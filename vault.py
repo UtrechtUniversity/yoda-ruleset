@@ -417,29 +417,16 @@ def api_vault_system_metadata(ctx, coll):
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
-    # Previous version.
-    previous_version = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        previous_version = row[0]
+    # Check for previous version.
+    previous_version = get_previous_version(ctx, coll)
+    if previous_version:
         previous_version_doi = get_doi(ctx, previous_version)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
 
     # Persistent Identifier DOI.
-    package_doi = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
-        genquery.AS_LIST, ctx
-    )
+    package_doi = get_doi(ctx, coll)
 
-    for row in iter:
-        package_doi = row[0]
+    if package_doi:
         if previous_version:
             persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
         else:
