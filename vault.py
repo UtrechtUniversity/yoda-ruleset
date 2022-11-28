@@ -4,7 +4,10 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import binascii
 import itertools
+import json
+import jsonavu
 import os
 import re
 import time
@@ -19,6 +22,7 @@ import meta
 import meta_form
 import policies_datamanager
 import policies_datapackage_status
+import provenance
 from util import *
 
 __all__ = ['api_vault_submit',
@@ -39,7 +43,10 @@ __all__ = ['api_vault_submit',
            'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group',
-           'api_vault_get_published_packages']
+           'api_vault_get_published_packages',
+           'api_vault_archive',
+           'api_vault_archived',
+           'rule_vault_archive']
 
 
 @api.make()
@@ -1231,3 +1238,116 @@ def api_vault_get_published_packages(ctx, path):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
     return dict(sorted(data_packages.items(), key=lambda x: x[1]))
+
+
+def decode_checksum(checksum):
+    if checksum is None:
+        return "0"
+    else:
+        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
+
+
+def package_manifest(ctx, coll):
+    length = len(coll) + 1
+    return "\n".join([
+        decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
+        for row in itertools.chain(
+            genquery.row_iterator("COLL_NAME, ORDER(DATA_NAME), DATA_CHECKSUM",
+                                  "COLL_NAME = '{}'".format(coll),
+                                  genquery.AS_LIST,
+                                  ctx),
+            genquery.row_iterator("ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
+                                  "COLL_NAME like '{}/%'".format(coll),
+                                  genquery.AS_LIST,
+                                  ctx))
+        if row[1] not in [
+            "manifest-sha256.txt",
+            "user-metadata.json",
+            "system-metadata.json",
+            "provenance-log.json"
+        ]
+    ]) + "\n"
+
+
+def package_user_metadata(ctx, coll):
+    avus = [
+        {
+            "a": row[0],
+            "v": row[1],
+            "u": row[2]
+        }
+        for row in genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_UNITS like '{}%'".format(coll, constants.UUUSERMETADATAPREFIX),
+            genquery.AS_LIST,
+            ctx)
+    ]
+    return jsonavu.avu2json(avus, "usr")
+
+
+def package_system_metadata(ctx, coll):
+    return [
+        {
+            "name": row[0],
+            "value": row[1]
+        }
+        for row in genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'".format(coll, constants.UUORGMETADATAPREFIX),
+            genquery.AS_LIST,
+            ctx)
+    ]
+
+
+def package_provenance_log(ctx, system_metadata):
+    def key(item):
+        return int(item["time"])
+
+    provenance_log = []
+    for item in system_metadata:
+        if item["name"] == constants.UUPROVENANCELOG:
+            data = json.loads(item["value"])
+            provenance_log.append({
+                "time": data[0],
+                "action": data[1],
+                "actor": data[2]
+            })
+    return sorted(provenance_log, key=key)
+
+
+def vault_archive(ctx, coll):
+    provenance.log_action(ctx, str(user.user_and_zone(ctx)), coll, "archived")
+    data_object.write(ctx, coll + "/manifest-sha256.txt",
+                      package_manifest(ctx, coll))
+
+    data_object.write(ctx, coll + "/user-metadata.json",
+                      jsonutil.dump(package_user_metadata(ctx, coll)))
+
+    system_metadata = package_system_metadata(ctx, coll)
+    data_object.write(ctx, coll + "/system-metadata.json",
+                      jsonutil.dump(system_metadata))
+
+    provenance_log = package_provenance_log(ctx, system_metadata)
+    data_object.write(ctx, coll + "/provenance-log.json",
+                      jsonutil.dump(provenance_log))
+
+    ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
+
+    # don't remove the real package just yet
+    # ctx.msiRmColl(coll, "forceFlag=", 0);
+
+
+@api.make()
+def api_vault_archive(ctx, coll):
+    vault_archive(ctx, coll)
+
+
+@api.make()
+def api_vault_archived(ctx, coll):
+    return '0'
+
+
+# test rule
+@rule.make()
+def rule_vault_archive(ctx, coll):
+    vault_archive(ctx, coll)
