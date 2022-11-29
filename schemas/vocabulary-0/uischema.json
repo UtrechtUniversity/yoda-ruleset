@@ -8,9 +8,9 @@
   },
   "Language": {
     "ui:field": "vocabulary",
-    "ui:data": "https://gist.githubusercontent.com/rvanelk/972979f66a0a3410b88f00574ebeb543/raw/87bcf7034fb644a1e973d7d7fdd09f5d0da5b134/language.json",
+    "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/schemas/vocabulary-0/languages.json",
     "ui:default": "English"
-  },  
+  },
   "Discipline": {
     "ui:description": "Categorize your research to a (sub)discipline"
   },

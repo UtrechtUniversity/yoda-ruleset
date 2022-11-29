@@ -196,7 +196,7 @@
     },
     "Language": {
       "title": "Language of the data",
-      "type": "string"
+      "type": "stringNormal"
     },
     "Tag": {
       "title": "Tags",
