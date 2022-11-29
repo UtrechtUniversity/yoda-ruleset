@@ -125,9 +125,6 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *description, *dataClassification, *allowed, *reason) {
-
-    writeLine("serverLog","HDR GroupPolicyCanGroupAdd");
-
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
@@ -154,20 +151,20 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 
 					*vaultName = "vault-*base";
 					uuGroupExists(*vaultName, *vaultExists);
-                    # Extra check for situations that a vault path is already present
-                    uuGroupVaultPathExists(*vaultName, *vaultPathExists);
+					# Extra check for situations that a vault path is already present
+					uuGroupVaultPathExists(*vaultName, *vaultPathExists);
 
 					if (*roExists || *vaultExists || *vaultPathExists) {
 						*reason = "This group name is not available.";
 					} else {
-						    uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
-						    if (*schemaIdValid) {
+						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
+						f (*schemaIdValid) {
 							# Last check.
 							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-						    } else {
+						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
-					            }
+					    }
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
