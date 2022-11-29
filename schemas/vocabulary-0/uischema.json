@@ -7,6 +7,7 @@
     "ui:widget": "textarea"
   },
   "Language": {
+    "ui:help": "The language of the data package",
     "ui:field": "vocabulary",
     "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/schemas/vocabulary-0/languages.json",
     "ui:default": "English"
