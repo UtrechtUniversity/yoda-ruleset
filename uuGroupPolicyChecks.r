@@ -151,8 +151,10 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 
 					*vaultName = "vault-*base";
 					uuGroupExists(*vaultName, *vaultExists);
+					# Extra check for situations that a vault path is already present
+					uuGroupVaultPathExists(*vaultName, *vaultPathExists);
 
-					if (*roExists || *vaultExists) {
+					if (*roExists || *vaultExists || *vaultPathExists) {
 						*reason = "This group name is not available.";
 					} else {
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
