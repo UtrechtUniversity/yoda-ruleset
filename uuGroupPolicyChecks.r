@@ -158,13 +158,13 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 						*reason = "This group name is not available.";
 					} else {
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
-						f (*schemaIdValid) {
+						if (*schemaIdValid) {
 							# Last check.
 							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
-					    }
+						}
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
