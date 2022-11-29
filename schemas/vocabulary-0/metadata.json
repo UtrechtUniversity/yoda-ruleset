@@ -196,7 +196,7 @@
     },
     "Language": {
       "title": "Language of the data",
-      "type": "stringNormal"
+      "$ref": "#/definitions/stringNormal"
     },
     "Tag": {
       "title": "Tags",
