@@ -111,31 +111,6 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
     }
 }
 
-# \brief Check if a specific vault path already exists
-#
-# \param[in]  name of vault group as the basis for the collection
-# \param[out] vaultPathExists
-#
-uuGroupVaultPathExists(*vaultName, *vaultPathExists) {
-    *vault_coll = "/$rodsZoneClient/home/" ++ *vaultName;
-    *coll = "";
-    writeLine("serverLog","HDR *vault_coll");
-
-
-    foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *vault_coll) {
-        *coll = *row.COLL_NAME;
-        succeed;
-    }
-    writeLine("serverLog","HDR AFTER => *coll ");
-
-
-    if (*coll != "") {
-        *vaultPathExists = true;
-    } else {
-        *vaultPathExists = false;
-    }
-}
-
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -179,16 +154,12 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 
 					*vaultName = "vault-*base";
 					uuGroupExists(*vaultName, *vaultExists);
+                    # Extra check for situations that a vault path is already present
+                    uuGroupVaultPathExists(*vaultName, *vaultPathExists);
 
-					if (*roExists || *vaultExists) {
+					if (*roExists || *vaultExists || *vaultPathExists) {
 						*reason = "This group name is not available.";
 					} else {
-                                                # Extra check for situations that a vault path is already present
-                                                uuGroupVaultPathExists(*vaultName, *vaultPathExists);
-                                                if (*vaultPathExists) {
-                                                    *reason = "Cannot create research group because of name conflict with existing vault folder. Group is not created";
-                                                }
-                                                else {
 						    uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
 						    if (*schemaIdValid) {
 							# Last check.
@@ -197,7 +168,6 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
 					            }
-                                                }
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
