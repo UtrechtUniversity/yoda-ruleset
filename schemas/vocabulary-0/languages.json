@@ -8,6 +8,10 @@
     "label": "Dutch"
   },
   {
+    "value": "de - German",
+    "label": "German"
+  },
+  {
     "value": "fr - French",
     "label": "French"
   }
