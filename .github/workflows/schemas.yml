@@ -28,5 +28,6 @@ jobs:
 
       - name: Validate JSON schemas
         run: |
-          ajv compile -s "schemas/*/*.json" --spec=draft7 --strict=false
+          ajv compile -s "schemas/*/metadata.json" --spec=draft7 --strict=false
+          ajv compile -s "schemas/*/uischema.json" --spec=draft7 --strict=false
           ajv compile -s "datarequest/schemas/*/*/*.json"  --spec=draft7 --strict=false
