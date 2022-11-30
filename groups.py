@@ -62,7 +62,7 @@ def getGroupData(ctx):
             }
             groups[name] = group
 
-        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory", "retention_period"]:
             group[attr] = value
         elif attr == "description":
             # Deal with legacy use of '.' for empty description metadata.
@@ -310,9 +310,13 @@ def api_group_data(ctx):
         if "schema_id" not in group:
             group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
 
+        if "retention_period" not in group:
+            group["retention_period"] = ''
+
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
             'schema_id': group['schema_id'],
+            'retention_period': group['retention_period'],
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -942,7 +946,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, retention_period, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -950,15 +954,19 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, descript
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
     :param schema_id:           Schema-id for the group to be created
+    :param retention_period     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, description, data_classification, '', '')['arguments']
-        status = response[6]
-        message = response[7]
+        # validate retention period. Must be proper date or empty
+
+
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, retention_period, description, data_classification, '', '')['arguments']
+        status = response[7]
+        message = response[8]
         if status == '0':
             return api.Result.ok()
         else:
@@ -979,6 +987,10 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :returns: Dict with API status result
     """
     try:
+        # validate retention period. Must be proper date or empty
+        if property_name == 'retention_period':
+            blabla = 'HdR'
+
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
         status = response[3]
         message = response[4]
