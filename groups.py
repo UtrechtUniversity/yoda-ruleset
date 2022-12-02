@@ -20,6 +20,7 @@ __all__ = ['api_group_data',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
+           'rule_group_retention_period_validate',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -911,6 +912,27 @@ def rule_group_check_external_user(ctx, username):
     return '0'
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_group_retention_period_validate(ctx, retention_period):
+    """ Validation of retention period date
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param retention_period: string containing date that has to be validated
+
+    :returns: indication whether retention period is an accepted value
+    """
+    if retention_period in ["", "."]:
+        return 'true'
+
+    from datetime import datetime
+    try:
+        if retention_period != datetime.strptime(retention_period, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+        return 'true'
+    except ValueError:
+        return 'false'
+
+
 @api.make()
 def api_group_search_users(ctx, pattern):
     (username, zone_name) = user.from_str(ctx, pattern)
@@ -961,9 +983,6 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, retentio
     :returns: Dict with API status result
     """
     try:
-        # validate retention period. Must be proper date or empty
-
-
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, retention_period, description, data_classification, '', '')['arguments']
         status = response[7]
         message = response[8]
@@ -987,10 +1006,6 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :returns: Dict with API status result
     """
     try:
-        # validate retention period. Must be proper date or empty
-        if property_name == 'retention_period':
-            blabla = 'HdR'
-
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
         status = response[3]
         message = response[4]
