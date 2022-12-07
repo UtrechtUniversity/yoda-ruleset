@@ -93,7 +93,7 @@
         "ui:description": "The organizational or institutional affiliation of the creator"
       },
       "Person_Identifier": {
-        "ui:description": "Person identifier of creator of the data package",
+        "ui:description": "Person identifier of creator of the data package. Use ORCID. If you don’t have one, go to https://orcid.org/register",
         "items": {
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"

@@ -882,7 +882,8 @@
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
-                  "title": "Type"
+                  "title": "Type",
+                  "default": "ORCID"
                 },
                 "Name_Identifier": {
                   "$ref": "#/definitions/stringNormal",
