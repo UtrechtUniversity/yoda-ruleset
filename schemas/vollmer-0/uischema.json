@@ -3,11 +3,13 @@
     "ui:disabled": true
   },
   "Title": {
-    "ui:help": "The title of your data package"
+    "ui:help": "The title of your data package",
+    "ui:placeholder": "Give a short title that describes this data best. The title of the metadata file in the main and manuscript folder is the title."
   },
   "Description": {
     "ui:help": "A description of your data package",
-    "ui:widget": "textarea"
+    "ui:widget": "textarea",
+    "ui:placeholder": "Copy the corresponding experimental part of the paper here. Give as mich detail as possible. Describe your folder structure, if you created subfolders. The description of the metadata in the main and manuscript folder is the same as the abstract of the paper."
   },
   "Discipline": {
     "ui:description": "Categorize your research to a (sub)discipline"
@@ -58,15 +60,18 @@
     "ui:help": "How is your data classified with regard to information security policy"
   },
   "Collection_Name": {
-    "ui:help": "Collection this data package is a part of. E.g. Project Name"
+    "ui:help": "Collection this data package is a part of. E.g. Project Name",
+    "ui:placeholder": "[last name],[first initial]_[journal abbreviation]_[volume]_[page 1]"
   },
   "Funding_Reference": {
     "items": {
       "Funder_Name": {
-        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"
+        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO",
+        "ui:placeholder": "NWO, company name, etc."
       },
       "Award_Number": {
-        "ui:help": "The award or grant number issued by the funding organisation"
+        "ui:help": "The award or grant number issued by the funding organisation",
+        "ui:placeholder": "NWO usually assigns funding numbers to all projects, they should be in your yearly reports"
       }
     }
   },
