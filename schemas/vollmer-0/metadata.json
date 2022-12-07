@@ -796,7 +796,8 @@
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
-      "title": "Data classification"
+      "title": "Data classification",
+      "default": "Public"
     },
     "Collection_Name": {
       "$ref": "#/definitions/stringNormal",
