@@ -16,6 +16,7 @@ from dateutil import relativedelta
 from genquery import Query
 
 import data_access_token
+import folder
 import mail
 import settings
 from util import *
@@ -25,6 +26,7 @@ __all__ = ['api_notifications_load',
            'api_notifications_dismiss_all',
            'rule_mail_notification_report',
            'rule_process_ending_retention_packages',
+           'rule_process_ending_retention_groups',
            'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
@@ -289,6 +291,62 @@ def rule_process_ending_retention_packages(ctx):
                 log.write(ctx, 'retention - Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, 'retention - Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
+
+
+@rule.make()
+def rule_process_ending_retention_groups(ctx):
+    """Rule interface for checking research groups for ending retention.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, 'retention - Checking research groups for ending retention')
+
+    zone = user.zone(ctx)
+    dp_notify_count = 0
+
+    # my_date = datetime.now()
+    today = datetime.now().strftime('%Y-%m-%d')
+    log.write(ctx, today)
+
+    # First query: obtain a list of groups with group attributes
+    # and group retention period less or equal than today
+    # and group retention != '.' (actually meaning empty)
+    today = '2030-01-01'
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE, COLL_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'retention_period'"
+        " AND META_USER_ATTR_VALUE <= '{}'  AND META_USER_ATTR_VALUE != '.'".format(today),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        group_name = row[0]
+        dp_coll = row[3]
+        attr = row[1]
+        retention_date = row[2]
+        # log.write(ctx, "{}:  {}".format(attr, retention_date))
+
+        # find corresponding datamanager
+        category = group.get_category(ctx, group_name)
+        datamanager_group_name = "datamanager-" + category
+        if group.exists(ctx, datamanager_group_name):
+            dp_notify_count += 1
+            # Send notifications to datamanager(s).
+            datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+            message = "Group '{}' passed retention date: {}".format(group_name, retention_date)
+
+            for datamanager in datamanagers:
+                datamanager = '{}#{}'.format(*datamanager)
+                actor = 'system'
+                set(ctx, actor, datamanager, dp_coll, message)
+            log.write(ctx, 'retention - Notifications set for group {} ending retention period on {}. <{}>'.format(group_name, retention_date, dp_coll))
+
+    log.write(ctx, 'retention - Finished checking research groups for ending retention | notified: {}'.format(dp_notify_count))
 
 
 @rule.make()
