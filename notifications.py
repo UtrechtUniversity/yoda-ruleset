@@ -313,7 +313,6 @@ def rule_process_ending_retention_groups(ctx):
     # First query: obtain a list of groups with group attributes
     # and group retention period less or equal than today
     # and group retention != '.' (actually meaning empty)
-    today = '2030-01-01'
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'retention_period'"
@@ -324,7 +323,6 @@ def rule_process_ending_retention_groups(ctx):
     for row in iter:
         group_name = row[0]
         coll = '/{}/home/{}'.format(zone, group_name)
-        attr = row[1]
         retention_date = row[2]
 
         # find corresponding datamanager
