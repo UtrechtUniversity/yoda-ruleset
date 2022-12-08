@@ -287,7 +287,7 @@ def rule_process_ending_retention_packages(ctx):
                 for datamanager in datamanagers:
                     datamanager = '{}#{}'.format(*datamanager)
                     actor = 'system'
-                    notifications.set(ctx, actor, datamanager, dp_coll, message)
+                    set(ctx, actor, datamanager, dp_coll, message)
                 log.write(ctx, 'retention - Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, 'retention - Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
@@ -307,18 +307,15 @@ def rule_process_ending_retention_groups(ctx):
     log.write(ctx, 'retention - Checking research groups for ending retention')
 
     zone = user.zone(ctx)
-    dp_notify_count = 0
-
-    # my_date = datetime.now()
+    notify_count = 0
     today = datetime.now().strftime('%Y-%m-%d')
-    log.write(ctx, today)
 
     # First query: obtain a list of groups with group attributes
     # and group retention period less or equal than today
     # and group retention != '.' (actually meaning empty)
     today = '2030-01-01'
     iter = genquery.row_iterator(
-        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE, COLL_NAME",
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'retention_period'"
         " AND META_USER_ATTR_VALUE <= '{}'  AND META_USER_ATTR_VALUE != '.'".format(today),
         genquery.AS_LIST, ctx
@@ -326,16 +323,15 @@ def rule_process_ending_retention_groups(ctx):
 
     for row in iter:
         group_name = row[0]
-        dp_coll = row[3]
+        coll = '/{}/home/{}'.format(zone, group_name)
         attr = row[1]
         retention_date = row[2]
-        # log.write(ctx, "{}:  {}".format(attr, retention_date))
 
         # find corresponding datamanager
         category = group.get_category(ctx, group_name)
         datamanager_group_name = "datamanager-" + category
         if group.exists(ctx, datamanager_group_name):
-            dp_notify_count += 1
+            notify_count += 1
             # Send notifications to datamanager(s).
             datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
             message = "Group '{}' passed retention date: {}".format(group_name, retention_date)
@@ -343,10 +339,10 @@ def rule_process_ending_retention_groups(ctx):
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
                 actor = 'system'
-                set(ctx, actor, datamanager, dp_coll, message)
-            log.write(ctx, 'retention - Notifications set for group {} ending retention period on {}. <{}>'.format(group_name, retention_date, dp_coll))
+                set(ctx, actor, datamanager, coll, message)
+            log.write(ctx, 'retention - Notifications set for group {} ending retention period on {}. <{}>'.format(group_name, retention_date, coll))
 
-    log.write(ctx, 'retention - Finished checking research groups for ending retention | notified: {}'.format(dp_notify_count))
+    log.write(ctx, 'retention - Finished checking research groups for ending retention | notified: {}'.format(notify_count))
 
 
 @rule.make()
