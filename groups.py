@@ -498,19 +498,8 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
-        # First create the group. Note that the rodsadmin actor will become a groupmanager
-
-        # when no matching category schema-id is found, fall back to yoda instance default
-        schema_id = 'default'
-        iter = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_NAME = '/{}/yoda/schemas/{}'".format(user.zone(ctx), category),
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            schema_id = category
-
-        response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id, '', 'unspecified', '', '')['arguments']
+        # First create the group. Note that the actor will become a groupmanager
+        response = ctx.uuGroupAdd(groupname, category, subcategory, '', '', '', 'unspecified', '', '')['arguments']
         status = response[6]
         message = response[7]
 
