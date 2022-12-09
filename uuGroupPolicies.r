@@ -84,6 +84,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*policyKv."category",
 				*policyKv."subcategory",
                                 *policyKv."schema_id",
+                                *policyKv."retention_period",
 				*policyKv."description",
 				*policyKv."data_classification",
 				*allowed, *reason
@@ -530,7 +531,9 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
                 if (*policyKv."schema_id" != "") {
                         errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
                 }
-
+                if (*policyKv."retention_period" != "") {
+                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "retention_period", *policyKv."retention_period", "", ""));
+                }
 	}
 
     # Put the group name in the policyKv to assist the acl policy.
