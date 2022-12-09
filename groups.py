@@ -66,7 +66,7 @@ def getGroupData(ctx):
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description" or attr = "retention_period":
+        elif attr == "description" or attr == "retention_period":
             # Deal with legacy use of '.' for empty description metadata and retention period.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
