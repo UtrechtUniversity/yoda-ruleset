@@ -332,7 +332,7 @@ def rule_process_ending_retention_groups(ctx):
             notify_count += 1
             # Send notifications to datamanager(s).
             datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-            message = "Group '{}' passed retention date: {}".format(group_name, retention_date)
+            message = "Group '{}' reached retention date: {}".format(group_name, retention_date)
 
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
