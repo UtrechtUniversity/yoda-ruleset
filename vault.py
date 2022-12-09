@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import binascii
 import itertools
 import json
-import jsonavu
 import os
 import re
 import time
@@ -15,6 +14,7 @@ from datetime import datetime
 
 import genquery
 import irods_types
+import jsonavu
 
 import folder
 import groups
@@ -46,7 +46,9 @@ __all__ = ['api_vault_submit',
            'api_vault_get_published_packages',
            'api_vault_archive',
            'api_vault_archived',
-           'rule_vault_archive']
+           'rule_vault_create_archive',
+           'rule_vault_archive',
+           'rule_vault_archived']
 
 
 @api.make()
@@ -1331,11 +1333,6 @@ def vault_archive(ctx, coll):
     data_object.write(ctx, coll + "/provenance-log.json",
                       jsonutil.dump(provenance_log))
 
-    ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
-
-    # don't remove the real package just yet
-    # ctx.msiRmColl(coll, "forceFlag=", 0);
-
 
 @api.make()
 def api_vault_archive(ctx, coll):
@@ -1344,10 +1341,39 @@ def api_vault_archive(ctx, coll):
 
 @api.make()
 def api_vault_archived(ctx, coll):
-    return '0'
+    archived = "0"
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
+                                     genquery.AS_LIST,
+                                     ctx):
+        archived = row[0]
+    return archived
+
+
+@rule.make()
+def rule_vault_create_archive(ctx, coll):
+    try:
+        ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
+
+        # don't remove the real package just yet
+        # ctx.msiRmColl(coll, "forceFlag=", 0);
+    except Exception:
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
 
 
 # test rule
 @rule.make()
 def rule_vault_archive(ctx, coll):
     vault_archive(ctx, coll)
+
+
+@rule.make(inputs=[0],outputs=[1])
+def rule_vault_archived(ctx, coll):
+    archived = "0"
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
+                                     genquery.AS_LIST,
+                                     ctx):
+        archived = row[0]
+    return archived
