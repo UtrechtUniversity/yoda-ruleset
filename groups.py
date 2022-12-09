@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from datetime import datetime
 
 import genquery
 import requests
@@ -311,13 +312,10 @@ def api_group_data(ctx):
         if "schema_id" not in group:
             group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
 
-        if "retention_period" not in group:
-            group["retention_period"] = ''
-
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
             'schema_id': group['schema_id'],
-            'retention_period': group['retention_period'],
+            'retention_period': group['retention_period'] if 'retention_period' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -914,17 +912,16 @@ def rule_group_check_external_user(ctx, username):
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_group_retention_period_validate(ctx, retention_period):
-    """ Validation of retention period date
+    """Validation of retention period date.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param retention_period: string containing date that has to be validated
+    :param ctx:              Combined type of a callback and rei struct
+    :param retention_period: String containing date that has to be validated
 
-    :returns: indication whether retention period is an accepted value
+    :returns: Indication whether retention period is an accepted value
     """
     if retention_period in ["", "."]:
         return 'true'
 
-    from datetime import datetime
     try:
         if retention_period != datetime.strptime(retention_period, "%Y-%m-%d").strftime('%Y-%m-%d'):
             raise ValueError
@@ -976,7 +973,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, retentio
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
     :param schema_id:           Schema-id for the group to be created
-    :param retention_period     Retention period for the group
+    :param retention_period:    Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 

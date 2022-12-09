@@ -111,16 +111,14 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
     }
 }
 
-# \brief Check if indicated retention period is valid
+# \brief Check if indicated eention period is valid
 #
 # \param[in]  retention_period
 # \param[out] valid
 #
 uuGroupRetentionPeriodIsValid(*retention_period, *valid) {
     *result = "";
-    writeLine("serverLog","IN uuGroupRetentionPeriodIsValid::::: retent_period:  *retention_period ");
     rule_group_retention_period_validate(*retention_period, *result);
-    writeLine("serverLog","IN uuGroupRetentionPeriodIsValid::::: result: *result ");
     *valid = bool(*result);
 }
 
@@ -174,14 +172,14 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 					} else {
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
 						if (*schemaIdValid) {
-                                                    # Check retention period
-                                                    uuGroupRetentionPeriodIsValid(*retention_period, *retentionPeriodValid);
-                                                    if (*retentionPeriodValid) {
-							# Last check.
-							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-                                                    } else {
-                                                        *reason = "Invalid retention period when adding group: '*retention_period'";
-                                                    }
+							# Check retention period
+							uuGroupRetentionPeriodIsValid(*retention_period, *retentionPeriodValid);
+							if (*retentionPeriodValid) {
+							    # Last check.
+    							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+							} else {
+							    *reason = "Invalid retention period when adding group: '*retention_period'";
+							}
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
@@ -306,15 +304,13 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			} else {
 				*reason = "The chosen schema id is invalid for this group.";
 			}
-
-                } else if (*attribute == "retention_period") {
-                        uuGroupRetentionPeriodIsValid(*value, *retentionPeriodValid);
-                        if (*retentionPeriodValid) {
-                                *allowed = 1;
-                        } else {
-                                *reason = "The indicated retention period is invalid";
-                        }
-
+		} else if (*attribute == "retention_period") {
+			uuGroupRetentionPeriodIsValid(*value, *retentionPeriodValid);
+			if (*retentionPeriodValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen retention period is invalid.";
+			}
 		} else {
 			*reason = "Invalid group attribute name.";
 		}
