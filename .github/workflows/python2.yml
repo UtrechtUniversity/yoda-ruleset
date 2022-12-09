@@ -4,10 +4,9 @@ on: [push, pull_request]
 
 jobs:
   flake8:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ubuntu-latest]
         python-version: [2.7]
     steps:
       - uses: actions/checkout@v2
