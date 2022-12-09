@@ -499,9 +499,9 @@ def apply_data(ctx, data, allow_update, delete_users):
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, '', '', '', 'unspecified', '', '')['arguments']
-        status = response[6]
-        message = response[7]
+        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '')['arguments']
+        status = response[7]
+        message = response[8]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
