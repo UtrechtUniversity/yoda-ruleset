@@ -85,10 +85,12 @@
     "items": {
       "Name": {
         "Given_Name": {
-          "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
+          "ui:help": "The personal or first name of the person(s) who created (a version of) the data package",
+          "ui:placeholder": "Jon"
         },
         "Family_Name": {
-          "ui:help": "The surname or last name of the person(s) who created (a version of) the data package"
+          "ui:help": "The surname or last name of the person(s) who created (a version of) the data package",
+          "ui:placeholder": "Doe"
         }
       },
       "Affiliation": {
