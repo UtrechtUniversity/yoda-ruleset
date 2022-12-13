@@ -1368,7 +1368,7 @@ def rule_vault_archive(ctx, coll):
     vault_archive(ctx, coll)
 
 
-@rule.make(inputs=[0],outputs=[1])
+@rule.make(inputs=[0], outputs=[1])
 def rule_vault_archived(ctx, coll):
     archived = "0"
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
