@@ -108,13 +108,30 @@ Feature: Group UI
         And category is set to <category>
         And subcategory is set to <subcategory>
         And schema id is set to <schema_id>
+        And retention period is set to <retention_period>
         When user submits new group data
         And research group <group> is successfully created
-        And check whether research group properties <group>, <category> and <schema_id> are correct
+        And check whether research group properties <group>, <category>, <subcategory>, <schema_id> and <retention_period> are correct
 
         Examples:
-            | category        | subcategory| group         | schema_id |
-            | test-automation | initial    | ui-test-group | teclab-1  |
+            | category        | subcategory     | group         | schema_id | retention_period  |
+            | test-automation | test-automation | ui-test-group | teclab-1  | 2030-12-25        |
+
+
+    Scenario Outline: Group research update
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When category is updated to <category>
+        And subcategory is updated to <subcategory>
+        And retention period is updated to <retention_period>
+        When user submits updated group data
+        And research group <group> is successfully updated
+        And check whether research group properties <category>, <subcategory> and <retention_period> are correctly updated
+
+        Examples:
+            | category        | subcategory | group         | retention_period |
+            | test-automation | initial     | ui-test-group | 2035-12-31       |
+
 
     Scenario Outline: Group datamanager create
         Given user technicaladmin is logged in

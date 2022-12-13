@@ -266,6 +266,36 @@ def ui_group_schema_category_is_set(browser, category):
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
 
+@when(parsers.parse("category is updated to {category}"))
+def ui_group_schema_category_is_updated(browser, category):
+    # Category already exists.
+    browser.find_by_id('s2id_f-group-update-category').click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == category:
+            option.click()
+            return True
+
+    # Category does not exist.
+    browser.find_by_xpath('//*[@id="s2id_autogen1_search"]').fill(category)
+    browser.find_by_css('.select2-results .select2-highlighted').click()
+
+
+@when(parsers.parse("subcategory is updated to {subcategory}"))
+def ui_group_schema_subcategory_is_updated(browser, subcategory):
+    # Subcategory already exists.
+    browser.find_by_id('s2id_f-group-update-subcategory').click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == subcategory:
+            option.click()
+            return True
+
+    # Subcategory does not exist.
+    browser.find_by_xpath('//*[@id="s2id_autogen3_search"]').fill(subcategory)
+    browser.find_by_css('.select2-results .select2-highlighted').click()
+
+
 @when(parsers.parse("subcategory is set to {subcategory}"))
 def ui_group_schema_subcategory_is_set(browser, subcategory):
     # Subcategory already exists.
@@ -292,9 +322,24 @@ def ui_group_schema_set_schema_id(browser, schema_id):
             break
 
 
+@when(parsers.parse("retention period is set to {retention_period}"))
+def ui_group_schema_set_retention(browser, retention_period):
+    browser.find_by_id('f-group-create-retention-period').fill(retention_period)
+
+
+@when(parsers.parse("retention period is updated to {retention_period}"))
+def ui_group_schema_update_retention(browser, retention_period):
+    browser.find_by_id('f-group-update-retention-period').fill(retention_period)
+
+
 @when("user submits new group data")
 def ui_schema_submit_new_group_data(browser):
     browser.find_by_id('f-group-create-submit').click()
+
+
+@when("user submits updated group data")
+def ui_schema_submit_updated_group_data(browser):
+    browser.find_by_id('f-group-update-submit').click()
 
 
 @when(parsers.parse("research group {group} is successfully created"))
@@ -302,17 +347,34 @@ def ui_group_schema_assert_research_group_created(browser, group):
     assert browser.find_by_css('.alert-success').text == 'Created group research-' + group + '.'
 
 
+@when(parsers.parse("research group {group} is successfully updated"))
+def ui_group_schema_assert_research_group_updated(browser, group):
+    assert browser.find_by_css('.alert-success').text == 'Updated research-' + group + ' group properties.'
+
+
 @when(parsers.parse("datamanager group {group} is successfully created"))
 def ui_group_schema_assert_datamanager_group_created(browser, group):
     assert browser.find_by_css('.alert-success').text == 'Created group datamanager-' + group + '.'
 
 
-@when(parsers.parse("check whether research group properties {group}, {category} and {schema_id} are correct"))
-def ui_group_schema_properties_schema_correct(browser, group, category, schema_id):
+@when(parsers.parse("check whether research group properties {group}, {category}, {subcategory}, {schema_id} and {retention_period} are correct"))
+def ui_group_schema_properties_schema_correct(browser, group, category, subcategory, schema_id, retention_period):
     assert browser.find_by_id('f-group-update-name').value == group
     assert browser.find_by_id('f-group-update-schema-id').value == schema_id
+    assert browser.find_by_id('f-group-update-retention-period').value == retention_period
     div = browser.find_by_id('s2id_f-group-update-category')
     assert div.find_by_css('.select2-chosen').text == category
+    div = browser.find_by_id('s2id_f-group-update-subcategory')
+    assert div.find_by_css('.select2-chosen').text == subcategory
+
+
+@when(parsers.parse("check whether research group properties {category}, {subcategory} and {retention_period} are correctly updated"))
+def ui_group_schema_properties_update_correct(browser, category, subcategory, retention_period):
+    assert browser.find_by_id('f-group-update-retention-period').value == retention_period
+    div = browser.find_by_id('s2id_f-group-update-category')
+    assert div.find_by_css('.select2-chosen').text == category
+    div = browser.find_by_id('s2id_f-group-update-subcategory')
+    assert div.find_by_css('.select2-chosen').text == subcategory
 
 
 @when(parsers.parse("check whether datamanager group properties {group} and {category} are correct"))

@@ -76,6 +76,7 @@ def api_group_create(user, group_name):
          "schema_id": "default-2",
          "retention_period": "",
          "description": "",
+         "retention_period": "",
          "data_classification": "public"}
     )
 
