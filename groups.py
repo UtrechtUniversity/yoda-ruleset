@@ -587,7 +587,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                             continue
                         else:
                             managers.remove(username)
-                    log.write(ctx, "CSV import - Removing user {} from group {}".format(user, usergroupname))
+                    log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
 
                     response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
                     status = response[2]
