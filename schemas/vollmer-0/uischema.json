@@ -24,7 +24,7 @@
     "ui:description": "Free text field for adding (searchable) key words to your data package",
     "items": {
       "ui:placeholder": "Select a tag from the Yoda_Tag_list.xlxs file"
-  }
+    }
   },
   "Related_Datapackage": {
     "items": {
