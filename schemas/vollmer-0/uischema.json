@@ -22,7 +22,9 @@
   },
   "Tag": {
     "ui:description": "Free text field for adding (searchable) key words to your data package",
-    "ui:placeholder": "Select a tag from the Yoda_Tag_list.xlxs file"
+    "items": {
+      "ui:placeholder": "Select a tag from the Yoda_Tag_list.xlxs file"
+  }
   },
   "Related_Datapackage": {
     "items": {
@@ -65,7 +67,7 @@
     "ui:placeholder": "[last name],[first initial]_[journal abbreviation]_[volume]_[page 1]"
   },
   "Funding_Reference": {
-    "ui:help": "Ask your supervisor for the funding information of your project",
+    "ui:description": "Ask your supervisor for the funding information of your project",
     "items": {
       "Funder_Name": {
         "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO",
