@@ -333,8 +333,8 @@ def ui_group_schema_set_retention(browser, retention_period):
 @when(parsers.parse("retention period is updated to {retention_period2}"))
 def ui_group_schema_set_retention(browser, retention_period2):
     browser.find_by_id('f-group-update-retention-period').fill(retention_period2)
-	
-	
+
+
 @when("user submits new group data")
 def ui_schema_submit_new_group_data(browser):
     browser.find_by_id('f-group-create-submit').click()
