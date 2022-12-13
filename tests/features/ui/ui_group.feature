@@ -100,7 +100,7 @@ Feature: Group UI
         And find group member "viewer@yoda.test"
 
 
-    Scenario Outline: Group research create and update
+    Scenario Outline: Group research create
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
         When user opens add group dialog
@@ -112,16 +112,25 @@ Feature: Group UI
         When user submits new group data
         And research group <group> is successfully created
         And check whether research group properties <group>, <category>, <subcategory>, <schema_id> and <retention_period> are correct
-        And category is updated to <category2>
-        And subcategory is updated to <subcategory2>
-        And retention period is updated to <retention_period2>
+
+        Examples:
+            | category        | subcategory     | group         | schema_id | retention_period  |
+            | test-automation | test-automation | ui-test-group | teclab-1  | 2030-12-25        |
+
+
+    Scenario Outline: Group research update
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When category is updated to <category>
+        And subcategory is updated to <subcategory>
+        And retention period is updated to <retention_period>
         When user submits updated group data
         And research group <group> is successfully updated
-        And check whether research group properties <category2>, <subcategory2> and <retention_period2> are correctly updated
-		
+        And check whether research group properties <category>, <subcategory> and <retention_period> are correctly updated
+
         Examples:
-            | category        | subcategory | group         | schema_id | retention_period  | category2       | subcategory2     | retention_period2 | 
-            | test-automation | initial     | ui-test-group | teclab-1  | 2030-12-25        | test-automation | metadata-schemas | 2035-12-31        |
+            | category        | subcategory | group         | retention_period |
+            | test-automation | initial     | ui-test-group | 2035-12-31       |
 
 
     Scenario Outline: Group datamanager create

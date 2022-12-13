@@ -266,33 +266,33 @@ def ui_group_schema_category_is_set(browser, category):
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
 
-@when(parsers.parse("category is updated to {category2}"))
-def ui_group_schema_category_is_updated(browser, category2):
+@when(parsers.parse("category is updated to {category}"))
+def ui_group_schema_category_is_updated(browser, category):
     # Category already exists.
     browser.find_by_id('s2id_f-group-update-category').click()
     options = browser.find_by_css('.select2-result')
     for option in options:
-        if option.text == category2:
+        if option.text == category:
             option.click()
             return True
 
     # Category does not exist.
-    browser.find_by_xpath('//*[@id="s2id_autogen1_search"]').fill(category2)
+    browser.find_by_xpath('//*[@id="s2id_autogen1_search"]').fill(category)
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
 
-@when(parsers.parse("subcategory is updated to {subcategory2}"))
-def ui_group_schema_subcategory_is_updated(browser, subcategory2):
+@when(parsers.parse("subcategory is updated to {subcategory}"))
+def ui_group_schema_subcategory_is_updated(browser, subcategory):
     # Subcategory already exists.
     browser.find_by_id('s2id_f-group-update-subcategory').click()
     options = browser.find_by_css('.select2-result')
     for option in options:
-        if option.text == subcategory2:
+        if option.text == subcategory:
             option.click()
             return True
 
     # Subcategory does not exist.
-    browser.find_by_xpath('//*[@id="s2id_autogen3_search"]').fill(subcategory2)
+    browser.find_by_xpath('//*[@id="s2id_autogen3_search"]').fill(subcategory)
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
 
@@ -325,14 +325,11 @@ def ui_group_schema_set_schema_id(browser, schema_id):
 @when(parsers.parse("retention period is set to {retention_period}"))
 def ui_group_schema_set_retention(browser, retention_period):
     browser.find_by_id('f-group-create-retention-period').fill(retention_period)
-    # time.sleep(2)
-    # assert browser.find_by_id('f-group-create-retention-period').value == retention_period
-    # time.sleep(10)
 
 
-@when(parsers.parse("retention period is updated to {retention_period2}"))
-def ui_group_schema_update_retention(browser, retention_period2):
-    browser.find_by_id('f-group-update-retention-period').fill(retention_period2)
+@when(parsers.parse("retention period is updated to {retention_period}"))
+def ui_group_schema_update_retention(browser, retention_period):
+    browser.find_by_id('f-group-update-retention-period').fill(retention_period)
 
 
 @when("user submits new group data")
@@ -371,13 +368,13 @@ def ui_group_schema_properties_schema_correct(browser, group, category, subcateg
     assert div.find_by_css('.select2-chosen').text == subcategory
 
 
-@when(parsers.parse("check whether research group properties {category2}, {subcategory2} and {retention_period2} are correctly updated"))
-def ui_group_schema_properties_update_correct(browser, category2, subcategory2, retention_period2):
-    assert browser.find_by_id('f-group-update-retention-period').value == retention_period2
+@when(parsers.parse("check whether research group properties {category}, {subcategory} and {retention_period} are correctly updated"))
+def ui_group_schema_properties_update_correct(browser, category, subcategory, retention_period):
+    assert browser.find_by_id('f-group-update-retention-period').value == retention_period
     div = browser.find_by_id('s2id_f-group-update-category')
-    assert div.find_by_css('.select2-chosen').text == category2
+    assert div.find_by_css('.select2-chosen').text == category
     div = browser.find_by_id('s2id_f-group-update-subcategory')
-    assert div.find_by_css('.select2-chosen').text == subcategory2
+    assert div.find_by_css('.select2-chosen').text == subcategory
 
 
 @when(parsers.parse("check whether datamanager group properties {group} and {category} are correct"))
