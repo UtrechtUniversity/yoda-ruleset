@@ -223,12 +223,16 @@ def load(ctx, coll):
                                  + 'Please contact your datamanager.')
 
     elif space is pathutil.Space.VAULT:
+
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)
         can_edit  = (groups.user_is_datamanager(ctx, category, user_full_name)
                      and (status == constants.vault_package_state.UNPUBLISHED
                           or status == constants.vault_package_state.PUBLISHED
                           or status == constants.vault_package_state.DEPUBLISHED))
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
+
+        if meta_path is None:
+            return api.Error('missing_metadata', 'No metadata file could be found for this data package.')
 
         # Try to load the metadata file.
         try:
