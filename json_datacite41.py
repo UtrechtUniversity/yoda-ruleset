@@ -153,8 +153,7 @@ def get_descriptions(combi):
 
 
 def get_publisher(combi):
-    # FIXME (untouched from b057f496).
-    return 'Utrecht University'
+    return config.datacite_publisher
 
 
 def get_publication_year(combi):
