@@ -21,7 +21,7 @@ def api_schema_get_schemas(ctx):
 
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_PARENT_NAME = '/{}/yoda/schemas'".format(user.zone(ctx)),
+        "COLL_PARENT_NAME = '/{}/yoda/schemas' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = 'True'".format(user.zone(ctx), constants.SCHEMA_USER_SELECTABLE),
         genquery.AS_LIST, ctx
     )
 
