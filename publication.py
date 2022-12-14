@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+from datetime import datetime
 
 import genquery
 
@@ -260,8 +261,6 @@ def get_publication_date(ctx, vault_package):
 
     :return: Publication date in ISO8601 format
     """
-    from datetime import datetime
-
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
@@ -276,6 +275,7 @@ def get_publication_date(ctx, vault_package):
             # ISO8601-fy
             return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
+    # ISO8601-fy
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
@@ -293,12 +293,12 @@ def get_last_modified_datetime(ctx, vault_package):
         "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
         genquery.AS_LIST, ctx
     )
+
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
+        my_date = datetime.fromtimestamp(int(log_item_list[0]))
 
-        import datetime
-        my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
-
+        # ISO8601-fy
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
