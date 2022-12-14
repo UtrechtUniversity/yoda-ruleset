@@ -12,6 +12,7 @@ from datetime import datetime
 
 import genquery
 import irods_types
+from dateutil import parser
 
 import folder
 import groups
@@ -402,7 +403,10 @@ def api_vault_system_metadata(ctx, coll):
     )
 
     for row in iter:
-        modified_date = row[0]
+        # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+        # modified_date = date.fromisoformat(row[0])
+        modified_date = parser.parse(row[0])
+        modified_date = modified_date.strftime('%Y-%m-%dT%H:%M:%S%z')
         system_metadata["Modified date"] = "{}".format(modified_date)
 
     # Landingpage URL.
