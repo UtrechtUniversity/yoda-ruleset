@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from dateutil import parser
+
 from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
@@ -292,10 +294,20 @@ def get_contributors(combi):
 
 
 def get_dates(combi):
-    """ return list of dates in datacite format """
+    """Return list of dates in DataCite format."""
 
-    dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'},
-             {'date': combi.get('Embargo_End_Date'), 'dateType': 'Available'}]
+    # Format last modified date for DataCite: https://support.datacite.org/docs/schema-optional-properties-v41#8-date
+    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+    # last_modified_date = date.fromisoformat(last_modified_date)
+    last_modified_date = combi.get('System', {}).get('Last_Modified_Date')
+    last_modified_date = parser.parse(last_modified_date)
+    last_modified_date = last_modified_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+
+    dates = [{'date': last_modified_date, 'dateType': 'Updated'}]
+
+    embargo_end_date = combi.get('Embargo_End_Date', None)
+    if embargo_end_date is not None:
+        dates.append({'date': embargo_end_date, 'dateType': 'Available'})
 
     collected = combi.get('Collected', None)
     if collected is not None:
