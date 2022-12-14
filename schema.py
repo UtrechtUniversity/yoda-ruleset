@@ -27,7 +27,7 @@ def api_schema_get_schemas(ctx):
 
     for row in iter:
         schema = row[0].split('/')[-1]
-        schemas.append(row[0].split('/')[-1])
+        schemas.append(schema)
 
     return schemas
 
