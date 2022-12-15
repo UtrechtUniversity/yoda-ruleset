@@ -22,7 +22,7 @@ import schema_transformations
 from util import *
 
 
-def execute_transformation(ctx, metadata_path, transform, make_metadata_backup=True):
+def execute_transformation(ctx, metadata_path, transform, keep_metadata_backup=True):
     """Transform a metadata file with the given transformation function."""
     coll, data = os.path.split(metadata_path)
 
@@ -33,11 +33,11 @@ def execute_transformation(ctx, metadata_path, transform, make_metadata_backup=T
 
     # make_metadata_backup is only relevant for research
     if group_name.startswith('research-'):
-        if make_metadata_backup:
+        if keep_metadata_backup:
             backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
-            # print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
+            print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
             msi.data_obj_copy(ctx, metadata_path, backup, '', irods_types.BytesBuf())
-            jsonutil.write(ctx, metadata_path, metadata)
+        jsonutil.write(ctx, metadata_path, metadata)
     elif group_name.startswith('vault-'):
         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
@@ -50,10 +50,9 @@ def execute_transformation(ctx, metadata_path, transform, make_metadata_backup=T
 
 
 @api.make()
-def api_transform_metadata(ctx, coll, make_metadata_backup=True):
+def api_transform_metadata(ctx, coll, keep_metadata_backup=True):
     """Transform a yoda-metadata file in the given collection to the active schema."""
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
-
     if metadata_path.endswith('.json'):
         # JSON metadata.
         log.write(ctx, 'Transforming JSON -> JSON in the research space')
@@ -62,7 +61,7 @@ def api_transform_metadata(ctx, coll, make_metadata_backup=True):
         if transform is None:
             return api.Error('undefined_transformation', 'No transformation found')
 
-        execute_transformation(ctx, metadata_path, transform, make_metadata_backup)
+        execute_transformation(ctx, metadata_path, transform, keep_metadata_backup)
     else:
         return api.Error('no_metadata', 'No metadata file found')
 
