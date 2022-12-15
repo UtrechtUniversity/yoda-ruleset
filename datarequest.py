@@ -2619,10 +2619,10 @@ def mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title)),
+                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): preregistration approved".format(request_id, truncated_title)),
                      body="""Dear {},
 
-Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
+The preregistration of your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
 
 The following link will take you directly to the data request: https://{}/datarequest/view/{}.
 
