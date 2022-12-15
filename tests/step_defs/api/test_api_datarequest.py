@@ -90,7 +90,7 @@ def api_datarequest_save(user):
                     },
                     "part2": {},
                     "study_information": {
-                        "title": "Títle",
+                        "title": "API test datarequest",
                         "research_questions": "Research qúestions",
                         "hypotheses": "Hypótheses",
                         "data_returned": "Réturned files"
@@ -193,7 +193,7 @@ def api_datarequest_submit(user, datarequest_id):
                     },
                     "part2": {},
                     "study_information": {
-                        "title": "Títle",
+                        "title": "API test datarequest",
                         "research_questions": "Research qúestions",
                         "hypotheses": "Hypótheses",
                         "data_returned": "Réturned files"
