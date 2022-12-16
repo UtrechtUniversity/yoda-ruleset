@@ -218,7 +218,7 @@ def get_creators(combi):
     for creator in combi.get('Creator', []):
         affiliations = []
         for aff in creator.get('Affiliation', []):
-            affiliations.append(aff)
+            affiliations.append({'name': aff})
         name_ids = []
         for pid in creator.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
@@ -247,7 +247,7 @@ def get_contributors(combi):
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            affiliations.append(aff)
+            affiliations.append({'name': aff})
         name_ids = []
         for pid in person.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
@@ -269,7 +269,7 @@ def get_contributors(combi):
     for person in combi.get('ContactPerson', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            affiliations.append(aff)
+            affiliations.append({'name': aff})
         name_ids = []
         for pid in person.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
