@@ -43,16 +43,35 @@ def api_datarequest_save(user):
         "datarequest_submit",
         {
             "data": {
+                "instructions": {},
+                "part": {},
                 "contact": {
                     "principal_investigator": {
-                        "name": "Jane Doe",
-                        "institution": "Utrecht University",
-                        "department": "RDMS",
-                        "work_address": "Heidelberglaan 8",
+                        "name": "Nãme",
+                        "institution": "Institutioñ",
+                        "department": "Départment",
+                        "work_address": "Wörk address",
                         "phone": "+31 30 1234 5678"
                     },
-                    "pi_is_contact": "Yes",
-                    "participating_researchers": "No"
+                    "study_contact": {
+                        "name": "Contact nàme",
+                        "institution": "Contact institútion",
+                        "department": "Contact départment",
+                        "work_address": "Contact wôrk address",
+                        "phone": "+31 30 2345 6789"
+                    },
+                    "participating_researchers_array": [
+                        {
+                            "name": "Participating researcher náme",
+                            "institution": "Participating researcher instítution",
+                            "department": "Participating researcher départment",
+                            "work_address": "Participating researcher work addrẽss",
+                            "phone": "+31 30 3456 7890"
+                        }
+                    ],
+                    "pi_is_contact": "No",
+                    "participating_researchers": "Yes",
+                    "cc_email_addresses": "cc1@example.invalid,cc2@example.invalid"
                 },
                 "datarequest": {
                     "data": {
@@ -69,29 +88,38 @@ def api_datarequest_save(user):
                             }
                         ]
                     },
+                    "part2": {},
                     "study_information": {
                         "title": "API test datarequest",
-                        "research_questions": "test",
-                        "hypotheses": "test",
-                        "data_returned": "test"
+                        "research_questions": "Research qúestions",
+                        "hypotheses": "Hypótheses",
+                        "data_returned": "Réturned files"
                     },
                     "variables": {
-                        "variables": "test"
+                        "variables": "Váriables",
+                        "unit_of_analysis": "Unit of ánalysis",
+                        "missing_data": "Missing dáta",
+                        "statistical_outliers": "Statistical óutliers"
                     },
                     "knowledge_of_data": {
-                        "prior_knowledge": "test"
+                        "prior_publication": "Prior ṕublication",
+                        "prior_knowledge": "Ṕrior knowledge"
                     },
                     "analyses": {
-                        "statistical_models": "test",
-                        "statistical_power": "test",
-                        "assumption_violation": "test"
+                        "statistical_models": "Śtatistical models",
+                        "effect_size": "Éffect size",
+                        "statistical_power": "Śtatistical power",
+                        "inference_criteria": "Ïnference criteria",
+                        "assumption_violation": "Ássumption violation",
+                        "reliability_and_robustness_testing": "Reĺiability and robustness testing",
+                        "exploratory_analysis": "Éxploratory analysis"
                     },
                     "attachments": {
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
                     "publication_type": "Article or report in a peer-reviewed journal"
-                },
+                }
             },
             "draft": True
         })
@@ -118,55 +146,83 @@ def api_datarequest_submit(user, datarequest_id):
         "datarequest_submit",
         {
             "data": {
+                "instructions": {},
+                "part": {},
                 "contact": {
                     "principal_investigator": {
-                        "name": "Jane Doe",
-                        "institution": "Utrecht University",
-                        "department": "RDMS",
-                        "work_address": "Heidelberglaan 8",
+                        "name": "Nãme",
+                        "institution": "Institutioñ",
+                        "department": "Départment",
+                        "work_address": "Wörk address",
                         "phone": "+31 30 1234 5678"
                     },
-                    "pi_is_contact": "Yes",
-                    "participating_researchers": "No"
+                    "study_contact": {
+                        "name": "Contact nàme",
+                        "institution": "Contact institútion",
+                        "department": "Contact départment",
+                        "work_address": "Contact wôrk address",
+                        "phone": "+31 30 2345 6789"
+                    },
+                    "participating_researchers_array": [
+                        {
+                            "name": "Participating researcher náme",
+                            "institution": "Participating researcher instítution",
+                            "department": "Participating researcher départment",
+                            "work_address": "Participating researcher work addrẽss",
+                            "phone": "+31 30 3456 7890"
+                        }
+                    ],
+                    "pi_is_contact": "No",
+                    "participating_researchers": "Yes",
+                    "cc_email_addresses": "cc1@example.invalid,cc2@example.invalid"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 1,
+                                "expId": 8,
                                 "expCohort": 1,
-                                "expWave": 7,
+                                "expWave": 8,
                                 "expType": 0,
                                 "expSubject": 0,
-                                "expName": 5,
+                                "expName": 51,
                                 "expInfo": "",
                                 "expAdditionalRemarks": ""
                             }
                         ]
                     },
+                    "part2": {},
                     "study_information": {
                         "title": "API test datarequest",
-                        "research_questions": "test",
-                        "hypotheses": "test",
-                        "data_returned": "test"
+                        "research_questions": "Research qúestions",
+                        "hypotheses": "Hypótheses",
+                        "data_returned": "Réturned files"
                     },
                     "variables": {
-                        "variables": "test"
+                        "variables": "Váriables",
+                        "unit_of_analysis": "Unit of ánalysis",
+                        "missing_data": "Missing dáta",
+                        "statistical_outliers": "Statistical óutliers"
                     },
                     "knowledge_of_data": {
-                        "prior_knowledge": "test"
+                        "prior_publication": "Prior ṕublication",
+                        "prior_knowledge": "Ṕrior knowledge"
                     },
                     "analyses": {
-                        "statistical_models": "test",
-                        "statistical_power": "test",
-                        "assumption_violation": "test"
+                        "statistical_models": "Śtatistical models",
+                        "effect_size": "Éffect size",
+                        "statistical_power": "Śtatistical power",
+                        "inference_criteria": "Ïnference criteria",
+                        "assumption_violation": "Ássumption violation",
+                        "reliability_and_robustness_testing": "Reĺiability and robustness testing",
+                        "exploratory_analysis": "Éxploratory analysis"
                     },
                     "attachments": {
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
                     "publication_type": "Article or report in a peer-reviewed journal"
-                },
+                }
             },
             "draft": False,
             "draft_request_id": datarequest_id

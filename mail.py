@@ -37,7 +37,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         log.write(ctx, 'Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
-    log.write(ctx, 'Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
+    log.write(ctx, u'Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 
     cfg = {k: getattr(config, v)
            for k, v in [('from',      'notifications_sender_email'),
@@ -83,7 +83,7 @@ def send(ctx, to, actor, subject, body, cc=None):
 
     fmt_addr = '{} <{}>'.format
 
-    msg = MIMEText(body)
+    msg = MIMEText(body, 'plain', 'UTF-8')
     msg['Reply-To'] = cfg['reply_to']
     msg['Date'] = email.utils.formatdate()
     msg['From'] = fmt_addr(cfg['from_name'], cfg['from'])
