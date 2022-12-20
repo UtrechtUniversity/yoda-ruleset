@@ -295,7 +295,7 @@ def rule_process_ending_retention_packages(ctx):
 
 @rule.make()
 def rule_process_ending_retention_groups(ctx):
-    """Rule interface for checking research groups for ending retention.
+    """Rule interface for checking research groups for passing group expiration date.
 
     :param ctx: Combined type of a callback and rei struct
     """
@@ -304,7 +304,7 @@ def rule_process_ending_retention_groups(ctx):
         log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
         return
 
-    log.write(ctx, 'retention - Checking research groups for ending retention')
+    log.write(ctx, 'retention - Checking research groups for passing group expiration date')
 
     zone = user.zone(ctx)
     notify_count = 0
@@ -332,7 +332,7 @@ def rule_process_ending_retention_groups(ctx):
             notify_count += 1
             # Send notifications to datamanager(s).
             datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-            message = "Group '{}' reached retention date: {}".format(group_name, retention_date)
+            message = "Group '{}' reached its expiration date: {}".format(group_name, retention_date)
 
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
@@ -340,7 +340,7 @@ def rule_process_ending_retention_groups(ctx):
                 set(ctx, actor, datamanager, coll, message)
             log.write(ctx, 'retention - Notifications set for group {} ending retention period on {}. <{}>'.format(group_name, retention_date, coll))
 
-    log.write(ctx, 'retention - Finished checking research groups for ending retention | notified: {}'.format(notify_count))
+    log.write(ctx, 'retention - Finished checking research groups for passing group expiration date | notified: {}'.format(notify_count))
 
 
 @rule.make()
