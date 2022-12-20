@@ -371,6 +371,22 @@ def is_revision_blocked_by_admin(ctx):
     return (len(list(iter)) > 0)
 
 
+def revision_single_dataobject(ctx, path, verbose):
+    """Create a revision of a single indicated dataobject
+
+    :param ctx:      Combined type of a callback and rei struct
+    # :param resource: Resource to retrieve original from
+    :param path:     Path of data object to create a revision for
+    # :param max_size: Max size of files in bytes
+    :param verbose:      Whether to print messages for troubleshooting to log (1: yes, 0: no)
+
+    :returns: Data object ID of created revision
+    """
+    # get resource to retrieve original from
+
+    id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose) 
+
+
 def revision_create(ctx, resource, path, max_size, verbose):
     """Create a revision of a dataobject in a revision folder.
 
