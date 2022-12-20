@@ -51,8 +51,12 @@ def write(ctx, path, data):
     :param path: Path to iRODS data object
     :param data: Data to write to data object
     """
-    ret = msi.data_obj_create(ctx, path, 'forceFlag=', 0)
-    handle = ret['arguments'][2]
+    if exists(ctx, path):
+        ret = msi.data_obj_open(ctx, 'openFlags=O_WRONLY++++objPath=' + path, 0)
+        handle = ret['arguments'][1]
+    else:
+        ret = msi.data_obj_create(ctx, path, '', 0)
+        handle = ret['arguments'][2]
 
     msi.data_obj_write(ctx, handle, data, 0)
     msi.data_obj_close(ctx, handle, 0)
