@@ -21,7 +21,7 @@ __all__ = ['api_group_data',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
-           'rule_group_retention_period_validate',
+           'rule_group_expiration_date_validate',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -66,7 +66,7 @@ def getGroupData(ctx):
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description" or attr == "retention_period":
+        elif attr == "description" or attr == "expiration_date":
             # Deal with legacy use of '.' for empty description metadata and retention period.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
@@ -315,7 +315,7 @@ def api_group_data(ctx):
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
             'schema_id': group['schema_id'],
-            'retention_period': group['retention_period'] if 'retention_period' in group else '',
+            'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -900,19 +900,19 @@ def rule_group_check_external_user(ctx, username):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_group_retention_period_validate(ctx, retention_period):
+def rule_group_expiration_date_validate(ctx, expiration_date):
     """Validation of retention period date.
 
-    :param ctx:              Combined type of a callback and rei struct
-    :param retention_period: String containing date that has to be validated
+    :param ctx:             Combined type of a callback and rei struct
+    :param expiration_date: String containing date that has to be validated
 
     :returns: Indication whether retention period is an accepted value
     """
-    if retention_period in ["", "."]:
+    if expiration_date in ["", "."]:
         return 'true'
 
     try:
-        if retention_period != datetime.strptime(retention_period, "%Y-%m-%d").strftime('%Y-%m-%d'):
+        if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
             raise ValueError
         return 'true'
     except ValueError:
@@ -954,7 +954,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, retention_period, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -962,14 +962,14 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, retentio
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
     :param schema_id:           Schema-id for the group to be created
-    :param retention_period:    Retention period for the group
+    :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, retention_period, description, data_classification, '', '')['arguments']
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, '', '')['arguments']
         status = response[7]
         message = response[8]
         if status == '0':

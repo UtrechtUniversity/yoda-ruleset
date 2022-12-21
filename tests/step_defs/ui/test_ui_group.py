@@ -322,14 +322,14 @@ def ui_group_schema_set_schema_id(browser, schema_id):
             break
 
 
-@when(parsers.parse("retention period is set to {retention_period}"))
-def ui_group_schema_set_retention(browser, retention_period):
-    browser.find_by_id('f-group-create-retention-period').fill(retention_period)
+@when(parsers.parse("expiration date is set to {expiration_date}"))
+def ui_group_schema_set_expiration_date(browser, expiration_date):
+    browser.find_by_id('f-group-create-expiration-date').fill(expiration_date)
 
 
-@when(parsers.parse("retention period is updated to {retention_period}"))
-def ui_group_schema_update_retention(browser, retention_period):
-    browser.find_by_id('f-group-update-retention-period').fill(retention_period)
+@when(parsers.parse("expiration date is updated to {expiration_date}"))
+def ui_group_schema_update_expiration_date(browser, expiration_date):
+    browser.find_by_id('f-group-update-expiration-date').fill(expiration_date)
 
 
 @when("user submits new group data")
@@ -357,20 +357,20 @@ def ui_group_schema_assert_datamanager_group_created(browser, group):
     assert browser.find_by_css('.alert-success').text == 'Created group datamanager-' + group + '.'
 
 
-@when(parsers.parse("check whether research group properties {group}, {category}, {subcategory}, {schema_id} and {retention_period} are correct"))
-def ui_group_schema_properties_schema_correct(browser, group, category, subcategory, schema_id, retention_period):
+@when(parsers.parse("check whether research group properties {group}, {category}, {subcategory}, {schema_id} and {expiration_date} are correct"))
+def ui_group_schema_properties_schema_correct(browser, group, category, subcategory, schema_id, expiration_date):
     assert browser.find_by_id('f-group-update-name').value == group
     assert browser.find_by_id('f-group-update-schema-id').value == schema_id
-    assert browser.find_by_id('f-group-update-retention-period').value == retention_period
+    assert browser.find_by_id('f-group-update-expiration-date').value == expiration_date
     div = browser.find_by_id('s2id_f-group-update-category')
     assert div.find_by_css('.select2-chosen').text == category
     div = browser.find_by_id('s2id_f-group-update-subcategory')
     assert div.find_by_css('.select2-chosen').text == subcategory
 
 
-@when(parsers.parse("check whether research group properties {category}, {subcategory} and {retention_period} are correctly updated"))
-def ui_group_schema_properties_update_correct(browser, category, subcategory, retention_period):
-    assert browser.find_by_id('f-group-update-retention-period').value == retention_period
+@when(parsers.parse("check whether research group properties {category}, {subcategory} and {expiration_date} are correctly updated"))
+def ui_group_schema_properties_update_correct(browser, category, subcategory, expiration_date):
+    assert browser.find_by_id('f-group-update-expiration-date').value == expiration_date
     div = browser.find_by_id('s2id_f-group-update-category')
     assert div.find_by_css('.select2-chosen').text == category
     div = browser.find_by_id('s2id_f-group-update-subcategory')

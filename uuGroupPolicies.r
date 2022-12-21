@@ -84,7 +84,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*policyKv."category",
 				*policyKv."subcategory",
                                 *policyKv."schema_id",
-                                *policyKv."retention_period",
+                                *policyKv."expiration_date",
 				*policyKv."description",
 				*policyKv."data_classification",
 				*allowed, *reason
@@ -531,8 +531,8 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
                 if (*policyKv."schema_id" != "") {
                         errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
                 }
-                if (*policyKv."retention_period" != "") {
-                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "retention_period", *policyKv."retention_period", "", ""));
+                if (*policyKv."expiration_date" != "") {
+                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "expiration_date", *policyKv."expiration_date", "", ""));
                 }
 	}
 

@@ -111,14 +111,14 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
     }
 }
 
-# \brief Check if indicated eention period is valid
+# \brief Check if indicated expiration date is valid
 #
-# \param[in]  retention_period
+# \param[in]  expiration_date
 # \param[out] valid
 #
-uuGroupRetentionPeriodIsValid(*retention_period, *valid) {
+uuGroupExpirationDateIsValid(*expiration_date, *valid) {
     *result = "";
-    rule_group_retention_period_validate(*retention_period, *result);
+    rule_group_expiration_date_validate(*expiration_date, *result);
     *valid = bool(*result);
 }
 
@@ -131,13 +131,13 @@ uuGroupRetentionPeriodIsValid(*retention_period, *valid) {
 # \param[in]  category
 # \param[in]  subcategory
 # \param[in]  schema_id
-# \param[in]  retention_period
+# \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *retention_period, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; writeLine("serverLog","In CanGroupAdd RODSADMIN");}
@@ -173,12 +173,12 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
 						if (*schemaIdValid) {
 							# Check retention period
-							uuGroupRetentionPeriodIsValid(*retention_period, *retentionPeriodValid);
+							uuGroupExpirationDateIsValid(*expiration_date, *retentionPeriodValid);
 							if (*retentionPeriodValid) {
 							    # Last check.
     							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
 							} else {
-							    *reason = "Invalid retention period when adding group: '*retention_period'";
+							    *reason = "Invalid retention period when adding group: '*expiration_date'";
 							}
 						} else {
 							# schema not valid -> report error
@@ -261,7 +261,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  groupName the group name
-# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification', 'schema_id', 'retention_period')
+# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification', 'schema_id', 'expiration_date')
 # \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
@@ -304,8 +304,8 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			} else {
 				*reason = "The chosen schema id is invalid for this group.";
 			}
-		} else if (*attribute == "retention_period") {
-			uuGroupRetentionPeriodIsValid(*value, *retentionPeriodValid);
+		} else if (*attribute == "expiration_date") {
+			uuGroupExpirationDateIsValid(*value, *retentionPeriodValid);
 			if (*retentionPeriodValid) {
 				*allowed = 1;
 			} else {

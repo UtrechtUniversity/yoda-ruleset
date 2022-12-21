@@ -26,7 +26,7 @@ __all__ = ['api_notifications_load',
            'api_notifications_dismiss_all',
            'rule_mail_notification_report',
            'rule_process_ending_retention_packages',
-           'rule_process_ending_retention_groups',
+           'rule_process_groups_expiration_date',
            'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
@@ -294,8 +294,8 @@ def rule_process_ending_retention_packages(ctx):
 
 
 @rule.make()
-def rule_process_ending_retention_groups(ctx):
-    """Rule interface for checking research groups for passing group expiration date.
+def rule_process_groups_expiration_date(ctx):
+    """Rule interface for checking research groups for reaching group expiration date.
 
     :param ctx: Combined type of a callback and rei struct
     """
@@ -304,7 +304,7 @@ def rule_process_ending_retention_groups(ctx):
         log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
         return
 
-    log.write(ctx, 'retention - Checking research groups for passing group expiration date')
+    log.write(ctx, 'retention - Checking research groups for reaching group expiration date')
 
     zone = user.zone(ctx)
     notify_count = 0
@@ -315,7 +315,7 @@ def rule_process_ending_retention_groups(ctx):
     # and group retention != '.' (actually meaning empty)
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'retention_period'"
+        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'expiration_date'"
         " AND META_USER_ATTR_VALUE <= '{}'  AND META_USER_ATTR_VALUE != '.'".format(today),
         genquery.AS_LIST, ctx
     )
@@ -323,7 +323,7 @@ def rule_process_ending_retention_groups(ctx):
     for row in iter:
         group_name = row[0]
         coll = '/{}/home/{}'.format(zone, group_name)
-        retention_date = row[2]
+        expiration_date = row[2]
 
         # find corresponding datamanager
         category = group.get_category(ctx, group_name)
@@ -332,15 +332,15 @@ def rule_process_ending_retention_groups(ctx):
             notify_count += 1
             # Send notifications to datamanager(s).
             datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-            message = "Group '{}' reached its expiration date: {}".format(group_name, retention_date)
+            message = "Group '{}' reached expiration date: {}".format(group_name, expiration_date)
 
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
                 actor = 'system'
                 set(ctx, actor, datamanager, coll, message)
-            log.write(ctx, 'retention - Notifications set for group {} ending retention period on {}. <{}>'.format(group_name, retention_date, coll))
+            log.write(ctx, 'retention - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
 
-    log.write(ctx, 'retention - Finished checking research groups for passing group expiration date | notified: {}'.format(notify_count))
+    log.write(ctx, 'retention - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
 
 
 @rule.make()
