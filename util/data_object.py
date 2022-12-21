@@ -52,7 +52,7 @@ def write(ctx, path, data):
     :param data: Data to write to data object
     """
     if exists(ctx, path):
-        ret = msi.data_obj_open(ctx, 'openFlags=O_WRONLY++++objPath=' + path, 0)
+        ret = msi.data_obj_open(ctx, 'openFlags=O_WRONLYO_TRUNC++++objPath=' + path, 0)
         handle = ret['arguments'][1]
     else:
         ret = msi.data_obj_create(ctx, path, '', 0)
