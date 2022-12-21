@@ -67,7 +67,7 @@ def getGroupData(ctx):
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
         elif attr == "description" or attr == "expiration_date":
-            # Deal with legacy use of '.' for empty description metadata and retention period.
+            # Deal with legacy use of '.' for empty description metadata and expiration date.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
@@ -901,12 +901,12 @@ def rule_group_check_external_user(ctx, username):
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_group_expiration_date_validate(ctx, expiration_date):
-    """Validation of retention period date.
+    """Validation of expiration date.
 
     :param ctx:             Combined type of a callback and rei struct
     :param expiration_date: String containing date that has to be validated
 
-    :returns: Indication whether retention period is an accepted value
+    :returns: Indication whether expiration date is an accepted value
     """
     if expiration_date in ["", "."]:
         return 'true'

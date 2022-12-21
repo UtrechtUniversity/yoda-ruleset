@@ -172,13 +172,13 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 					} else {
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
 						if (*schemaIdValid) {
-							# Check retention period
-							uuGroupExpirationDateIsValid(*expiration_date, *retentionPeriodValid);
-							if (*retentionPeriodValid) {
+							# Check expiration date
+							uuGroupExpirationDateIsValid(*expiration_date, *expirationDateValid);
+							if (*expirationDateValid) {
 							    # Last check.
     							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
 							} else {
-							    *reason = "Invalid retention period when adding group: '*expiration_date'";
+							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
 							}
 						} else {
 							# schema not valid -> report error
@@ -305,11 +305,11 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 				*reason = "The chosen schema id is invalid for this group.";
 			}
 		} else if (*attribute == "expiration_date") {
-			uuGroupExpirationDateIsValid(*value, *retentionPeriodValid);
-			if (*retentionPeriodValid) {
+			uuGroupExpirationDateIsValid(*value, *expirationDateValid);
+			if (*expirationDateValid) {
 				*allowed = 1;
 			} else {
-				*reason = "The chosen retention period is invalid.";
+				*reason = "The chosen expiration date is invalid.";
 			}
 		} else {
 			*reason = "Invalid group attribute name.";

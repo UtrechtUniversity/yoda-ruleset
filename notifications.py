@@ -311,8 +311,8 @@ def rule_process_groups_expiration_date(ctx):
     today = datetime.now().strftime('%Y-%m-%d')
 
     # First query: obtain a list of groups with group attributes
-    # and group retention period less or equal than today
-    # and group retention != '.' (actually meaning empty)
+    # and group expiration date less or equal than today
+    # and group expiration date != '.' (actually meaning empty)
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'expiration_date'"
