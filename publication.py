@@ -37,7 +37,9 @@ def get_publication_config(ctx):
                  "random_id_length": "randomIdLength",
                  "yoda_instance": "yodaInstance",
                  "davrods_vhost": "davrodsVHost",
-                 "davrods_anonymous_vhost": "davrodsAnonymousVHost"}
+                 "davrods_anonymous_vhost": "davrodsAnonymousVHost",
+                 "publication_verbose_mode": "verboseMode"}
+    optional_keys = ["publication_verbose_mode"]
     configKeys = {}
     found_attrs = []
 
@@ -60,11 +62,9 @@ def get_publication_config(ctx):
             continue
 
     # Any differences between
-    if len(found_attrs) != len(attr2keys):
-        # Difference between attrs wanted and found
-        for key in attr2keys:
-            if key not in found_attrs:
-                log.write(ctx, 'Missing config key ' + key)
+    for key in attr2keys:
+        if key not in found_attrs and key not in optional_keys:
+            log.write(ctx, 'Missing config key ' + key)
 
     return configKeys
 
@@ -608,7 +608,14 @@ def process_publication(ctx, vault_package):
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
+    # Check if verbose mode is enabled
+    verbose = True if "verboseMode" in publication_config else False
+    if verbose:
+        log.write(ctx, "Running process_publication in verbose mode.")
+
     # Publication status check and handling
+    if verbose:
+        log.write(ctx, "Initial publication status is: " + publication_state['status'])
     if status in ["Unrecoverable", "Processing"]:
         return "publication status: " + status
     elif status in ["Unknown", "Retry"]:
@@ -618,6 +625,9 @@ def process_publication(ctx, vault_package):
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
     if "previous_version" in publication_state and "next_version" not in publication_state:
+        if verbose:
+            log.write(ctx, "In branch for updating base DOI")
+
         update_base_doi = True
         v1_exists = True
 
@@ -637,28 +647,44 @@ def process_publication(ctx, vault_package):
             set_update_publication_state(ctx, previous_vault_package)
             status = process_publication(ctx, previous_vault_package)
             if status in ["Unrecoverable", "Retry"]:
+                if verbose:
+                    log.write(ctx, "Error status for creating v1 package: " + status)
                 return status
 
     # Publication date
     if "publicationDate" not in publication_state:
+        if verbose:
+            log.write(ctx, "Setting publication date.")
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     # DOI handling
     if "yodaDOI" not in publication_state:
         # If a previous version is set generate a versioned DOI.
         if "previous_version" in publication_state:
+            if verbose:
+                log.write(ctx, "Generating preliminary DOI for next version.")
             generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
         else:
+            if verbose:
+                log.write(ctx, "Generating preliminary DOI.")
             generate_preliminary_DOI(ctx, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
     elif "DOIAvailable" in publication_state:
         if publication_state["DOIAvailable"] == "no":
+
+            if verbose:
+                log.write(ctx, "DOI available: no")
+
             # If a previous version is set generate a versioned DOI.
             if "previous_version" in publication_state:
+                if verbose:
+                    log.write(ctx, "Generating preliminary DOI for next version.")
                 generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
             else:
+                if verbose:
+                    log.write(ctx, "Generating preliminary DOI.")
                 generate_preliminary_DOI(ctx, publication_config, publication_state)
 
             publication_state["combiJsonPath"] = ""
@@ -666,47 +692,73 @@ def process_publication(ctx, vault_package):
             save_publication_state(ctx, vault_package, publication_state)
 
     # Determine last modification time. Always run, no matter if retry
+    if verbose:
+        log.write(ctx, "Updating modification date.")
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Generating combi JSON.")
+
         try:
             generate_combi_json(ctx, publication_config, publication_state)
         except msi.Error:
+            if verbose:
+                log.write(ctx, "Exception while generating combi JSON.")
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            if verbose:
+                log.write(ctx, "Error status after generating combi JSON.")
             return publication_state["status"]
 
     # Create Landing page URL
+    if verbose:
+        log.write(ctx, "Creating landing page.")
     generate_landing_page_url(ctx, publication_config, publication_state)
 
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
         except msi.Error:
+            if verbose:
+                log.write(ctx, "Error while generating Datacite JSON.")
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            if verbose:
+                log.write(ctx, "Error status after generating Datacite JSON.")
             return publication_state["status"]
 
     # Check if DOI is in use
     if "DOIAvailable" not in publication_state:
+        if verbose:
+            log.write(ctx, "Checking whether DOI is available.")
+
         try:
             check_doi_availability(ctx, publication_state)
         except msi.Error:
+            if verbose:
+                log.write(ctx, "Error while checking DOI availability.")
             publication_state["status"] = "Retry"
 
         if publication_state["status"] == "Retry":
+            if verbose:
+                log.write(ctx, "Error status after checking DOI availability.")
             return publication_state["status"]
 
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading metadata to Datacite.")
         try:
             # Determine wether DOI is already minted.
             yoda_doi = None
@@ -720,72 +772,104 @@ def process_publication(ctx, vault_package):
 
             if update_base_doi:
                 # Remove version from DOI.
+                if verbose:
+                    log.write(ctx, "Updating base DOI.")
                 yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
                 upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
+            if verbose:
+                log.write(ctx, "Error while sending metadata to Datacite.")
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            if verbose:
+                log.write(ctx, "Error status after sending metadata to Datacite.")
             return publication_state["status"]
 
     # Create landing page
     if "landingPagePath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Creating landing page.")
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
+            if verbose:
+                log.write(ctx, "Error while sending metadata to Datacite.")
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Unrecoverable":
+            if verbose:
+                log.write(ctx, "Error status after creating landing page.")
             return publication_state["status"]
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading landing page.")
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
             # Remove version from DOI.
+            if verbose:
+                log.write(ctx, "Updating base DOI landing page.")
             random_id = random_id.rsplit(".", 1)[0]
             copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
+            if verbose:
+                log.write(ctx, "Error status after uploading landing page.")
             return publication_state["status"]
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading to MOAI.")
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
             # Remove version from DOI.
+            if verbose:
+                log.write(ctx, "Updating base DOI at MOAI.")
             random_id = random_id.rsplit(".", 1)[0]
             copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
+            if verbose:
+                log.write(ctx, "Error status after uplaoding to MOAI.")
             return publication_state["status"]
 
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
+        if verbose:
+            log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
+            if verbose:
+                log.write(ctx, "Error status after setting vault access restrictions.")
             return publication_state["status"]
 
     # Mint DOI with landing page URL.
     if "DOIMinted" not in publication_state:
+        if verbose:
+            log.write(ctx, "Minting DOI.")
         mint_doi(ctx, publication_state['yodaDOI'], publication_state)
 
         if update_base_doi:
+            if verbose:
+                log.write(ctx, "Base DOI update.")
             # Remove version from DOI.
             yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
             mint_doi(ctx, yoda_doi, publication_state)
@@ -793,6 +877,8 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            if verbose:
+                log.write(ctx, "Error status during minting DOI.")
             return publication_state["status"]
 
         # The publication was a success
@@ -802,9 +888,13 @@ def process_publication(ctx, vault_package):
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
         if "previous_version" in publication_state:
+            if verbose:
+                log.write(ctx, "Updating previous version AVU.")
             avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
     else:
         # The publication was a success
+        if verbose:
+            log.write(ctx, "Publication successful.")
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
