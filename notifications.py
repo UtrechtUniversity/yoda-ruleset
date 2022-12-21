@@ -301,10 +301,10 @@ def rule_process_groups_expiration_date(ctx):
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
+        log.write(ctx, "group expiration date - Insufficient permissions - should only be called by rodsadmin")
         return
 
-    log.write(ctx, 'retention - Checking research groups for reaching group expiration date')
+    log.write(ctx, 'group expiration date - Checking research groups for reaching group expiration date')
 
     zone = user.zone(ctx)
     notify_count = 0
@@ -338,9 +338,9 @@ def rule_process_groups_expiration_date(ctx):
                 datamanager = '{}#{}'.format(*datamanager)
                 actor = 'system'
                 set(ctx, actor, datamanager, coll, message)
-            log.write(ctx, 'retention - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
+            log.write(ctx, 'group expiration date - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
 
-    log.write(ctx, 'retention - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
+    log.write(ctx, 'group expiration date - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
 
 
 @rule.make()
