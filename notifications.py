@@ -177,7 +177,7 @@ def rule_mail_notification_report(ctx, to, notifications):
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 
-    return _wrapper(ctx,
+    return mail._wrapper(ctx,
                     to=to,
                     actor='system',
                     subject='[Yoda] {} notification(s)'.format(notifications),
