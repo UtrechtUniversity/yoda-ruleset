@@ -376,7 +376,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
 
     :param ctx:      Combined type of a callback and rei struct
     :param resource: Resource to retrieve original from
-    :param data_id:     Path of data object to create a revision for
+    :param data_id:  Data id of data object to create a revision for
     :param max_size: Max size of files in bytes
     :param verbose:	 Whether to print messages for troubleshooting to log (1: yes, 0: no)
 
@@ -384,7 +384,6 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
     """
     revision_id = ""
     print_verbose = verbose
-    # parent, basename = pathutil.chop(path)
     found = False
 
     iter = genquery.row_iterator(
@@ -482,7 +481,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             # This way rev_path can have 1 or more of original_data_id.
             try:
                 avu.associate_to_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-            except msi.Error as e:
+            except msi.Error:
                 log.write(ctx, 'ERROR - associating original_data_id {} to path: {}'.format(data_id, rev_path))
                 return ""
 
@@ -513,7 +512,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             if len(rows) == 1:
                 revision_id = rows[0][0]
             else:
-                log.write(ctx, 'ERROR - incorrect number of original_data_id avus found {}. Must be 1!'.format(len(rows)))
+                log.write(ctx, "failed to find unique data object id for revision of data id <{}>. Aborting.".format(data_id))
                 return ""
 
             # Add original metadata to revision data object.
@@ -525,7 +524,6 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
-
         except msi.Error as e:
             log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
             return ''
