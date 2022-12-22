@@ -477,7 +477,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             # Genquery cannot be used as path names containing "'" result in errors.
             # Therefore, a different approach is taken here.
 
-            # Possibly there could be another rev_path already around accompanied with an original_data_id AVU            
+            # Possibly there could be another rev_path already around accompanied with an original_data_id AVU
             # Therefore, use associate the new original_data_id and afterwards draw conclusions.
             # This way rev_path can have 1 or more of original_data_id.
             try:
@@ -488,7 +488,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
 
             count = 0
             for avu_item in avu.of_data(ctx, rev_path):
-                # Count the number of original_data_id avu's as there should only be 1 
+                # Count the number of original_data_id avu's as there should only be 1
                 if avu_item[0] == constants.UUORGMETADATAPREFIX + "original_data_id":
                     count += 1
 
