@@ -303,7 +303,6 @@ def rule_revision_batch(ctx, verbose):
             if print_verbose:
                 log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
-            # id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
             id = revision_create(ctx, resc, data_id, constants.UUMAXREVISIONSIZE, verbose)
 
             # Remove revision_scheduled flag no matter if it succeeded or not.
@@ -338,8 +337,7 @@ def rule_revision_batch(ctx, verbose):
                 # Revision creation OK. Remove any existing error indication attribute.
                 iter2 = genquery.row_iterator(
                     "DATA_NAME",
-                    "COLL_NAME = '" + row[1] + "' AND DATA_NAME = '" + row[2] + "'"
-                    " AND META_DATA_ATTR_NAME  = '" + errorattr + "' AND META_DATA_ATTR_VALUE = 'true'",
+                    "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
                     genquery.AS_LIST, ctx
                 )
                 for row2 in iter2:
@@ -482,16 +480,16 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             # Possibly there could be another rev_path already around accompanied with an original_data_id AVU            
             # Therefore, use associate the new original_data_id and afterwards draw conclusions.
             # This way rev_path can have 1 or more of original_data_id.
-
             try:
-                avu.associate_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
+                avu.associate_to_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
             except msi.Error as e:
                 log.write(ctx, 'ERROR - associating original_data_id {} to path: {}'.format(data_id, rev_path))
                 return ""
 
             count = 0
-            for avu in  avu.of_data(ctx, rev_path):
-                if avu[0] == constants.UUORGMETADATAPREFIX + "original_data_id":
+            for avu_item in avu.of_data(ctx, rev_path):
+                # Count the number of original_data_id avu's as there should only be 1 
+                if avu_item[0] == constants.UUORGMETADATAPREFIX + "original_data_id":
                     count += 1
 
             if count == 0:
@@ -506,11 +504,12 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
 
             # Revision was created correctly.
             # Determine data-id of created revision
-            rows = genquery.row_iterator(
+            rows = list(genquery.row_iterator(
                 "DATA_ID",
-                "META_DATA_ATTR_VALUE = '{}' AND META_DATA_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX + "original_data_id", data_id),
+                "META_DATA_ATTR_NAME = '{}' AND META_DATA_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX + "original_data_id", data_id),
                 genquery.AS_LIST, ctx
-            )
+            ))
+
             if len(rows) == 1:
                 revision_id = rows[0][0]
             else:
