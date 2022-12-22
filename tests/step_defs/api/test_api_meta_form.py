@@ -76,8 +76,8 @@ LONG_METADATA = {
         },
         {
             "Name": {
-                "Given_Name": "Борис",
-                "Family_Name": "Николаевич Ельцин"
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
             },
             "Affiliation": [
                 "Utrecht University"
