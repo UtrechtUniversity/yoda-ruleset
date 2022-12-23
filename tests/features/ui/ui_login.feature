@@ -39,7 +39,7 @@ Feature: Login UI
     Scenario Outline: After direct login redirected to homepage
         Given user is not logged in
         When user <user> logs in
-        Then the user is redirected to <page>
+        Then the user is redirected to page <page>
 
         Examples:
             | user          | page      |
@@ -52,7 +52,7 @@ Feature: Login UI
         And the user is redirected to the login page
         When user <user> enters email address
         And user <user> logs in
-        Then the user is redirected to <page>
+        Then the user is redirected to page <page>
 
         Examples:
             | user          | page       |

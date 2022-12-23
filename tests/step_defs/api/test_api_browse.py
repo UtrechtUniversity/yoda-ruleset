@@ -34,16 +34,12 @@ def api_browse_collections(user, collection):
     )
 
 
-@given(parsers.parse("the Yoda browse folder API is queried with sorting on {sort_on} and {sort_order} direction on {collection}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda browse folder API is queried on {collection} with sorting on {sort_on} and {sort_order} direction"), target_fixture="api_response")
 def api_browse_folder_ordering(user, collection, sort_on, sort_order):
     return api_request(
         user,
         "browse_folder",
-        {
-            "coll": collection,
-            "sort_on": sort_on,
-            "sort_order": sort_order
-        }
+        {"coll": collection, "sort_on": sort_on, "sort_order": sort_order}
     )
 
 

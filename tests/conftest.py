@@ -255,14 +255,6 @@ def ui_gate_username(browser, user):
     browser.find_by_id('f-login-submit').click()
 
 
-@given('the user is redirected to the login page')
-@then('the user is redirected to the login page')
-def ui_login_assert_login_page(browser):
-    assert (
-        "{}/user/login".format(portal_url) in browser.url
-        or "{}/user/gate".format(portal_url) in browser.url)
-
-
 @given(parsers.parse('module "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
 @then(parsers.parse('module "{module}" is shown'))
@@ -341,13 +333,6 @@ def collection_is_locked(user, collection):
 @when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
-
-
-@then(parsers.parse("the user is redirected to {page}"))
-def ui_user_redirected(browser, page):
-    target = "{}{}".format(portal_url, page)
-
-    assert browser.url == target
 
 
 @when(parsers.parse("user browses to folder {folder}"))
