@@ -1,4 +1,4 @@
-setuptools==44.0.0
+setuptools==65.5.1
 MarkupSafe==1.1.1
 enum34==1.1.10
 Jinja2==2.11.3
