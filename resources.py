@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 from datetime import timedelta
 from math import ceil
-######## from collections import OrderedDict
 
 import genquery
 
