@@ -81,16 +81,19 @@ def api_browse_group_data(ctx,
         sort_reverse = True
     group_list.sort(key=lambda x:x[sort_key], reverse=sort_reverse)
 
+    # Only at this point we have the list in correct shape/order and can the limit and offset be applied
     # Format for datatables in frontend throughout yoda
     group_list_sorted = []
-    for group_data in group_list:
-        group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
+
+    for index, group_data in enumerate(group_list):
+        # break out of loop
+        if index >= offset:
+            if index >= offset +limit:
+                break
+            else:
+                group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
 
     return {'total': len(group_list), 'items': group_list_sorted}
-
-
-#    return OrderedDict([('total', len(group_list)),
-#                       ('items', group_list)])
 
 
 @api.make()
