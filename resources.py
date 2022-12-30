@@ -29,11 +29,11 @@ __all__ = ['api_resource_list_groups',
 
 @api.make()
 def api_browse_group_data(ctx,
-                      sort_on='name',
-                      sort_order='asc',
-                      offset=0,
-                      limit=10):
-    """Get paginated group data groupname / size 
+                          sort_on='name',
+                          sort_order='asc',
+                          offset=0,
+                          limit=10):
+    """Get paginated group data groupname / size
 
     :param ctx:        Combined type of a callback and rei struct
     :param sort_on:    Column to sort on ('name', 'modified' or size)
@@ -79,7 +79,7 @@ def api_browse_group_data(ctx,
     sort_reverse = False
     if sort_order == 'desc':
         sort_reverse = True
-    group_list.sort(key=lambda x:x[sort_key], reverse=sort_reverse)
+    group_list.sort(key=lambda x: x[sort_key], reverse=sort_reverse)
 
     # Only at this point we have the list in correct shape/order and can the limit and offset be applied
     # Format for datatables in frontend throughout yoda
@@ -88,7 +88,7 @@ def api_browse_group_data(ctx,
     for index, group_data in enumerate(group_list):
         # break out of loop
         if index >= offset:
-            if index >= offset +limit:
+            if index >= offset + limit:
                 break
             else:
                 group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
