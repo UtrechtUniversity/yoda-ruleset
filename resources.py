@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 from datetime import timedelta
 from math import ceil
+######## from collections import OrderedDict
 
 import genquery
 
@@ -21,9 +22,76 @@ __all__ = ['api_resource_list_groups',
            'api_resource_get_tiers',
            'api_resource_save_tier',
            'api_resource_full_year_group_data',
+           'api_browse_group_data',
            'rule_resource_store_monthly_storage_statistics',
            'rule_resource_research',
            'rule_resource_vault']
+
+
+@api.make()
+def api_browse_group_data(ctx,
+                      sort_on='name',
+                      sort_order='asc',
+                      offset=0,
+                      limit=10):
+    """Get paginated group data groupname / size 
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param sort_on:    Column to sort on ('name', 'modified' or size)
+    :param sort_order: Column sort order ('asc' or 'desc')
+    :param offset:     Offset to start browsing from
+    :param limit:      Limit number of results
+
+    :returns: Dict with paginated collection contents
+    """
+    user_name = user.name(ctx)
+    user_zone = user.zone(ctx)
+
+    if user.is_admin(ctx):
+        groups_research = [a for a
+                           in genquery.Query(ctx, "USER_GROUP_NAME",
+                                             "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+        groups_deposit = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_ZONE = '{}'".format(user_zone))]
+        groups = list(set(groups_research + groups_deposit))
+    else:
+        categories = get_categories(ctx)
+        groups_dm = get_groups_on_categories(ctx, categories)
+
+        groups_research_member = [a for a
+                                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                    "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_deposit_member = [a for a
+                                 in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                   "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
+
+    # groups.sort()
+    group_list = []
+    for group in groups:
+        data_size = get_group_data_size(ctx, group)
+        group_list.append([group, data_size])
+
+    # Sort the list as requested by user
+    sort_key = 0
+    if sort_on == 'size':
+        sort_key = 1
+    sort_reverse = False
+    if sort_order == 'desc':
+        sort_reverse = True
+    group_list.sort(key=lambda x:x[sort_key], reverse=sort_reverse)
+
+    # Format for datatables in frontend throughout yoda
+    group_list_sorted = []
+    for group_data in group_list:
+        group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
+
+    return {'total': len(group_list), 'items': group_list_sorted}
+
+
+#    return OrderedDict([('total', len(group_list)),
+#                       ('items', group_list)])
 
 
 @api.make()
