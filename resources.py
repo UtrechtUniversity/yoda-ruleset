@@ -32,7 +32,8 @@ def api_browse_group_data(ctx,
                           sort_on='name',
                           sort_order='asc',
                           offset=0,
-                          limit=10):
+                          limit=10,
+                          search_groups=""):
     """Get paginated group data groupname / size
 
     :param ctx:        Combined type of a callback and rei struct
@@ -40,30 +41,35 @@ def api_browse_group_data(ctx,
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
+    :param search_groups: Search specific groups
 
     :returns: Dict with paginated collection contents
     """
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
+    search_sql = ""
+    if search_groups:
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+
     if user.is_admin(ctx):
         groups_research = [a for a
                            in genquery.Query(ctx, "USER_GROUP_NAME",
-                                             "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+                                             "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
         groups_deposit = [a for a
                           in genquery.Query(ctx, "USER_GROUP_NAME",
-                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_ZONE = '{}'".format(user_zone))]
+                                            "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
         groups = list(set(groups_research + groups_deposit))
     else:
         categories = get_categories(ctx)
-        groups_dm = get_groups_on_categories(ctx, categories)
+        groups_dm = get_groups_on_categories(ctx, categories, search_groups)
 
         groups_research_member = [a for a
                                   in genquery.Query(ctx, "USER_GROUP_NAME",
-                                                    "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+                                                    "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups_deposit_member = [a for a
                                  in genquery.Query(ctx, "USER_GROUP_NAME",
-                                                   "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+                                                   "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
 
     # groups.sort()
@@ -439,20 +445,25 @@ def get_group_category_info(ctx, groupName):
     return {'category': category, 'subcategory': subcategory}
 
 
-def get_groups_on_categories(ctx, categories):
+def get_groups_on_categories(ctx, categories, search_groups=""):
     """Get all groups belonging to all given categories.
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param categories: List of categories groups have to be found for
+    :param ctx:           Combined type of a callback and rei struct
+    :param categories:    List of categories groups have to be found for
+    :param search_groups: Find specific groups
 
     :returns: All groups belonging to all given categories
     """
     groups = []
 
+    search_sql = ""
+    if search_groups:
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+
     for category in categories:
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'research-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -461,7 +472,7 @@ def get_groups_on_categories(ctx, categories):
 
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'deposit-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
