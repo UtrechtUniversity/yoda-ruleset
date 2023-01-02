@@ -50,7 +50,8 @@ def api_resource_browse_group_data(ctx,
 
     search_sql = ""
     if search_groups:
-        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+        # The maximum allowed number of characters in the group name is 63.
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups[:63])
 
     if user.is_admin(ctx):
         groups_research = [a for a
