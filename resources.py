@@ -13,7 +13,8 @@ import genquery
 import groups
 from util import *
 
-__all__ = ['api_resource_list_groups',
+__all__ = ['api_resource_browse_group_data',
+           'api_resource_list_groups',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_resource_and_tier_data',
@@ -21,19 +22,18 @@ __all__ = ['api_resource_list_groups',
            'api_resource_get_tiers',
            'api_resource_save_tier',
            'api_resource_full_year_group_data',
-           'api_browse_group_data',
            'rule_resource_store_monthly_storage_statistics',
            'rule_resource_research',
            'rule_resource_vault']
 
 
 @api.make()
-def api_browse_group_data(ctx,
-                          sort_on='name',
-                          sort_order='asc',
-                          offset=0,
-                          limit=10,
-                          search_groups=""):
+def api_resource_browse_group_data(ctx,
+                                   sort_on='name',
+                                   sort_order='asc',
+                                   offset=0,
+                                   limit=10,
+                                   search_groups=""):
     """Get paginated group data groupname / size
 
     :param ctx:        Combined type of a callback and rei struct
