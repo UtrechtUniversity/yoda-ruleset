@@ -111,6 +111,9 @@ def ui_group_user_removed(browser, user_remove):
 
 @when(parsers.parse("searches for member {member}"))
 def ui_group_member_search(browser, member):
+    # Scroll to bottom.
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(1)
     browser.find_by_id('user-list-search').fill(member)
 
 
