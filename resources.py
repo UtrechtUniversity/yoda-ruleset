@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -13,7 +13,7 @@ import genquery
 import groups
 from util import *
 
-__all__ = ['api_resource_list_groups',
+__all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_resource_and_tier_data',
@@ -24,6 +24,78 @@ __all__ = ['api_resource_list_groups',
            'rule_resource_store_monthly_storage_statistics',
            'rule_resource_research',
            'rule_resource_vault']
+
+
+@api.make()
+def api_resource_browse_group_data(ctx,
+                                   sort_on='name',
+                                   sort_order='asc',
+                                   offset=0,
+                                   limit=10,
+                                   search_groups=""):
+    """Get paginated group data groupname / size
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param sort_on:    Column to sort on ('name', 'modified' or size)
+    :param sort_order: Column sort order ('asc' or 'desc')
+    :param offset:     Offset to start browsing from
+    :param limit:      Limit number of results
+    :param search_groups: Search specific groups
+
+    :returns: Dict with paginated collection contents
+    """
+    user_name = user.name(ctx)
+    user_zone = user.zone(ctx)
+
+    search_sql = ""
+    if search_groups:
+        # The maximum allowed number of characters in the group name is 63.
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups[:63])
+
+    if user.is_admin(ctx):
+        groups_research = [a for a
+                           in genquery.Query(ctx, "USER_GROUP_NAME",
+                                             "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups_deposit = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups = list(set(groups_research + groups_deposit))
+    else:
+        categories = get_categories(ctx)
+        groups_dm = get_groups_on_categories(ctx, categories, search_groups)
+
+        groups_research_member = [a for a
+                                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                    "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_deposit_member = [a for a
+                                 in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                   "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
+
+    # groups.sort()
+    group_list = []
+    for group in groups:
+        data_size = get_group_data_size(ctx, group)
+        group_list.append([group, data_size])
+
+    # Sort the list as requested by user
+    sort_key = 0
+    if sort_on == 'size':
+        sort_key = 1
+    sort_reverse = False
+    if sort_order == 'desc':
+        sort_reverse = True
+    group_list.sort(key=lambda x: x[sort_key], reverse=sort_reverse)
+
+    # Only at this point we have the list in correct shape/order and can the limit and offset be applied
+    # Format for datatables in frontend throughout yoda
+    group_list_sorted = []
+    group_slice = group_list[offset: offset + limit]
+
+    for group_data in group_slice:
+        group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
+
+    return {'total': len(group_list), 'items': group_list_sorted}
 
 
 @api.make()
@@ -106,46 +178,6 @@ def api_resource_full_year_group_data(ctx, group_name):
         months_order[11 - i] = storage_month + 12 if storage_month < 1 else storage_month
 
     return {'tiers': full_year_data, 'months': months_order, 'total_storage': total_storage}
-
-
-@api.make()
-def api_resource_list_groups(ctx):
-    """Get the groups (research and deposit) a user is member or datamanager of.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: List of groups
-    """
-    user_name = user.name(ctx)
-    user_zone = user.zone(ctx)
-
-    if user.is_admin(ctx):
-        groups_research = [a for a
-                           in genquery.Query(ctx, "USER_GROUP_NAME",
-                                             "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
-        groups_deposit = [a for a
-                          in genquery.Query(ctx, "USER_GROUP_NAME",
-                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_ZONE = '{}'".format(user_zone))]
-        groups = list(set(groups_research + groups_deposit))
-    else:
-        categories = get_categories(ctx)
-        groups_dm = get_groups_on_categories(ctx, categories)
-
-        groups_research_member = [a for a
-                                  in genquery.Query(ctx, "USER_GROUP_NAME",
-                                                    "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups_deposit_member = [a for a
-                                 in genquery.Query(ctx, "USER_GROUP_NAME",
-                                                   "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
-
-    groups.sort()
-    group_list = []
-    for group in groups:
-        data_size = get_group_data_size(ctx, group)
-        group_list.append((group, misc.human_readable_size(data_size)))
-
-    return group_list
 
 
 @api.make()
@@ -369,20 +401,25 @@ def get_group_category_info(ctx, groupName):
     return {'category': category, 'subcategory': subcategory}
 
 
-def get_groups_on_categories(ctx, categories):
+def get_groups_on_categories(ctx, categories, search_groups=""):
     """Get all groups belonging to all given categories.
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param categories: List of categories groups have to be found for
+    :param ctx:           Combined type of a callback and rei struct
+    :param categories:    List of categories groups have to be found for
+    :param search_groups: Find specific groups
 
     :returns: All groups belonging to all given categories
     """
     groups = []
 
+    search_sql = ""
+    if search_groups:
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+
     for category in categories:
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'research-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -391,7 +428,7 @@ def get_groups_on_categories(ctx, categories):
 
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'deposit-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
