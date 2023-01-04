@@ -1,7 +1,7 @@
 # coding=utf-8
 """Resources API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -16,27 +16,45 @@ from conftest import api_request
 scenarios('../../features/api/api_resources.feature')
 
 
-@given('the Yoda resources API is queried for all research groups', target_fixture="api_response")
-def api_get_groups_of_datamanger(user):
+@given('the Yoda resources browse group data API is queried', target_fixture="api_response")
+def api_get_groups_paginated_datamanger(user):
     return api_request(
         user,
-        "resource_list_groups",
+        "resource_browse_group_data",
         {}
     )
 
 
 @then(parsers.parse("group {group} is found"))
-def api_response_group_is_found(api_response, group):
+def api_response_paginated_group_is_found(api_response, group):
     _, body = api_response
 
-    assert len(body["data"]) > 0
+    assert len(body["data"]["items"]) > 0
+
     found_group = False
-    for list in body["data"]:
-        if group in list:
+
+    for item in body["data"]["items"]:
+        if item["name"] == group:
             found_group = True
             break
 
     assert found_group
+
+
+@given(parsers.parse("the Yoda resources API is queried for a paginated range of research groups filtered on group {group}"), target_fixture="api_response")
+def api_get_groups_paginated_filtered(user, group):
+    return api_request(
+        user,
+        "resource_browse_group_data",
+        {"search_groups": group}
+    )
+
+
+@then("only 1 group is found")
+def api_response_paginated_group_found_one(api_response):
+    _, body = api_response
+
+    assert len(body["data"]["items"]) == 1
 
 
 @given(parsers.parse("the Yoda resources full year group data API is queried with {group}"), target_fixture="api_response")
