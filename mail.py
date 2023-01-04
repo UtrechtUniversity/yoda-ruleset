@@ -108,7 +108,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         pass
 
 
-def _wrapper(ctx, to, actor, subject, body):
+def wrapper(ctx, to, actor, subject, body):
     """Send mail, returns status/statusinfo in rule-language style."""
     x = send(ctx, to, actor, subject, body)
 
@@ -122,11 +122,11 @@ def rule_mail_test(ctx, to):
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 
-    return _wrapper(ctx,
-                    to=to,
-                    actor='None',
-                    subject='[Yoda] Test mail',
-                    body="""
+    return wrapper(ctx,
+                   to=to,
+                   actor='None',
+                   subject='[Yoda] Test mail',
+                   body="""
 Congratulations, you have sent a test mail from your Yoda system.
 
 Best regards,
