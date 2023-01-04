@@ -21,7 +21,7 @@
     }
   },
   "datarequest": {
-    "ui:order": [ "data", "specific_criteria", "purpose", "publication_type", "publication_type_other", "part2", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
+    "ui:order": [ "data", "specific_criteria", "purpose", "part2", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
     "data": {
       "ui:field": "DataSelection"
     },
@@ -29,9 +29,6 @@
       "ui:widget": "textarea"
     },
     "purpose": {
-      "ui:widget": "radio"
-    },
-    "publication_type": {
       "ui:widget": "radio"
     },
     "other_remarks": {

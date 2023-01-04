@@ -224,16 +224,6 @@
                     "Analyses in order to publish"
                   ]
                 },
-                "publication_type": {
-                  "type": "string",
-                  "title": "Publication of results",
-                  "enum": [
-                    "Article or report in a peer-reviewed journal",
-                    "(Part of a) PhD thesis",
-                    "(Part of a) PhD thesis that will also be published in a peer-reviewed journal",
-                    "Other (please specify below)"
-                  ]
-                },
                 "study_information": {
                   "type": "object",
                   "title": "Study information",
@@ -378,41 +368,7 @@
                     "attachments"
                   ]
                 }
-              },
-              "required": [
-                "publication_type"
-              ]
-            }
-          ]
-        },
-        "publication_type": {
-          "oneOf": [
-            {
-              "properties": {
-                "publication_type": {
-                  "enum": [
-                    "Article or report in a peer-reviewed journal",
-                    "(Part of a) PhD thesis",
-                    "(Part of a) PhD thesis that will also be published in a peer-reviewed journal"
-                  ]
-                }
               }
-            },
-            {
-              "properties": {
-                "publication_type": {
-                  "enum": [
-                    "Other (please specify below)"
-                  ]
-                },
-                "publication_type_other": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Publication type"
-                }
-              },
-              "required": [
-                "publication_type_other"
-              ]
             }
           ]
         }
