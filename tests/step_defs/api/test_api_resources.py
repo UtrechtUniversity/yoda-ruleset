@@ -39,6 +39,47 @@ def api_response_group_is_found(api_response, group):
     assert found_group
 
 
+@given('the Yoda resources API is queried for a paginated range of research groups', target_fixture="api_response")
+def api_get_groups_paginated_datamanger(user):
+    return api_request(
+        user,
+        "resource_browse_group_data",
+        {}
+    )
+
+
+@then(parsers.parse("group {group} is found on first page"))
+def api_response_paginated_group_is_found(api_response, group):
+    _, body = api_response
+
+    assert len(body["data"]["items"]) > 0
+
+    found_group = False
+
+    for item in body["data"]["items"]:
+        if item["name"] == group:
+            found_group = True
+            break
+
+    assert found_group
+
+
+@given(parsers.parse("the Yoda resources API is queried for a paginated range of research groups filtered on group {group}"), target_fixture="api_response")
+def api_get_groups_paginated_filtered(user, group):
+    return api_request(
+        user,
+        "resource_browse_group_data",
+        {"search_groups": group}
+    )
+
+
+@then("only 1 group is found")
+def api_response_paginated_group_found_one(api_response, group):
+    _, body = api_response
+
+    assert len(body["data"]["items"]) == 1
+
+
 @given(parsers.parse("the Yoda resources full year group data API is queried with {group}"), target_fixture="api_response")
 def api_resource_full_year_group_data(user, group):
     return api_request(
