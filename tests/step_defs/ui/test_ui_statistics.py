@@ -26,7 +26,7 @@ def ui_statistics_group_details_initial_state(browser):
 @when(parsers.parse("user views statistics of group {group}"))
 def ui_statistics_group_view(browser, group):
     items = browser.find_by_css('#group-browser tr')
-    
+
     for item in items:
         if item.value.find(group) > -1:
             item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
@@ -34,6 +34,7 @@ def ui_statistics_group_view(browser, group):
             return True
 
     assert False
+
 
 @when('export statistics button is clicked')
 def ui_statistics_export(browser):
