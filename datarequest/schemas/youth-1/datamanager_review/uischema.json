@@ -1,0 +1,11 @@
+{
+  "datamanager_remarks": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  },
+  "reviewing_dm": {
+    "ui:widget": "hidden"
+  }
+}

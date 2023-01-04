@@ -1,0 +1,14 @@
+{
+  "evaluation_rationale": {
+    "ui:widget": "textarea"
+  },
+  "involvement_requested": {
+    "ui:widget": "radio"
+  },
+  "researchers_to_be_involved": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  }
+}
