@@ -57,7 +57,7 @@ def rule_replicate_batch(ctx, verbose):
 
         # Get list of data objects scheduled for replication.
         iter = genquery.row_iterator(
-            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
+            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE, DATA_RESC_NAME",
             "META_DATA_ATTR_NAME = '{}'".format(attr),
             genquery.AS_LIST, ctx
         )
@@ -70,6 +70,7 @@ def rule_replicate_batch(ctx, verbose):
             count += 1
             path = row[1] + "/" + row[2]
             rescs = row[3]
+            data_resc_name = row[4]
             xs = rescs.split(',')
             if len(xs) != 2:
                 # Not replicable.
@@ -100,10 +101,20 @@ def rule_replicate_batch(ctx, verbose):
                 count_ok += 1
             except msi.Error as e:
                 log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
+
+                # Retry replication with data resource name (covers case where resource is removed from the resource hierarchy).
                 try:
-                    ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
-                except Exception:
-                    pass
+                    # Workaround the PREP deadlock issue: Restrict threads to 1.
+                    ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(data_resc_name, to_path)
+                    msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
+                    # Mark as correctly replicated
+                    count_ok += 1
+                except msi.Error as e:
+                    log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
+                    try:
+                        ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                    except Exception:
+                        pass
 
             # Remove replication_scheduled flag no matter if replication succeeded or not.
             # rods should have been given own access via policy to allow AVU changes
