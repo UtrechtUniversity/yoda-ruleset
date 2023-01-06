@@ -102,6 +102,9 @@ def rule_replicate_batch(ctx, verbose):
             except msi.Error as e:
                 log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
 
+                if print_verbose:
+                    log.write(ctx, "Batch replication retry: copying {} from {} to {}".format(path, data_resc_name, to_path))
+
                 # Retry replication with data resource name (covers case where resource is removed from the resource hierarchy).
                 try:
                     # Workaround the PREP deadlock issue: Restrict threads to 1.
