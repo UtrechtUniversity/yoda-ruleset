@@ -107,6 +107,7 @@ def rule_replicate_batch(ctx, verbose):
 
                 # Retry replication with data resource name (covers case where resource is removed from the resource hierarchy).
                 try:
+                    log.write(ctx, 'Fallback replication triggered: {}'.format(path))
                     # Workaround the PREP deadlock issue: Restrict threads to 1.
                     ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(data_resc_name, to_path)
                     msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
