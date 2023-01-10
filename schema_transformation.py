@@ -35,7 +35,6 @@ def execute_transformation(ctx, metadata_path, transform, keep_metadata_backup=T
     if group_name.startswith('research-'):
         if keep_metadata_backup:
             backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
-            print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
             msi.data_obj_copy(ctx, metadata_path, backup, '', irods_types.BytesBuf())
         jsonutil.write(ctx, metadata_path, metadata)
     elif group_name.startswith('vault-'):
@@ -55,7 +54,7 @@ def api_transform_metadata(ctx, coll, keep_metadata_backup=True):
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
     if metadata_path.endswith('.json'):
         # JSON metadata.
-        log.write(ctx, 'Transforming JSON -> JSON in the research space')
+        log.write(ctx, 'Transforming JSON metadata in the research space: <{}>'.format(metadata_path))
         transform = get(ctx, metadata_path)
 
         if transform is None:
