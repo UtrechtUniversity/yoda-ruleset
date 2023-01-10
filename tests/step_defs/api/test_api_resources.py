@@ -21,7 +21,7 @@ def api_get_groups_paginated_datamanger(user):
     return api_request(
         user,
         "resource_browse_group_data",
-        {"offset":0, "limit":200, "search_groups": ""}
+        {"offset": 0, "limit": 200, "search_groups": ""}
     )
 
 
@@ -46,7 +46,7 @@ def api_get_groups_paginated_filtered(user, group):
     return api_request(
         user,
         "resource_browse_group_data",
-        {"offset":0, "limit":200, "search_groups": group}
+        {"offset": 0, "limit": 200, "search_groups": group}
     )
 
 
