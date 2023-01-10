@@ -1,7 +1,7 @@
 # coding=utf-8
 """Schema transformations API feature tests."""
 
-__copyright__ = 'Copyright (c) 2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -23,12 +23,12 @@ def api_upload_transform_metadata_json(user, schema_from, schema_to):
     api_request(
         user,
         "research_file_delete",
-        {"coll": "/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
+        {"coll": "/tempZone/home/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
     )
 
     cwd = os.getcwd()
 
-    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to)) as f:
+    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to), "rb") as f:
         metadata = f.read()
 
     return upload_data(
