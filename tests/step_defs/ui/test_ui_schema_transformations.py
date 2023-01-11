@@ -1,7 +1,7 @@
 # coding=utf-8
 """Schema transformations UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2022-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -17,16 +17,22 @@ from pytest_bdd import (
     when,
 )
 
-from conftest import upload_data
+from conftest import api_request, upload_data
 
 scenarios('../../features/ui/ui_schema_transformations.feature')
 
 
 @when(parsers.parse("metadata file {schema_from} for {schema_to} is uploaded by user {user}"), target_fixture="api_response")
 def ui_schema_transformations_upload_metadata(user, schema_from, schema_to):
+    api_request(
+        user,
+        "research_file_delete",
+        {"coll": "/tempZone/home/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
+    )
+
     cwd = os.getcwd()
 
-    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to)) as f:
+    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to), "rb") as f:
         metadata = f.read()
 
     return upload_data(
