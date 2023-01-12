@@ -1318,6 +1318,8 @@ def package_provenance_log(ctx, system_metadata):
 
 
 def vault_archive(ctx, coll):
+    """Prepare for archival.
+    """
     provenance.log_action(ctx, str(user.user_and_zone(ctx)), coll, "archived")
     data_object.write(ctx, coll + "/manifest-sha256.txt",
                       package_manifest(ctx, coll))
@@ -1333,6 +1335,37 @@ def vault_archive(ctx, coll):
     data_object.write(ctx, coll + "/provenance-log.json",
                       jsonutil.dump(provenance_log))
 
+    # ready to be archived
+    avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
+
+
+def vault_archived(ctx, coll):
+    archived = False
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
+                                     genquery.AS_LIST,
+                                     ctx):
+        archived = row[0]
+    return archived
+
+
+def vault_create_archive(ctx, coll):
+    if vault_archived(ctx, coll) != "archive":
+        return "Invalid"
+    try:
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
+        ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
+
+        # don't remove the real package just yet
+        # ctx.msiRmColl(coll, "forceFlag=", 0);
+
+        return "Success"
+    except Exception:
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
+
+        return "Failure"
+
 
 @api.make()
 def api_vault_archive(ctx, coll):
@@ -1341,28 +1374,12 @@ def api_vault_archive(ctx, coll):
 
 @api.make()
 def api_vault_archived(ctx, coll):
-    archived = "0"
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
-                                     genquery.AS_LIST,
-                                     ctx):
-        archived = row[0]
-    return archived
+    return vault_archived(ctx)
 
 
-@rule.make()
-def rule_vault_create_archive(ctx, coll):
-    try:
-        ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
-
-        # don't remove the real package just yet
-        # ctx.msiRmColl(coll, "forceFlag=", 0);
-    except Exception:
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
-
-
-# test rule
+#
+# test rules
+#
 @rule.make()
 def rule_vault_archive(ctx, coll):
     vault_archive(ctx, coll)
@@ -1370,10 +1387,9 @@ def rule_vault_archive(ctx, coll):
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_vault_archived(ctx, coll):
-    archived = "0"
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
-                                     genquery.AS_LIST,
-                                     ctx):
-        archived = row[0]
-    return archived
+    return vault_archived(ctx)
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_create_archive(ctx, coll):
+    return vault_create_archive(ctx, coll)
