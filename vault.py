@@ -591,6 +591,9 @@ def api_vault_collection_details(ctx, path):
     if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
         research_path = research_name
 
+    # check archival status
+    archival_status = vault_archived(ctx, path)
+
     return {"basename": basename,
             "status": status,
             "metadata": metadata,
@@ -598,7 +601,8 @@ def api_vault_collection_details(ctx, path):
             "is_datamanager": is_datamanager,
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
-            "research_path": research_path}
+            "research_path": research_path,
+            "archival_status": archival_status}
 
 
 @api.make()
