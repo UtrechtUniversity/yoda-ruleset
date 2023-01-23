@@ -6,11 +6,12 @@ vaultArchive {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
 	}
 
-	foreach (*row in SELECT COLL_NAME WHERE META_COLL_ATTR_NAME = 'org_archival_status' AND META_COLL_ATTR_VALUE = 'archiving') {
+	foreach (*row in SELECT COLL_NAME WHERE META_COLL_ATTR_NAME = 'org_archival_status' AND META_COLL_ATTR_VALUE = 'archive') {
 		*coll = *row.COLL_NAME;
-		break;
+		*status = "";
+		rule_vault_create_archive(*coll, *status);
+		writeLine("stdout", "create archive for *coll: *status");
 	}
-	rule_vault_create_archive(*coll);
 }
 
 input null

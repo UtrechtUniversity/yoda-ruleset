@@ -46,9 +46,7 @@ __all__ = ['api_vault_submit',
            'api_vault_get_published_packages',
            'api_vault_archive',
            'api_vault_archived',
-           'rule_vault_create_archive',
-           'rule_vault_archive',
-           'rule_vault_archived']
+           'rule_vault_create_archive']
 
 
 @api.make()
@@ -1322,8 +1320,7 @@ def package_provenance_log(ctx, system_metadata):
 
 
 def vault_archive(ctx, coll):
-    """Prepare for archival.
-    """
+    # Prepare for archival.
     provenance.log_action(ctx, str(user.user_and_zone(ctx)), coll, "archived")
     data_object.write(ctx, coll + "/manifest-sha256.txt",
                       package_manifest(ctx, coll))
@@ -1378,19 +1375,6 @@ def api_vault_archive(ctx, coll):
 
 @api.make()
 def api_vault_archived(ctx, coll):
-    return vault_archived(ctx)
-
-
-#
-# test rules
-#
-@rule.make()
-def rule_vault_archive(ctx, coll):
-    vault_archive(ctx, coll)
-
-
-@rule.make(inputs=[0], outputs=[1])
-def rule_vault_archived(ctx, coll):
     return vault_archived(ctx)
 
 
