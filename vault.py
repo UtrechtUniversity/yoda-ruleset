@@ -20,6 +20,7 @@ import folder
 import groups
 import meta
 import meta_form
+import notifications
 import policies_datamanager
 import policies_datapackage_status
 import provenance
@@ -1321,7 +1322,8 @@ def package_provenance_log(ctx, system_metadata):
 
 def vault_archive(ctx, coll):
     # Prepare for archival.
-    provenance.log_action(ctx, str(user.user_and_zone(ctx)), coll, "archived")
+    actor = str(user.user_and_zone(ctx))
+    provenance.log_action(ctx, actor, coll, "archived")
     data_object.write(ctx, coll + "/manifest-sha256.txt",
                       package_manifest(ctx, coll))
 
@@ -1338,6 +1340,23 @@ def vault_archive(ctx, coll):
 
     # ready to be archived
     avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
+
+    # notify members of research group
+    message = "Data package scheduled for archival"
+    for row in genquery.row_iterator("COLL_ACCESS_USER_ID",
+                                     "COLL_NAME = '{}'".format(coll),
+                                     genquery.AS_LIST,
+                                     ctx):
+        id = row[0]
+        for row2 in genquery.row_iterator("USER_NAME",
+                                          "USER_ID = '{}'".format(id),
+                                          genquery.AS_LIST,
+                                          ctx):
+            name = row2[0]
+            if name.startswith("research-"):
+                for member in group.members(ctx, name):
+                    member = '{}#{}'.format(*member)
+                    notifications.set(ctx, actor, member, coll, message)
 
 
 def vault_archived(ctx, coll):
