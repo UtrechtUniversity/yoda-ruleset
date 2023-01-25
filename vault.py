@@ -590,9 +590,6 @@ def api_vault_collection_details(ctx, path):
     if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
         research_path = research_name
 
-    # check archival status
-    archival_status = vault_archival_status(ctx, path)
-
     return {"basename": basename,
             "status": status,
             "metadata": metadata,
@@ -601,7 +598,10 @@ def api_vault_collection_details(ctx, path):
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
             "research_path": research_path,
-            "archival_status": archival_status}
+            "archive": {
+                "archivable": vault_archivable(ctx, path),
+                "status": vault_archival_status(ctx, path)
+            }}
 
 
 @api.make()
@@ -1320,27 +1320,29 @@ def package_provenance_log(ctx, system_metadata):
     return sorted(provenance_log, key=key)
 
 
-def vault_archival_status(ctx, coll):
-    if coll.endswith("/original"):
-        return False
+def vault_archivable(ctx, coll):
+    if not coll.endswith("/original"):
+        for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                         "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                         genquery.AS_LIST,
+                                         ctx):
+            return (collection.size(ctx, coll) >= 10485760)
 
+    return False
+
+
+def vault_archival_status(ctx, coll):
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
                                      genquery.AS_LIST,
                                      ctx):
-        for row2 in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                          "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
-                                          genquery.AS_LIST,
-                                          ctx):
-            return row2[0]
-
-        return (collection.size(ctx, coll) >= 10485760)
+        return row[0]
 
     return False
 
 
 def vault_archive(ctx, coll):
-    if vault_archival_status(ctx, coll) != True:
+    if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
         return "Invalid"
 
     try:
