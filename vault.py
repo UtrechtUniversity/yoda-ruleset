@@ -46,7 +46,7 @@ __all__ = ['api_vault_submit',
            'api_revoke_read_access_research_group',
            'api_vault_get_published_packages',
            'api_vault_archive',
-           'api_vault_archived',
+           'api_vault_archival_status',
            'rule_vault_create_archive']
 
 
@@ -591,7 +591,7 @@ def api_vault_collection_details(ctx, path):
         research_path = research_name
 
     # check archival status
-    archival_status = vault_archived(ctx, path)
+    archival_status = vault_archival_status(ctx, path)
 
     return {"basename": basename,
             "status": status,
@@ -1320,57 +1320,75 @@ def package_provenance_log(ctx, system_metadata):
     return sorted(provenance_log, key=key)
 
 
-def vault_archive(ctx, coll):
-    # Prepare for archival.
-    actor = str(user.user_and_zone(ctx))
-    provenance.log_action(ctx, actor, coll, "archived")
-    data_object.write(ctx, coll + "/manifest-sha256.txt",
-                      package_manifest(ctx, coll))
+def vault_archival_status(ctx, coll):
+    if coll.endswith("/original"):
+        return False
 
-    data_object.write(ctx, coll + "/user-metadata.json",
-                      jsonutil.dump(package_user_metadata(ctx, coll)))
-
-    system_metadata = package_system_metadata(ctx, coll)
-    data_object.write(ctx, coll + "/system-metadata.json",
-                      jsonutil.dump(system_metadata))
-
-    provenance_log = package_provenance_log(ctx, system_metadata)
-    data_object.write(ctx, coll + "/provenance-log.json",
-                      jsonutil.dump(provenance_log))
-
-    # ready to be archived
-    avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
-
-    # notify members of research group
-    message = "Data package scheduled for archival"
-    for row in genquery.row_iterator("COLL_ACCESS_USER_ID",
-                                     "COLL_NAME = '{}'".format(coll),
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
                                      genquery.AS_LIST,
                                      ctx):
-        id = row[0]
-        for row2 in genquery.row_iterator("USER_NAME",
-                                          "USER_ID = '{}'".format(id),
+        for row2 in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                          "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
                                           genquery.AS_LIST,
                                           ctx):
-            name = row2[0]
-            if name.startswith("research-"):
-                for member in group.members(ctx, name):
-                    member = '{}#{}'.format(*member)
-                    notifications.set(ctx, actor, member, coll, message)
+            return row2[0]
+
+        return (collection.size(ctx, coll) >= 10485760)
+
+    return False
 
 
-def vault_archived(ctx, coll):
-    archived = False
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
-                                     genquery.AS_LIST,
-                                     ctx):
-        archived = row[0]
-    return archived
+def vault_archive(ctx, coll):
+    if vault_archival_status(ctx, coll) != True:
+        return "Invalid"
+
+    try:
+        # Prepare for archival.
+        actor = str(user.user_and_zone(ctx))
+        provenance.log_action(ctx, actor, coll, "archived")
+        data_object.write(ctx, coll + "/manifest-sha256.txt",
+                          package_manifest(ctx, coll))
+
+        data_object.write(ctx, coll + "/user-metadata.json",
+                          jsonutil.dump(package_user_metadata(ctx, coll)))
+
+        system_metadata = package_system_metadata(ctx, coll)
+        data_object.write(ctx, coll + "/system-metadata.json",
+                          jsonutil.dump(system_metadata))
+
+        provenance_log = package_provenance_log(ctx, system_metadata)
+        data_object.write(ctx, coll + "/provenance-log.json",
+                          jsonutil.dump(provenance_log))
+
+        # notify members of research group
+        message = "Data package scheduled for archival"
+        for row in genquery.row_iterator("COLL_ACCESS_USER_ID",
+                                         "COLL_NAME = '{}'".format(coll),
+                                         genquery.AS_LIST,
+                                         ctx):
+            id = row[0]
+            for row2 in genquery.row_iterator("USER_NAME",
+                                              "USER_ID = '{}'".format(id),
+                                              genquery.AS_LIST,
+                                              ctx):
+                name = row2[0]
+                if name.startswith("research-"):
+                    for member in group.members(ctx, name):
+                        member = '{}#{}'.format(*member)
+                        notifications.set(ctx, actor, member, coll, message)
+
+        # ready to be archived
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
+
+        return "Success"
+
+    except Exception:
+        return "Failure"
 
 
 def vault_create_archive(ctx, coll):
-    if vault_archived(ctx, coll) != "archive":
+    if vault_archival_status(ctx, coll) != "archive":
         return "Invalid"
     try:
         avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
@@ -1389,12 +1407,12 @@ def vault_create_archive(ctx, coll):
 
 @api.make()
 def api_vault_archive(ctx, coll):
-    vault_archive(ctx, coll)
+    return vault_archive(ctx, coll)
 
 
 @api.make()
-def api_vault_archived(ctx, coll):
-    return vault_archived(ctx)
+def api_vault_archival_status(ctx, coll):
+    return vault_archival_status(ctx, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
