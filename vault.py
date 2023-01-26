@@ -47,6 +47,7 @@ __all__ = ['api_vault_submit',
            'api_vault_get_published_packages',
            'api_vault_archive',
            'api_vault_archival_status',
+           'rule_vault_archive',
            'rule_vault_create_archive']
 
 
@@ -1341,13 +1342,9 @@ def vault_archival_status(ctx, coll):
     return False
 
 
-def vault_archive(ctx, coll):
-    if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
-        return "Invalid"
-
+def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
-        actor = str(user.user_and_zone(ctx))
         provenance.log_action(ctx, actor, coll, "archived")
         data_object.write(ctx, coll + "/manifest-sha256.txt",
                           package_manifest(ctx, coll))
@@ -1409,12 +1406,24 @@ def vault_create_archive(ctx, coll):
 
 @api.make()
 def api_vault_archive(ctx, coll):
-    return vault_archive(ctx, coll)
+    if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
+        return "Invalid"
+
+    try:
+        ctx.iiAdminVaultArchive(coll)
+        return "Success"
+    except Exception:
+        return "Failure"
 
 
 @api.make()
 def api_vault_archival_status(ctx, coll):
     return vault_archival_status(ctx, coll)
+
+
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_vault_archive(ctx, actor, coll):
+    return vault_archive(ctx, actor, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
