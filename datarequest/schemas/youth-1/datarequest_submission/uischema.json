@@ -21,7 +21,13 @@
     }
   },
   "datarequest": {
-    "ui:order": [ "data", "specific_criteria", "purpose", "part2", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
+    "ui:order": [ "abstract", "data", "specific_criteria", "purpose", "part2", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
+    "abstract": {
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 8
+      }
+    },
     "data": {
       "ui:field": "DataSelection"
     },
