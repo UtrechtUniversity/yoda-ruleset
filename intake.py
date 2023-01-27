@@ -56,6 +56,8 @@ def api_intake_list_studies(ctx):
     for row in iter:
         if row[0].startswith('grp-intake-'):
             groups.append(row[0][11:])
+        elif row[0].startswith('intake-'):
+            groups.append(row[0][7:])
 
     groups.sort()
     return groups
@@ -80,8 +82,13 @@ def api_intake_list_dm_studies(ctx):
     )
 
     for row in iter:
+        study = ''
         if row[0].startswith('grp-intake-'):
             study = row[0][11:]
+        elif row[0].startswith('intake-'):
+            study = row[0][7:]
+
+        if study:
             # Is a member of this study ... check whether member of corresponding datamanager group
             iter2 = genquery.row_iterator(
                 "USER_NAME",
@@ -133,7 +140,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
     # check permissions
     parts = coll.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if user.is_member_of(ctx, group):
         pass
@@ -397,9 +404,12 @@ def api_intake_scan_for_datasets(ctx, coll):
     """
 
     if _intake_check_authorized_to_scan(ctx, coll):
-        _intake_scan_for_datasets(ctx, coll)
+        try:
+            _intake_scan_for_datasets(ctx, coll)
+        except Exception:
+            return {"proc_status": "NOK", "error_msg": "Error during scanning process"}
     else:
-        return {}
+        return {"proc_status": "NOK", "error_msg": "No permissions to scan collection"}
 
     return {"proc_status": "OK"}
 
@@ -412,12 +422,17 @@ def rule_intake_scan_for_datasets(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to scan for datasets
 
-    :returns: indication correct
+    :returns: 0=correct, 1=insufficient rights, 2=error during scanning process
     """
+    if not collection.exists(ctx, coll):
+        return "Non existing collection: " + coll
     if _intake_check_authorized_to_scan(ctx, coll):
-        _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
+        try:
+            _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
+        except Exception:
+            return "Error scanning for datasets for collection: " + coll
     else:
-        return 1
+        return "Insufficient permissions for collection: " + coll
 
     return 0
 
@@ -433,7 +448,7 @@ def _intake_check_authorized_to_scan(ctx, coll):
     """
     parts = coll.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         return True
@@ -488,14 +503,26 @@ def api_intake_lock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
-        return {"proc_status": "NOK"}
+        return {"proc_status": "NOK",
+                "error_msg": "No permissions to lock dataset(s)",
+                "error_dataset_ids": []}
 
+    error_dataset_ids = []
     for dataset_id in dataset_ids.split(','):
-        intake_lock.intake_dataset_lock(ctx, path, dataset_id)
+        # error_dataset_ids.append(dataset_id)
+        try:
+            intake_lock.intake_dataset_lock(ctx, path, dataset_id)
+        except Exception:
+            error_dataset_ids.append(dataset_id)
+
+    if error_dataset_ids:
+        return {"proc_status": "NOK",
+                "error_msg": "Something went wrong locking datasets",
+                "error_dataset_ids": error_dataset_ids}
 
     return {"proc_status": "OK"}
 
@@ -515,14 +542,26 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not user.is_member_of(ctx, datamanager_group):
-        log.write(ctx, "No permissions to unlock dataset")
-        return {"proc_status": "NOK"}
+        log.write(ctx, "No permissions to unlock dataset(s)")
+        return {"proc_status": "NOK",
+                "error_msg": "No permissions to unlock dataset",
+                "error_dataset_ids": []}
 
+    error_dataset_ids = []
     for dataset_id in dataset_ids.split(','):
-        intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
+        # error_dataset_ids.append(dataset_id)
+        try:
+            intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
+        except Exception:
+            error_dataset_ids.append(dataset_id)
+
+    if error_dataset_ids:
+        return {"proc_status": "NOK",
+                "error_msg": "Something went wrong unlocking datasets",
+                "error_dataset_ids": error_dataset_ids}
 
     return {"proc_status": "OK"}
 
@@ -538,12 +577,12 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
 
     :returns: indication correct
     """
-    coll = '/' + user.zone(ctx) + '/home/grp-intake-' + study_id
+    coll = '/' + user.zone(ctx) + '/home/' + study_id
 
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -582,7 +621,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -650,8 +689,6 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
 
     level = '0'
     files = coll_objects(ctx, level, coll, dataset_id)
-
-    log.write(ctx, files)
 
     if len(scanned.split(':')) != 2:
         # Retrieve scannedby/when information in a different way
@@ -819,3 +856,20 @@ def api_intake_report_export_study_data(ctx, study_id):
         return {}
 
     return intake_dataset.intake_report_export_study_data(ctx, study_id)
+
+
+def intake_group_to_datamanager_group(intake_group):
+    """Determines the name of the data manager group of a particular intake group.
+
+    :param intake_group: name of intake group
+
+    :returns: name of datamanager group
+
+    :raises ValueError: if provided group name is not a valid intake group name
+    """
+    if intake_group.startswith("grp-intake-"):
+        return intake_group.replace("-intake-", "-datamanager-", 1)
+    elif intake_group.startswith("intake-"):
+        return intake_group.replace("intake-", "grp-datamanager-", 1)
+    else:
+        raise ValueError("Unexpected intake group format for group " + intake_group)

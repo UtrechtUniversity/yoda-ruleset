@@ -165,7 +165,15 @@ def vault_aggregated_info(ctx, study_id):
     dataset_file_growth = {'raw': 0, 'processed': 0}
     dataset_pseudocodes = {'raw': [], 'processed': []}
 
-    last_month = 30 * 24 * 3600
+    # Determine full last month reference point
+    import time
+    from datetime import datetime, date, timedelta
+
+    last_day_of_prev_month = date.today().replace(day=1) - timedelta(days=1)
+    month = int(last_day_of_prev_month.strftime("%m"))
+    year = int(last_day_of_prev_month.strftime("%Y"))
+
+    last_month = int(time.time() - int(datetime(year, month, int(date.today().strftime("%d")), 0, 0, 0).strftime('%s')))
 
     dataset_paths = []
     for dataset in datasets:
