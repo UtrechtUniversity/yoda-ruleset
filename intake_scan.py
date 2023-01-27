@@ -410,9 +410,6 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
 
     subscope["dataset_id"] = dataset_make_id(subscope)
 
-    log.write(ctx, 'APPLY DATASET META')
-    log.write(ctx, subscope)
-
     # add all keys to this to this level
 
     for key in subscope:
