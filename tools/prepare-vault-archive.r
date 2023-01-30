@@ -6,9 +6,10 @@ prepareVaultArchive {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
 	}
 
+	*status = "";
 	rule_vault_archive(*actor, *coll, *status);
 	writeLine("stdout", "*actor archive *coll: *status");
 }
 
-input null
+input *actor="", *coll=""
 output ruleExecOut
