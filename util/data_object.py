@@ -51,7 +51,7 @@ def replica_status(ctx, path):
     )
 
     for row in iter:
-        return constant.replica_status(int(row[0]))
+        return constants.replica_status(int(row[0]))
 
 
 def write(ctx, path, data):
