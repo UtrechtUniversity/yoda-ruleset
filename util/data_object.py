@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -40,6 +40,18 @@ def size(ctx, path):
 
     for row in iter:
         return int(row[0])
+
+
+def replica_status(ctx, path):
+    """Get a data object's replica status."""
+    iter = genquery.row_iterator(
+        "DATA_REPL_STATUS",
+        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return constant.replica_status(int(row[0]))
 
 
 def write(ctx, path, data):
