@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -42,6 +42,28 @@ def size(ctx, path):
         return int(row[0])
 
 
+def has_replica_with_status(ctx, path, statuses):
+    """Check if data object has replica with specified replica statuses.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param path:     Path to iRODS data object
+    :param statuses: List of replica status to check
+
+    :returns: Boolean indicating if data object has replicas with specified replica statuses
+    """
+    iter = genquery.row_iterator(
+        "DATA_REPL_STATUS",
+        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if constants.replica_status(int(row[0])) in statuses:
+            return True
+
+    return False
+
+
 def write(ctx, path, data):
     """Write a string to an iRODS data object.
 
@@ -51,8 +73,12 @@ def write(ctx, path, data):
     :param path: Path to iRODS data object
     :param data: Data to write to data object
     """
-    ret = msi.data_obj_create(ctx, path, 'forceFlag=', 0)
-    handle = ret['arguments'][2]
+    if exists(ctx, path):
+        ret = msi.data_obj_open(ctx, 'openFlags=O_WRONLYO_TRUNC++++objPath=' + path, 0)
+        handle = ret['arguments'][1]
+    else:
+        ret = msi.data_obj_create(ctx, path, '', 0)
+        handle = ret['arguments'][2]
 
     msi.data_obj_write(ctx, handle, data, 0)
     msi.data_obj_close(ctx, handle, 0)

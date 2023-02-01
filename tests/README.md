@@ -10,7 +10,7 @@ Install pip requirements for tests:
 $ python -m pip install -r requirements.txt
 ```
 
-To run the UI tests you need Firefox 91 ESR or later and [geckodriver 0.31.0](https://github.com/mozilla/geckodriver/releases/tag/v0.31.0).
+To run the UI tests you need Firefox 102 ESR or later and [geckodriver 0.32.0](https://github.com/mozilla/geckodriver/releases/tag/v0.32.0).
 Geckodriver should be in your path before running the UI tests:
 ```bash
 $ export PATH=$PATH:/path/to/geckodriver
@@ -27,9 +27,9 @@ Use `-k` to only run API or UI tests:
 $ pytest -k api
 ```
 
-If Yoda is not running on development address or test password is not the default, use `--url` and `--password` to specify:
+If Yoda is not running on development address or test users / passwords are not the default, use `--environment` to specify environment file:
 ```bash
-$ pytest --url <url> --password <password>
+$ pytest --environment <environment_file>
 ```
 
 Datarequest tests are disabled by default, enable using `--datarequest`:

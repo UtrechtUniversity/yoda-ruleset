@@ -25,6 +25,10 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
 
     :returns: Found datasets
     """
+
+    # Loop until pseudocode, experiment type and wave are complete.
+    # But the found values can be overwritten when deeper levels are found.
+
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -41,7 +45,33 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
             remove_dataset_metadata(ctx, path, False)
             scan_mark_scanned(ctx, path, False)
         if in_dataset:
-            apply_dataset_metadata(ctx, path, scope, False, False)
+            subscope = scope.copy()
+
+            # Safeguard original data
+            prev_scope = subscope.copy()
+
+            # Extract tokens of current name
+            intake_extract_tokens_from_name(ctx, row[1], row[0], False, subscope)
+
+            new_deeper_dataset_toplevel = False
+            if not (prev_scope['pseudocode'] == subscope['pseudocode']
+                    and prev_scope['experiment_type'] == subscope['experiment_type']
+                    and prev_scope['wave'] == subscope['wave']):
+                prev_scope['directory'] = prev_scope["dataset_directory"]
+                if 'version' not in prev_scope:
+                    prev_scope['version'] = 'Raw'
+
+                # It is safe to assume that the dataset was collection based without actively checking.
+                # Otherwise it would mean that each found file on this level could potentially change the dataset properties
+                # avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+                # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
+                try:
+                    avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
+                except msi.Error:
+                    pass
+
+                new_deeper_dataset_toplevel = True
+            apply_dataset_metadata(ctx, path, subscope, False, new_deeper_dataset_toplevel)
         else:
             subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope.copy())
 
@@ -80,7 +110,39 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                 child_in_dataset = in_dataset
 
                 if in_dataset:  # initially is False
-                    apply_dataset_metadata(ctx, path, subscope, True, False)
+                    # Safeguard original data
+                    prev_scope = subscope.copy()
+
+                    # Extract tokens of current name
+                    intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
+
+                    new_deeper_dataset_toplevel = False
+
+                    # A change in path in relation to the dataset_directory invokes handling of deeper lying dataset.
+                    # This, not necessarily with a dataset id change, but it does change the dataset toplevel
+                    # In fact the same dataset simply lies a level deeper which invokes a dataset_toplevel change
+                    if not (prev_scope['pseudocode'] == subscope['pseudocode']
+                            and prev_scope['experiment_type'] == subscope['experiment_type']
+                            and prev_scope['wave'] == subscope['wave']
+                            and path == prev_scope['dataset_directory']):
+                        # Found a deeper lying dataset with more specific attributes
+                        # Prepwork for being able to create a dataset_id
+                        prev_scope['directory'] = prev_scope["dataset_directory"]
+                        if 'version' not in prev_scope:
+                            prev_scope['version'] = 'Raw'
+
+                        # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
+                        try:
+                            avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
+                        except msi.Error:
+                            pass
+
+                        # set flag correctly for creating of new toplevel
+                        new_deeper_dataset_toplevel = True
+
+                    subscope["dataset_directory"] = path
+                    apply_dataset_metadata(ctx, path, subscope, True, new_deeper_dataset_toplevel)
+
                     scan_mark_scanned(ctx, path, True)
                 else:
                     subscope = intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
@@ -155,7 +217,7 @@ def intake_tokens_identify_dataset(tokens):
         if req_token not in tokens or tokens[req_token] == "":
             missing = missing + 1
 
-    return (missing < 3)
+    return (missing == 0)
 
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
@@ -334,11 +396,6 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
     :param is_collection: Whether the object is a collection
     :param is_top_level:  If true, a dataset_toplevel field will be set on the object
     """
-
-#    if is_collection:
-#        avu.set_on_coll(ctx, )
-#    else:
-#        avu.set_on_data(ctx, )
 
     if "version" not in scope:
         version = "Raw"

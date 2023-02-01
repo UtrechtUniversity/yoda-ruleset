@@ -796,7 +796,8 @@
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
-      "title": "Data classification"
+      "title": "Data classification",
+      "default": "Public"
     },
     "Collection_Name": {
       "$ref": "#/definitions/stringNormal",
@@ -881,7 +882,8 @@
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
-                  "title": "Type"
+                  "title": "Type",
+                  "default": "ORCID"
                 },
                 "Name_Identifier": {
                   "$ref": "#/definitions/stringNormal",

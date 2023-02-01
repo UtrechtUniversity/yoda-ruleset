@@ -22,3 +22,6 @@ geckodriver.log
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 __pycache__/
 *.py[cod]
+
+# Pyenv local config
+.python-version

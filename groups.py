@@ -6,10 +6,12 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from datetime import datetime
 
 import genquery
 import requests
 
+import schema
 from util import *
 
 __all__ = ['api_group_data',
@@ -19,6 +21,7 @@ __all__ = ['api_group_data',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
+           'rule_group_expiration_date_validate',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -61,10 +64,10 @@ def getGroupData(ctx):
             }
             groups[name] = group
 
-        if attr in ["data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description":
-            # Deal with legacy use of '.' for empty description metadata.
+        elif attr == "description" or attr == "expiration_date":
+            # Deal with legacy use of '.' for empty description metadata and expiration date.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
@@ -99,9 +102,12 @@ def getGroupData(ctx):
                     except Exception:
                         pass
             elif not name.startswith("vault-"):
-                # Ardinary group.
-                group = groups[name]
-                group["members"].append(user)
+                try:
+                    # Ardinary group.
+                    group = groups[name]
+                    group["members"].append(user)
+                except KeyError:
+                    pass
 
     return groups.values()
 
@@ -301,8 +307,15 @@ def api_group_data(ctx):
         if not group_hierarchy[group['category']].get(group['subcategory']):
             group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
 
+        # Check whether schema_id is present on group level.
+        # If not, collect it from the corresponding category
+        if "schema_id" not in group:
+            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
+            'schema_id': group['schema_id'],
+            'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -483,15 +496,15 @@ def apply_data(ctx, data, allow_update, delete_users):
     for (category, subcategory, groupname, managers, members, viewers) in data:
         new_group = False
 
-        log.write(ctx, '[CSV import] Adding and updating group: {}'.format(groupname))
+        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
-        # First create the group. Note that the rodsadmin actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, '', 'unspecified', '', '')['arguments']
-        status = response[5]
-        message = response[6]
+        # First create the group. Note that the actor will become a groupmanager
+        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '')['arguments']
+        status = response[7]
+        message = response[8]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
-            log.write(ctx, '[CSV import] WARNING: group "{}" not created, it already exists'.format(groupname))
+            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
         elif status != '0':
             return "Error while attempting to create group {}. Status/message: {} / {}".format(groupname, status, message)
         else:
@@ -507,12 +520,12 @@ def apply_data(ctx, data, allow_update, delete_users):
                 message = response[3]
                 if status == '0':
                     currentrole = "member"
-                    log.write(ctx, "[CSV import] Notice: added user {} to group {}".format(username, groupname))
+                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, groupname))
                 else:
-                    log.write(ctx, "[CSV import] Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
-                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
             else:
-                log.write(ctx, "[CSV import] Notice: user {} is already present in group {}.".format(username, groupname))
+                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, groupname))
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -524,17 +537,17 @@ def apply_data(ctx, data, allow_update, delete_users):
                 role = 'manager'
 
             if _are_roles_equivalent(role, currentrole):
-                log.write(ctx, "[CSV import] Notice: user {} already has role {} in group {}.".format(username, role, groupname))
+                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, groupname))
             else:
                 response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
                 status = response[3]
                 message = response[4]
 
                 if status == '0':
-                    log.write(ctx, "[CSV import] Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
                 else:
-                    log.write(ctx, "[CSV import] Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
-                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
@@ -543,11 +556,11 @@ def apply_data(ctx, data, allow_update, delete_users):
             status = response[2]
             message = response[3]
             if status == "0":
-                log.write(ctx, "[CSV import] Notice: removed rods user from group " + groupname)
+                log.write(ctx, "CSV import - Notice: removed rods user from group " + groupname)
             else:
                 if status != 0:
-                    log.write(ctx, "[CSV import] Warning: error while attempting to remove user rods from group {}".format(groupname))
-                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(groupname))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
         if delete_users:
@@ -565,23 +578,23 @@ def apply_data(ctx, data, allow_update, delete_users):
                     currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
-                user = userdata[0]
+                username = userdata[0]
                 usergroupname = userdata[1]
-                if user not in allusers:
-                    if user in managers:
+                if username not in allusers:
+                    if username in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "[CSV import] Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
+                            log.write(ctx, "CSV import - Error: cannot remove user {} from group {}, because he/she is the only group manager".format(username, usergroupname))
                             continue
                         else:
-                            managers.remove(user)
-                    log.write(ctx, "[CSV import] Removing user {} from group {}".format(user, usergroupname))
+                            managers.remove(username)
+                    log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
 
-                    response = ctx.uuGroupUserRemove(usergroupname, user, '', '')['arguments']
+                    response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
                     status = response[2]
                     message = response[3]
                     if status != "0":
-                        log.write(ctx, "[CSV import] Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
-                        log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
+                        log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
+                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
     return ''
 
@@ -886,6 +899,26 @@ def rule_group_check_external_user(ctx, username):
     return '0'
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_group_expiration_date_validate(ctx, expiration_date):
+    """Validation of expiration date.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param expiration_date: String containing date that has to be validated
+
+    :returns: Indication whether expiration date is an accepted value
+    """
+    if expiration_date in ["", "."]:
+        return 'true'
+
+    try:
+        if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+        return 'true'
+    except ValueError:
+        return 'false'
+
+
 @api.make()
 def api_group_search_users(ctx, pattern):
     (username, zone_name) = user.from_str(ctx, pattern)
@@ -921,22 +954,24 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
     :param group_name:          Name of the group to create
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
+    :param schema_id:           Schema-id for the group to be created
+    :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')['arguments']
-        status = response[5]
-        message = response[6]
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, '', '')['arguments']
+        status = response[7]
+        message = response[8]
         if status == '0':
             return api.Result.ok()
         else:

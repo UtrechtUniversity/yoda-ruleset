@@ -100,6 +100,24 @@ uuGroupExists(*groupName, *exists) {
 	}
 }
 
+# \brief Check if a specific vault path already exists
+#
+# \param[in]  vaultName
+# \param[out] exists
+#
+uuGroupVaultPathExists(*vaultName, *exists) {
+    *exists = false;
+    *coll = "/$rodsZoneClient/home/" ++ *vaultName;
+
+    foreach(
+        *row in
+        SELECT COLL_NAME
+        WHERE COLL_NAME = *coll
+    ) {
+        *exists = true;
+    }
+}
+
 # \brief Check if a rodsuser or rodsadmin with the given name exists.
 #
 # \param[in]  userName	 username(#zone)
@@ -698,7 +716,7 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 # \param[out] status  '0' on success, non-zero on failure - as string value!
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassification, *status, *message) {
+uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *status, *message) {
 	*status  = '0';
 	*message = "An internal error occurred";
 
@@ -725,6 +743,8 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 
 	*kv."category"            = *category;
 	*kv."subcategory"         = *subcategory;
+	*kv."schema_id"           = *schema_id;
+	*kv."expiration_date"    = *expiration_date;
 	*kv."description"         = *description;
 	*kv."data_classification" = *dataClassification;
 
@@ -740,6 +760,8 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 			*groupName,
 			*category,
 			*subcategory,
+			*expiration_date,
+			*schema_id,
 			*description,
 			*dataClassification,
 			*allowed,

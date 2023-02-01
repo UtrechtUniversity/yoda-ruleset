@@ -18,79 +18,60 @@ from pytest_bdd import (
 )
 
 
-portal_url = "https://portal.yoda.test"
-api_url = "https://portal.yoda.test/api"
-password = "test"
-users = ['researcher',
-         'datamanager',
-         'groupmanager',
-         'functionaladminpriv',
-         'technicaladmin']
+portal_url = ""
+api_url = ""
+roles = {}
 user_cookies = {}
 
 datarequest = False
 deposit = False
 intake = False
-login_oidc = False
 run_all = False
 
 
 def pytest_addoption(parser):
-    parser.addoption("--url", action="store", default="https://portal.yoda.test")
-    parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
-    parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
+    parser.addoption("--environment", action="store", default="environments/development.json", help="Specify configuration file")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
-    config.addinivalue_line("markers", "oidc: Run login OIDC tests")
+    config.addinivalue_line("markers", "all: Run all tests")
+
+    global environment
+    environment = config.getoption("--environment")
+
+    with open(environment) as f:
+        configuration = json.loads(f.read())
 
     global portal_url
-    portal_url = config.getoption("--url")
+    portal_url = configuration.get("url", "https://portal.yoda.test")
 
     global api_url
     api_url = "{}/api".format(portal_url)
 
-    global password
-    password = config.getoption("--password")
+    global roles
+    roles = configuration.get("roles", {})
 
-    global datarequest
+    # Store cookies for each user.
+    for role, user in roles.items():
+        csrf, session = login(user["username"], user["password"])
+        user_cookies[role] = (csrf, session)
+
+    global datarequest, deposit, intake, run_all
     datarequest = config.getoption("--datarequest")
-
-    global deposit
     deposit = config.getoption("--deposit")
-
-    global intake
     intake = config.getoption("--intake")
-
-    global login_oidc
-    login_oidc = config.getoption("--oidc")
-
-    global run_all
     run_all = config.getoption("--all")
     if run_all:
         datarequest = True
         deposit = True
         intake = True
-        login_oidc = True
-
-    global users
-    if datarequest:
-        users = users + ['projectmanager', 'dacmember']
-
-    if deposit:
-        users = users + ['viewer']
-
-    # Store cookies for each user.
-    for user in users:
-        csrf, session = login(user, password)
-        user_cookies[user] = (csrf, session)
 
 
 def pytest_bdd_apply_tag(tag, function):
@@ -104,10 +85,6 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'intake' and not intake:
         marker = pytest.mark.skip(reason="Skip intake")
-        marker(function)
-        return True
-    elif tag == 'oidc' and not login_oidc:
-        marker = pytest.mark.skip(reason="Skip login OIDC")
         marker(function)
         return True
     elif tag == "fail":
@@ -185,7 +162,7 @@ def api_request(user, request, data, timeout=10):
     return (response.status_code, body)
 
 
-def upload_data(user, file, folder):
+def upload_data(user, file, folder, file_content="test"):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -205,7 +182,7 @@ def upload_data(user, file, folder):
              "flowFilename": (None, file),
              "flowRelativePath": (None, file),
              "flowTotalChunks": (None, "1"),
-             "file": (file, "test")}
+             "file": (file, file_content)}
 
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
@@ -233,7 +210,7 @@ def post_form_data(user, request, files):
 
 @given(parsers.parse("user {user:w} is authenticated"), target_fixture="user")
 def api_user_authenticated(user):
-    assert user in users
+    assert user in roles
     return user
 
 
@@ -244,11 +221,17 @@ def ui_login(browser, user):
     browser.visit(url)
 
     # Fill in username
-    browser.find_by_id('f-login-username').fill(user)
+    try:
+        browser.find_by_id('f-login-username').fill(roles[user]["username"])
+    except KeyError:
+        browser.find_by_id('f-login-username').fill(user)
     browser.find_by_id('f-login-submit').click()
 
     # Fill in password
-    browser.find_by_id('f-login-password').fill(password)
+    try:
+        browser.find_by_id('f-login-password').fill(roles[user]["password"])
+    except KeyError:
+        browser.find_by_id('f-login-password').fill("test")
 
     # Find and click the 'Sign in' button
     browser.find_by_id('f-login-submit').click()
@@ -262,16 +245,14 @@ def ui_logout(browser):
 
 @when(parsers.parse("user {user} enters email address"))
 def ui_gate_username(browser, user):
-    browser.find_by_id('f-login-username').fill(user)
+    # Fill in username
+    try:
+        browser.find_by_id('f-login-username').fill(roles[user]["username"])
+    except KeyError:
+        browser.find_by_id('f-login-username').fill(user)
+
+    # Find and click the 'Next' button
     browser.find_by_id('f-login-submit').click()
-
-
-@given('the user is redirected to the login page')
-@then('the user is redirected to the login page')
-def ui_login_assert_login_page(browser):
-    assert (
-        "{}/user/login".format(portal_url) in browser.url
-        or "{}/user/gate".format(portal_url) in browser.url)
 
 
 @given(parsers.parse('module "{module}" is shown'))
@@ -352,13 +333,6 @@ def collection_is_locked(user, collection):
 @when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
-
-
-@then(parsers.parse("the user is redirected to {page}"))
-def ui_user_redirected(browser, page):
-    target = "{}{}".format(portal_url, page)
-
-    assert browser.url == target
 
 
 @when(parsers.parse("user browses to folder {folder}"))

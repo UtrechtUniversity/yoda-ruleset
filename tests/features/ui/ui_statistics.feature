@@ -8,9 +8,9 @@ Feature: Statistics UI
         Then statistics graph is shown
 
         Examples:
-            | user           |
-            | researcher     |
-            | datamanager    |
+            | user        |
+            | researcher  |
+            | datamanager |
 
 
     Scenario Outline: Viewing storage details of a deposit group
@@ -21,9 +21,9 @@ Feature: Statistics UI
         Then statistics graph is not shown
 
         Examples:
-            | user           |
-            | researcher     |
-            | datamanager    |
+            | user        |
+            | researcher  |
+            | datamanager |
 
 
     Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
@@ -32,9 +32,9 @@ Feature: Statistics UI
         Then storage for <categories> is shown
 
         Examples:
-            | user           | categories                                                                                    |
-            | technicaladmin | core-0,core-1,initial,default-0,default-1,default-2,hptlab-0,hptlab-1,teclab-0,teclab-1,dag-0 |
-            | datamanager    | core-0,core-1,initial,default-0,default-1,default-2,hptlab-0,hptlab-1,teclab-0,teclab-1,dag-0 |
+            | user           | categories      |
+            | technicaladmin | test-automation |
+            | datamanager    | test-automation |
 
 
     Scenario Outline: Export category storage details as a technicaladmin or datamanager

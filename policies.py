@@ -151,7 +151,7 @@ def can_data_move(ctx, actor, src, dst):
 
 @policy.require()
 def py_acPreprocForCollCreate(ctx):
-    log._debug(ctx, 'py_acPreprocForCollCreate')
+    log.debug(ctx, 'py_acPreprocForCollCreate')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
     return can_coll_create(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
@@ -159,7 +159,7 @@ def py_acPreprocForCollCreate(ctx):
 
 @policy.require()
 def py_acPreprocForRmColl(ctx):
-    log._debug(ctx, 'py_acPreprocForRmColl')
+    log.debug(ctx, 'py_acPreprocForRmColl')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
     return can_coll_delete(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
@@ -167,7 +167,7 @@ def py_acPreprocForRmColl(ctx):
 
 @policy.require()
 def py_acPreprocForDataObjOpen(ctx):
-    log._debug(ctx, 'py_acPreprocForDataObjOpen')
+    log.debug(ctx, 'py_acPreprocForDataObjOpen')
     # data object reads are always allowed.
     # writes are blocked e.g. when the object is locked (unless actor is a rodsadmin).
     if session_vars.get_map(ctx.rei)['data_object']['write_flag'] == 1:
@@ -179,7 +179,7 @@ def py_acPreprocForDataObjOpen(ctx):
 
 @policy.require()
 def py_acDataDeletePolicy(ctx):
-    log._debug(ctx, 'py_acDataDeletePolicy')
+    log.debug(ctx, 'py_acDataDeletePolicy')
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
@@ -188,7 +188,7 @@ def py_acDataDeletePolicy(ctx):
 
 @policy.require()
 def py_acPreProcForObjRename(ctx, src, dst):
-    log._debug(ctx, 'py_acPreProcForObjRename')
+    log.debug(ctx, 'py_acPreProcForObjRename')
 
     # irods/lib/api/include/dataObjInpOut.h
     RENAME_DATA_OBJ = 11
@@ -204,7 +204,7 @@ def py_acPreProcForObjRename(ctx, src, dst):
 
 @policy.require()
 def py_acPostProcForPut(ctx):
-    log._debug(ctx, 'py_acPostProcForPut')
+    log.debug(ctx, 'py_acPostProcForPut')
     # Data object creation cannot be prevented by API dynpeps and static PEPs,
     # due to how MSIs work. Thus, this ugly workaround specifically for MSIs.
     path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
@@ -219,7 +219,7 @@ def py_acPostProcForPut(ctx):
 @policy.require()
 def py_acPostProcForCopy(ctx):
     # See py_acPostProcForPut.
-    log._debug(ctx, 'py_acPostProcForCopy')
+    log.debug(ctx, 'py_acPostProcForCopy')
 
     path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
     x = can_data_create(ctx, user.user_and_zone(ctx), path)
@@ -233,14 +233,14 @@ def py_acPostProcForCopy(ctx):
 # Disabled: caught by acPreprocForCollCreate
 # @policy.require()
 # def pep_api_coll_create_pre(ctx, instance_name, rs_comm, coll_create_inp):
-#     log._debug(ctx, 'pep_api_coll_create_pre')
+#     log.debug(ctx, 'pep_api_coll_create_pre')
 #     return can_coll_create(ctx, user.user_and_zone(ctx),
 #                            str(coll_create_inp.collName))
 
 # Disabled: caught by acPreprocForRmColl
 # @policy.require()
 # def pep_api_rm_coll_pre(ctx, instance_name, rs_comm, rm_coll_inp, coll_opr_stat):
-#     log._debug(ctx, 'pep_api_rm_coll_pre')
+#     log.debug(ctx, 'pep_api_rm_coll_pre')
 #     return can_coll_delete(ctx, user.user_and_zone(ctx),
 #                            str(rm_coll_inp.collName))
 
@@ -248,14 +248,14 @@ def py_acPostProcForCopy(ctx):
 # @policy.require()
 # def pep_api_data_obj_put_pre(ctx, instance_name, rs_comm, data_obj_inp, data_obj_inp_bbuf, portal_opr_out):
 #     # Matches data object creation/overwrite via iput.
-#     log._debug(ctx, 'pep_api_data_obj_put_pre')
+#     log.debug(ctx, 'pep_api_data_obj_put_pre')
 #     return can_data_create(ctx, user.user_and_zone(ctx),
 #                            str(data_obj_inp.objPath))
 
 
 @policy.require()
 def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
-    log._debug(ctx, 'pep_api_data_obj_create_pre')
+    log.debug(ctx, 'pep_api_data_obj_create_pre')
 
     # Catch object creation/overwrite via Davrods and PRC.
     # This should also catch object creation by any other client that isn't so
@@ -268,7 +268,7 @@ def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
 
 @policy.require()
 def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_inp, open_stat):
-    log._debug(ctx, 'pep_api_data_obj_create_and_stat_pre')
+    log.debug(ctx, 'pep_api_data_obj_create_and_stat_pre')
 
     # Not triggered by any of our clients currently, but needed for completeness.
     return can_data_create(ctx, user.user_and_zone(ctx),
@@ -278,14 +278,14 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
 # Disabled: caught by acPostProcForCopy
 # @policy.require()
 # def pep_api_data_obj_copy_pre(ctx, instance_name, rs_comm, data_obj_copy_inp, trans_stat):
-#     log._debug(ctx, 'pep_api_data_obj_copy_pre')
+#     log.debug(ctx, 'pep_api_data_obj_copy_pre')
 #     return can_data_create(ctx, user.user_and_zone(ctx),
 #                            str(data_obj_copy_inp.destDataObjInp.objPath))
 
 # Disabled: caught by acPreProcForObjRename
 # @policy.require()
 # def pep_api_data_obj_rename_pre(ctx, instance_name, rs_comm, data_obj_rename_inp):
-#     log._debug(ctx, 'pep_api_data_obj_rename_pre')
+#     log.debug(ctx, 'pep_api_data_obj_rename_pre')
 
 #     # API name says data_obj, but it applies to both data and collections
 #     # depending on 'oprType'.
@@ -306,21 +306,21 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
 
 @policy.require()
 def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):
-    log._debug(ctx, 'pep_api_data_obj_trim_pre')
+    log.debug(ctx, 'pep_api_data_obj_trim_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
 
 
 @policy.require()
 def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate_inp):
-    log._debug(ctx, 'pep_api_data_obj_truncate_pre')
+    log.debug(ctx, 'pep_api_data_obj_truncate_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
 
 # Disabled: caught by acDataDeletePolicy
 # @policy.require()
 # def pep_api_data_obj_unlink_pre(ctx, instance_name, rs_comm, data_obj_unlink_inp):
-#     log._debug(ctx, 'pep_api_data_obj_unlink_pre')
+#     log.debug(ctx, 'pep_api_data_obj_unlink_pre')
 #     return can_data_delete(ctx, user.user_and_zone(ctx),
 #                            str(data_obj_unlink_inp.objPath))
 
@@ -330,7 +330,7 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
 # Disabled: caught by py_acPreProcForModifyAVUMetadata
 # @policy.require()
 # def pep_api_mod_avu_metadata_pre(ctx, instance_name, rs_comm, mod_avumetadata_inp):
-#     log._debug(ctx, 'pep_api_mod_avu_metadata_pre')
+#     log.debug(ctx, 'pep_api_mod_avu_metadata_pre')
 #     return can_meta_modify(ctx, actor, AvuOpr(mod_avumetadata_inp))
 
 

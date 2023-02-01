@@ -24,6 +24,7 @@ Feature: Intake API
         Examples:
             | user        | study   |
             | datamanager | initial |
+            | datamanager | test |
 
 
     Scenario Outline: Get the total count of all files in a collection

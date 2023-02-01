@@ -111,7 +111,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 				uuGroupGetCategory("deposit-" ++ *baseGroupName, *category, *subcategory);
 			} else {
 				uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
-				uuGroupExists("research-*category", *researchExists);
+				uuGroupExists("research-*baseGroupName", *researchExists);
 				if (!*researchExists) {
 					*allowed = false;
 					*reason = "Cannot grant or revoke read access, research group *category does not exist.";

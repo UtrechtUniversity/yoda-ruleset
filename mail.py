@@ -30,14 +30,14 @@ def send(ctx, to, actor, subject, body, cc=None):
     :returns: API status
     """
     if not config.notifications_enabled:
-        log.write(ctx, '[EMAIL] Sending mail notifications is disabled')
+        log.write(ctx, 'Sending mail notifications is disabled')
         return
 
     if '@' not in to:
-        log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
+        log.write(ctx, 'Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
-    log.write(ctx, '[EMAIL] Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
+    log.write(ctx, u'Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 
     cfg = {k: getattr(config, v)
            for k, v in [('from',      'notifications_sender_email'),
@@ -59,7 +59,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         port = int(port or (465 if proto == 'smtps' else 587))
 
     except Exception as e:
-        log.write(ctx, '[EMAIL] Configuration error: ' + str(e))
+        log.write(ctx, 'Configuration error: ' + str(e))
         return api.Error('internal', 'Mail configuration error')
 
     try:
@@ -70,7 +70,7 @@ def send(ctx, to, actor, subject, body, cc=None):
             smtp.starttls()
 
     except Exception as e:
-        log.write(ctx, '[EMAIL] Could not connect to mail server at {}://{}:{}: {}'.format(proto, host, port, e))
+        log.write(ctx, 'Could not connect to mail server at {}://{}:{}: {}'.format(proto, host, port, e))
         return api.Error('internal', 'Mail configuration error')
 
     try:
@@ -78,12 +78,12 @@ def send(ctx, to, actor, subject, body, cc=None):
             smtp.login(cfg['username'], cfg['password'])
 
     except Exception:
-        log.write(ctx, '[EMAIL] Could not login to mail server with configured credentials')
+        log.write(ctx, 'Could not login to mail server with configured credentials')
         return api.Error('internal', 'Mail configuration error')
 
     fmt_addr = '{} <{}>'.format
 
-    msg = MIMEText(body)
+    msg = MIMEText(body, 'plain', 'UTF-8')
     msg['Reply-To'] = cfg['reply_to']
     msg['Date'] = email.utils.formatdate()
     msg['From'] = fmt_addr(cfg['from_name'], cfg['from'])
@@ -99,7 +99,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         else:
             smtp.sendmail(cfg['from'], [to], msg.as_string())
     except Exception as e:
-        log.write(ctx, '[EMAIL] Could not send mail: {}'.format(e))
+        log.write(ctx, 'Could not send mail: {}'.format(e))
         return api.Error('internal', 'Mail configuration error')
 
     try:
@@ -108,7 +108,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         pass
 
 
-def _wrapper(ctx, to, actor, subject, body):
+def wrapper(ctx, to, actor, subject, body):
     """Send mail, returns status/statusinfo in rule-language style."""
     x = send(ctx, to, actor, subject, body)
 
@@ -122,11 +122,11 @@ def rule_mail_test(ctx, to):
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 
-    return _wrapper(ctx,
-                    to=to,
-                    actor='None',
-                    subject='[Yoda] Test mail',
-                    body="""
+    return wrapper(ctx,
+                   to=to,
+                   actor='None',
+                   subject='[Yoda] Test mail',
+                   body="""
 Congratulations, you have sent a test mail from your Yoda system.
 
 Best regards,

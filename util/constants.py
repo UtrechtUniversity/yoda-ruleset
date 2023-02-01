@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -74,6 +74,8 @@ IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
 
 DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
+
+SCHEMA_USER_SELECTABLE = UUORGMETADATAPREFIX + 'schema_user_selectable'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
@@ -151,3 +153,12 @@ folder_transitions = [(research_package_state(x),
                                    ('SECURED',   'LOCKED'),
                                    ('SECURED',   ''),
                                    ('SECURED',   'SUBMITTED')]]
+
+
+# List of valid replica states.
+class replica_status(Enum):
+    STALE_REPLICA        = 0  # Replica is no longer known to be good
+    GOOD_REPLICA         = 1  # Replica is good
+    INTERMEDIATE_REPLICA = 2  # Replica is actively being written to
+    READ_LOCKED          = 3  # Replica or a sibling replica is opened for read by an agent
+    WRITE_LOCKED         = 4  # One of this replica's sibling replicas is actively being written to but is itself at rest

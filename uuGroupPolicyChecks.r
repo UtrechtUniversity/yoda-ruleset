@@ -90,6 +90,38 @@ uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 	}
 }
 
+# \brief Check if a schema-id is valid.
+#
+# \param[in]  schema_id
+# \param[out] valid
+#
+uuGroupSchemaIdIsValid(*schema_id, *valid) {
+    # Check validity of schema_id
+    *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id;
+    *coll = "";
+    foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
+        *coll = *row.COLL_NAME;
+        succeed;
+    }
+
+    if (*coll != "") {
+        *valid = true;
+    } else {
+        *valid = false;
+    }
+}
+
+# \brief Check if indicated expiration date is valid
+#
+# \param[in]  expiration_date
+# \param[out] valid
+#
+uuGroupExpirationDateIsValid(*expiration_date, *valid) {
+    *result = "";
+    rule_group_expiration_date_validate(*expiration_date, *result);
+    *valid = bool(*result);
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -98,15 +130,17 @@ uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 # \param[in]  groupName   the new group name
 # \param[in]  category
 # \param[in]  subcategory
+# \param[in]  schema_id
+# \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; writeLine("serverLog","In CanGroupAdd RODSADMIN");}
 
 	*allowed = 0;
 	*reason  = "";
@@ -125,18 +159,31 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 
 					# For research and intake groups: Make sure their ro and
 					# vault groups do not exist yet.
-
 					*roName = "read-*base";
 					uuGroupExists(*roName, *roExists);
 
 					*vaultName = "vault-*base";
 					uuGroupExists(*vaultName, *vaultExists);
+					# Extra check for situations that a vault path is already present
+					uuGroupVaultPathExists(*vaultName, *vaultPathExists);
 
-					if (*roExists || *vaultExists) {
+					if (*roExists || *vaultExists || *vaultPathExists) {
 						*reason = "This group name is not available.";
 					} else {
-						# Last check.
-						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
+						if (*schemaIdValid) {
+							# Check expiration date
+							uuGroupExpirationDateIsValid(*expiration_date, *expirationDateValid);
+							if (*expirationDateValid) {
+							    # Last check.
+    							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+							} else {
+							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
+							}
+						} else {
+							# schema not valid -> report error
+							*reason = "Invalid schema-id used when adding group: '*schema_id'";
+						}
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
@@ -214,7 +261,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  groupName the group name
-# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification')
+# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification', 'schema_id', 'expiration_date')
 # \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
@@ -244,11 +291,25 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 		} else if (*attribute == "description") {
 			*allowed = 1;
 		} else if (*attribute == "data_classification") {
-			uuGroupDataClassificationIsValid(*groupName, *value, *dataclasValid);
-			if (*dataclasValid) {
+			uuGroupDataClassificationIsValid(*groupName, *value, *dataClassValid);
+			if (*dataClassValid) {
 				*allowed = 1;
 			} else {
 				*reason = "The chosen data classification is invalid for this type of group.";
+			}
+		} else if (*attribute == "schema_id") {
+			uuGroupSchemaIdIsValid(*value, *schemaIdValid);
+			if (*schemaIdValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen schema id is invalid for this group.";
+			}
+		} else if (*attribute == "expiration_date") {
+			uuGroupExpirationDateIsValid(*value, *expirationDateValid);
+			if (*expirationDateValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen expiration date is invalid.";
 			}
 		} else {
 			*reason = "Invalid group attribute name.";
