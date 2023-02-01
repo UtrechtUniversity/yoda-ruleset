@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -40,6 +40,28 @@ def size(ctx, path):
 
     for row in iter:
         return int(row[0])
+
+
+def has_replica_with_status(ctx, path, statuses):
+    """Check if data object has replica with specified replica statuses.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param path:     Path to iRODS data object
+    :param statuses: List of replica status to check
+
+    :returns: Boolean indicating if data object has replicas with specified replica statuses
+    """
+    iter = genquery.row_iterator(
+        "DATA_REPL_STATUS",
+        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if constants.replica_status(int(row[0])) in statuses:
+            return True
+
+    return False
 
 
 def write(ctx, path, data):

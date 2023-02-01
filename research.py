@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import binascii
@@ -470,6 +470,12 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     # new filename already exists?
     if data_object.exists(ctx, path_target):
         return api.Error('invalid_destination', 'The selected filename ' + new_file_name + ' already exists')
+
+    # Does data object has replica in intermediate or locked state? (replica is not actively being written to or opened for read)
+    if data_object.has_replica_with_status(ctx, coll + '/' + org_file_name, [constants.replica_status.INTERMEDIATE_REPLICA,
+                                                                             constants.replica_status.READ_LOCKED,
+                                                                             constants.replica_status.WRITE_LOCKED]):
+        return api.Error('not_allowed', 'Not allowed, this file is actively being written to')
 
     # All requirements OK
     try:
