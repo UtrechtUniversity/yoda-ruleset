@@ -58,7 +58,7 @@ def has_replica_with_status(ctx, path, statuses):
     )
 
     for row in iter:
-        if int(row[0]) in statuses:
+        if constants.replica_status(int(row[0])) in statuses:
             return True
 
     return False
