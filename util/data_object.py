@@ -42,8 +42,15 @@ def size(ctx, path):
         return int(row[0])
 
 
-def replica_status(ctx, path):
-    """Get a data object's replica status."""
+def has_replica_with_status(ctx, path, statuses):
+    """Check if data object has replica with specified replica statuses.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param path:     Path to iRODS data object
+    :param statuses: List of replica status to check
+
+    :returns: Boolean indicating if data object has replicas with specified replica statuses
+    """
     iter = genquery.row_iterator(
         "DATA_REPL_STATUS",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
@@ -51,7 +58,10 @@ def replica_status(ctx, path):
     )
 
     for row in iter:
-        return constants.replica_status(int(row[0]))
+        if int(row[0]) in statuses:
+            return True
+
+    return False
 
 
 def write(ctx, path, data):
