@@ -24,7 +24,7 @@ Feature: Intake API
         Examples:
             | user        | study   |
             | datamanager | initial |
-            | datamanager | test |
+            | datamanager | test    |
 
 
     Scenario Outline: Get the total count of all files in a collection
@@ -34,9 +34,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/home/grp-intake-initial |
+            | researcher  | /tempZone/home/grp-intake-initial |
 
 
     Scenario Outline: Get list of all unrecognized and unscanned files
@@ -46,9 +46,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/yoda/grp-intake-initial |
+            | researcher  | /tempZone/yoda/grp-intake-initial |
 
 
     Scenario Outline: Get list of all datasets
@@ -58,9 +58,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/home/grp-intake-initial |
+            | researcher  | /tempZone/home/grp-intake-initial |
 
 
     Scenario Outline: Scan for and recognize datasets in study intake area
@@ -70,9 +70,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/home/grp-intake-initial |
+            | researcher  | /tempZone/home/grp-intake-initial |
 
 
     Scenario Outline: Lock dataset in study intake area
@@ -83,9 +83,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/home/grp-intake-initial |
+            | researcher  | /tempZone/home/grp-intake-initial |
 
 
     Scenario Outline: Unlock dataset in study intake area
@@ -96,22 +96,21 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                        |
+            | datamanager | /tempZone/home/grp-intake-initial |
+            | researcher  | /tempZone/home/grp-intake-initial |
 
 
     Scenario Outline: Get all details for a dataset
         Given user <user> is authenticated
-        And dataset exists
-        And the Yoda intake dataset get details API is queried with dataset id and collection <collection>
+        And the Yoda intake dataset get details API is queried with dataset id <dataset_id> and collection <collection>
         Then the response status code is "200"
         # And ...
 
         Examples:
-            | user        | collection                      |
-            | datamanager | /tempZone/yoda/home/grp-initial |
-            | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                             | dataset_id              |
+            | datamanager | /tempZone/home/grp-intake-initial      | 3y*discount*B00000*Raw  |
+            | researcher  | /tempZone/home/grp-intake-initial      | 3y*discount*B00001*Raw  |
 
 
     Scenario Outline: Add a comment to a dataset
@@ -122,9 +121,9 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | study_id | comment |
-            | datamanager | initial  | initial |
-            | researcher  | initial  | initial |
+            | user        | study_id            | comment |
+            | datamanager | grp-intake-initial  | initial |
+            | researcher  | grp-intake-initial  | initial |
 
 
     Scenario Outline: Get vault dataset related counts for reporting for a study
@@ -134,8 +133,8 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | study_id   |
-            | datamanager | initial    |
+            | user        | study_id              |
+            | datamanager | grp-intake-initial    |
 
 
     Scenario Outline: Get aggregated vault dataset info for reporting for a study
@@ -145,8 +144,8 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | study_id |
-            | datamanager | initial  |
+            | user        | study_id            |
+            | datamanager | grp-intake-initial  |
 
 
     Scenario Outline: Get vault data for export of a study
@@ -156,5 +155,5 @@ Feature: Intake API
         # And ...
 
         Examples:
-            | user        | study_id |
-            | datamanager | initial  |
+            | user        | study_id            |
+            | datamanager | grp-intake-initial  |
