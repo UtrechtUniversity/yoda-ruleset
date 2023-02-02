@@ -693,7 +693,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     if len(scanned.split(':')) != 2:
         # Retrieve scannedby/when information in a different way
         dataset = get_dataset_details(ctx, dataset_id, coll)
-        scanned = dataset['datasetCreatedByWhen']
+        scanned = dataset.get('datasetCreatedByWhen', "unknown")
 
     return {"files": files,
             # "is_collection": is_collection,
