@@ -88,12 +88,12 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     )
 
 
-@given(parsers.parse("the Yoda intake dataset get details API is queried with dataset id and collection {collection}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda intake dataset get details API is queried with dataset id {dataset_id} and collection {collection}"), target_fixture="api_response")
 def api_intake_dataset_get_details(user, dataset_id, collection):
     return api_request(
         user,
         "intake_dataset_get_details",
-        {"coll": collection, "dataset_id": dataset_id}
+        {"coll": collection, "dataset_id": dataset_id.replace("*", "\t")}
     )
 
 
