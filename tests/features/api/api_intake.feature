@@ -103,7 +103,6 @@ Feature: Intake API
 
     Scenario Outline: Get all details for a dataset
         Given user <user> is authenticated
-        And dataset exists
         And the Yoda intake dataset get details API is queried with dataset id <dataset_id> and collection <collection>
         Then the response status code is "200"
         # And ...
