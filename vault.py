@@ -1342,12 +1342,7 @@ def package_manifest(ctx, coll):
                                   "COLL_NAME like '{}/%'".format(coll),
                                   genquery.AS_LIST,
                                   ctx))
-        if row[1] not in [
-            "manifest-sha256.txt",
-            "user-metadata.json",
-            "system-metadata.json",
-            "provenance-log.json"
-        ]
+        if row[0] != coll or not row[1].startswith("yoda-metadata")
     ]) + "\n"
 
 
@@ -1422,19 +1417,24 @@ def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
         provenance.log_action(ctx, actor, coll, "archived")
-        data_object.write(ctx, coll + "/manifest-sha256.txt",
-                          package_manifest(ctx, coll))
 
         data_object.write(ctx, coll + "/user-metadata.json",
                           jsonutil.dump(package_user_metadata(ctx, coll)))
+        ctx.msiDataObjChksum(coll + "/user-metadata.json", "", "")
 
         system_metadata = package_system_metadata(ctx, coll)
         data_object.write(ctx, coll + "/system-metadata.json",
                           jsonutil.dump(system_metadata))
+        ctx.msiDataObjChksum(coll + "/system-metadata.json", "", "")
 
         provenance_log = package_provenance_log(ctx, system_metadata)
         data_object.write(ctx, coll + "/provenance-log.json",
                           jsonutil.dump(provenance_log))
+        ctx.msiDataObjChksum(coll + "/provenance-log.json", "", "")
+
+        data_object.write(ctx, coll + "/manifest-sha256.txt",
+                          package_manifest(ctx, coll))
+        ctx.msiDataObjChksum(coll + "/manifest-sha256.txt", "", "")
 
         # notify members of research group
         message = "Data package scheduled for archival"
