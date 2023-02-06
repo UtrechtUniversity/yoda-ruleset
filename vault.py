@@ -1467,11 +1467,20 @@ def vault_create_archive(ctx, coll):
         return "Invalid"
     try:
         avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
-        ctx.msiArchiveCreate(coll + ".tar", coll, 0, 0)
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
 
-        # don't remove the real package just yet
-        # ctx.msiRmColl(coll, "forceFlag=", 0);
+        # move/copy files to a temporary collection to archive from
+        ctx.msiCollCreate(coll + "/archive", "0", 0)
+        ctx.msiDataObjRename(coll + "/user-metadata.json", coll + "/archive/user-metadata.json", "0", 0)
+        ctx.msiDataObjRename(coll + "/system-metadata.json", coll + "/archive/system-metadata.json", "0", 0)
+        ctx.msiDataObjRename(coll + "/provenance-log.json", coll + "/archive/provenance-log.json", "0", 0)
+        ctx.msiDataObjRename(coll + "/manifest-sha256.txt", coll + "/archive/manifest-sha256.txt", "0", 0)
+        ctx.msiDataObjRename(coll + "/original", coll + "/archive/original", "1", 0)
+        ctx.msiDataObjCopy(coll + "/License.txt", coll + "/archive/License.txt", "", 0)
+        ctx.msiDataObjChksum(coll + "/archive/License.txt", "", "")
+
+        ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
+        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0);
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
 
         return "Success"
     except Exception:
