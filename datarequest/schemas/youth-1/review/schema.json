@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "required": [
+    "evaluation",
+    "involvement_requested"
+  ],
+  "properties": {
+    "introduction": {
+      "type": "object",
+      "title": "Reviewer instructions",
+      "description": "Please note that your review is permanent and cannot be altered after submission. If you are in doubt, please contact the YOUth project manager first."
+    },
+    "evaluation": {
+      "type": "string",
+      "title": "Would you approve / reject / reject (resubmit) this data request?",
+      "enum": [
+        "Approve",
+        "Reject (resubmit)",
+        "Reject"
+      ]
+    },
+    "evaluation_rationale": {
+      "type": "string",
+      "title": "Please provide a brief rationale for your evaluation.",
+      "description": "This is mandatory if the data request is rejected."
+    },
+    "involvement_requested": {
+      "type": "string",
+      "title": "Do you or any of your (former) colleagues who were involved in the collection of (part of) the requested data wish to become involved in this project and/or the resulting publication?",
+      "enum": [
+        "Yes",
+        "No"
+      ]
+    }
+  },
+  "dependencies": {
+    "evaluation": {
+      "oneOf": [
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Approve"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Reject (resubmit)",
+                "Reject"
+              ]
+            }
+          },
+          "required": [
+            "evaluation_rationale"
+          ]
+        }
+      ]
+    },
+    "involvement_requested": {
+      "oneOf": [
+        {
+          "properties": {
+            "involvement_requested": {
+              "enum": [
+                "No"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "involvement_requested": {
+              "enum": [
+                "Yes"
+              ]
+            },
+            "researchers_to_be_involved": {
+              "type": "string",
+              "title": "Please specify the name and email address of the person(s) who should be invited to become involved."
+            }
+          },
+          "required": [
+            "researchers_to_be_involved"
+          ]
+        }
+      ]
+    }
+  }
+}
