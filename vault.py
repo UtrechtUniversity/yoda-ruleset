@@ -1479,7 +1479,7 @@ def vault_create_archive(ctx, coll):
         ctx.msiDataObjChksum(coll + "/archive/License.txt", "", "")
 
         ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
-        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0);
+        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
 
         return "Success"
