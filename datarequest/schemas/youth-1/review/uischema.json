@@ -1,11 +1,15 @@
 {
+  "ui:order": [ "introduction", "evaluation", "evaluation_rationale", "personal_involvement_requested", "other_involvement_requested" ],
+  "evaluation": {
+    "ui:widget": "radio"
+  },
   "evaluation_rationale": {
     "ui:widget": "textarea"
   },
-  "involvement_requested": {
+  "personal_involvement_requested": {
     "ui:widget": "radio"
   },
-  "researchers_to_be_involved": {
+  "other_involvement_requested": {
     "ui:widget": "textarea",
     "ui:options": {
       "rows": 12
