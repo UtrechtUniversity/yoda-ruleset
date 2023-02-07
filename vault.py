@@ -14,7 +14,6 @@ from datetime import datetime
 
 import genquery
 import irods_types
-import jsonavu
 from dateutil import parser
 
 import folder
@@ -1348,22 +1347,6 @@ def package_manifest(ctx, coll):
     ]) + "\n"
 
 
-def package_user_metadata(ctx, coll):
-    avus = [
-        {
-            "a": row[0],
-            "v": row[1],
-            "u": row[2]
-        }
-        for row in genquery.row_iterator(
-            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_UNITS like '{}%'".format(coll, constants.UUUSERMETADATAPREFIX),
-            genquery.AS_LIST,
-            ctx)
-    ]
-    return jsonavu.avu2json(avus, "usr")
-
-
 def package_system_metadata(ctx, coll):
     return [
         {
@@ -1420,9 +1403,8 @@ def vault_archive(ctx, actor, coll):
         # Prepare for archival.
         provenance.log_action(ctx, actor, coll, "archived")
 
-        data_object.write(ctx, coll + "/user-metadata.json",
-                          jsonutil.dump(package_user_metadata(ctx, coll)))
-        ctx.msiDataObjChksum(coll + "/user-metadata.json", "", "")
+        user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
+        ctx.msiDataObjCopy(user_metadata, coll + "/archive/user-metadata.json", "verifyChksum=", 0)
 
         system_metadata = package_system_metadata(ctx, coll)
         data_object.write(ctx, coll + "/system-metadata.json",
