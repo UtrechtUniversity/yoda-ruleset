@@ -4,6 +4,9 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+
+from deepdiff import DeepDiff
 from pytest_bdd import (
     given,
     parsers,
@@ -70,21 +73,21 @@ def api_intake_scan_for_datasets(user, collection):
     )
 
 
-@given(parsers.parse("the Yoda intake lock API is queried with dataset id and collection {collection}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda intake lock API is queried with dataset id {dataset_id} and collection {collection}"), target_fixture="api_response")
 def api_intake_lock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_lock_dataset",
-        {"path": collection, "dataset_ids": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id.replace("*", "\n")}
     )
 
 
-@given(parsers.parse("the Yoda intake unlock API is queried with dataset id and collection {collection}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda intake unlock API is queried with dataset id {dataset_id} and collection {collection}"), target_fixture="api_response")
 def api_intake_unlock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_unlock_dataset",
-        {"path": collection, "dataset_ids": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id.replace("*", "\n")}
     )
 
 
@@ -97,12 +100,12 @@ def api_intake_dataset_get_details(user, dataset_id, collection):
     )
 
 
-@given(parsers.parse("the Yoda intake dataset add comment API is queried with dataset id, study id {study_id} and comment {comment}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda intake dataset add comment API is queried with dataset id {dataset_id}, study id {study_id} and comment {comment}"), target_fixture="api_response")
 def api_intake_dataset_add_comment(user, dataset_id, study_id, comment):
     return api_request(
         user,
         "intake_dataset_add_comment",
-        {"study_id": study_id, "dataset_id": dataset_id, "comment": comment}
+        {"study_id": study_id, "dataset_id": dataset_id.replace("*", "\n"), "comment": comment}
     )
 
 
@@ -133,11 +136,6 @@ def api_intake_report_export_study_data(user, study_id):
     )
 
 
-@given('dataset exists', target_fixture="dataset_id")
-def dataset_exists(user):
-    return "dataset id"
-
-
 @then(parsers.parse("study {study} is returned"))
 def study_returned(api_response, study):
     _, body = api_response
@@ -150,3 +148,10 @@ def debug(api_response):
     _, body = api_response
 
     assert 0, body
+
+
+@then(parsers.parse("the result is equivalent to {result}"))
+def result_equivalent_to(api_response, result):
+    _, body = api_response
+
+    assert DeepDiff(json.loads(result), body['data']) == {}

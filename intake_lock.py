@@ -94,6 +94,9 @@ def intake_dataset_lock(ctx, collection, dataset_id):
     tl_objects = tl_info['objects']
     log.write(ctx, tl_info)
 
+    if not is_collection and len(tl_objects) == 0:
+        raise Exception("Dataset \"{}\" in collection {} not found".format(collection, dataset_id))
+
     if is_collection:
         intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_lock", timestamp, False)
     else:
@@ -108,6 +111,9 @@ def intake_dataset_unlock(ctx, collection, dataset_id):
     tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
+
+    if not is_collection and len(tl_objects) == 0:
+        raise Exception("Dataset \"{}\" in collection {} not found".format(collection, dataset_id))
 
     # It is possible that the status of the dataset status has moved on.
     if is_collection:
