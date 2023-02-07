@@ -174,6 +174,11 @@
       "title": "Requested data",
       "description": "In this section, please specify as detailed as possible which data you request from which cohort (Baby & Child or Child & Adolescent) and which wave(s). If applicable, please also list any specific criteria (e.g. only data of children of whom mothers smoked during pregnancy).",
       "properties": {
+        "abstract": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Abstract",
+          "description": "Please provide a summary of your data request."
+        },
         "data": {
           "type": "object",
           "title": "Data"
