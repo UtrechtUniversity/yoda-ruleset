@@ -1404,7 +1404,7 @@ def vault_archive(ctx, actor, coll):
         provenance.log_action(ctx, actor, coll, "archived")
 
         user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
-        ctx.msiDataObjCopy(user_metadata, coll + "/archive/user-metadata.json", "verifyChksum=", 0)
+        ctx.msiDataObjCopy(user_metadata, coll + "/user-metadata.json", "verifyChksum=", 0)
 
         system_metadata = package_system_metadata(ctx, coll)
         data_object.write(ctx, coll + "/system-metadata.json",
