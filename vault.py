@@ -1400,7 +1400,7 @@ def vault_archivable(ctx, coll):
                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
                                          genquery.AS_LIST,
                                          ctx):
-            return (collection.size(ctx, coll) >= 1048)
+            return (collection.size(ctx, coll) >= 10485760)
 
     return False
 
@@ -1480,6 +1480,7 @@ def vault_create_archive(ctx, coll):
         ctx.msiDataObjCopy(coll + "/License.txt", coll + "/archive/License.txt", "verifyChksum=", 0)
 
         ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
+        ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
         ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
 
@@ -1498,9 +1499,7 @@ def vault_extract_archive(ctx, coll):
 
         ctx.msiArchiveExtract(coll + "/archive.tar", coll + "/archive", 0, 0, 0)
         ctx.msiDataObjRename(coll + "/archive/original", coll + "/original", "1", 0)
-        group_name = folder.collection_group_name(ctx, coll)
-        if group_name != "":
-            set_vault_permissions(ctx, group_name, coll, coll + "/original")
+        ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
         ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
         # ctx.msiDataObjUnlink("objPath=" + coll + "/archive.tar++++forceFlag=", 0)
 
