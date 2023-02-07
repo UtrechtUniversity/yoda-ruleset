@@ -12,6 +12,13 @@ vaultArchive {
 		rule_vault_create_archive(*coll, *status);
 		writeLine("stdout", "create archive for *coll: *status");
 	}
+
+	foreach (*row in SELECT COLL_NAME WHERE META_COLL_ATTR_NAME = 'org_archival_status' AND META_COLL_ATTR_VALUE = 'extract') {
+		*coll = *row.COLL_NAME;
+		*status = "";
+		rule_vault_extract_archive(*coll, *status);
+		writeLine("stdout", "extract archive for *coll: *status");
+	}
 }
 
 input null

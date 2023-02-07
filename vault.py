@@ -1530,7 +1530,7 @@ def api_vault_archival_status(ctx, coll):
     return vault_archival_status(ctx, coll)
 
 
-api.make()
+@api.make()
 def api_vault_extract(ctx, coll):
     if vault_archival_status(ctx, coll) != "archived":
         return "Invalid"
