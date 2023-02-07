@@ -48,8 +48,10 @@ __all__ = ['api_vault_submit',
            'api_vault_get_published_packages',
            'api_vault_archive',
            'api_vault_archival_status',
+           'api_vault_extract',
            'rule_vault_archive',
-           'rule_vault_create_archive']
+           'rule_vault_create_archive',
+           'rule_vault_extract_archive']
 
 
 @api.make()
@@ -1398,7 +1400,7 @@ def vault_archivable(ctx, coll):
                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
                                          genquery.AS_LIST,
                                          ctx):
-            return (collection.size(ctx, coll) >= 10485760)
+            return (collection.size(ctx, coll) >= 1048)
 
     return False
 
@@ -1475,8 +1477,7 @@ def vault_create_archive(ctx, coll):
         ctx.msiDataObjRename(coll + "/provenance-log.json", coll + "/archive/provenance-log.json", "0", 0)
         ctx.msiDataObjRename(coll + "/manifest-sha256.txt", coll + "/archive/manifest-sha256.txt", "0", 0)
         ctx.msiDataObjRename(coll + "/original", coll + "/archive/original", "1", 0)
-        ctx.msiDataObjCopy(coll + "/License.txt", coll + "/archive/License.txt", "", 0)
-        ctx.msiDataObjChksum(coll + "/archive/License.txt", "", "")
+        ctx.msiDataObjCopy(coll + "/License.txt", coll + "/archive/License.txt", "verifyChksum=", 0)
 
         ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
         ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
@@ -1485,6 +1486,29 @@ def vault_create_archive(ctx, coll):
         return "Success"
     except Exception:
         avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
+
+        return "Failure"
+
+
+def vault_extract_archive(ctx, coll):
+    if vault_archival_status(ctx, coll) != "extract":
+        return "Invalid"
+    try:
+        avu.set_on_coll(ctx, coll, "org_archival_status", "extracting")
+
+        ctx.msiArchiveExtract(coll + "/archive.tar", coll + "/archive", 0, 0, 0)
+        ctx.msiDataObjRename(coll + "/archive/original", coll + "/original", "1", 0)
+        group_name = folder.collection_group_name(ctx, coll)
+        if group_name != "":
+            set_vault_permissions(ctx, group_name, coll, coll + "/original")
+        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
+        # ctx.msiDataObjUnlink("objPath=" + coll + "/archive.tar++++forceFlag=", 0)
+
+        avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
+
+        return "Success"
+    except Exception:
+        avu.set_on_coll(ctx, coll, "org_archival_status", "extraction failed")
 
         return "Failure"
 
@@ -1506,11 +1530,32 @@ def api_vault_archival_status(ctx, coll):
     return vault_archival_status(ctx, coll)
 
 
+api.make()
+def api_vault_extract(ctx, coll):
+    if vault_archival_status(ctx, coll) != "archived":
+        return "Invalid"
+
+    try:
+        ctx.iiAdminVaultArchive(coll)
+        return "Success"
+    except Exception:
+        return "Failure"
+
+
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_vault_archive(ctx, actor, coll):
+    if vault_archival_status(ctx, coll) == "archived":
+        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
+        return "Success"
+
     return vault_archive(ctx, actor, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_vault_create_archive(ctx, coll):
     return vault_create_archive(ctx, coll)
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_extract_archive(ctx, coll):
+    return vault_extract_archive(ctx, coll)
