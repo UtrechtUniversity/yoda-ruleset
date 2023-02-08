@@ -1401,7 +1401,7 @@ def vault_archival_status(ctx, coll):
 def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
-        provenance.log_action(ctx, actor, coll, "archived")
+        provenance.log_action(ctx, actor, coll, "archive scheduled")
 
         user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
         ctx.msiDataObjCopy(user_metadata, coll + "/user-metadata.json", "verifyChksum=", 0)
@@ -1464,10 +1464,24 @@ def vault_create_archive(ctx, coll):
         ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
         ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
+
+        provenance.log_action(ctx, "system", coll, "archive completed")
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
 
         return "Success"
     except Exception:
+        # attempt to restore package
+        try:
+            ctx.msiDataObjRename(coll + "/archive/original", coll + "/original", "1", 0)
+        except Exception:
+            pass
+        # remove temporary files
+        try:
+            ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
+        except Exception:
+            pass
+
+        provenance.log_action(ctx, "system", coll, "archive failed")
         avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
 
         return "Failure"
