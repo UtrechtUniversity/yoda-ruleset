@@ -6,12 +6,13 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
+import re
 import time
 from datetime import datetime
 
 import genquery
 import irods_types
-from dateutil import relativedelta, parser
+from dateutil import parser, relativedelta
 
 import folder
 import groups

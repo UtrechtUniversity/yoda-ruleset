@@ -523,7 +523,7 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
-    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + random_id + ".json"
+    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
     copy_result = ctx.iiGenericSecureCopy(argv, combiJsonPath, '')
     error = copy_result['arguments'][2]
     if int(error) >= 0:
