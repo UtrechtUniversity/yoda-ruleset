@@ -83,7 +83,7 @@ def vault_archivable(ctx, coll):
                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
                                          genquery.AS_LIST,
                                          ctx):
-            return (collection.size(ctx, coll) >= 1048)
+            return (collection.size(ctx, coll) >= config.data_package_limit)
 
     return False
 
