@@ -32,11 +32,20 @@ def api_vault_data_package(user, vault):
     return body["data"]["items"][0]["name"]
 
 
-@given(parsers.parse("the Yoda vault archive status API is queried on datapackage in {vault}"), target_fixture="api_response")
-def api_vault_system_metadata(user, vault, data_package):
+@given(parsers.parse("the Yoda vault archival status API is queried on datapackage in {vault}"), target_fixture="api_response")
+def api_vault_archival_status(user, vault, data_package):
     return api_request(
         user,
         "vault_archival_status",
+        {"coll": vault + "/" + data_package}
+    )
+
+
+@given(parsers.parse("the Yoda vault archive API is queried on datapackage in {vault}"), target_fixture="api_response")
+def api_vault_archive(user, vault, data_package):
+    return api_request(
+        user,
+        "vault_archive",
         {"coll": vault + "/" + data_package}
     )
 
@@ -52,8 +61,8 @@ def data_package_archivable(user, vault, data_package):
     return body["data"]["archive"]["archivable"]
 
 
-@then(parsers.parse('data package in {vault} archive status is "{status}"'))
-def data_package_status(user, vault, data_package, status):
+@then(parsers.parse('data package in {vault} archival status is "{status}"'))
+def data_package_archival_status(user, vault, data_package, status):
     for _i in range(25):
         _, body = api_request(
             user,
