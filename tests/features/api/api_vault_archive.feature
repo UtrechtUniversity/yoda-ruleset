@@ -42,3 +42,18 @@ Feature: Vault Archive API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault extract
+        Given user datamanager is authenticated
+        And data package exists in <vault>
+        And the Yoda vault extract API is queried on datapackage in <vault>
+        Then the response status code is "200"
+        And data package in <vault> archival status is "extract"
+
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |

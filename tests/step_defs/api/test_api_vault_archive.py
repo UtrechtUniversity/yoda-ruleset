@@ -50,6 +50,15 @@ def api_vault_archive(user, vault, data_package):
     )
 
 
+@given(parsers.parse("the Yoda vault extract API is queried on datapackage in {vault}"), target_fixture="api_response")
+def api_vault_extract(user, vault, data_package):
+    return api_request(
+        user,
+        "vault_extract",
+        {"coll": vault + "/" + data_package}
+    )
+
+
 @then(parsers.parse('the data package in {vault} is archivable'))
 def data_package_archivable(user, vault, data_package):
     _, body = api_request(
@@ -63,7 +72,7 @@ def data_package_archivable(user, vault, data_package):
 
 @then(parsers.parse('data package in {vault} archival status is "{status}"'))
 def data_package_archival_status(user, vault, data_package, status):
-    for _i in range(25):
+    for _i in range(36):
         _, body = api_request(
             user,
             "vault_collection_details",
@@ -72,6 +81,6 @@ def data_package_archival_status(user, vault, data_package, status):
 
         if body["data"]["archive"]["status"] == status:
             return True
-        time.sleep(5)
+        time.sleep(10)
 
     raise AssertionError()
