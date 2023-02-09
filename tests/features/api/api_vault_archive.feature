@@ -2,10 +2,11 @@
 Feature: Vault Archive API
 
     Scenario Outline: Vault archive status
-        Given user researcher is authenticated
+        Given user datamanager is authenticated
         And data package exists in <vault>
         And the Yoda vault archive status API is queried on datapackage in <vault>
         Then the response status code is "200"
+        And the data package in <vault> is archivable
 
         Examples:
             | vault                          |

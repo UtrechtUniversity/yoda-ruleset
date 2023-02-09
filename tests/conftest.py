@@ -66,15 +66,17 @@ def pytest_configure(config):
         csrf, session = login(user["username"], user["password"])
         user_cookies[role] = (csrf, session)
 
-    global datarequest, deposit, intake, run_all
+    global datarequest, deposit, intake, archive, run_all
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
+    archive = config.getoption("--archive")
     run_all = config.getoption("--all")
     if run_all:
         datarequest = True
         deposit = True
         intake = True
+        archive = True
 
 
 def pytest_bdd_apply_tag(tag, function):

@@ -41,7 +41,18 @@ def api_vault_system_metadata(user, vault, data_package):
     )
 
 
-@then(parsers.parse('data package in {vault} status is "{status}"'))
+@then(parsers.parse('the data package in {vault} is archivable'))
+def data_package_archivable(user, vault, data_package):
+    _, body = api_request(
+        user,
+        "vault_collection_details",
+        {"path": vault + "/" + data_package}
+    )
+
+    return body["data"]["archive"]["archivable"]
+
+
+@then(parsers.parse('data package in {vault} archive status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
     for _i in range(25):
         _, body = api_request(
@@ -50,7 +61,7 @@ def data_package_status(user, vault, data_package, status):
             {"path": vault + "/" + data_package}
         )
 
-        if body["data"]["status"] == status:
+        if body["data"]["archive"]["status"] == status:
             return True
         time.sleep(5)
 
