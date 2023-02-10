@@ -117,8 +117,7 @@ def api_datarequest_save(user):
                     "attachments": {
                         "attachments": "Yes"
                     },
-                    "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report in a peer-reviewed journal"
+                    "purpose": "Analyses in order to publish"
                 }
             },
             "draft": True

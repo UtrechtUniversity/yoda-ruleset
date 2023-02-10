@@ -592,6 +592,10 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
+    if not is_collection and len(tl_objects) == 0:
+        return {"proc_status": "NOK",
+                "error_msg": "Dataset does not exist"}
+
     timestamp = int(time.time())  # int(datetime.timestamp(datetime.now()))
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
 
@@ -693,7 +697,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     if len(scanned.split(':')) != 2:
         # Retrieve scannedby/when information in a different way
         dataset = get_dataset_details(ctx, dataset_id, coll)
-        scanned = dataset['datasetCreatedByWhen']
+        scanned = dataset.get('datasetCreatedByWhen', "unknown")
 
     return {"files": files,
             # "is_collection": is_collection,

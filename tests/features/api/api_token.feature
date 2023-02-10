@@ -13,6 +13,11 @@ Feature: Token API
             | api_test_token_4 |
             | api_test_token_5 |
 
+    Scenario: Token delete expired
+        Given user researcher is authenticated
+        And the Yoda token delete expired API is queried
+        Then the response status code is "200"
+
 
     Scenario: Token load
         Given user researcher is authenticated

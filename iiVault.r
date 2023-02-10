@@ -125,8 +125,9 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 # \param[out] err         return the error to calling function
 #
 iiGenericSecureCopy(*argv, *origin_path, *err) {
-        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_path, 1, *cmdExecOut));
-        if (*err < 0) {
+        *intErr = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_path, 1, *cmdExecOut));
+        *err = str(*intErr);
+        if (*intErr < 0 ) {
                 msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
                 msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
                 writeLine("serverLog", "iiGenericSecureCopy: errorcode *err");

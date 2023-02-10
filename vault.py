@@ -257,8 +257,10 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
                                 collection.data_objects(ctx, coll, recursive=True))
 
-    # If JSON is considered unpreservable, ignore yoda-metadata.json.
-    data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
+    # Exclude Yoda metadata files
+    data_names = itertools.ifilter(lambda
+                                   x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x),
+                                   data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))

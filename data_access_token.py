@@ -15,7 +15,8 @@ from util import *
 
 __all__ = ['api_token_generate',
            'api_token_load',
-           'api_token_delete']
+           'api_token_delete',
+           'api_token_delete_expired']
 
 
 @api.make()
@@ -117,6 +118,37 @@ def api_token_delete(ctx, label):
         with conn:
             conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             conn.execute('''DELETE FROM tokens WHERE user = ? AND label = ?''', (user_id, label))
+            result = api.Result.ok()
+    except Exception:
+        print_exc()
+        result = api.Error('DatabaseError', 'Error during deletion from database')
+
+    # Connection object used as context manager only commits or rollbacks transactions,
+    # so the connection object should be closed manually
+    conn.close()
+
+    return result
+
+
+@api.make()
+def api_token_delete_expired(ctx):
+    """Deletes expired tokens of current user
+
+    :param ctx:   Combined type of a callback and rei struct
+
+    :returns: Status of token deletion
+    """
+    if not token_database_initialized():
+        return api.Error('DatabaseError', 'Internal error: token database unavailable')
+
+    user_id = user.name(ctx)
+    conn = sqlite3.connect(config.token_database)
+    result = None
+
+    try:
+        with conn:
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
+            conn.execute('''DELETE FROM tokens WHERE user = ? AND exp_time < ? ''', (user_id, datetime.now()))
             result = api.Result.ok()
     except Exception:
         print_exc()
