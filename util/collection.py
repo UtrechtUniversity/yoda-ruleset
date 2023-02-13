@@ -181,8 +181,8 @@ def copy(ctx, path_org, path_copy):
                                      ctx):
         data_obj = row[0]
         data_object.copy(ctx,
-			 path_org + "/" + data_obj,
-			 path_copy + "/" + data_obj)
+                         path_org + "/" + data_obj,
+                         path_copy + "/" + data_obj)
 
     for row in genquery.row_iterator("COLL_NAME",
                                      "COLL_PARENT_NAME = '{}'".format(path_org),
