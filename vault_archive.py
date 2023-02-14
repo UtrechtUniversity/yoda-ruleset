@@ -8,6 +8,7 @@ import itertools
 import json
 
 import genquery
+import irods_types
 
 import meta
 import notifications
@@ -96,21 +97,21 @@ def vault_archive(ctx, actor, coll):
         provenance.log_action(ctx, actor, coll, "archive scheduled")
 
         user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
-        ctx.msiDataObjCopy(user_metadata, coll + "/user-metadata.json", "verifyChksum=", 0)
+        data_object.copy(ctx, user_metadata, coll + "/user-metadata.json")
 
         system_metadata = package_system_metadata(ctx, coll)
         data_object.write(ctx, coll + "/system-metadata.json",
                           jsonutil.dump(system_metadata))
-        ctx.msiDataObjChksum(coll + "/system-metadata.json", "", "")
+        msi.data_obj_chksum(ctx, coll + "/system-metadata.json", "", irods_types.BytesBuf())
 
         provenance_log = package_provenance_log(ctx, system_metadata)
         data_object.write(ctx, coll + "/provenance-log.json",
                           jsonutil.dump(provenance_log))
-        ctx.msiDataObjChksum(coll + "/provenance-log.json", "", "")
+        msi.data_obj_chksum(ctx, coll + "/provenance-log.json", "", irods_types.BytesBuf())
 
         data_object.write(ctx, coll + "/manifest-sha256.txt",
                           package_manifest(ctx, coll))
-        ctx.msiDataObjChksum(coll + "/manifest-sha256.txt", "", "")
+        msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "", irods_types.BytesBuf())
 
         # notify members of research group
         message = "Data package scheduled for archival"
@@ -145,17 +146,19 @@ def vault_create_archive(ctx, coll):
         avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
 
         # move/copy files to a temporary collection to archive from
-        ctx.msiCollCreate(coll + "/archive", "0", 0)
-        ctx.msiDataObjRename(coll + "/user-metadata.json", coll + "/archive/user-metadata.json", "0", 0)
-        ctx.msiDataObjRename(coll + "/system-metadata.json", coll + "/archive/system-metadata.json", "0", 0)
-        ctx.msiDataObjRename(coll + "/provenance-log.json", coll + "/archive/provenance-log.json", "0", 0)
-        ctx.msiDataObjRename(coll + "/manifest-sha256.txt", coll + "/archive/manifest-sha256.txt", "0", 0)
-        ctx.msiDataObjRename(coll + "/original", coll + "/archive/original", "1", 0)
-        ctx.msiDataObjCopy(coll + "/License.txt", coll + "/archive/License.txt", "verifyChksum=", 0)
+        collection.create(ctx, coll + "/archive")
+        data_object.rename(ctx, coll + "/user-metadata.json", coll + "/archive/user-metadata.json")
+        data_object.rename(ctx, coll + "/system-metadata.json", coll + "/archive/system-metadata.json")
+        data_object.rename(ctx, coll + "/provenance-log.json", coll + "/archive/provenance-log.json")
+        data_object.rename(ctx, coll + "/manifest-sha256.txt", coll + "/archive/manifest-sha256.txt")
+        collection.rename(ctx, coll + "/original", coll + "/archive/original")
+        data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
 
-        ctx.msiArchiveCreate(coll + "/archive.tar", coll + "/archive", 0, 0)
+        ret = msi.archive_create(ctx, coll + "/archive.tar", coll + "/archive", 0, 0)
+        if ret < 0:
+            raise Exception("Archive creation failed: {}".format(ret))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
-        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
+        collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
         provenance.log_action(ctx, "system", coll, "archive completed")
@@ -164,12 +167,12 @@ def vault_create_archive(ctx, coll):
     except Exception:
         # attempt to restore package
         try:
-            ctx.msiDataObjRename(coll + "/archive/original", coll + "/original", "1", 0)
+            collection.rename(ctx, coll + "/archive/original", coll + "/original")
         except Exception:
             pass
         # remove temporary files
         try:
-            ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
+            collection.remove(ctx, coll + "/archive")
         except Exception:
             pass
 
@@ -185,11 +188,13 @@ def vault_extract_archive(ctx, coll):
     try:
         avu.set_on_coll(ctx, coll, "org_archival_status", "extracting")
 
-        ctx.msiArchiveExtract(coll + "/archive.tar", coll + "/archive", 0, 0, 0)
-        ctx.msiDataObjRename(coll + "/archive/original", coll + "/original", "1", 0)
+        ret = msi.archive_extract(ctx, coll + "/archive.tar", coll + "/archive", 0, 0, 0)
+        if ret < 0:
+            raise Exception("Archive extraction failed: {}".format(ret))
+        collection.rename(ctx, coll + "/archive/original", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
-        ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
-        # ctx.msiDataObjUnlink("objPath=" + coll + "/archive.tar++++forceFlag=", 0)
+        collection.remove(ctx, coll + "/archive")
+        # data_object.remove(ctx, coll + "/archive.tar")
 
         avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
         provenance.log_action(ctx, actor, coll, "unarchive completed]")
