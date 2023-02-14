@@ -96,23 +96,6 @@ def vault_archive(ctx, actor, coll):
         # Prepare for archival.
         provenance.log_action(ctx, actor, coll, "archive scheduled")
 
-        user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
-        data_object.copy(ctx, user_metadata, coll + "/user-metadata.json")
-
-        system_metadata = package_system_metadata(ctx, coll)
-        data_object.write(ctx, coll + "/system-metadata.json",
-                          jsonutil.dump(system_metadata))
-        msi.data_obj_chksum(ctx, coll + "/system-metadata.json", "", irods_types.BytesBuf())
-
-        provenance_log = package_provenance_log(ctx, system_metadata)
-        data_object.write(ctx, coll + "/provenance-log.json",
-                          jsonutil.dump(provenance_log))
-        msi.data_obj_chksum(ctx, coll + "/provenance-log.json", "", irods_types.BytesBuf())
-
-        data_object.write(ctx, coll + "/manifest-sha256.txt",
-                          package_manifest(ctx, coll))
-        msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "", irods_types.BytesBuf())
-
         # notify members of research group
         message = "Data package scheduled for archival"
         for row in genquery.row_iterator("COLL_ACCESS_USER_ID",
@@ -145,14 +128,28 @@ def vault_create_archive(ctx, coll):
     try:
         avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
 
-        # move/copy files to a temporary collection to archive from
         collection.create(ctx, coll + "/archive")
-        data_object.rename(ctx, coll + "/user-metadata.json", coll + "/archive/user-metadata.json")
-        data_object.rename(ctx, coll + "/system-metadata.json", coll + "/archive/system-metadata.json")
-        data_object.rename(ctx, coll + "/provenance-log.json", coll + "/archive/provenance-log.json")
-        data_object.rename(ctx, coll + "/manifest-sha256.txt", coll + "/archive/manifest-sha256.txt")
-        collection.rename(ctx, coll + "/original", coll + "/archive/original")
+
+        # create extra archive files
+        system_metadata = package_system_metadata(ctx, coll)
+        data_object.write(ctx, coll + "/archive/system-metadata.json",
+                          jsonutil.dump(system_metadata))
+        msi.data_obj_chksum(ctx, coll + "/archive/system-metadata.json", "", irods_types.BytesBuf())
+        provenance_log = package_provenance_log(ctx, system_metadata)
+        data_object.write(ctx, coll + "/archive/provenance-log.json",
+                          jsonutil.dump(provenance_log))
+        msi.data_obj_chksum(ctx, coll + "/archive/provenance-log.json", "", irods_types.BytesBuf())
+
+        # copy/move existing data
+        user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
+        data_object.copy(ctx, user_metadata, coll + "/archive/user-metadata.json")
         data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
+        collection.rename(ctx, coll + "/original", coll + "/archive/data")
+
+        # create manifest
+        data_object.write(ctx, coll + "/archive/manifest-sha256.txt",
+                          package_manifest(ctx, coll + "/archive"))
+        msi.data_obj_chksum(ctx, coll + "/archive/manifest-sha256.txt", "", irods_types.BytesBuf())
 
         ret = msi.archive_create(ctx, coll + "/archive.tar", coll + "/archive", 0, 0)
         if ret < 0:
@@ -167,7 +164,7 @@ def vault_create_archive(ctx, coll):
     except Exception:
         # attempt to restore package
         try:
-            collection.rename(ctx, coll + "/archive/original", coll + "/original")
+            collection.rename(ctx, coll + "/archive/data", coll + "/original")
         except Exception:
             pass
         # remove temporary files
@@ -191,13 +188,13 @@ def vault_extract_archive(ctx, coll):
         ret = msi.archive_extract(ctx, coll + "/archive.tar", coll + "/archive", 0, 0, 0)
         if ret < 0:
             raise Exception("Archive extraction failed: {}".format(ret))
-        collection.rename(ctx, coll + "/archive/original", coll + "/original")
+        collection.rename(ctx, coll + "/archive/data", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
         collection.remove(ctx, coll + "/archive")
         # data_object.remove(ctx, coll + "/archive.tar")
 
         avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
-        provenance.log_action(ctx, actor, coll, "unarchive completed]")
+        provenance.log_action(ctx, "system", coll, "unarchive completed")
 
         return "Success"
     except Exception:
