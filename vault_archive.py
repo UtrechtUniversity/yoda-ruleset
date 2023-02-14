@@ -165,8 +165,8 @@ def vault_create_archive(ctx, coll):
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
         ctx.msiRmColl(coll + "/archive", "forceFlag=", 0)
 
-        provenance.log_action(ctx, "system", coll, "archive completed")
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
+        provenance.log_action(ctx, "system", coll, "archive completed")
 
         return "Success"
     except Exception:
@@ -200,9 +200,11 @@ def vault_extract_archive(ctx, coll):
         # ctx.msiDataObjUnlink("objPath=" + coll + "/archive.tar++++forceFlag=", 0)
 
         avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
+        provenance.log_action(ctx, actor, coll, "unarchive completed]")
 
         return "Success"
     except Exception:
+        provenance.log_action(ctx, "system", coll, "unarchive failed")
         avu.set_on_coll(ctx, coll, "org_archival_status", "extraction failed")
 
         return "Failure"
@@ -240,6 +242,7 @@ def api_vault_extract(ctx, coll):
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_vault_archive(ctx, actor, coll):
     if vault_archival_status(ctx, coll) == "archived":
+        provenance.log_action(ctx, actor, coll, "unarchive scheduled")
         avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
         return "Success"
 
