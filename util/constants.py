@@ -37,6 +37,9 @@ UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
 UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
 """Metadata for calculated storage month."""
 
+UUMETADATAGROUPSTORAGETOTALS = UUORGMETADATAPREFIX + 'storage_totals'
+"""Metadata key for temporal total group storage (research, vault, revision)"""
+
 UUPROVENANCELOG = UUORGMETADATAPREFIX + 'action_log'
 """Provenance log item."""
 

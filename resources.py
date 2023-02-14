@@ -16,12 +16,9 @@ from util import *
 __all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
-           'api_resource_resource_and_tier_data',
-           'api_resource_tier',
-           'api_resource_get_tiers',
-           'api_resource_save_tier',
-           'api_resource_full_year_group_data',
+           'api_resource_full_year_differentiated_group_storage',
            'rule_resource_store_monthly_storage_statistics',
+           'rule_resource_transform_old_storage_data',
            'rule_resource_research',
            'rule_resource_vault']
 
@@ -75,8 +72,9 @@ def api_resource_browse_group_data(ctx,
     # groups.sort()
     group_list = []
     for group in groups:
-        data_size = get_group_data_size(ctx, group)
-        group_list.append([group, data_size])
+        data_sizes = get_group_data_sizes(ctx, group)
+        # [research_storage, vault_storage, revision_storage, total_storage] 
+        group_list.append([group, data_sizes[3]])
 
     # Sort the list as requested by user
     sort_key = 0
@@ -98,36 +96,155 @@ def api_resource_browse_group_data(ctx,
     return {'total': len(group_list), 'items': group_list_sorted}
 
 
-@api.make()
-def api_resource_save_tier(ctx, resource_name, tier_name):
-    """Save tier for given resource as metadata.
+@rule.make()
+def rule_resource_transform_old_storage_data(ctx):
+    """ Transform all old school storage data collection to the new way.
+    Get rid of tiers.
+    Fact: only one tier was used in all yoda instances
+
+    [cat, research, vault, revisions, total]
 
     :param ctx:           Combined type of a callback and rei struct
-    :param resource_name: Resource that the tier is equipped with
-    :param tier_name:     Name of the tier that is given to the resource
 
     :returns: API status
     """
-    if user.user_type(ctx) != 'rodsadmin':
-        return api.Error('not_allowed', 'Insufficient permissions')
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    current_date = datetime.now().date
 
-    if not resource_exists(ctx, resource_name):
-        return api.Error('not_exists', 'Given resource name is not in use')
+    # Step through all aggregated storage data that was previously recorded monthly
+    # PRECONDITION: only 1 tier is used throughout the entire use of the previously used collection method.
 
-    meta_attr_name = constants.UURESOURCETIERATTRNAME
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
+        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATASTORAGEMONTH),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # group - [category, tier, total]
+        # group - [category, research, vault, revisions, total]
 
-    avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
+        # As only one tier was used, each found total for a group, can directly be set as the total for that group.
+        # No differentation into research / vault / revisions as this information is not present.
+
+        storage_data = jsonutil.parse(row[0])
+        storage_category = storage_data[0]
+        storage_total = int(storage_data[2])
+        storage_month = int(row[1][-2:])
+        storage_group = row[3]
+
+        storage_year = current_year if storage_month <= current_month else current_year - 1
+
+        # set the measurement date on the 15th of any month
+        storage_attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
+        storage_attr_val = '["{}", 0, 0, 0, {}]'.format(storage_category, storage_total)
+
+        # First test if exists - if so => delete:
+        # First delete possibly previously stored data
+        iter2 = genquery.row_iterator(
+            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
+            "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_group, storage_attr_name, storage_attr_val, storage_group),
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
+            log.write(ctx, 'Delete first!')
+
+        # Add data in new manner without tiers
+        avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
+
+        log.write(ctx, 'after addition')
+
+        # ?? Do we delete previously stored monthly totals??
+        #avu.rm_from_group(ctx, row[3], row[1], row[0])
+
+    return 'ok'
 
 
+## CHART!
 @api.make()
-def api_resource_full_year_group_data(ctx, group_name):
-    """Get a full year of monthly storage data starting from current month and look back one year.
+def api_resource_full_year_differentiated_group_storage(ctx, group_name):
+    # def api_resource_full_range ...
+
+    """Return the full range of registered storage data differentiated into vault/research/revision/total
 
     :param ctx:           Combined type of a callback and rei struct
     :param group_name:    Group that is searched for storage data
 
     :returns: API status
     """
+    # Check permissions for this function
+    # Member of this group?
+    member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
+    if member_type not in ['reader', 'normal', 'manager']:
+        category = groups.group_category(ctx, group_name)
+        if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
+            if user.user_type(ctx) != 'rodsadmin':
+                return api.Error('not_allowed', 'Insufficient permissions')
+
+    # full_year_data = {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
+    full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision':[]}
+
+    log.write(ctx, 'start')
+    labels = []
+    research = []
+    vault = []
+    revision = []
+    iter = genquery.row_iterator(
+        "ORDER(META_USER_ATTR_NAME), META_USER_ATTR_VALUE",
+        "USER_NAME = '{}' AND META_USER_ATTR_NAME like '{}%%' AND USER_TYPE = 'rodsgroup'".format(group_name, constants.UUMETADATAGROUPSTORAGETOTALS),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        log.write(ctx, row[1])
+        log.write(ctx, row[0])
+        # 2022_01_15
+        storage_date = row[0][-10:].replace('_', '-')
+        log.write(ctx, storage_date)
+        labels.append(storage_date)
+
+        temp = jsonutil.parse(row[1].replace("'", '"'))
+        # [category, research, vault, revision, total]
+        research.append(temp[1])
+        vault.append(temp[2])
+        revision.append(temp[3])
+
+        # full_year_data['revision'][str(col)] = temp[3]
+        # full_year_data['total'][str(col)] = temp[4]
+        # indication to frontend that any data is present.
+        # No further purpose
+        # total_storage += temp[4]
+
+
+    return {'labels': labels, 'research': research, 'vault': vault, 'revision': revision}
+
+
+    log.write(ctx, '1')
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE, META_USER_ATTR_NAME",
+        "USER_NAME = '{}' AND META_USER_ATTR_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group_name, constants.UUMETADATAGROUPSTORAGETOTALS + '2023_01_15'),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        log.write(ctx, row[1])
+        log.write(ctx, row[0])
+
+    log.write(ctx, 'eind')
+
+
+    
+
+    if group_name == 'research-core-1':
+        full_year_data = {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
+    elif group_name == 'research-core-0':
+        full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision': []}
+    else:
+        full_year_data = {'labels': ['2022-06-01', '2022-06-02'], 'research': [123, 456], 'vault': [666, 777], 'revision': [200, 300]}
+
+
+    return {'spaces': full_year_data}
+
 
     # Check permissions for this function
     # Member of this group?
@@ -138,155 +255,122 @@ def api_resource_full_year_group_data(ctx, group_name):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 
-    current_month = int('%0*d' % (2, datetime.now().month))
-    full_year_data = {}  # all tiers with storage size per month
+    # Data for 1 year for 1 group
     total_storage = 0
+    current_month = int('%0*d' % (2, datetime.now().month))
+    current_year = datetime.now().year
+    full_year_data = {'research': {}, 'vault': {}, 'revision':{}, 'total': {}}
 
-    # per month gather month/tier/storage information from metadata:
-    # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
-    # metadata-attr-val = [category,tier,storage] ... only tier and storage required within this code
-    for counter in range(0, 12):
-        referenceMonth = current_month - counter
-        if referenceMonth < 1:
-            referenceMonth = referenceMonth + 12
+    # Supporting info for the frontend & inialitin of full_year_data
+    # --- deze list wordt flexibel. Loopt terug tot het eerste meetmoment. Dit kan een enorme lijst gaan worden!!!!
 
-        metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
+    # voor een groep:
+    # research [oudst, ... , meest-recent]
+    # vault    [oudst, ... , meest-recent]
+    # revision [oudst, ... , meest-recent]
+    # total    [oudst, ... , meest-recent]
 
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + group_name + "'",
-            genquery.AS_LIST, ctx
-        )
+    # Dit wordt een enorme matrix!
 
-        for row in iter:
-            data = jsonutil.parse(row[0])
-            tierName = data[1]
-            monthly_storage = int(data[2])  # historic scripts sometimes used string
-            total_storage += monthly_storage
-            data_size = ceil((monthly_storage / 1000000000000.0) * 10) / 10  # bytes to terabytes
-            try:
-                full_year_data[tierName][referenceMonth - 1] = data_size
-            except KeyError:
-                full_year_data[tierName] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                full_year_data[tierName][referenceMonth - 1] = data_size
-
-    # Supporting info for the frontend.
+    # months_order verandert mogelijk ook want is een hulp-lijst voor het frontend.
+ 
     months_order = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     for i in range(0, 12):
+        full_year_data['research'][str(i)] = 0
+        full_year_data['vault'][str(i)] = 0
+        full_year_data['revision'][str(i)] = 0
+        full_year_data['total'][str(i)] = 0
+
         storage_month = int(current_month - i)
         # reverse the order of months
         months_order[11 - i] = storage_month + 12 if storage_month < 1 else storage_month
 
-    return {'tiers': full_year_data, 'months': months_order, 'total_storage': total_storage}
+    # total_storage merely to inform frontend that data is available for presentation
+    total_storage = 0
+    # 0 to 11 - storage column indices
+    storage_year = current_year - 1
+    for col in range(12):
+        storage_month = (col + current_month + 1) % 12
+        if storage_month == 0:
+            storage_month = 12
 
+        # Step into current year
+        if storage_month == 1:
+            storage_year +=1 
 
-@api.make()
-def api_resource_get_tiers(ctx):
-    """As rodsadmin get all tiers present."""
-    if user.user_type(ctx) != 'rodsadmin':
-        return api.Error('not_allowed', 'Insufficient permissions')
+        md_storage_date =  constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
 
-    return get_all_tiers(ctx)
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE",
+            "USER_NAME = '{}' AND META_USER_ATTR_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group_name, md_storage_date),
+             genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            temp = jsonutil.parse(row[0])
+            # [category, research, vault, revision, total]
+            full_year_data['research'][str(col)] = temp[1]
+            full_year_data['vault'][str(col)] = temp[2]
+            full_year_data['revision'][str(col)] = temp[3]
+            full_year_data['total'][str(col)] = temp[4]
+            # indication to frontend that any data is present.
+            # No further purpose
+            total_storage += temp[4]
 
-
-@api.make()
-def api_resource_tier(ctx, res_name):
-    """Get the tier belonging to the given resource.
-
-    :param ctx:      Combined type of a callback and rei struct
-    :param res_name: Resource that the tier is equipped with
-
-    :returns: API status
-    """
-    if user.user_type(ctx) != 'rodsadmin':
-        return api.Error('not_allowed', 'Insufficient permissions')
-
-    return get_tier_by_resource_name(ctx, res_name)
-
-
-@api.make()
-def api_resource_resource_and_tier_data(ctx):
-    """List al resources and its tier data."""
-    if user.user_type(ctx) != 'rodsadmin':
-        return api.Error('not_allowed', 'Insufficient permissions')
-
-    resourceList = list()
-
-    iter = genquery.row_iterator(
-        "RESC_ID, RESC_NAME",
-        "",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        resourceId = row[0]
-        resourceName = row[1]
-        tierName = get_tier_by_resource_name(ctx, resourceName)
-        resourceList.append({'name': resourceName,
-                             'id': resourceId,
-                             'tier': tierName})
-
-    # Sort on resource name.
-    resourceListSorted = sorted(resourceList, key=lambda d: d['name'])
-
-    return resourceListSorted
+    return {'spaces': full_year_data, 'months': months_order, 'total_storage': total_storage}
 
 
 @api.make()
 def api_resource_category_stats(ctx):
     """Collect storage stats of last month for categories.
-
-    Storage is summed up for each category/tier combination.
-    Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+    Storage is summed up for each category.
 
     :param ctx:      Combined type of a callback and rei struct
 
     :returns: Storage stats of last month for a list of categories
     """
+
     categories = get_categories(ctx)
     month = '%0*d' % (2, datetime.now().month)
-    metadataName = constants.UUMETADATASTORAGEMONTH + month
 
     storageDict = {}
 
+    # Dit gaat over de huidige stand van zaken.
+    # Dus denken vanuit de huidige categorien en de daaronder vallende groepen
+    # Per groep het meest recente bepaalde storage total ophalen.
+
+    # Go through current groups of current categories.
+    # This function has no historic value so it is allowed to do so 
     for category in categories:
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            # Loop through groups per category and sum per tier the storage data.
-            attrValue = row[0]
+        log.write(ctx, category)
+        storageDict[category] = 0
 
-            temp = jsonutil.parse(attrValue)
-            category = temp[0]
-            tier = temp[1]
-            storage = ceil((temp[2] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+        # for all groups in category
+        groups = get_groups_on_categories(ctx, [category])
+        for group in groups:
+            if group.startswith(('research', 'deposit')):
+                # Only check the most recent storage measurement
+                iter = list(genquery.Query(ctx, ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+                    "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, group),
+                    offset=0, limit=1, output=genquery.AS_LIST))
+                for row in iter:
+                    temp = jsonutil.parse(row[0])
+                    log.write(ctx, row[1])
+                    log.write(ctx, row[0])
+                    log.write(ctx, group)
+                    log.write(ctx, temp)
+                    storageDict[category] += temp[4] 
 
-            try:
-                storageDict[category][tier] = storageDict[category][tier] + storage
-            except KeyError:
-                # if key error, can be either category or category/tier combination is missing
-                try:
-                    storageDict[category][tier] = storage
-                except KeyError:
-                    storageDict[category] = {tier: storage}
-
-    # prepare for json output, convert storageDict into dict with keys
+    # Now go through all totals 
     allStorage = []
+    for category in categories:
+        storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+        allStorage.append({'category': category,
+                           'storage': storage})
 
-    for category in storageDict:
-        for tier in storageDict[category]:
-            allStorage.append({'category': category,
-                               'tier': tier,
-                               'storage': str(storageDict[category][tier])})
+    return sorted(allStorage, key=lambda d: d['category'])
 
-    # Sort on category name.
-    allStorageSorted = sorted(allStorage, key=lambda d: d['category'])
 
-    return allStorageSorted
-
+## EXPORT
 
 @api.make()
 def api_resource_monthly_category_stats(ctx):
@@ -296,80 +380,81 @@ def api_resource_monthly_category_stats(ctx):
     - Category
     - Subcategory
     - Groupname
-    - Tier
-    - 12 columns, one per month, with used storage count in bytes
+    - 12 columns ????  one per month, with used storage count in bytes
+
+    - nu per datum dus weergeven???
 
     :param ctx:  Combined type of a callback and rei struct
 
     :returns: API status
     """
-    current_month = int('%0*d' % (2, datetime.now().month))
     categories = get_categories(ctx)
-    storageDict = {}
 
-    # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
-    # There always is a maximum of one year of history of storage data
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    # Two seperate steps
+    # First create dict with all groups
+    # Then find all storage per date and add to group storage
+    # A group always has 1 distinct category and 1 distinct subcateory
+
+    group_storage = {}
+    group_catdata = {}
+
     for category in categories:
         groupToSubcategory = {}
 
+        # We now have a daily continuum of data instead of a circular buffer.
+        # We are going to limit this by simply selecting 12 months
+
+        # for all groups in category
+        groups = get_groups_on_categories(ctx, [category])
+        for group in groups:
+            if group.startswith(('research', 'deposit')):
+
+                # This has to follow resolution choosen for Yoda instance
+                group_storage[group] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]    # dit wordt net zo lang als terugkijkend tot het verste meetpunt??
+                group_catdata[group] = {'category': category, 
+                                        'subcategory': get_group_category_info(ctx, group)['subcategory']}
+
+    # we nog have a full table with zero values that needs to be filled with actual storage data
+
+    storage_year = current_year - 1
+    for col in range(12):
+        log.write(ctx, 'EXP')
+        log.write(ctx, col)
+        storage_month = (col + current_month + 1) % 12
+        if storage_month == 0:
+            storage_month = 12
+
+        if storage_month == 1:
+            storage_year +=1
+
+        # Liefst niet met voor elke group / datum combinatie een 
+        # hier staat nu een query die in 1 keer voor een heleboel groepen de storage voor een specifieke datum kan ophalen.
+        # => een sterk beperkt aantal queries dus!!
+        # Maar met veranderende instance-afhankelijke resoluties 
+
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME like  '" + constants.UUMETADATASTORAGEMONTH + "%'",
+            "META_USER_ATTR_NAME = '" + constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17'".format(storage_year, '%0*d' % (2,storage_month)),
             genquery.AS_LIST, ctx
         )
-
         for row in iter:
-            attrValue = row[0]
-            month = row[1]
-            month = int(month[-2:])  # the month storage data is about, is taken from the attr_name of the AVU
-            groupName = row[3]
+            if row[2].startswith(('research', 'deposit')):
+                temp = jsonutil.parse(row[0])
+                # [category, research, vault, revision, total]
+                group_storage[row[3]][col] = temp[4]
 
-            # Determine subcategory on groupName
-            try:
-                subcategory = groupToSubcategory[groupName]
-            except KeyError:
-                catInfo = get_group_category_info(ctx, groupName)
-                subcategory = catInfo['subcategory']
-                groupToSubcategory[groupName] = subcategory
+    # All storage for 1 year back
+    all_storage = []
+    for group in group_storage:
+        all_storage.append({'category': group_catdata[group]['category'],
+                            'subcategory': group_catdata[group]['subcategory'],
+                            'groupname': group,
+                            'storage': group_storage[group]})
 
-            temp = jsonutil.parse(attrValue)
-            category = temp[0]
-            tier = temp[1]
-            storage = int(float(temp[2]))
-
-            referenceMonth = current_month - month
-            if referenceMonth < 0:
-                referenceMonth = abs(referenceMonth)
-            else:
-                referenceMonth = abs(referenceMonth - 12)
-
-            if not storageDict.get(category):
-                storageDict[category] = {}
-            if not storageDict[category].get(subcategory):
-                storageDict[category][subcategory] = {}
-            if not storageDict[category][subcategory].get(groupName):
-                storageDict[category][subcategory][groupName] = {}
-
-            try:
-                storageDict[category][subcategory][groupName][tier][referenceMonth - 1] = storage
-            except KeyError:
-                storageDict[category][subcategory][groupName][tier] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                storageDict[category][subcategory][groupName][tier][referenceMonth - 1] = storage
-
-    # prepare for json output, convert storageDict into dict with keys
-    allStorage = []
-
-    for category in storageDict:
-        for subcategory in storageDict[category]:
-            for groupName in storageDict[category][subcategory]:
-                for tier in storageDict[category][subcategory][groupName]:
-                    allStorage.append({'category': category,
-                                       'subcategory': subcategory,
-                                       'groupname': groupName,
-                                       'tier': tier,
-                                       'storage': storageDict[category][subcategory][groupName][tier]})
-
-    return allStorage
+    return all_storage
 
 
 def get_group_category_info(ctx, groupName):
@@ -438,40 +523,17 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
     return groups
 
 
-def get_tier_by_resource_name(ctx, res_name):
-    """Get Tiername, if present, for given resource.
-
-    If not present, fall back to default tier name.
-
-    :param ctx:      Combined type of a callback and rei struct
-    :param res_name: Name of the resource to get the tier name for
-
-    :returns: Tiername for given resource
-    """
-    tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
-
-    # find (possibly present) tier for this resource
-    iter = genquery.row_iterator(
-        "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
-        "RESC_NAME = '{}' AND META_RESC_ATTR_NAME = '{}'"
-        .format(res_name, constants.UURESOURCETIERATTRNAME),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        tier = row[3]
-
-    return tier
-
-
 @rule.make()
 def rule_resource_store_monthly_storage_statistics(ctx):
-    """For all categories, known store all found storage data for each group belonging to these categories.
+    #@rule.make()
+    #def rule_resource_store_group_storage_statistics(ctx):
+    """  
+    !!! Function has to be renamed as no longer 
 
-    Store as metadata on group level holding
-    1) category of group on probe date - this can change
-    2) tier
-    3) actual calculated storage for the group
+
+    For all categories present, store all found storage data for each group belonging to these categories.
+
+    Store as metadata on group level as [category, research, vault, revision, total]
 
     :param ctx:  Combined type of a callback and rei struct
 
@@ -479,24 +541,18 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     """
     zone = user.zone(ctx)
 
-    # Get storage month with leading 0
     dt = datetime.today()
-    md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
+    md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
-    # Determine previous month for storage date when actual probe is going wrong
-    # today = datetime.today()
-    first = dt.replace(day=1)
-    last_month = first - timedelta(days=1)
-    md_storage_last_month = constants.UUMETADATASTORAGEMONTH + last_month.strftime("%m")
-
-    # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
+    # Delete previous data for this perticular day if present at all
+    # Each group should only have one aggrageted totals attribute per day
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE, USER_GROUP_NAME",
-        "META_USER_ATTR_NAME = '" + md_storage_month + "'",
+        "META_USER_ATTR_NAME = '" + md_storage_date + "'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        avu.rm_from_group(ctx, row[1], md_storage_month, row[0])
+        avu.rm_from_group(ctx, row[1], md_storage_date, row[0])
 
     # Get all categories
     categories = []
@@ -508,19 +564,13 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     for row in iter:
         categories.append(row[0])
 
-    # Get all tiers - Standard must be present
-    tiers = get_all_tiers(ctx)
-
-    # List of resources and their corresponding tiers (for easy access further)
-    resource_tiers = {}
-    for resource in get_resources(ctx):
-        resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
-
     # Steps to be taken per group
     # The software distinguishes 2 separate areas.
     # 1) VAULT AREA
     # 2) RESEARCH AREA - which includes research and deposit groups
+    # 3) REVISION AREA
     steps = ['research', 'vault']
+    total = {'research': 0, 'vault': 0, 'revision': 0}
 
     # Loop through all categories
     for category in categories:
@@ -529,19 +579,16 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
         for group in groups:
             # COLLECT GROUP DATA
-            # Per group collect totals for category and tier
-
-            # Loop though all tiers and set storage to 0
-            tier_storage = {}
-            for tier in tiers:
-                tier_storage[tier] = 0
-
-            # If anyting goes wrong during collection or storing of storage data for this group
-            # -> for current group fall back on data of previous month
-            try:
-                # Research and vault area
+            # Per group collect totals for vault, research and revision
+            log.write(ctx, 'GROUP: ' + group)
+            # only look at research or deposit groups
+            if group.startswith(('research', 'deposit')):
+                # RESEARCH AND VAULT SPACE
                 log.write(ctx, 'Research and vault area starting for group: ' + group)
                 for step in steps:
+                    log.write(ctx, step)
+                    total[step] = 0
+
                     if step == 'research':
                         path = '/' + zone + '/home/' + group
                     else:
@@ -563,104 +610,51 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                             whereClause = "COLL_NAME like '" + path + "/%'"
 
                         iter = genquery.row_iterator(
-                            "SUM(DATA_SIZE), RESC_NAME",
+                            "SUM(DATA_SIZE)",
                             whereClause,
                             genquery.AS_LIST, ctx
                         )
 
                         for row in iter:
-                            # sum up for this tier
-                            the_tier = resource_tiers[row[1]]
-                            tier_storage[the_tier] += int(row[0])
-                log.write(ctx, 'Research and vault area complete for group: ' + group)
+                            log.write(ctx, row)
+                            if row[0] != '':
+                                total[step] += int(row[0])
 
-                # Revision area
-                log.write(ctx, 'Revision area starting for group: ' + group)
+                # REVISION SPACE
+                total['revision'] = 0
                 revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
                 whereClause = "COLL_NAME like '" + revision_path + "/%'"
                 iter = genquery.row_iterator(
-                    "SUM(DATA_SIZE), RESC_NAME",
+                    "SUM(DATA_SIZE)",
                     whereClause,
                     genquery.AS_LIST, ctx
                 )
                 for row in iter:
-                    # sum up for this tier
-                    the_tier = resource_tiers[row[1]]
-                    tier_storage[the_tier] += int(row[0])
-                log.write(ctx, 'Revision area completed for group: ' + group)
+                    log.write(ctx, row)
+                    if row[0] != '':
+                        total['revision'] += int(row[0])
+
 
                 # STORE GROUP DATA
-                # Write total storages as metadata on current group for any tier
-                # val = [category, tier, storage]
-                for tier in tiers:
-                    log.write(ctx, 'Storing for group: ' + group)
-                    # constructed this way to be backwards compatible (not using json.dump)
-                    val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
-                    log.write(ctx, val)
-                    # write as metadata (kv-pair) to current group
-                    avu.associate_to_group(ctx, group, md_storage_month, val)
+                # STORAGE_TOTAL_REVISION_2023_01_09
+                # constructed this way to be backwards compatible (not using json.dump)
+
+                # [category, research, vault, revision, total]
+                storage_total = total['research'] + total['vault'] + total['revision']
+                storage_val = "[\"{}\", {}, {}, {}, {}]".format(category, total['research'], total['vault'], total['revision'], storage_total)
+                log.write(ctx, storage_val)
+
+                # Only store if storage_total>0???
+                # Sla maar wel op want anders niet duidelijk of het gebeurd is
+
+                # write as metadata (kv-pair) to current group
+                avu.associate_to_group(ctx, group, md_storage_date, storage_val)
+
                 log.write(ctx, 'All group data collected and stored for current month')
-
-            except Exception:
-                log.write(ctx, 'ERROR COLLECTING OR SAVING GROUP STORAGE DATA')
-                log.write(ctx, 'Copy prev month storage to current month')
-
-                # Something went wrong during collection. Possibly some newly collected data has been added to groups already.
-                # Delete this and fall back on data of the previous month
-                iter2 = genquery.row_iterator(
-                    "META_USER_ATTR_VALUE, USER_GROUP_NAME",
-                    "META_USER_ATTR_NAME = '" + md_storage_month + "' AND USER_NAME = '" + group + "'",
-                    genquery.AS_LIST, ctx
-                )
-                for row2 in iter2:
-                    avu.rm_from_group(ctx, row2[1], md_storage_month, row2[0])
-
-                # set current data to storage amount of last month
-                iter2 = genquery.row_iterator(
-                    "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-                    "META_USER_ATTR_NAME = '" + md_storage_last_month + "' AND USER_NAME = '" + group + "'",
-                    genquery.AS_LIST, ctx
-                )
-                for row2 in iter2:
-                    storage_prev_month = row2[0]
-                    # Add all previous month storage amounts to current month
-                    avu.associate_to_group(ctx, group, md_storage_month, storage_prev_month)
-                    log.write(ctx, 'Previous data associated to group ' + group + ' month: ' + md_storage_month + ' val: ' + storage_prev_month)
+            else:  # except Exception:
+                log.write(ctx, 'SKIPPING GROUP AS NOT prefixed with either research- or deposit-')
 
     return 'ok'
-
-
-def resource_exists(ctx, resource_name):
-    """Check whether given resource actually exists."""
-    iter = genquery.row_iterator(
-        "RESC_ID, RESC_NAME",
-        "RESC_NAME = '{}'"
-        .format(resource_name),
-        genquery.AS_LIST, ctx
-    )
-
-    for _row in iter:
-        return True
-
-    return False
-
-
-def get_all_tiers(ctx):
-    """List all tiers currently present including 'Standard'."""
-    tiers = [constants.UUDEFAULTRESOURCETIER]
-
-    iter = genquery.row_iterator(
-        "META_RESC_ATTR_VALUE",
-        "META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        if not row[0] == constants.UUDEFAULTRESOURCETIER:
-            if row[0] not in tiers:
-                tiers.append(row[0])
-
-    return tiers
 
 
 def get_categories(ctx):
@@ -715,36 +709,30 @@ def get_groups_on_category(ctx, category):
     return groups
 
 
-def get_resources(ctx):
-    """Get all resources."""
-    resources = []
-    iter = genquery.row_iterator(
-        "RESC_NAME",
-        "",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        resources.append(row[0])
+def get_group_data_sizes(ctx, group_name, ref_date=''):
+    """
+    Get nearest (earlier) group data sizes and return as a list of values [research_storage, vault_storage, revision_storage, total_storage]
+    If no reference date present return closest to today
+    ref_date written as 'YYYY-MM-DD'
+    """
+    # Get most recent information present for this group
+    if ref_date:
+        md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + ref_date
+    else:
+        dt = datetime.today()
+        md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
-    return resources
+    iter = genquery.Query(ctx, 
+        ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+        "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
+        offset=0, limit=1, output=genquery.AS_LIST)
 
+    for row in list(iter):
+        temp = jsonutil.parse(row[0])
+        # [research_storage, vault_storage, revision_storage, total_storage]
+        return [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
 
-def get_group_data_size(ctx, group_name):
-    metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-        "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + group_name + "'",
-        genquery.AS_LIST, ctx
-    )
-
-    data_size = 0
-    for row in iter:
-        data = row[0]
-        temp = jsonutil.parse(data)
-        data_size = data_size + int(float(temp[2]))  # no construction for summation required in this case
-
-    return data_size
+    return [0, 0, 0, 0]
 
 
 def rule_resource_research(rule_args, callback, rei):
