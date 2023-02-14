@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import binascii
 import itertools
 import json
 
@@ -23,17 +22,10 @@ __all__ = ['api_vault_archive',
            'rule_vault_extract_archive']
 
 
-def decode_checksum(checksum):
-    if checksum is None:
-        return "0"
-    else:
-        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
-
-
 def package_manifest(ctx, coll):
     length = len(coll) + 1
     return "\n".join([
-        decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
+        data_object.decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
         for row in itertools.chain(
             genquery.row_iterator("COLL_NAME, ORDER(DATA_NAME), DATA_CHECKSUM",
                                   "COLL_NAME = '{}'".format(coll),
