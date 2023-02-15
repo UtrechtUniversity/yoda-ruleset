@@ -120,24 +120,14 @@ def vault_archive(ctx, actor, coll):
         # Prepare for archival.
         provenance.log_action(ctx, actor, coll, "archive scheduled")
 
-        # notify members of research group
+        # Send notifications to datamanagers.
+        datamanagers = folder.get_datamanagers(ctx, coll)
         message = "Data package scheduled for archival"
-        for row in genquery.row_iterator("COLL_ACCESS_USER_ID",
-                                         "COLL_NAME = '{}'".format(coll),
-                                         genquery.AS_LIST,
-                                         ctx):
-            id = row[0]
-            for row2 in genquery.row_iterator("USER_NAME",
-                                              "USER_ID = '{}'".format(id),
-                                              genquery.AS_LIST,
-                                              ctx):
-                name = row2[0]
-                if name.startswith("research-"):
-                    for member in group.members(ctx, name):
-                        member = '{}#{}'.format(*member)
-                        notifications.set(ctx, actor, member, coll, message)
+        for datamanager in datamanagers:
+            datamanager = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, actor, datamanager, coll, message)
 
-        # ready to be archived
+        # Ready to be archived.
         avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
 
         return "Success"
@@ -200,6 +190,27 @@ def vault_create_archive(ctx, coll):
         provenance.log_action(ctx, "system", coll, "archive failed")
         avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
 
+        return "Failure"
+
+
+def vault_unarchive(ctx, actor, coll):
+    try:
+        # Prepare for unarchival.
+        provenance.log_action(ctx, actor, coll, "unarchive scheduled")
+
+        # Send notifications to datamanagers.
+        datamanagers = folder.get_datamanagers(ctx, coll)
+        message = "Data package scheduled for unarchival"
+        for datamanager in datamanagers:
+            datamanager = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, actor, datamanager, coll, message)
+
+        # Ready to be unarchived.
+        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
+
+        return "Success"
+
+    except Exception:
         return "Failure"
 
 
@@ -281,9 +292,7 @@ def api_vault_extract(ctx, coll):
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_vault_archive(ctx, actor, coll):
     if vault_archival_status(ctx, coll) == "archived":
-        provenance.log_action(ctx, actor, coll, "unarchive scheduled")
-        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
-        return "Success"
+        return vault_unarchive(ctx, actor, coll)
 
     return vault_archive(ctx, actor, coll)
 
