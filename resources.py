@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
-from datetime import timedelta
 from math import ceil
 
 import genquery
@@ -73,7 +72,7 @@ def api_resource_browse_group_data(ctx,
     group_list = []
     for group in groups:
         data_sizes = get_group_data_sizes(ctx, group)
-        # [research_storage, vault_storage, revision_storage, total_storage] 
+        # [research_storage, vault_storage, revision_storage, total_storage]
         group_list.append([group, data_sizes[3]])
 
     # Sort the list as requested by user
@@ -110,7 +109,6 @@ def rule_resource_transform_old_storage_data(ctx):
     """
     current_month = datetime.now().month
     current_year = datetime.now().year
-    current_date = datetime.now().date
 
     # Step through all aggregated storage data that was previously recorded monthly
     # PRECONDITION: only 1 tier is used throughout the entire use of the previously used collection method.
@@ -143,7 +141,7 @@ def rule_resource_transform_old_storage_data(ctx):
         # First delete possibly previously stored data
         iter2 = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_group, storage_attr_name, storage_attr_val, storage_group),
+            "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_attr_name, storage_attr_val, storage_group),
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
@@ -156,12 +154,12 @@ def rule_resource_transform_old_storage_data(ctx):
         log.write(ctx, 'after addition')
 
         # ?? Do we delete previously stored monthly totals??
-        #avu.rm_from_group(ctx, row[3], row[1], row[0])
+        # avu.rm_from_group(ctx, row[3], row[1], row[0])
 
     return 'ok'
 
 
-## CHART!
+# CHART!
 @api.make()
 def api_resource_full_year_differentiated_group_storage(ctx, group_name):
     # def api_resource_full_range ...
@@ -182,8 +180,8 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 
-    # full_year_data = {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
-    full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision':[]}
+    # example: {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
+    full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision': []}
 
     log.write(ctx, 'start')
     labels = []
@@ -203,120 +201,14 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
         log.write(ctx, storage_date)
         labels.append(storage_date)
 
+        # Make compatible with json strings containing ' coming from previous erroneous storage conversion
+        # [category, research, vault, revision, total] 
         temp = jsonutil.parse(row[1].replace("'", '"'))
-        # [category, research, vault, revision, total]
         research.append(temp[1])
         vault.append(temp[2])
         revision.append(temp[3])
 
-        # full_year_data['revision'][str(col)] = temp[3]
-        # full_year_data['total'][str(col)] = temp[4]
-        # indication to frontend that any data is present.
-        # No further purpose
-        # total_storage += temp[4]
-
-
     return {'labels': labels, 'research': research, 'vault': vault, 'revision': revision}
-
-
-    log.write(ctx, '1')
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE, META_USER_ATTR_NAME",
-        "USER_NAME = '{}' AND META_USER_ATTR_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group_name, constants.UUMETADATAGROUPSTORAGETOTALS + '2023_01_15'),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        log.write(ctx, row[1])
-        log.write(ctx, row[0])
-
-    log.write(ctx, 'eind')
-
-
-    
-
-    if group_name == 'research-core-1':
-        full_year_data = {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
-    elif group_name == 'research-core-0':
-        full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision': []}
-    else:
-        full_year_data = {'labels': ['2022-06-01', '2022-06-02'], 'research': [123, 456], 'vault': [666, 777], 'revision': [200, 300]}
-
-
-    return {'spaces': full_year_data}
-
-
-    # Check permissions for this function
-    # Member of this group?
-    member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
-    if member_type not in ['reader', 'normal', 'manager']:
-        category = groups.group_category(ctx, group_name)
-        if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
-            if user.user_type(ctx) != 'rodsadmin':
-                return api.Error('not_allowed', 'Insufficient permissions')
-
-    # Data for 1 year for 1 group
-    total_storage = 0
-    current_month = int('%0*d' % (2, datetime.now().month))
-    current_year = datetime.now().year
-    full_year_data = {'research': {}, 'vault': {}, 'revision':{}, 'total': {}}
-
-    # Supporting info for the frontend & inialitin of full_year_data
-    # --- deze list wordt flexibel. Loopt terug tot het eerste meetmoment. Dit kan een enorme lijst gaan worden!!!!
-
-    # voor een groep:
-    # research [oudst, ... , meest-recent]
-    # vault    [oudst, ... , meest-recent]
-    # revision [oudst, ... , meest-recent]
-    # total    [oudst, ... , meest-recent]
-
-    # Dit wordt een enorme matrix!
-
-    # months_order verandert mogelijk ook want is een hulp-lijst voor het frontend.
- 
-    months_order = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    for i in range(0, 12):
-        full_year_data['research'][str(i)] = 0
-        full_year_data['vault'][str(i)] = 0
-        full_year_data['revision'][str(i)] = 0
-        full_year_data['total'][str(i)] = 0
-
-        storage_month = int(current_month - i)
-        # reverse the order of months
-        months_order[11 - i] = storage_month + 12 if storage_month < 1 else storage_month
-
-    # total_storage merely to inform frontend that data is available for presentation
-    total_storage = 0
-    # 0 to 11 - storage column indices
-    storage_year = current_year - 1
-    for col in range(12):
-        storage_month = (col + current_month + 1) % 12
-        if storage_month == 0:
-            storage_month = 12
-
-        # Step into current year
-        if storage_month == 1:
-            storage_year +=1 
-
-        md_storage_date =  constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
-
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE",
-            "USER_NAME = '{}' AND META_USER_ATTR_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group_name, md_storage_date),
-             genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            temp = jsonutil.parse(row[0])
-            # [category, research, vault, revision, total]
-            full_year_data['research'][str(col)] = temp[1]
-            full_year_data['vault'][str(col)] = temp[2]
-            full_year_data['revision'][str(col)] = temp[3]
-            full_year_data['total'][str(col)] = temp[4]
-            # indication to frontend that any data is present.
-            # No further purpose
-            total_storage += temp[4]
-
-    return {'spaces': full_year_data, 'months': months_order, 'total_storage': total_storage}
 
 
 @api.make()
@@ -330,7 +222,6 @@ def api_resource_category_stats(ctx):
     """
 
     categories = get_categories(ctx)
-    month = '%0*d' % (2, datetime.now().month)
 
     storageDict = {}
 
@@ -339,10 +230,12 @@ def api_resource_category_stats(ctx):
     # Per groep het meest recente bepaalde storage total ophalen.
 
     # Go through current groups of current categories.
-    # This function has no historic value so it is allowed to do so 
+    # This function has no historic value so it is allowed to do so
     for category in categories:
         log.write(ctx, category)
-        storageDict[category] = 0
+        #storageDict[category] = 0
+
+        storageDict[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
 
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
@@ -358,20 +251,23 @@ def api_resource_category_stats(ctx):
                     log.write(ctx, row[0])
                     log.write(ctx, group)
                     log.write(ctx, temp)
-                    storageDict[category] += temp[4] 
 
-    # Now go through all totals 
+                    storageDict[category]['total'] += temp[4]
+                    storageDict[category]['research'] += temp[1]
+                    storageDict[category]['vault'] += temp[2]
+                    storageDict[category]['revision'] += temp[3]
+
+    # Now go through all totals
     allStorage = []
     for category in categories:
-        storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+        # storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
         allStorage.append({'category': category,
-                           'storage': storage})
+                           'storage': storageDict[category]})
 
     return sorted(allStorage, key=lambda d: d['category'])
 
 
-## EXPORT
-
+# EXPORT
 @api.make()
 def api_resource_monthly_category_stats(ctx):
     """Collect storage stats for all twelve months based upon categories a user is datamanager of.
@@ -380,73 +276,74 @@ def api_resource_monthly_category_stats(ctx):
     - Category
     - Subcategory
     - Groupname
-    - 12 columns ????  one per month, with used storage count in bytes
-
-    - nu per datum dus weergeven???
+    - n columns - one per month, with used storage count in bytes
 
     :param ctx:  Combined type of a callback and rei struct
 
     :returns: API status
     """
-    categories = get_categories(ctx)
-
     current_month = datetime.now().month
     current_year = datetime.now().year
 
-    # Two seperate steps
-    # First create dict with all groups
-    # Then find all storage per date and add to group storage
-    # A group always has 1 distinct category and 1 distinct subcateory
+    # find minimal registered date registered.
+    iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
+        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+        offset=0, limit=1, output=genquery.AS_LIST))
+    for row in iter:
+        min_year = int(row[0][-10:-6])
+        min_month = int(row[0][-5:-3])
 
+    # Prepare storage data
+    # Create dict with all groups that will contain list of storage values corresponding to complete range from minimal date till now.
     group_storage = {}
+
+    # All storage periods (yyyy-mm) for frontend
+    storage_dates = []
+
+    # A group always has 1 distinct category and 1 distinct subcateory
     group_catdata = {}
 
+    # Initialisation
+    categories = get_categories(ctx)
     for category in categories:
-        groupToSubcategory = {}
-
-        # We now have a daily continuum of data instead of a circular buffer.
-        # We are going to limit this by simply selecting 12 months
-
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
         for group in groups:
             if group.startswith(('research', 'deposit')):
-
-                # This has to follow resolution choosen for Yoda instance
-                group_storage[group] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]    # dit wordt net zo lang als terugkijkend tot het verste meetpunt??
-                group_catdata[group] = {'category': category, 
+                group_storage[group] = []
+                group_catdata[group] = {'category': category,
                                         'subcategory': get_group_category_info(ctx, group)['subcategory']}
 
-    # we nog have a full table with zero values that needs to be filled with actual storage data
+    # Loop from earliest data to now and find storage for each group/date combination
+    while min_month != current_month or min_year != current_year:
+        date_reference = "{}_{}".format(min_year, '%0*d' % (2,min_month))
+        storage_dates.append(date_reference)
 
-    storage_year = current_year - 1
-    for col in range(12):
-        log.write(ctx, 'EXP')
-        log.write(ctx, col)
-        storage_month = (col + current_month + 1) % 12
-        if storage_month == 0:
-            storage_month = 12
+        for category in categories:
+            # for all groups in category
+            groups = get_groups_on_categories(ctx, [category])
+            for group in groups:
+                if group.startswith(('research', 'deposit')):
+                    storage = get_group_data_sizes(ctx, group, date_reference)
+                    group_storage[group].append(storage[3])
 
-        if storage_month == 1:
-            storage_year +=1
+        # Next time period based on month
+        min_month += 1
+        if min_month > 12:
+            min_month = 1
+            min_year += 1
 
-        # Liefst niet met voor elke group / datum combinatie een 
-        # hier staat nu een query die in 1 keer voor een heleboel groepen de storage voor een specifieke datum kan ophalen.
-        # => een sterk beperkt aantal queries dus!!
-        # Maar met veranderende instance-afhankelijke resoluties 
+    date_reference = "{}_{}".format(min_year, '%0*d' % (2,min_month))
+    storage_dates.append(date_reference)
 
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_NAME = '" + constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17'".format(storage_year, '%0*d' % (2,storage_month)),
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            if row[2].startswith(('research', 'deposit')):
-                temp = jsonutil.parse(row[0])
-                # [category, research, vault, revision, total]
-                group_storage[row[3]][col] = temp[4]
+    for category in categories:
+        # for all groups in category
+        groups = get_groups_on_categories(ctx, [category])
+        for group in groups:
+            if group.startswith(('research', 'deposit')):
+                storage = get_group_data_sizes(ctx, group, date_reference)
+                group_storage[group].append(storage[3])
 
-    # All storage for 1 year back
     all_storage = []
     for group in group_storage:
         all_storage.append({'category': group_catdata[group]['category'],
@@ -454,7 +351,7 @@ def api_resource_monthly_category_stats(ctx):
                             'groupname': group,
                             'storage': group_storage[group]})
 
-    return all_storage
+    return {'storage': all_storage, 'dates': storage_dates}
 
 
 def get_group_category_info(ctx, groupName):
@@ -525,10 +422,10 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 
 @rule.make()
 def rule_resource_store_monthly_storage_statistics(ctx):
-    #@rule.make()
-    #def rule_resource_store_group_storage_statistics(ctx):
-    """  
-    !!! Function has to be renamed as no longer 
+    # @rule.make()
+    # def rule_resource_store_group_storage_statistics(ctx):
+    """ 
+    !!! Function has to be renamed as name does not correspond to its actual function
 
 
     For all categories present, store all found storage data for each group belonging to these categories.
@@ -634,7 +531,6 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     if row[0] != '':
                         total['revision'] += int(row[0])
 
-
                 # STORE GROUP DATA
                 # STORAGE_TOTAL_REVISION_2023_01_09
                 # constructed this way to be backwards compatible (not using json.dump)
@@ -709,26 +605,32 @@ def get_groups_on_category(ctx, category):
     return groups
 
 
-def get_group_data_sizes(ctx, group_name, ref_date=''):
+def get_group_data_sizes(ctx, group_name, ref_period=''):
     """
     Get nearest (earlier) group data sizes and return as a list of values [research_storage, vault_storage, revision_storage, total_storage]
-    If no reference date present return closest to today
-    ref_date written as 'YYYY-MM-DD'
+    If no reference period present return closest to today
+    ref_period written as 'YYYY-MM'
     """
     # Get most recent information present for this group
-    if ref_date:
-        md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + ref_date
+    if ref_period:
+        md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS + ref_period
+
+        iter = genquery.Query(ctx,
+            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+            "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
+            offset=0, limit=1, output=genquery.AS_LIST)
     else:
         dt = datetime.today()
         md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
-    iter = genquery.Query(ctx, 
-        ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-        "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
-        offset=0, limit=1, output=genquery.AS_LIST)
+        iter = genquery.Query(ctx,
+            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+            "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
+            offset=0, limit=1, output=genquery.AS_LIST)
 
     for row in list(iter):
-        temp = jsonutil.parse(row[0])
+        # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+        temp = jsonutil.parse(row[0].replace("'", '"'))
         # [research_storage, vault_storage, revision_storage, total_storage]
         return [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
 
