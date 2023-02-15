@@ -10,6 +10,7 @@ import json
 import genquery
 import irods_types
 
+import folder
 import meta
 import notifications
 import provenance
@@ -118,6 +119,7 @@ def vault_archival_status(ctx, coll):
 def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
+        avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
         provenance.log_action(ctx, actor, coll, "archive scheduled")
 
         # Send notifications to datamanagers.
@@ -126,9 +128,6 @@ def vault_archive(ctx, actor, coll):
         for datamanager in datamanagers:
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
-
-        # Ready to be archived.
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
 
         return "Success"
 
@@ -196,6 +195,7 @@ def vault_create_archive(ctx, coll):
 def vault_unarchive(ctx, actor, coll):
     try:
         # Prepare for unarchival.
+        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
         provenance.log_action(ctx, actor, coll, "unarchive scheduled")
 
         # Send notifications to datamanagers.
@@ -204,9 +204,6 @@ def vault_unarchive(ctx, actor, coll):
         for datamanager in datamanagers:
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
-
-        # Ready to be unarchived.
-        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
 
         return "Success"
 
