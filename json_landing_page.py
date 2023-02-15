@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
+from dateutil import parser
 
 from util import *
 
@@ -240,11 +241,21 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     license = dictJsonData['License']
     data_access_restriction = dictJsonData['Data_Access_Restriction']
     data_classification = dictJsonData['Data_Classification']
-    last_modified_date = dictJsonData['System']['Last_Modified_Date']
     persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
-    publication_date = dictJsonData['System']['Publication_Date']
     open_access_link = dictJsonData['System']['Open_access_Link']
     license_uri = dictJsonData['System']['License_URI']
+
+    # Format last modified date.
+    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+    # last_modified_date = date.fromisoformat(dictJsonData['System']['Last_Modified_Date'])
+    last_modified_date = parser.parse(dictJsonData['System']['Last_Modified_Date'])
+    last_modified_date = last_modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
+
+    # Format publication date.
+    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+    # publication_date = date.fromisoformat(dictJsonData['System']['Publication_Date'])
+    publication_date = parser.parse(dictJsonData['System']['Publication_Date'])
+    publication_date = publication_date.strftime('%Y-%m-%d %H:%M:%S%z')
 
     try:
         geolocations = dictJsonData['GeoLocation']

@@ -13,9 +13,9 @@ Feature: Revisions API
 
     Scenario Outline: Find actual revisions for one particular data object
         Given user <user> is authenticated
-        Given the Yoda revision list API is queried with <path>
+        And the Yoda revision list API is queried with <path>
 	    Then the response status code is "200"
-	    And revisions list is found
+	    And revisions list is returned
 
         Examples:
         | user       | path                                                                  |

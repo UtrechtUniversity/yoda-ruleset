@@ -92,7 +92,7 @@ def api_intake_list_dm_studies(ctx):
             # Is a member of this study ... check whether member of corresponding datamanager group
             iter2 = genquery.row_iterator(
                 "USER_NAME",
-                "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-" + study + "'",
+                "USER_TYPE = 'rodsgroup' AND USER_NAME like 'grp-datamanager-" + study + "'",
                 genquery.AS_LIST, ctx
             )
             for row2 in iter2:
@@ -693,7 +693,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     if len(scanned.split(':')) != 2:
         # Retrieve scannedby/when information in a different way
         dataset = get_dataset_details(ctx, dataset_id, coll)
-        scanned = dataset['datasetCreatedByWhen']
+        scanned = dataset.get('datasetCreatedByWhen', "unknown")
 
     return {"files": files,
             # "is_collection": is_collection,

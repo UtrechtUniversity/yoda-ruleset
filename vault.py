@@ -6,12 +6,13 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
+import re
 import time
 from datetime import datetime
 
 import genquery
 import irods_types
-from dateutil import relativedelta
+from dateutil import parser, relativedelta
 
 import folder
 import groups
@@ -342,8 +343,10 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
                                 collection.data_objects(ctx, coll, recursive=True))
 
-    # If JSON is considered unpreservable, ignore yoda-metadata.json.
-    data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
+    # Exclude Yoda metadata files
+    data_names = itertools.ifilter(lambda
+                                   x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x),
+                                   data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
@@ -482,7 +485,10 @@ def api_vault_system_metadata(callback, coll):
     )
 
     for row in iter:
-        modified_date = row[0]
+        # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+        # modified_date = date.fromisoformat(row[0])
+        modified_date = parser.parse(row[0])
+        modified_date = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
         system_metadata["Modified date"] = "{}".format(modified_date)
 
     # Landingpage URL.

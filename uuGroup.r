@@ -100,6 +100,24 @@ uuGroupExists(*groupName, *exists) {
 	}
 }
 
+# \brief Check if a specific vault path already exists
+#
+# \param[in]  vaultName
+# \param[out] exists
+#
+uuGroupVaultPathExists(*vaultName, *exists) {
+    *exists = false;
+    *coll = "/$rodsZoneClient/home/" ++ *vaultName;
+
+    foreach(
+        *row in
+        SELECT COLL_NAME
+        WHERE COLL_NAME = *coll
+    ) {
+        *exists = true;
+    }
+}
+
 # \brief Check if a rodsuser or rodsadmin with the given name exists.
 #
 # \param[in]  userName	 username(#zone)
