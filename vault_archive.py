@@ -24,6 +24,16 @@ __all__ = ['api_vault_archive',
 
 
 def package_manifest(ctx, coll):
+    """Generate a BagIt manifest of collection.
+
+    Manifest with a complete listing of each file name along with
+    a corresponding checksum to permit data integrity checking.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to generate manifest of
+
+    :returns: String with BagIt manifest
+    """
     length = len(coll) + 1
     return "\n".join([
         data_object.decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
@@ -41,6 +51,13 @@ def package_manifest(ctx, coll):
 
 
 def package_system_metadata(ctx, coll):
+    """Retrieve system metadata of collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to retrieve system metadata of
+
+    :returns: List of dicts with system metadata
+    """
     return [
         {
             "name": row[0],
@@ -55,6 +72,13 @@ def package_system_metadata(ctx, coll):
 
 
 def package_provenance_log(ctx, system_metadata):
+    """Retrieve provenance log from system metadata.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param system_metadata: System metadata to retrieve provenance log from
+
+    :returns: List of dicts with provenance log
+    """
     def key(item):
         return int(item["time"])
 
@@ -206,6 +230,13 @@ def vault_extract_archive(ctx, coll):
 
 @api.make()
 def api_vault_archive(ctx, coll):
+    """Request to archive vault data package.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of vault data package to archive
+
+    :returns: API status
+    """
     if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
         return "Invalid"
 
@@ -218,11 +249,25 @@ def api_vault_archive(ctx, coll):
 
 @api.make()
 def api_vault_archival_status(ctx, coll):
+    """Request archival status of vault data package.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of vault data package to request archive status from
+
+    :returns: Vault data package archival status
+    """
     return vault_archival_status(ctx, coll)
 
 
 @api.make()
 def api_vault_extract(ctx, coll):
+    """Request to unarchive an archived vault data package.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of vault data package to unarchive
+
+    :returns: API status
+    """
     if vault_archival_status(ctx, coll) != "archived":
         return "Invalid"
 
