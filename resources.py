@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
-from math import ceil
 
 import genquery
 
@@ -180,10 +179,6 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 
-    # example: {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
-    full_year_data = {'labels': [], 'research': [], 'vault': [], 'revision': []}
-
-    log.write(ctx, 'start')
     labels = []
     research = []
     vault = []
@@ -202,12 +197,13 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
         labels.append(storage_date)
 
         # Make compatible with json strings containing ' coming from previous erroneous storage conversion
-        # [category, research, vault, revision, total] 
+        # [category, research, vault, revision, total]
         temp = jsonutil.parse(row[1].replace("'", '"'))
         research.append(temp[1])
         vault.append(temp[2])
         revision.append(temp[3])
 
+    # example: {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
     return {'labels': labels, 'research': research, 'vault': vault, 'revision': revision}
 
 
@@ -232,9 +228,6 @@ def api_resource_category_stats(ctx):
     # Go through current groups of current categories.
     # This function has no historic value so it is allowed to do so
     for category in categories:
-        log.write(ctx, category)
-        #storageDict[category] = 0
-
         storageDict[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
 
         # for all groups in category
@@ -316,7 +309,7 @@ def api_resource_monthly_category_stats(ctx):
 
     # Loop from earliest data to now and find storage for each group/date combination
     while min_month != current_month or min_year != current_year:
-        date_reference = "{}_{}".format(min_year, '%0*d' % (2,min_month))
+        date_reference = "{}_{}".format(min_year, '%0*d' % (2, min_month))
         storage_dates.append(date_reference)
 
         for category in categories:
@@ -333,7 +326,7 @@ def api_resource_monthly_category_stats(ctx):
             min_month = 1
             min_year += 1
 
-    date_reference = "{}_{}".format(min_year, '%0*d' % (2,min_month))
+    date_reference = "{}_{}".format(min_year, '%0*d' % (2, min_month))
     storage_dates.append(date_reference)
 
     for category in categories:
@@ -424,7 +417,7 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 def rule_resource_store_monthly_storage_statistics(ctx):
     # @rule.make()
     # def rule_resource_store_group_storage_statistics(ctx):
-    """ 
+    """
     !!! Function has to be renamed as name does not correspond to its actual function
 
 
