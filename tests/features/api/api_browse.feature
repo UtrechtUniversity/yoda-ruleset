@@ -31,7 +31,7 @@ Feature: Browse API
 
     Scenario Outline: Browse folder with ordering
         Given user <user> is authenticated
-        And the Yoda browse folder API is queried with sorting on <sort_on> and <sort_order> direction on <collection>
+        And the Yoda browse folder API is queried on <collection> with sorting on <sort_on> and <sort_order> direction
         Then the response status code is "200"
         And the first row in result contains <result>
 
