@@ -237,15 +237,14 @@ def api_resource_category_stats(ctx):
                 for row in iter:
                     temp = jsonutil.parse(row[0])
 
-                    storageDict[category]['total'] += temp[4]
-                    storageDict[category]['research'] += temp[1]
-                    storageDict[category]['vault'] += temp[2]
-                    storageDict[category]['revision'] += temp[3]
+                    storageDict[category]['total'] += misc.human_readable_size(temp[4])
+                    storageDict[category]['research'] += misc.human_readable_size(temp[1])
+                    storageDict[category]['vault'] += misc.human_readable_size(temp[2])
+                    storageDict[category]['revision'] += misc.human_readable_size(temp[3])
 
     # Now go through all totals
     allStorage = []
     for category in categories:
-        # storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
         allStorage.append({'category': category,
                            'storage': storageDict[category]})
 
