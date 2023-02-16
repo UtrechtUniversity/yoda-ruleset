@@ -213,7 +213,7 @@ def api_resource_category_stats(ctx):
 
     categories = get_categories(ctx)
 
-    storageDict = {}
+    storage = {}
 
     # Dit gaat over de huidige stand van zaken.
     # Dus denken vanuit de huidige categorien en de daaronder vallende groepen
@@ -222,7 +222,7 @@ def api_resource_category_stats(ctx):
     # Go through current groups of current categories.
     # This function has no historic value so it is allowed to do so
     for category in categories:
-        storageDict[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
+        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
 
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
@@ -237,18 +237,24 @@ def api_resource_category_stats(ctx):
                 for row in iter:
                     temp = jsonutil.parse(row[0])
 
-                    storageDict[category]['total'] += misc.human_readable_size(temp[4])
-                    storageDict[category]['research'] += misc.human_readable_size(temp[1])
-                    storageDict[category]['vault'] += misc.human_readable_size(temp[2])
-                    storageDict[category]['revision'] += misc.human_readable_size(temp[3])
+                    storage[category]['total'] += temp[4]
+                    storage[category]['research'] += temp[1]
+                    storage[category]['vault'] += temp[2]
+                    storage[category]['revision'] += temp[3]
 
-    # Now go through all totals
-    allStorage = []
+        # Make storage size human readable.
+        storage[category]['total'] = misc.human_readable_size(storage[category]['total'])
+        storage[category]['research'] = misc.human_readable_size(storage[category]['research'])
+        storage[category]['vault'] = misc.human_readable_size(storage[category]['vault'])
+        storage[category]['revision'] = misc.human_readable_size(storage[category]['revision'])
+
+    # Now go through all totals.
+    all_storage = []
     for category in categories:
-        allStorage.append({'category': category,
-                           'storage': storageDict[category]})
+        all_storage.append({'category': category,
+                           'storage': storage[category]})
 
-    return sorted(allStorage, key=lambda d: d['category'])
+    return sorted(all_storage, key=lambda d: d['category'])
 
 
 # EXPORT
