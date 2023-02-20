@@ -246,7 +246,9 @@ def api_vault_archive(ctx, coll):
 
     :returns: API status
     """
-    _, _, group, _ = pathutil.info(coll)
+    space, _, group, _ = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return "Invalid"
     category = groups.group_category(ctx, group)
     if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
         return "Access denied"
@@ -282,7 +284,9 @@ def api_vault_extract(ctx, coll):
 
     :returns: API status
     """
-    _, _, group, _ = pathutil.info(coll)
+    space, _, group, _ = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return "Invalid"
     category = groups.group_category(ctx, group)
     if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
         return "Access denied"
