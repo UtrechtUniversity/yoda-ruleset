@@ -224,7 +224,7 @@ def vault_extract_archive(ctx, coll):
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
         collection.remove(ctx, coll + "/archive")
-        # data_object.remove(ctx, coll + "/archive.tar")
+        data_object.remove(ctx, coll + "/archive.tar")
 
         avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
         provenance.log_action(ctx, "system", coll, "unarchive completed")
