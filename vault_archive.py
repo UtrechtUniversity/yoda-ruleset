@@ -11,6 +11,7 @@ import genquery
 import irods_types
 
 import folder
+import groups
 import meta
 import notifications
 import provenance
@@ -245,6 +246,11 @@ def api_vault_archive(ctx, coll):
 
     :returns: API status
     """
+    _, _, group, _ = pathutil.info(coll)
+    category = groups.group_category(ctx, group)
+    if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
+        return "Access denied"
+
     if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
         return "Invalid"
 
@@ -276,6 +282,11 @@ def api_vault_extract(ctx, coll):
 
     :returns: API status
     """
+    _, _, group, _ = pathutil.info(coll)
+    category = groups.group_category(ctx, group)
+    if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
+        return "Access denied"
+
     if vault_archival_status(ctx, coll) != "archived":
         return "Invalid"
 
