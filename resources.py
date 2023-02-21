@@ -72,7 +72,7 @@ def api_resource_browse_group_data(ctx,
     for group in groups:
         data_sizes = get_group_data_sizes(ctx, group)
         # [research_storage, vault_storage, revision_storage, total_storage]
-        group_list.append([group, data_sizes[3]])
+        group_list.append([group, data_sizes[3], data_sizes[0], data_sizes[1], data_sizes[2]])
 
     # Sort the list as requested by user
     sort_key = 0
@@ -89,7 +89,7 @@ def api_resource_browse_group_data(ctx,
     group_slice = group_list[offset: offset + limit]
 
     for group_data in group_slice:
-        group_list_sorted.append({"name": group_data[0], "size": group_data[1]})
+        group_list_sorted.append({"name": group_data[0], "size": [group_data[1], group_data[2], group_data[3], group_data[4]]})
 
     return {'total': len(group_list), 'items': group_list_sorted}
 
@@ -130,30 +130,32 @@ def rule_resource_transform_old_storage_data(ctx):
         storage_month = int(row[1][-2:])
         storage_group = row[3]
 
-        storage_year = current_year if storage_month <= current_month else current_year - 1
+        if storage_month != current_month:
+            # Only do the transformation when NOT in current month itself.
+            storage_year = current_year if storage_month <= current_month else current_year - 1
 
-        # set the measurement date on the 15th of any month
-        storage_attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
-        storage_attr_val = '["{}", 0, 0, 0, {}]'.format(storage_category, storage_total)
+            # set the measurement date on the 15th of any month
+            storage_attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
+            storage_attr_val = '["{}", 0, 0, 0, {}]'.format(storage_category, storage_total)
 
-        # First test if exists - if so => delete:
-        # First delete possibly previously stored data
-        iter2 = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_attr_name, storage_attr_val, storage_group),
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-            log.write(ctx, 'Delete first!')
+            # First test if exists - if so => delete:
+            # First delete possibly previously stored data
+            iter2 = genquery.row_iterator(
+                "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
+                "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_attr_name, storage_attr_val, storage_group),
+                genquery.AS_LIST, ctx
+            )
+            for row2 in iter2:
+                avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
+                log.write(ctx, 'Delete first!')
 
-        # Add data in new manner without tiers
-        avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
+            # Add data in new manner without tiers
+            avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
 
-        log.write(ctx, 'after addition')
+            log.write(ctx, 'after addition')
 
-        # ?? Do we delete previously stored monthly totals??
-        # avu.rm_from_group(ctx, row[3], row[1], row[0])
+            # ?? Do we delete previously stored monthly totals??
+            # avu.rm_from_group(ctx, row[3], row[1], row[0])
 
     return 'ok'
 
@@ -221,10 +223,6 @@ def api_resource_category_stats(ctx):
 
     storageDict = {}
 
-    # Dit gaat over de huidige stand van zaken.
-    # Dus denken vanuit de huidige categorien en de daaronder vallende groepen
-    # Per groep het meest recente bepaalde storage total ophalen.
-
     # Go through current groups of current categories.
     # This function has no historic value so it is allowed to do so
     for category in categories:
@@ -240,10 +238,6 @@ def api_resource_category_stats(ctx):
                     offset=0, limit=1, output=genquery.AS_LIST))
                 for row in iter:
                     temp = jsonutil.parse(row[0])
-                    log.write(ctx, row[1])
-                    log.write(ctx, row[0])
-                    log.write(ctx, group)
-                    log.write(ctx, temp)
 
                     storageDict[category]['total'] += temp[4]
                     storageDict[category]['research'] += temp[1]
@@ -254,8 +248,14 @@ def api_resource_category_stats(ctx):
     allStorage = []
     for category in categories:
         # storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+
+        storage = {}
+        # humanize storage sizes for the frontend
+        for type in ['total', 'research', 'vault', 'revision']:
+            storage[type] = misc.human_readable_size(1.0 * storageDict[category][type])
+
         allStorage.append({'category': category,
-                           'storage': storageDict[category]})
+                           'storage': storage})
 
     return sorted(allStorage, key=lambda d: d['category'])
 
