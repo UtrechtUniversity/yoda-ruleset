@@ -70,7 +70,7 @@ def api_resource_browse_group_data(ctx,
     # groups.sort()
     group_list = []
     for groupname in groups:
-        data_size = get_group_data_size(ctx, groupname)
+        data_size = get_group_data_sizes(ctx, groupname)
         group_list.append([groupname, data_size])
 
     # Sort the list as requested by user
