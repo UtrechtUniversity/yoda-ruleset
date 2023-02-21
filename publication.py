@@ -496,13 +496,13 @@ def copy_landingpage_to_public_host(ctx, random_id, publication_config, publicat
 
     argv = publicHost + " inbox /var/www/landingpages/" + publicPath
 
-    error = 0
-    ctx.iiGenericSecureCopy(argv, landingPagePath, error)
-    if error >= 0:
+    copy_result = ctx.iiGenericSecureCopy(argv, landingPagePath, '')
+    error = copy_result['arguments'][2]
+    if int(error) >= 0:
         publication_state["landingPageUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
-        log.write(ctx, "copy_landingpage_to_public: " + str(error))
+        log.write(ctx, "copy_landingpage_to_public: " + error)
 
 
 def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state):
@@ -519,9 +519,9 @@ def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
     combiJsonPath = publication_state["combiJsonPath"]
 
     argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + random_id + ".json"
-    error = 0
-    ctx.iiGenericSecureCopy(argv, combiJsonPath, error)
-    if error >= 0:
+    copy_result = ctx.iiGenericSecureCopy(argv, combiJsonPath, '')
+    error = copy_result['arguments'][2]
+    if int(error) >= 0:
         publication_state["oaiUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"

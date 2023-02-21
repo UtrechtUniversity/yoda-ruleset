@@ -4,3 +4,4 @@ selenium==4.7.2
 pytest-splinter==3.3.2
 pytest_bdd==6.1.1
 pytest==7.2.0
+deepdiff==5.8.1

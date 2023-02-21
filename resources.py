@@ -69,10 +69,9 @@ def api_resource_browse_group_data(ctx,
 
     # groups.sort()
     group_list = []
-    for group in groups:
-        data_sizes = get_group_data_sizes(ctx, group)
-        # [research_storage, vault_storage, revision_storage, total_storage]
-        group_list.append([group, data_sizes[3], data_sizes[0], data_sizes[1], data_sizes[2]])
+    for groupname in groups:
+        data_size = get_group_data_size(ctx, groupname)
+        group_list.append([groupname, data_size])
 
     # Sort the list as requested by user
     sort_key = 0
@@ -89,7 +88,8 @@ def api_resource_browse_group_data(ctx,
     group_slice = group_list[offset: offset + limit]
 
     for group_data in group_slice:
-        group_list_sorted.append({"name": group_data[0], "size": [group_data[1], group_data[2], group_data[3], group_data[4]]})
+        members = group.members(ctx, group_data[0])
+        group_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
 
     return {'total': len(group_list), 'items': group_list_sorted}
 

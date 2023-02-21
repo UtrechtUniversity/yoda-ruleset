@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "required": [
+    "evaluation",
+    "personal_involvement_requested"
+  ],
+  "properties": {
+    "introduction": {
+      "type": "object",
+      "title": "Reviewer instructions",
+      "description": "Please note that data requests that reach the Data Access Committee have already been assessed on whether they fit within the framework of the informed consent and the protocol of YOUth, and on potential privacy risks. You are <b>not</b> asked to review the scientific value or methodological rigour of data requests either, as this is considered the responsibility of the requesting researcher(s) and can be evaluated by the scientific community through the preregistration in the YOUth Registry on the Open Science Framework.</br></br>Data Access Committee reviews <b>only</b> pertain to 1) potential objections due to conflicts of interests (e.g. your PhD student is working on a similar proposal), 2) the opportunity to express the wish become involved in the proposed project and/or publication, and 3) the opportunity to suggest others who have been involved in the relevant data collection/processing to be invited to become involved in the project and/or publication.</br></br>Please note that your review is permanent and cannot be altered after submission. When in doubt, please contact the YOUth project manager first."
+    },
+    "evaluation": {
+      "type": "string",
+      "title": "Do you object to this data request?",
+      "enum": [
+        "Yes",
+        "No"
+      ]
+    },
+    "personal_involvement_requested": {
+      "type": "string",
+      "title": "Do you wish to become involved in this project and/or the resulting publication?",
+      "enum": [
+        "Yes",
+        "No"
+      ]
+    },
+    "other_involvement_requested": {
+      "type": "string",
+      "title": "Would you like to suggest others who have been involved in the relevant data collection/processing to be invited to become involved in the project and/or publication? If yes, please specify the name and email address of the person(s) who should be invited to become involved."
+    }
+  },
+  "dependencies": {
+    "evaluation": {
+      "oneOf": [
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "No"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Yes"
+              ]
+            },
+            "evaluation_rationale": {
+              "type": "string",
+              "title": "Please explain why you object to this data request."
+            }
+          },
+          "required": [
+            "evaluation_rationale"
+          ]
+        }
+      ]
+    }
+  }
+}

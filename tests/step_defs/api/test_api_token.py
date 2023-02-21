@@ -25,6 +25,15 @@ def api_token_generate(user, label):
     )
 
 
+@given('the Yoda token delete expired API is queried', target_fixture="api_response")
+def api_token_delete_expired(user):
+    return api_request(
+        user,
+        "token_delete_expired",
+        {}
+    )
+
+
 @given('the Yoda token load API is queried', target_fixture="api_response")
 def api_token_load(user):
     return api_request(
