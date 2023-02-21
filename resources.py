@@ -147,12 +147,9 @@ def rule_resource_transform_old_storage_data(ctx):
             )
             for row2 in iter2:
                 avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-                log.write(ctx, 'Delete first!')
 
             # Add data in new manner without tiers
             avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-
-            log.write(ctx, 'after addition')
 
             # ?? Do we delete previously stored monthly totals??
             # avu.rm_from_group(ctx, row[3], row[1], row[0])
@@ -160,7 +157,6 @@ def rule_resource_transform_old_storage_data(ctx):
     return 'ok'
 
 
-# CHART!
 @api.make()
 def api_resource_full_year_differentiated_group_storage(ctx, group_name):
     # def api_resource_full_range ...
@@ -191,11 +187,8 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        log.write(ctx, row[1])
-        log.write(ctx, row[0])
         # 2022_01_15
         storage_date = row[0][-10:].replace('_', '-')
-        log.write(ctx, storage_date)
         labels.append(storage_date)
 
         # Make compatible with json strings containing ' coming from previous erroneous storage conversion
@@ -221,46 +214,45 @@ def api_resource_category_stats(ctx):
 
     categories = get_categories(ctx)
 
-    storageDict = {}
+    storage = {}
 
     # Go through current groups of current categories.
     # This function has no historic value so it is allowed to do so
     for category in categories:
-        storageDict[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
+        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
 
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
         for group in groups:
             if group.startswith(('research', 'deposit')):
                 # Only check the most recent storage measurement
-                iter = list(genquery.Query(ctx, ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                    "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, group),
-                    offset=0, limit=1, output=genquery.AS_LIST))
+                iter = list(genquery.Query(ctx,
+                            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+                            "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, group),
+                            offset=0, limit=1, output=genquery.AS_LIST))
+
                 for row in iter:
                     temp = jsonutil.parse(row[0])
 
-                    storageDict[category]['total'] += temp[4]
-                    storageDict[category]['research'] += temp[1]
-                    storageDict[category]['vault'] += temp[2]
-                    storageDict[category]['revision'] += temp[3]
+                    storage[category]['total'] += temp[4]
+                    storage[category]['research'] += temp[1]
+                    storage[category]['vault'] += temp[2]
+                    storage[category]['revision'] += temp[3]
 
     # Now go through all totals
-    allStorage = []
+    all_storage = []
     for category in categories:
-        # storage = ceil((storageDict[category] / 1000000000000.0) * 10) / 10  # bytes to terabytes
-
-        storage = {}
+        storage_humanized = {}
         # humanize storage sizes for the frontend
         for type in ['total', 'research', 'vault', 'revision']:
-            storage[type] = misc.human_readable_size(1.0 * storageDict[category][type])
+            storage_humanized[type] = misc.human_readable_size(1.0 * storage[category][type])
 
-        allStorage.append({'category': category,
-                           'storage': storage})
+        all_storage.append({'category': category,
+                           'storage': storage_humanized})
 
-    return sorted(allStorage, key=lambda d: d['category'])
+    return sorted(all_storage, key=lambda d: d['category'])
 
 
-# EXPORT
 @api.make()
 def api_resource_monthly_category_stats(ctx):
     """Collect storage stats for all twelve months based upon categories a user is datamanager of.
@@ -280,8 +272,9 @@ def api_resource_monthly_category_stats(ctx):
 
     # find minimal registered date registered.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
-        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
-        offset=0, limit=1, output=genquery.AS_LIST))
+                               "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                               offset=0, limit=1, output=genquery.AS_LIST))
+
     for row in iter:
         min_year = int(row[0][-10:-6])
         min_month = int(row[0][-5:-3])
@@ -464,19 +457,15 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
     # Loop through all categories
     for category in categories:
-        log.write(ctx, 'COLLECTING FOR CATEGORY: ' + category)
         groups = get_groups_on_category(ctx, category)
 
         for group in groups:
             # COLLECT GROUP DATA
             # Per group collect totals for vault, research and revision
-            log.write(ctx, 'GROUP: ' + group)
             # only look at research or deposit groups
             if group.startswith(('research', 'deposit')):
                 # RESEARCH AND VAULT SPACE
-                log.write(ctx, 'Research and vault area starting for group: ' + group)
                 for step in steps:
-                    log.write(ctx, step)
                     total[step] = 0
 
                     if step == 'research':
@@ -506,7 +495,6 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                         )
 
                         for row in iter:
-                            log.write(ctx, row)
                             if row[0] != '':
                                 total[step] += int(row[0])
 
@@ -520,7 +508,6 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     genquery.AS_LIST, ctx
                 )
                 for row in iter:
-                    log.write(ctx, row)
                     if row[0] != '':
                         total['revision'] += int(row[0])
 
@@ -531,7 +518,6 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                 # [category, research, vault, revision, total]
                 storage_total = total['research'] + total['vault'] + total['revision']
                 storage_val = "[\"{}\", {}, {}, {}, {}]".format(category, total['research'], total['vault'], total['revision'], storage_total)
-                log.write(ctx, storage_val)
 
                 # Only store if storage_total>0???
                 # Sla maar wel op want anders niet duidelijk of het gebeurd is
@@ -598,28 +584,34 @@ def get_groups_on_category(ctx, category):
     return groups
 
 
-def get_group_data_sizes(ctx, group_name, ref_period=''):
-    """
-    Get nearest (earlier) group data sizes and return as a list of values [research_storage, vault_storage, revision_storage, total_storage]
-    If no reference period present return closest to today
-    ref_period written as 'YYYY-MM'
+def get_group_data_sizes(ctx, group_name, ref_period=None):
+    """Get group data sizes and return as a list of values.
+
+    List: [research_storage, vault_storage, revision_storage, total_storage]
+    If no reference period is specified return closest to today.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Name of group to get data sizes of
+    :param ref_period: Reference period written as 'YYYY-MM'
+
+    :returns: Group data sizes
     """
     # Get most recent information present for this group
     if ref_period:
         md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS + ref_period
 
         iter = genquery.Query(ctx,
-            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-            "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
-            offset=0, limit=1, output=genquery.AS_LIST)
+                              ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+                              "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
+                              offset=0, limit=1, output=genquery.AS_LIST)
     else:
         dt = datetime.today()
         md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
         iter = genquery.Query(ctx,
-            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-            "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
-            offset=0, limit=1, output=genquery.AS_LIST)
+                              ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+                              "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
+                              offset=0, limit=1, output=genquery.AS_LIST)
 
     for row in list(iter):
         # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
