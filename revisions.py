@@ -262,7 +262,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
 def rule_revision_batch(ctx, verbose):
     """Scheduled revision creation batch job.
 
-    Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
+    Creates revisions for all data objects (in research space) marked with 'org_revision_scheduled' metadata.
 
     :param ctx:     Combined type of a callback and rei struct
     :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
@@ -281,10 +281,10 @@ def rule_revision_batch(ctx, verbose):
     else:
         log.write(ctx, "Batch revision job started")
 
-        # Get list of data objects scheduled for revision
+        # Get list of data objects (in research space) scheduled for revision.
         iter = genquery.row_iterator(
             "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '{}'".format(attr),
+            "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%'".format(attr, user.zone(ctx), constants.IIGROUPPREFIX),
             genquery.AS_LIST, ctx
         )
         for row in iter:
