@@ -25,11 +25,11 @@ Feature: Resources API
             | datamanager | deposit-pilot |
 
 
-    Scenario Outline: Get a full year of monthly storage data starting from current month and look back one year
+    Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
         Given user <user> is authenticated
-        And the Yoda resources full year group data API is queried with <group>
+        And the Yoda resources full year differentiated group data API is queried with <group>
 	    Then the response status code is "200"
-	    And monthly storage data for group is found
+	    And storage data for group is found
 
         Examples:
             | user        | group             |
