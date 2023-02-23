@@ -352,7 +352,7 @@ def rule_revision_batch(ctx, verbose):
                 avu.set_on_data(ctx, path, errorattr, "true")
 
         # Total revision process completed
-        log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. {} objects ignored.".format(count_ok, count, count_ignored))
+        log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. {} data objects in research area ignored.".format(count_ok, count, count_ignored))
 
 
 def is_revision_blocked_by_admin(ctx):
