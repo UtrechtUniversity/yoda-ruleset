@@ -18,7 +18,7 @@ Feature: Statistics UI
         And module "stats" is shown
         When groupdetails contains initial text
         When user views statistics of group deposit-pilot
-        Then statistics graph is not shown
+        Then statistics graph is shown
 
         Examples:
             | user        |

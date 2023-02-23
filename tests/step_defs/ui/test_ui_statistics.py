@@ -1,7 +1,7 @@
 # coding=utf-8
 """Statistics UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -48,11 +48,6 @@ def ui_statistics_export(browser):
 @then('statistics graph is shown')
 def ui_statistics_graph_shown(browser):
     assert browser.is_text_not_present("No storage information found.", wait_time=1)
-
-
-@then('statistics graph is not shown')
-def ui_statistics_graph_not_shown(browser):
-    assert browser.is_text_present("No storage information found.", wait_time=1)
 
 
 @then(parsers.parse("storage for {categories} is shown"))
