@@ -169,6 +169,7 @@ def vault_create_archive(ctx, coll):
         if ret < 0:
             raise Exception("Archive creation failed: {}".format(ret))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
+        ctx.dmput(coll + "/archive.tar", "REG")
         collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")

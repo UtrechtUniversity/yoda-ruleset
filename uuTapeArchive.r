@@ -137,6 +137,21 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
 }
 
 
+# \brief Perform dmput command.
+#
+# \param[in] data Physical path of data object.
+# \param[in] dmfs Current DMF state of data object.
+#
+dmput(*data, *dmfs) {
+    #if (*dmfs not like "DUL" && *dmfs not like "OFL" && *dmfs not like "UNM" && *dmfs not like "MIG") {
+        *hostAddress = ARCHIVERESOURCEHOST;
+        msiExecCmd("dmput", *data, *hostAddress, "", "", *dmRes);
+        msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
+        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dm
+    #}
+}
+
+
 # \brief Perform dmget command.
 #
 # \param[in] data Physical path of data object.
