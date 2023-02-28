@@ -27,6 +27,7 @@ __all__ = ['api_vault_archive',
 
 TAPE_ARCHIVE_RESC = "mockTapeArchive"
 
+
 def package_manifest(ctx, coll):
     """Generate a BagIt manifest of collection.
 
