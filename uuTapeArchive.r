@@ -147,7 +147,7 @@ dmput(*data, *dmfs) {
         *hostAddress = ARCHIVERESOURCEHOST;
         msiExecCmd("dmput", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
-        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dm
+        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmput started: *data. Returned Status - *dmStat.");
     #}
 }
 

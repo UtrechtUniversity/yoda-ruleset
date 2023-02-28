@@ -25,6 +25,8 @@ __all__ = ['api_vault_archive',
            'rule_vault_extract_archive']
 
 
+TAPE_ARCHIVE_RESC = "mockTapeArchive"
+
 def package_manifest(ctx, coll):
     """Generate a BagIt manifest of collection.
 
@@ -165,7 +167,7 @@ def vault_create_archive(ctx, coll):
                           package_manifest(ctx, coll + "/archive"))
         msi.data_obj_chksum(ctx, coll + "/archive/manifest-sha256.txt", "", irods_types.BytesBuf())
 
-        ret = msi.archive_create(ctx, coll + "/archive.tar", coll + "/archive", 0, 0)
+        ret = msi.archive_create(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC, 0)
         if ret < 0:
             raise Exception("Archive creation failed: {}".format(ret))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
