@@ -99,6 +99,14 @@ def package_provenance_log(ctx, system_metadata):
     return sorted(provenance_log, key=key)
 
 
+def package_archive_path(ctx, coll):
+    for row in genquery.row_iterator("DATA_PATH",
+                                     "COLL_NAME = '{}' AND DATA_NAME = 'archive.tar'".format(coll),
+                                     genquery.AS_LIST,
+                                     ctx):
+        return row[0]
+
+
 def vault_archivable(ctx, coll):
     if not coll.endswith("/original"):
         for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
@@ -172,7 +180,7 @@ def vault_create_archive(ctx, coll):
         if ret < 0:
             raise Exception("Archive creation failed: {}".format(ret))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
-        ctx.dmput(coll + "/archive.tar", "REG")
+        ctx.dmput(package_archive_path(ctx, coll), "REG")
         collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")

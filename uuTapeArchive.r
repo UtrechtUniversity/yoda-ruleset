@@ -144,7 +144,7 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
 #
 dmput(*data, *dmfs) {
     #if (*dmfs not like "DUL" && *dmfs not like "OFL" && *dmfs not like "UNM" && *dmfs not like "MIG") {
-        *hostAddress = ARCHIVERESOURCEHOST;
+        *hostAddress = "";
         msiExecCmd("dmput", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
         writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmput started: *data. Returned Status - *dmStat.");
