@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import json
+import time
 
 import genquery
 import irods_types
@@ -180,7 +181,7 @@ def vault_create_archive(ctx, coll):
         if ret < 0:
             raise Exception("Archive creation failed: {}".format(ret))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
-        ctx.dmput(package_archive_path(ctx, coll), "REG")
+        ctx.dmput(package_archive_path(ctx, coll), "", "REG")
         collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
@@ -210,6 +211,7 @@ def vault_unarchive(ctx, actor, coll):
         # Prepare for unarchival.
         avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
         provenance.log_action(ctx, actor, coll, "unarchive scheduled")
+        ctx.dmget(package_archive_path(ctx, coll), "", "OFL")
 
         # Send notifications to datamanagers.
         datamanagers = folder.get_datamanagers(ctx, coll)
@@ -228,6 +230,14 @@ def vault_extract_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "extract":
         return "Invalid"
     try:
+        while True:
+            state = ctx.dmattr(package_archive_path(ctx, coll), "", "")["arguments"][2]
+            if state != "UNM":
+                break;
+            time.sleep(1)
+        if state != "DUL" and state != "REG" and state != "INV":
+            raise Exception("Archive is not available")
+
         avu.set_on_coll(ctx, coll, "org_archival_status", "extracting")
 
         ret = msi.archive_extract(ctx, coll + "/archive.tar", coll + "/archive", 0, 0, 0)
