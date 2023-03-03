@@ -233,7 +233,7 @@ def vault_extract_archive(ctx, coll):
         while True:
             state = ctx.dmattr(package_archive_path(ctx, coll), "", "")["arguments"][2]
             if state != "UNM":
-                break;
+                break
             time.sleep(1)
         if state != "DUL" and state != "REG" and state != "INV":
             raise Exception("Archive is not available")
