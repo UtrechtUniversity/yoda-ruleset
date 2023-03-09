@@ -66,7 +66,7 @@ def ui_group_list_search_user(browser, user):
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
     groups_2 = len(tbl.find_by_css('.user-search-result-group'))
-	
+
     assert groups_1 > groups_2
 
 
@@ -77,9 +77,9 @@ def ui_group_list_search_group(browser, group):
     groups_1 = len(tbl.find_by_css('.user-search-result-group'))
 
     browser.find_by_id('treelist-search-group').fill(group)
-    # get group count after filtering	
+    # get group count after filtering
     groups_2 = len(tbl.find_by_css('.user-search-result-group'))
-	
+
     assert groups_1 > groups_2
 
 
@@ -93,9 +93,9 @@ def ui_group_tree_search_user(browser, user):
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(user)
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
-    # get group count after filtering	
+    # get group count after filtering
     groups_2 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
-	
+
     assert groups_1 > groups_2
 
 
@@ -106,15 +106,15 @@ def ui_group_tree_search_group(browser, group):
     groups_1 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
 
     browser.find_by_id('treelist-search-group').fill(group)
-	
-    # get group count after filtering	
+
+    # get group count after filtering
     groups_2 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
-	
+
     assert groups_1 > groups_2
 
 
 @when(parsers.parse("user enters search argument {search_user}"))
-def ui_group_tree_search_user(browser, search_user):
+def ui_group_tree_search_user_argument(browser, search_user):
     browser.find_by_css('div#s2id_treelist-search-user').click()
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(search_user)
 
@@ -227,7 +227,7 @@ def ui_group_member_filtered(browser, member):
     assert browser.is_text_not_present("groupmanager", wait_time=1)
     assert browser.is_text_not_present("functionaladminpriv", wait_time=1)
 
-# in treelist
+
 @when(parsers.parse("searches for group {group}"))
 def ui_group_search(browser, group):
     browser.find_by_id('treelist-search-group').fill(group)
@@ -238,11 +238,6 @@ def ui_group_filtered(browser, group):
     assert browser.is_text_present(group, wait_time=1)
     assert browser.is_text_not_present("core", wait_time=1)
     assert browser.is_text_not_present("default", wait_time=1)
-
-
-@when("user opens group search dialog")    ### Vervalt
-def ui_group_click_group_search_dlg_button(browser):
-    browser.find_by_css('.user-search-groups').click()
 
 
 @then("user opens group import dialog")
