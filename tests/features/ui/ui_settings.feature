@@ -21,7 +21,7 @@ Feature: Settings UI
     Scenario Outline: Save user settings for group manager
         Given user <user> is logged in
         And module "user/settings" is shown
-        When uuser sets group manager view to {type}
+        When user sets group manager view to <type>
         And clicks the save button
         Then group manager view is set to <type>
 
