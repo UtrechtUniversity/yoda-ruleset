@@ -346,7 +346,7 @@ def api_group_data(ctx):
     for cat in new_group_hierarchy:
         subcats_data = new_group_hierarchy[cat]
         # order on subcat level per category
-        subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x:x[0]))
+        subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
 
     return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
