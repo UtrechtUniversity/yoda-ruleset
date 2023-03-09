@@ -1,6 +1,6 @@
 Feature: Settings UI
 
-    Scenario Outline: Save user settings for mail notification
+    Scenario Outline: Save user settings for mail notifications
         Given user <user> is logged in
         And module "user/settings" is shown
         When user sets mail notifications to <type>
