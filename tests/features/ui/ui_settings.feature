@@ -18,7 +18,8 @@ Feature: Settings UI
             | technicaladmin | IMMEDIATE |
             | technicaladmin | OFF       |
 
-    Scenario Outline: Save user settings for group manager
+
+    Scenario Outline: Save user settings for group manager view
         Given user <user> is logged in
         And module "user/settings" is shown
         When user sets group manager view to <type>
