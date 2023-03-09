@@ -1,7 +1,7 @@
 # coding=utf-8
 """Group UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -58,9 +58,8 @@ def ui_group_list_search_user(browser, user):
     tbl = browser.find_by_id('tbl-list-groups')
     # get unfitlered table group count
     groups_1 = len(tbl.find_by_css('.user-search-result-group'))
-    # assert groups_all == 9999
 
-    browser.find_by_css('div#s2id_treelist-search-user').click()
+    browser.find_by_css('div#s2id_search').click()
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(user)  # Waarom 7??
     # time.sleep(3)
     browser.find_by_css('.select2-results .select2-highlighted').click()
@@ -76,7 +75,7 @@ def ui_group_list_search_group(browser, group):
     # get unfitlered table group count
     groups_1 = len(tbl.find_by_css('.user-search-result-group'))
 
-    browser.find_by_id('treelist-search-group').fill(group)
+    browser.find_by_id('search').fill(group)
     # get group count after filtering
     groups_2 = len(tbl.find_by_css('.user-search-result-group'))
 
@@ -89,7 +88,7 @@ def ui_group_tree_search_user(browser, user):
     # get unfitlered table group count
     groups_1 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
 
-    browser.find_by_css('div#s2id_treelist-search-user').click()
+    browser.find_by_css('div#s2id_search').click()
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(user)
     browser.find_by_css('.select2-results .select2-highlighted').click()
 
@@ -105,7 +104,7 @@ def ui_group_tree_search_group(browser, group):
     # get unfitlered table group count
     groups_1 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
 
-    browser.find_by_id('treelist-search-group').fill(group)
+    browser.find_by_id('search').fill(group)
 
     # get group count after filtering
     groups_2 = len(tbl.find_by_css('.list-group-item.group:not(.filtered)'))
@@ -115,7 +114,7 @@ def ui_group_tree_search_group(browser, group):
 
 @when(parsers.parse("user enters search argument {search_user}"))
 def ui_group_tree_search_user_argument(browser, search_user):
-    browser.find_by_css('div#s2id_treelist-search-user').click()
+    browser.find_by_css('div#s2id_search').click()
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(search_user)
 
 
@@ -230,7 +229,9 @@ def ui_group_member_filtered(browser, member):
 
 @when(parsers.parse("searches for group {group}"))
 def ui_group_search(browser, group):
-    browser.find_by_id('treelist-search-group').fill(group)
+    browser.find_by_css('div#s2id_search').click()
+    browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(group)
+    browser.find_by_css('.select2-results .select2-highlighted').click()
 
 
 @then(parsers.parse("only group {group} is shown"))
