@@ -31,11 +31,11 @@ def ui_settings_mail_notifications_checked(browser, type):
 
 
 @when(parsers.parse("user sets group manager view to {type}"))
-def ui_settings_check_group_manager_settings(browser, type):
+def ui_settings_check_group_manager_view(browser, type):
     browser.find_by_css('#group_manager_view').click()
     browser.find_by_value(type).click()
 
 
 @then(parsers.parse("group manager view is set to {type}"))
-def ui_settings_group_manager_checked(browser, type):
+def ui_settings_group_manager_view_checked(browser, type):
     assert browser.find_by_css('#group_manager_view').value == type
