@@ -15,7 +15,8 @@ __all__ = ['api_settings_load',
 # Policies: uuUserPolicyCanUserModify in yoda-ruleset/uuGroupPolicyChecks.r
 # Portal: settings in yoda-portal/user/user.py
 USER_SETTINGS = {"mail_notifications": {"default": "OFF", "values": ["OFF", "IMMEDIATE", "DAILY", "WEEKLY"]},
-                 "group_manager_view": {"default": "TREE", "values": ["TREE", "LIST"]}}
+                 "group_manager_view": {"default": "TREE", "values": ["TREE", "LIST"]},
+                 "number_of_items": {"default": "10", "values": ["10", "25", "50", "100"]}}
 
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
