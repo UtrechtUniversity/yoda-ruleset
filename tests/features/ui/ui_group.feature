@@ -3,7 +3,7 @@ Feature: Group UI
     Scenario Outline: Group member add
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And user adds <member_add> to group
         Then test if member <member_add> is added to the group
@@ -17,7 +17,7 @@ Feature: Group UI
     Scenario Outline: Group member change role
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And user selects two members <member1> and <member2>
         And user changes roles to <new_role>
@@ -33,7 +33,7 @@ Feature: Group UI
     Scenario Outline: Group member remove
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And user selects two members <member1> and <member2>
         And user removes selected members
@@ -48,7 +48,7 @@ Feature: Group UI
     Scenario Outline: Group member search
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And searches for member <member>
         Then only member <member> is shown
@@ -61,7 +61,7 @@ Feature: Group UI
     Scenario Outline: Group search
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And searches for group <group>
         Then only group <group> is shown
@@ -113,7 +113,7 @@ Feature: Group UI
     Scenario Outline: Group research update
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         When category is updated to <category>
         And subcategory is updated to <subcategory>
@@ -146,13 +146,13 @@ Feature: Group UI
     Scenario Outline: Within TREE list select a group and check whether flatlist and group properties are set correctly
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         And checks group properties for <group>
         And correct row in tree is active for <group>
-        When user selects FLAT group list
+        When user selects list view
         And correct row in flatlist is active for <group>
- 
+
         Examples:
             | category        | subcategory | group            |
             | test-automation | initial     | research-initial |
@@ -161,11 +161,11 @@ Feature: Group UI
     Scenario Outline: Within FLAT list select group and check whether tree and group properties are set correctly
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects FLAT group list
-        When user selects group <group> in flatlist
+        When user selects list view
+        When user selects group <group> in list view
         When checks group properties for <group>
         And correct row in flatlist is active for <group>
-        When user selects TREE group list
+        When user selects tree view
         And correct row in tree is active for <group>
 
         Examples:
@@ -176,7 +176,7 @@ Feature: Group UI
     Scenario Outline: Search in flatlist on group and user and check shortening of result list
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects FLAT group list
+        When user selects list view
         And user searches for groups <group> in flatlist
         And user searches for users <user> in flatlist
 
@@ -188,7 +188,7 @@ Feature: Group UI
     Scenario Outline: Search in treelist on group and user and check shortening of result list
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         And user searches for groups <group> in tree
         And user searches for users <user> in tree
 
@@ -200,7 +200,7 @@ Feature: Group UI
     Scenario Outline: Searching for users results in different lists depending on user (role)
         Given user <user> is logged in
         And module "group_manager" is shown
-        When user selects TREE group list
+        When user selects tree view
         And user enters search argument <search_user>
         And finds <result_count> users
 

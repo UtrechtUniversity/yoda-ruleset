@@ -39,18 +39,29 @@ def ui_group_flatlist_correct_row_active(browser, group):
     assert len(browser.find_by_css('#tbl-list-groups tr.active[user-search-result-group="{}"]'.format(group))) == 1
 
 
-@when(parsers.parse("user selects group {group} in flatlist"))
+@when(parsers.parse("user selects group {group} in list view"))
 def ui_group_flatlist_select_group(browser, group):
-    browser.execute_script("ta_helper_selectGroup('{}');".format(group))
+    table = browser.find_by_id('tbl-list-groups')
+    rows = table.find_by_css('tr.user-search-result-group')
+
+    for row in rows:
+        group_name = row.find_by_tag('td').first
+        if group_name.value == group:
+            group_name.click()
+            assert True
+            return
+
+    raise AssertionError()
 
 
-@when(parsers.parse("user selects {listtype} group list"))
-def ui_group_select_group_list_type(browser, listtype):
-    if listtype == "FLAT":
-        browser.find_by_id('pills-list-tab').click()
-    elif listtype == "TREE":
-        browser.find_by_id('pills-tree-tab').click()
-    time.sleep(3)
+@when(parsers.parse("user selects tree view"))
+def ui_group_select_group_tree_view(browser):
+    browser.find_by_id('pills-tree-tab').click()
+
+
+@when(parsers.parse("user selects list view"))
+def ui_group_select_group_list_view(browser):
+    browser.find_by_id('pills-list-tab').click()
 
 
 @when(parsers.parse("user searches for users {user} in flatlist"))
