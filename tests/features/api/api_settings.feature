@@ -9,6 +9,8 @@ Feature: Settings API
             | user           | attribute               | value |
             | researcher     | mail_notifications      | OFF   |
             | technicaladmin | mail_notifications      | OFF   |
+            | researcher     | group_manager_view      | TREE  |
+            | technicaladmin | group_manager_view      | TREE  |
 
 
     Scenario Outline: Settings Load
@@ -21,3 +23,5 @@ Feature: Settings API
             | user           | attribute               | value |
             | researcher     | mail_notifications      | OFF   |
             | technicaladmin | mail_notifications      | OFF   |
+            | researcher     | group_manager_view      | TREE  |
+            | technicaladmin | group_manager_view      | TREE  |
