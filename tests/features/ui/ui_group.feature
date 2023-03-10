@@ -143,7 +143,7 @@ Feature: Group UI
             | test-datamanager | test-datamanager | test-datamanager |
 
 
-    Scenario Outline: Within TREE list select a group and check whether list view and group properties are set correctly
+    Scenario Outline: Select group in tree view and check group properties are set and active in tree view
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects tree view
@@ -158,7 +158,7 @@ Feature: Group UI
             | test-automation | initial     | research-initial |
 
 
-    Scenario Outline: Within FLAT list select group and check whether tree and group properties are set correctly
+    Scenario Outline: Select group in list view and check group properties are set and active in tree view
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects list view
@@ -173,38 +173,13 @@ Feature: Group UI
             | research-initial |
 
 
-    Scenario Outline: Search in list view on group and user and check shortening of result list
-        Given user researcher is logged in
-        And module "group_manager" is shown
-        When user selects list view
-        And user searches for groups <group> in list view
-        And user searches for users <user> in list view
-
-        Examples:
-            | group  | user  |
-            | res    | data  |
-
-
-    Scenario Outline: Search in treelist on group and user and check shortening of result list
-        Given user researcher is logged in
-        And module "group_manager" is shown
-        When user selects tree view
-        And user searches for groups <group> in tree
-        And user searches for users <user> in tree
-
-        Examples:
-            | group  | user |
-            | res    | data |
-
-
-    Scenario Outline: Searching for users results in different lists depending on user (role)
+    Scenario Outline: Searching results in different lists depending on user (role)
         Given user <user> is logged in
         And module "group_manager" is shown
-        When user selects tree view
-        And user enters search argument <search_user>
-        And finds <result_count> users
+        When user enters search argument <search>
+        And autocomplete returns <suggestions> suggestions
 
         Examples:
-            | user        | search_user | result_count |
-            | researcher  | yoda        | 5            |
-            | datamanager | yoda        | 13           |
+            | user        | search | suggestions |
+            | researcher  | yoda   | 5           |
+            | datamanager | yoda   | 13          |

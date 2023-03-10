@@ -123,16 +123,16 @@ def ui_group_tree_search_group(browser, group):
     assert groups_1 > groups_2
 
 
-@when(parsers.parse("user enters search argument {search_user}"))
+@when(parsers.parse("user enters search argument {search}"))
 def ui_group_tree_search_user_argument(browser, search_user):
     browser.find_by_css('div#s2id_search').click()
     browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(search_user)
 
 
-@when(parsers.parse("finds {result_count} users"))
-def ui_group_count_user_search_result(browser, result_count):
+@when(parsers.parse("autocomplete returns {suggestions} suggestions"))
+def ui_group_count_user_search_result(browser, suggestions):
     users = browser.find_by_css('.select2-result')
-    assert len(users) == int(result_count)
+    assert len(users) == (int(suggestions) + 1)
 
 
 @when(parsers.parse("user selects group {group} in subcategory {subcategory} and category {category}"))
