@@ -34,13 +34,13 @@ def ui_group_tree_correct_row_active(browser, group):
     assert browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1)
 
 
-@when(parsers.parse("correct row in flatlist is active for {group}"))
-def ui_group_flatlist_correct_row_active(browser, group):
+@when(parsers.parse("correct row in list view is active for {group}"))
+def ui_group_list_view_correct_row_active(browser, group):
     assert len(browser.find_by_css('#tbl-list-groups tr.active[user-search-result-group="{}"]'.format(group))) == 1
 
 
 @when(parsers.parse("user selects group {group} in list view"))
-def ui_group_flatlist_select_group(browser, group):
+def ui_group_list_view_select_group(browser, group):
     table = browser.find_by_id('tbl-list-groups')
     rows = table.find_by_css('tr.user-search-result-group')
 
@@ -64,7 +64,7 @@ def ui_group_select_group_list_view(browser):
     browser.find_by_id('pills-list-tab').click()
 
 
-@when(parsers.parse("user searches for users {user} in flatlist"))
+@when(parsers.parse("user searches for users {user} in list view"))
 def ui_group_list_search_user(browser, user):
     tbl = browser.find_by_id('tbl-list-groups')
     # get unfitlered table group count
@@ -80,7 +80,7 @@ def ui_group_list_search_user(browser, user):
     assert groups_1 > groups_2
 
 
-@when(parsers.parse("user searches for groups {group} in flatlist"))
+@when(parsers.parse("user searches for groups {group} in list view"))
 def ui_group_list_search_group(browser, group):
     tbl = browser.find_by_id('tbl-list-groups')
     # get unfitlered table group count

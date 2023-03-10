@@ -143,7 +143,7 @@ Feature: Group UI
             | test-datamanager | test-datamanager | test-datamanager |
 
 
-    Scenario Outline: Within TREE list select a group and check whether flatlist and group properties are set correctly
+    Scenario Outline: Within TREE list select a group and check whether list view and group properties are set correctly
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects tree view
@@ -151,7 +151,7 @@ Feature: Group UI
         And checks group properties for <group>
         And correct row in tree is active for <group>
         When user selects list view
-        And correct row in flatlist is active for <group>
+        And correct row in list view is active for <group>
 
         Examples:
             | category        | subcategory | group            |
@@ -164,7 +164,7 @@ Feature: Group UI
         When user selects list view
         When user selects group <group> in list view
         When checks group properties for <group>
-        And correct row in flatlist is active for <group>
+        And correct row in list view is active for <group>
         When user selects tree view
         And correct row in tree is active for <group>
 
@@ -173,12 +173,12 @@ Feature: Group UI
             | research-initial |
 
 
-    Scenario Outline: Search in flatlist on group and user and check shortening of result list
+    Scenario Outline: Search in list view on group and user and check shortening of result list
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects list view
-        And user searches for groups <group> in flatlist
-        And user searches for users <user> in flatlist
+        And user searches for groups <group> in list view
+        And user searches for users <user> in list view
 
         Examples:
             | group  | user  |
