@@ -123,8 +123,8 @@ Feature: Group UI
         And check whether research group properties <category>, <subcategory> and <expiration_date> are correctly updated
 
         Examples:
-            | category              | subcategory        | group                                | expiration_date |
-            | test-automation | test-automation | research-ui-test-group  | 2035-12-31         |
+            | category        | subcategory      | group                  | expiration_date |
+            | test-automation | test-automation | research-ui-test-group  | 2035-12-31      |
 
 
     Scenario Outline: Group datamanager create
@@ -152,7 +152,7 @@ Feature: Group UI
 
         Examples:
             | user                | category         | subcategory      | group                        |
-            | functionaladminpriv | test-automation  | initial          | research-ui-test-group       |
+            | functionaladminpriv | test-automation  | test-automation  | research-ui-test-group       |
             | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
             | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
             | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
@@ -199,4 +199,6 @@ Feature: Group UI
         Examples:
             | user        | search | suggestions |
             | researcher  | yoda   | 5           |
-            | datamanager | yoda   | 13          |
+            | datamanager | yoda   | 5           |
+            | researcher  | core   | 2           |
+            | datamanager | core   | 2           |
