@@ -143,6 +143,23 @@ Feature: Group UI
             | test-datamanager | test-datamanager | test-datamanager |
 
 
+    Scenario Outline: Group remove
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user clicks remove group
+        And user confirms group removal
+
+        Examples:
+            | user                | category         | subcategory      | group                        |
+            | functionaladminpriv | test-automation  | initial          | research-ui-test-group       |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group4     |
+            | technicaladmin      | test-datamanager | test-datamanager | datamanager-test-datamanager |
+
+
     Scenario Outline: Select group in tree view and check group properties are set and active in tree view
         Given user researcher is logged in
         And module "group_manager" is shown

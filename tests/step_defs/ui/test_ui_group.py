@@ -124,9 +124,9 @@ def ui_group_tree_search_group(browser, group):
 
 
 @when(parsers.parse("user enters search argument {search}"))
-def ui_group_tree_search_user_argument(browser, search_user):
+def ui_group_tree_search_user_argument(browser, search):
     browser.find_by_css('div#s2id_search').click()
-    browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(search_user)
+    browser.find_by_xpath('//*[@id="s2id_autogen7_search"]').fill(search)
 
 
 @when(parsers.parse("autocomplete returns {suggestions} suggestions"))
