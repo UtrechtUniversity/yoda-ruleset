@@ -341,7 +341,14 @@ def api_group_data(ctx):
     # if "System" in group_hierarchy:
     #    group_hierarchy.move_to_end("System", last=False)
 
-    return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    # Per category the group data has to be ordered by subcat asc as well
+    subcat_ordered_group_hierarchy = OrderedDict()
+    for cat in new_group_hierarchy:
+        subcats_data = new_group_hierarchy[cat]
+        # order on subcat level per category
+        subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
+
+    return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def user_is_a_datamanager(ctx):
