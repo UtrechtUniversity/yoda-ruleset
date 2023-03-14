@@ -310,7 +310,7 @@ def api_group_data(ctx):
         # Check whether schema_id is present on group level.
         # If not, collect it from the corresponding category
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
