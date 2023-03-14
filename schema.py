@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for finding the active schema."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -87,14 +87,14 @@ def get_schema_collection(ctx, rods_zone, group_name):
     return schema_coll
 
 
-def get_active_schema_path(callback, path):
+def get_active_schema_path(ctx, path):
     """Get the iRODS path to a schema file from a deposit, research or vault path.
 
     The schema collection is determined from group name of the path.
 
-    :param callback: Combined type of a callback and rei struct
-    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                     (anything after the group name is ignored)
+    :param ctx:   Combined type of a callback and rei struct
+    :param path:  A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                  (anything after the group name is ignored)
 
     :returns: string -- Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json)
     """
@@ -109,57 +109,64 @@ def get_active_schema_path(callback, path):
 
     if group_name.startswith("vault-"):
         temp_group_name = group_name.replace("vault-", "deposit-", 1)
-        if group.exists(callback, temp_group_name):
+        if group.exists(ctx, temp_group_name):
             group_name = temp_group_name
         else:
             group_name = group_name.replace("vault-", "research-", 1)
 
-    schema_coll = get_schema_collection(callback, rods_zone, group_name)
+    schema_coll = get_schema_collection(ctx, rods_zone, group_name)
 
     return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
 
 
-def get_active_schema(callback, path):
+def get_active_schema(ctx, path):
     """Get a schema object from a research or vault path.
 
-    :param callback: Combined type of a callback and rei struct
-    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                     (anything after the group name is ignored)
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                 (anything after the group name is ignored)
 
     :returns: Schema object (parsed from JSON)
     """
-    return jsonutil.read(callback, get_active_schema_path(callback, path))
+    return jsonutil.read(ctx, get_active_schema_path(ctx, path))
 
 
-def get_active_schema_uischema(callback, path):
-    """Get a schema and uischema object from a research or vault path."""
-    schema_path   = get_active_schema_path(callback, path)
+def get_active_schema_uischema(ctx, path):
+    """Get a schema and uischema object from a research or vault path.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                 (anything after the group name is ignored)
+
+    :returns: Schema and UI schema object (parsed from JSON)
+    """
+    schema_path   = get_active_schema_path(ctx, path)
     uischema_path = '{}/{}'.format(pathutil.chop(schema_path)[0], 'uischema.json')
 
-    return jsonutil.read(callback, schema_path), \
-        jsonutil.read(callback, uischema_path)
+    return jsonutil.read(ctx, schema_path), \
+        jsonutil.read(ctx, uischema_path)
 
 
-def get_active_schema_id(callback, path):
+def get_active_schema_id(ctx, path):
     """Get the active schema id from a research or vault path.
 
-    :param callback: Combined type of a callback and rei struct
-    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                     (anything after the group name is ignored)
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                 (anything after the group name is ignored)
 
     :returns: string -- Schema $id (e.g. https://yoda.uu.nl/schemas/.../metadata.json)
     """
-    return get_active_schema(callback, path)['$id']
+    return get_active_schema(ctx, path)['$id']
 
 
-def get_schema_id(callback, metadata_path, metadata=None):
+def get_schema_id(ctx, metadata_path, metadata=None):
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
-        metadata = jsonutil.read(callback, metadata_path)
+        metadata = jsonutil.read(ctx, metadata_path)
     return meta.metadata_get_schema_id(metadata)
 
 
-def get_schema_path_by_id(callback, path, schema_id):
+def get_schema_path_by_id(ctx, path, schema_id):
     """Get a schema path from a schema id."""
     _, zone, _2, _3 = pathutil.info(path)
 
@@ -172,20 +179,20 @@ def get_schema_path_by_id(callback, path, schema_id):
         return None
 
 
-def get_schema_by_id(callback, path, schema_id):
+def get_schema_by_id(ctx, path, schema_id):
     """
     Get a schema from a schema id.
 
     The path is used solely to get the zone name.
 
-    :param callback:  Combined type of a callback and rei struct
+    :param ctx:       Combined type of a callback and rei struct
     :param path:      A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
                       (anything after the group name is ignored)
     :param schema_id: Identifier of schema to get
 
     :returns: Schema object (parsed from JSON)
     """
-    path = get_schema_path_by_id(callback, path, schema_id)
+    path = get_schema_path_by_id(ctx, path, schema_id)
     if path is None:
         return None
-    return jsonutil.read(callback, path)
+    return jsonutil.read(ctx, path)
