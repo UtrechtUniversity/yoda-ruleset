@@ -32,37 +32,37 @@ def api_schema_get_schemas(ctx):
     return schemas
 
 
-def get_group_category(callback, rods_zone, group_name):
-    """Determine category (for schema purposes) based upon rods zone and name of the group.
+def get_schema_collection(ctx, rods_zone, group_name):
+    """Determine schema collection based upon rods zone and name of the group.
 
-    If the category does not have a schema, 'default' is returned.
+    If there is no schema id set on group level and
+    the category does not have a schema, 'default' is returned.
 
-    :param callback:   Combined type of a callback and rei struct
+    :param ctx:        Combined type of a callback and rei struct
     :param rods_zone:  Rods zone name
     :param group_name: Group name
 
     :returns: string -- Category
     """
-    category = '-1'
-    schemaCategory = 'default'
-
-    # Find out whether a schema_id has been set on group level
+    # Find out whether a schema_id has been set on group level.
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
         "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
-        # return found schemaCategory directly on group level
-        # No further test is required here as the value found here was selected from /rodszone/yoda/schemas/ and therefore MUST be present
+        # Return schema id if found on group level.
+        # No further test is required here as the value found here was selected
+        # from /rods_zone/yoda/schemas/ and therefore must be present.
         return row[0]
 
     # Find out category based on current group_name.
+    category = '-1'
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -72,24 +72,25 @@ def get_group_category(callback, rods_zone, group_name):
         # Test whether found category actually has a metadata JSON.
         # If not, fall back to default schema collection.
         # /tempZone/yoda/schemas/default/metadata.json
-        schemaCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
+        schema_path = '/' + rods_zone + '/yoda/schemas/' + category
+        schema_coll = 'default'
 
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "DATA_NAME like 'metadata.json' AND COLL_NAME = '" + schemaCollectionName + "'",
-            genquery.AS_LIST, callback
+            "DATA_NAME like 'metadata.json' AND COLL_NAME = '" + schema_path + "'",
+            genquery.AS_LIST, ctx
         )
 
         for _row in iter:
-            schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
+            schema_coll = category  # As collection is present, the schema_collection can be assigned the category.
 
-    return schemaCategory
+    return schema_coll
 
 
 def get_active_schema_path(callback, path):
     """Get the iRODS path to a schema file from a deposit, research or vault path.
 
-    The schema path is determined from the category name of the path's group level.
+    The schema collection is determined from group name of the path.
 
     :param callback: Combined type of a callback and rei struct
     :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
@@ -113,9 +114,9 @@ def get_active_schema_path(callback, path):
         else:
             group_name = group_name.replace("vault-", "research-", 1)
 
-    category = get_group_category(callback, rods_zone, group_name)
+    schema_coll = get_schema_collection(callback, rods_zone, group_name)
 
-    return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, category)
+    return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
 
 
 def get_active_schema(callback, path):
