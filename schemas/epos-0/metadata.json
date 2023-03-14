@@ -830,7 +830,7 @@
             "required": [ "rel", "href" ],
             "properties": {
                 "rel":  { "const": "describedby" },
-                "href": { "const": "https://yoda.uu.nl/schemas/teclab-1/metadata.json" }
+                "href": { "const": "https://yoda.uu.nl/schemas/epos-0/metadata.json" }
             }
         }
     },
@@ -914,7 +914,7 @@
     },
     "GeoLocation": {
       "type": "array",
-      "title": "Sample location(s) or modeled location(s)",      
+      "title": "Sample location(s) or modeled location(s)",
       "minItems": 1,
       "items": {
         "type": "object",
