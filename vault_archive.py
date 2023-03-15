@@ -23,7 +23,8 @@ __all__ = ['api_vault_archive',
            'api_vault_extract',
            'rule_vault_archive',
            'rule_vault_create_archive',
-           'rule_vault_extract_archive']
+           'rule_vault_extract_archive',
+           'rule_vault_update_archive']
 
 
 TAPE_ARCHIVE_RESC = "mockTapeArchive"
@@ -121,7 +122,7 @@ def vault_archivable(ctx, coll):
 
 def vault_archival_status(ctx, coll):
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, "org_archival_status"),
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -132,8 +133,8 @@ def vault_archival_status(ctx, coll):
 def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archive")
-        provenance.log_action(ctx, actor, coll, "archive scheduled")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archive")
+        provenance.log_action(ctx, actor, coll, "archive scheduled", False)
 
         # Send notifications to datamanagers.
         datamanagers = folder.get_datamanagers(ctx, coll)
@@ -148,44 +149,68 @@ def vault_archive(ctx, actor, coll):
         return "Failure"
 
 
+def create_bagit_archive(ctx, archive, coll, resource, user_metadata, system_metadata, provenance_log):
+    # create extra archive files
+    data_object.copy(ctx, user_metadata, coll + "/user-metadata.json")
+    data_object.write(ctx, coll + "/system-metadata.json",
+                      jsonutil.dump(system_metadata))
+    msi.data_obj_chksum(ctx, coll + "/system-metadata.json", "",
+                        irods_types.BytesBuf())
+    data_object.write(ctx, coll + "/provenance-log.json",
+                      jsonutil.dump(provenance_log))
+    msi.data_obj_chksum(ctx, coll + "/provenance-log.json", "",
+                        irods_types.BytesBuf())
+
+    # create manifest
+    data_object.write(ctx, coll + "/manifest-sha256.txt",
+                      package_manifest(ctx, coll))
+    msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
+                        irods_types.BytesBuf())
+
+    # create archive
+    ret = msi.archive_create(ctx, archive, coll, resource, 0)
+    if ret < 0:
+        raise Exception("Archive creation failed: {}".format(ret))
+
+
+def extract_bagit_archive(ctx, archive, coll):
+    path = pathutil.dirname(archive)
+    while True:
+        state = ctx.dmattr(package_archive_path(ctx, path), "", "")["arguments"][2]
+        if state != "UNM":
+            break
+        time.sleep(1)
+    if state != "DUL" and state != "REG" and state != "INV":
+        raise Exception("Archive is not available")
+
+    ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
+    if ret < 0:
+        raise Exception("Archive extraction failed: {}".format(ret))
+
+
 def vault_create_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "archive":
         return "Invalid"
     try:
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archiving")
-
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archiving")
         collection.create(ctx, coll + "/archive")
-
-        # create extra archive files
-        system_metadata = package_system_metadata(ctx, coll)
-        data_object.write(ctx, coll + "/archive/system-metadata.json",
-                          jsonutil.dump(system_metadata))
-        msi.data_obj_chksum(ctx, coll + "/archive/system-metadata.json", "", irods_types.BytesBuf())
-        provenance_log = package_provenance_log(ctx, system_metadata)
-        data_object.write(ctx, coll + "/archive/provenance-log.json",
-                          jsonutil.dump(provenance_log))
-        msi.data_obj_chksum(ctx, coll + "/archive/provenance-log.json", "", irods_types.BytesBuf())
-
-        # copy/move existing data
-        user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
-        data_object.copy(ctx, user_metadata, coll + "/archive/user-metadata.json")
         data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
         collection.rename(ctx, coll + "/original", coll + "/archive/data")
 
-        # create manifest
-        data_object.write(ctx, coll + "/archive/manifest-sha256.txt",
-                          package_manifest(ctx, coll + "/archive"))
-        msi.data_obj_chksum(ctx, coll + "/archive/manifest-sha256.txt", "", irods_types.BytesBuf())
-
-        ret = msi.archive_create(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC, 0)
-        if ret < 0:
-            raise Exception("Archive creation failed: {}".format(ret))
+        system_metadata = package_system_metadata(ctx, coll)
+        create_bagit_archive(ctx,
+                             coll + "/archive.tar",
+                             coll + "/archive",
+                             TAPE_ARCHIVE_RESC,
+                             meta.get_latest_vault_metadata_path(ctx, coll),
+                             system_metadata,
+                             package_provenance_log(ctx, system_metadata))
         ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
         ctx.dmput(package_archive_path(ctx, coll), "", "REG")
         collection.remove(ctx, coll + "/archive")
 
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archived")
-        provenance.log_action(ctx, "system", coll, "archive completed")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
+        provenance.log_action(ctx, "system", coll, "archive completed", False)
 
         return "Success"
     except Exception:
@@ -200,8 +225,8 @@ def vault_create_archive(ctx, coll):
         except Exception:
             pass
 
-        provenance.log_action(ctx, "system", coll, "archive failed")
-        avu.set_on_coll(ctx, coll, "org_archival_status", "archival failed")
+        provenance.log_action(ctx, "system", coll, "archive failed", False)
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archival failed")
 
         return "Failure"
 
@@ -209,8 +234,8 @@ def vault_create_archive(ctx, coll):
 def vault_unarchive(ctx, actor, coll):
     try:
         # Prepare for unarchival.
-        avu.set_on_coll(ctx, coll, "org_archival_status", "extract")
-        provenance.log_action(ctx, actor, coll, "unarchive scheduled")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
+        provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
         ctx.dmget(package_archive_path(ctx, coll), "", "OFL")
 
         # Send notifications to datamanagers.
@@ -230,32 +255,53 @@ def vault_extract_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "extract":
         return "Invalid"
     try:
-        while True:
-            state = ctx.dmattr(package_archive_path(ctx, coll), "", "")["arguments"][2]
-            if state != "UNM":
-                break
-            time.sleep(1)
-        if state != "DUL" and state != "REG" and state != "INV":
-            raise Exception("Archive is not available")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
 
-        avu.set_on_coll(ctx, coll, "org_archival_status", "extracting")
-
-        ret = msi.archive_extract(ctx, coll + "/archive.tar", coll + "/archive", 0, 0, 0)
-        if ret < 0:
-            raise Exception("Archive extraction failed: {}".format(ret))
+        extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
         collection.remove(ctx, coll + "/archive")
         data_object.remove(ctx, coll + "/archive.tar")
 
-        avu.rm_from_coll(ctx, coll, "org_archival_status", "extracting")
-        provenance.log_action(ctx, "system", coll, "unarchive completed")
+        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
+        provenance.log_action(ctx, "system", coll, "unarchive completed", False)
 
         return "Success"
     except Exception:
-        provenance.log_action(ctx, "system", coll, "unarchive failed")
-        avu.set_on_coll(ctx, coll, "org_archival_status", "extraction failed")
+        provenance.log_action(ctx, "system", coll, "unarchive failed", False)
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extraction failed")
 
+        return "Failure"
+
+
+def update(ctx, coll, attr=None):
+    if pathutil.info(coll)[0] == pathutil.Space.VAULT and attr != constants.IIARCHIVEATTRNAME and attr != constants.UUPROVENANCELOG and vault_archival_status(ctx, coll) == "archived":
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
+        ctx.dmget(package_archive_path(ctx, coll), "", "OFL")
+
+
+def vault_update_archive(ctx, coll):
+    try:
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
+        extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
+        data_object.remove(ctx, coll + "/archive.tar")
+
+        system_metadata = package_system_metadata(ctx, coll)
+        create_bagit_archive(ctx,
+                             coll + "/archive.tar",
+                             coll + "/archive",
+                             TAPE_ARCHIVE_RESC,
+                             meta.get_latest_vault_metadata_path(ctx, coll),
+                             system_metadata,
+                             package_provenance_log(ctx, system_metadata))
+        ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
+        ctx.dmput(package_archive_path(ctx, coll), "", "REG")
+
+        collection.remove(ctx, coll + "/archive")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
+        return "Success"
+    except Exception:
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update failed")
         return "Failure"
 
 
@@ -339,3 +385,8 @@ def rule_vault_create_archive(ctx, coll):
 @rule.make(inputs=[0], outputs=[1])
 def rule_vault_extract_archive(ctx, coll):
     return vault_extract_archive(ctx, coll)
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_update_archive(ctx, coll):
+    return vault_update_archive(ctx, coll)
