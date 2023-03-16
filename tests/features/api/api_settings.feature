@@ -11,6 +11,8 @@ Feature: Settings API
             | technicaladmin | mail_notifications      | OFF   |
             | researcher     | group_manager_view      | TREE  |
             | technicaladmin | group_manager_view      | TREE  |
+            | researcher     | number_of_items         | 10    |
+            | technicaladmin | number_of_items         | 10    |
 
 
     Scenario Outline: Settings Load
@@ -25,3 +27,5 @@ Feature: Settings API
             | technicaladmin | mail_notifications      | OFF   |
             | researcher     | group_manager_view      | TREE  |
             | technicaladmin | group_manager_view      | TREE  |
+            | researcher     | number_of_items         | 10    |
+            | technicaladmin | number_of_items         | 10    |
