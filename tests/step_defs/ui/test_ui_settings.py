@@ -50,4 +50,3 @@ def ui_settings_number_of_items_checked(browser, type):
 @then(parsers.parse("group manager view is set to {type}"))
 def ui_settings_group_manager_view_checked(browser, type):
     assert browser.find_by_css('#group_manager_view').value == type
-
