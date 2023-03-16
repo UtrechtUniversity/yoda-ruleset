@@ -9,6 +9,7 @@ import time
 
 import genquery
 
+import vault
 from util import *
 
 __all__ = ['rule_provenance_log_action',
@@ -28,7 +29,7 @@ def rule_provenance_log_action(ctx, actor, coll, action):
     try:
         log_item = [str(int(time.time())), action, actor]
         avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
-        vault_archive.update(ctx, coll)
+        vault.update_archive(ctx, coll)
         log.write(ctx, "rule_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
     except Exception:
         log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
@@ -41,12 +42,13 @@ def log_action(ctx, actor, coll, action, update=True):
     :param actor:  The actor of the action
     :param coll:   The collection the provenance log is linked to.
     :param action: The action that is logged.
+    :param update: Whether to update provenance in any archive (default: True)
     """
     try:
         log_item = [str(int(time.time())), action, actor]
         avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
         if update:
-            vault_archive.update(ctx, coll)
+            vault.update_archive(ctx, coll)
         log.write(ctx, "rule_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
     except Exception:
         log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))

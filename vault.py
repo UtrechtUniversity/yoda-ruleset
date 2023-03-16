@@ -1319,3 +1319,16 @@ def api_vault_get_published_packages(ctx, path):
         published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
 
     return published_packages
+
+
+def update_archive(ctx, coll, attr=None):
+    """Potentially update archive after metadata changed.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+    :param attr: The AVU that was changed, if any
+    """
+    if config.enable_data_package_archive:
+        import vault_archive
+
+        vault_archive.update(ctx, coll, attr)

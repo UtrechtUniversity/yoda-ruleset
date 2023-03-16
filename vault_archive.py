@@ -274,8 +274,8 @@ def vault_extract_archive(ctx, coll):
         return "Failure"
 
 
-def update(ctx, coll, attr=None):
-    if pathutil.info(coll)[0] == pathutil.Space.VAULT and attr != constants.IIARCHIVEATTRNAME and attr != constants.UUPROVENANCELOG and vault_archival_status(ctx, coll) == "archived":
+def update(ctx, coll, attr):
+    if pathutil.info(coll).space == pathutil.Space.VAULT and attr != constants.IIARCHIVEATTRNAME and attr != constants.UUPROVENANCELOG and vault_archival_status(ctx, coll) == "archived":
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
         ctx.dmget(package_archive_path(ctx, coll), "", "OFL")
 

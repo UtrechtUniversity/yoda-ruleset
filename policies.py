@@ -16,7 +16,7 @@ import policies_folder_status
 import policies_intake
 import replication
 import revisions
-import vault_archive
+import vault
 from util import *
 
 
@@ -448,7 +448,7 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
         if attr == constants.IIVAULTSTATUSATTRNAME:
             policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
         elif attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
-            vault_archive.update(ctx, obj_name, attr)
+            vault.update_archive(ctx, obj_name, attr)
 
     # Send emails after datarequest status transition if appropriate
     elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
