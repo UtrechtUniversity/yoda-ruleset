@@ -26,6 +26,13 @@ vaultArchive {
 		rule_vault_update_archive(*coll, *status);
 		writeLine("stdout", "update archive for *coll: *status");
 	}
+
+	foreach (*row in SELECT COLL_NAME WHERE META_COLL_ATTR_NAME = 'org_archival_status' AND META_COLL_ATTR_VALUE = 'bagit') {
+		*coll = *row.COLL_NAME;
+		*status = "";
+		rule_vault_download_archive(*coll, *status);
+		writeLine("stdout", "download archive for *coll: *status");
+	}
 }
 
 input null

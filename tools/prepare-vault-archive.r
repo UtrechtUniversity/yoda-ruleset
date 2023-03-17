@@ -7,9 +7,9 @@ prepareVaultArchive {
 	}
 
 	*status = "";
-	rule_vault_archive(*actor, *coll, *status);
-	writeLine("stdout", "*actor archive *coll: *status");
+	rule_vault_archive(*actor, *coll, *action, *status);
+	writeLine("stdout", "*actor archive *coll *action: *status");
 }
 
-input *actor="", *coll=""
+input *actor="", *coll="", *action=""
 output ruleExecOut

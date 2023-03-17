@@ -21,10 +21,12 @@ from util import *
 __all__ = ['api_vault_archive',
            'api_vault_archival_status',
            'api_vault_extract',
+           'api_vault_download',
            'rule_vault_archive',
            'rule_vault_create_archive',
            'rule_vault_extract_archive',
-           'rule_vault_update_archive']
+           'rule_vault_update_archive',
+           'rule_vault_download_archive']
 
 
 TAPE_ARCHIVE_RESC = "mockTapeArchive"
@@ -130,6 +132,59 @@ def vault_archival_status(ctx, coll):
     return False
 
 
+def create_bagit_archive(ctx, archive, coll, resource):
+    # create manifest
+    data_object.write(ctx, coll + "/manifest-sha256.txt",
+                      package_manifest(ctx, coll))
+    msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
+                        irods_types.BytesBuf())
+
+    # create archive
+    ret = msi.archive_create(ctx, archive, coll, resource, 0)
+    if ret < 0:
+        raise Exception("Archive creation failed: {}".format(ret))
+    ctx.iiCopyACLsFromParent(archive, "default")
+
+
+def extract_bagit_archive(ctx, archive, coll):
+    ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
+    if ret < 0:
+        raise Exception("Archive extraction failed: {}".format(ret))
+
+
+def create_archive(ctx, coll):
+    user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
+    system_metadata = package_system_metadata(ctx, coll)
+    provenance_log = package_provenance_log(ctx, system_metadata)
+
+    # create extra archive files
+    data_object.copy(ctx, user_metadata, coll + "/archive/user-metadata.json")
+    data_object.write(ctx, coll + "/archive/system-metadata.json",
+                      jsonutil.dump(system_metadata))
+    msi.data_obj_chksum(ctx, coll + "/archive/system-metadata.json", "",
+                        irods_types.BytesBuf())
+    data_object.write(ctx, coll + "/archive/provenance-log.json",
+                      jsonutil.dump(provenance_log))
+    msi.data_obj_chksum(ctx, coll + "/archive/provenance-log.json", "",
+                        irods_types.BytesBuf())
+
+    # create bagit archive
+    create_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
+    ctx.dmput(package_archive_path(ctx, coll), "", "REG")
+
+
+def extract_archive(ctx, coll):
+    while True:
+        state = ctx.dmattr(package_archive_path(ctx, coll), "", "")["arguments"][2]
+        if state != "UNM":
+            break
+        time.sleep(1)
+    if state != "DUL" and state != "REG" and state != "INV":
+        raise Exception("Archive is not available")
+
+    extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
+
+
 def vault_archive(ctx, actor, coll):
     try:
         # Prepare for archival.
@@ -149,45 +204,6 @@ def vault_archive(ctx, actor, coll):
         return "Failure"
 
 
-def create_bagit_archive(ctx, archive, coll, resource, user_metadata, system_metadata, provenance_log):
-    # create extra archive files
-    data_object.copy(ctx, user_metadata, coll + "/user-metadata.json")
-    data_object.write(ctx, coll + "/system-metadata.json",
-                      jsonutil.dump(system_metadata))
-    msi.data_obj_chksum(ctx, coll + "/system-metadata.json", "",
-                        irods_types.BytesBuf())
-    data_object.write(ctx, coll + "/provenance-log.json",
-                      jsonutil.dump(provenance_log))
-    msi.data_obj_chksum(ctx, coll + "/provenance-log.json", "",
-                        irods_types.BytesBuf())
-
-    # create manifest
-    data_object.write(ctx, coll + "/manifest-sha256.txt",
-                      package_manifest(ctx, coll))
-    msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
-                        irods_types.BytesBuf())
-
-    # create archive
-    ret = msi.archive_create(ctx, archive, coll, resource, 0)
-    if ret < 0:
-        raise Exception("Archive creation failed: {}".format(ret))
-
-
-def extract_bagit_archive(ctx, archive, coll):
-    path = pathutil.dirname(archive)
-    while True:
-        state = ctx.dmattr(package_archive_path(ctx, path), "", "")["arguments"][2]
-        if state != "UNM":
-            break
-        time.sleep(1)
-    if state != "DUL" and state != "REG" and state != "INV":
-        raise Exception("Archive is not available")
-
-    ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
-    if ret < 0:
-        raise Exception("Archive extraction failed: {}".format(ret))
-
-
 def vault_create_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "archive":
         return "Invalid"
@@ -196,17 +212,7 @@ def vault_create_archive(ctx, coll):
         collection.create(ctx, coll + "/archive")
         data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
         collection.rename(ctx, coll + "/original", coll + "/archive/data")
-
-        system_metadata = package_system_metadata(ctx, coll)
-        create_bagit_archive(ctx,
-                             coll + "/archive.tar",
-                             coll + "/archive",
-                             TAPE_ARCHIVE_RESC,
-                             meta.get_latest_vault_metadata_path(ctx, coll),
-                             system_metadata,
-                             package_provenance_log(ctx, system_metadata))
-        ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
-        ctx.dmput(package_archive_path(ctx, coll), "", "REG")
+        create_archive(ctx, coll)
         collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
@@ -257,7 +263,7 @@ def vault_extract_archive(ctx, coll):
     try:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
 
-        extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
+        extract_archive(ctx, coll)
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
         collection.remove(ctx, coll + "/archive")
@@ -283,25 +289,60 @@ def update(ctx, coll, attr):
 def vault_update_archive(ctx, coll):
     try:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
-        extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
+
+        extract_archive(ctx, coll)
         data_object.remove(ctx, coll + "/archive.tar")
 
-        system_metadata = package_system_metadata(ctx, coll)
-        create_bagit_archive(ctx,
-                             coll + "/archive.tar",
-                             coll + "/archive",
-                             TAPE_ARCHIVE_RESC,
-                             meta.get_latest_vault_metadata_path(ctx, coll),
-                             system_metadata,
-                             package_provenance_log(ctx, system_metadata))
-        ctx.iiCopyACLsFromParent(coll + "/archive.tar", "default")
-        ctx.dmput(package_archive_path(ctx, coll), "", "REG")
-
+        create_archive(ctx, coll)
         collection.remove(ctx, coll + "/archive")
+
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
         return "Success"
     except Exception:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update failed")
+        return "Failure"
+
+
+def vault_download(ctx, actor, coll):
+    try:
+        # Prepare for download.
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "bagit")
+        provenance.log_action(ctx, actor, coll, "bagit scheduled", False)
+
+        return "Success"
+    except Exception:
+        return "Failure"
+
+
+def vault_download_archive(ctx, coll):
+    if vault_archival_status(ctx, coll) != "bagit":
+        return "Invalid"
+    try:
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
+        create_bagit_archive(ctx, coll + "/download.tar", coll, TAPE_ARCHIVE_RESC)
+
+        data_object.remove(ctx, coll + "/manifest-sha256.txt")
+        provenance.log_action(ctx, "system", coll, "bagit completed", False)
+        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
+
+        notifications.set(ctx, actor, actor, coll, "Bagit ready for download")
+
+        return "Success"
+    except Exception:
+        # remove bagit
+        try:
+            data_object.remove(ctx, coll + "/bagit.tar")
+        except Exception:
+            pass
+        # remove temporary files
+        try:
+            data_object.remove(ctx, coll + "/manifest-sha256.txt")
+        except Exception:
+            pass
+
+        provenance.log_action(ctx, "system", coll, "bagit failed", False)
+        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
+
         return "Failure"
 
 
@@ -325,7 +366,7 @@ def api_vault_archive(ctx, coll):
         return "Invalid"
 
     try:
-        ctx.iiAdminVaultArchive(coll)
+        ctx.iiAdminVaultArchive(coll, "archive")
         return "Success"
     except Exception:
         return "Failure"
@@ -363,18 +404,42 @@ def api_vault_extract(ctx, coll):
         return "Invalid"
 
     try:
-        ctx.iiAdminVaultArchive(coll)
+        ctx.iiAdminVaultArchive(coll, "extract")
         return "Success"
     except Exception:
         return "Failure"
 
 
-@rule.make(inputs=[0, 1], outputs=[2])
-def rule_vault_archive(ctx, actor, coll):
-    if vault_archival_status(ctx, coll) == "archived":
-        return vault_unarchive(ctx, actor, coll)
+@api.make()
+def api_vault_download(ctx, coll):
+    """Request to download a vault data package.
 
-    return vault_archive(ctx, actor, coll)
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of vault data package to download
+
+    :returns: API status
+    """
+    if pathutil.info(coll).space != pathutil.Space.VAULT:
+        return "Invalid"
+
+    if vault_archival_status(ctx, coll):
+        return "Invalid"
+
+    try:
+        ctx.iiAdminVaultArchive(coll, "download")
+        return "Success"
+    except Exception:
+        return "Failure"
+
+
+@rule.make(inputs=[0, 1, 2], outputs=[3])
+def rule_vault_archive(ctx, actor, coll, action):
+    if action == "archive":
+        return vault_archive(ctx, actor, coll)
+    elif action == "extract":
+        return vault_unarchive(ctx, actor, coll)
+    elif action == "download":
+        return vault_download(ctx, actor, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -390,3 +455,8 @@ def rule_vault_extract_archive(ctx, coll):
 @rule.make(inputs=[0], outputs=[1])
 def rule_vault_update_archive(ctx, coll):
     return vault_update_archive(ctx, coll)
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_download_archive(ctx, coll):
+    return vault_download_archive(ctx, coll)

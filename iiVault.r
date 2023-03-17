@@ -242,8 +242,8 @@ iiAdminVaultActions() {
 
 # \brief Prepare to archive a data package in the vault
 #
-iiAdminVaultArchive(*coll) {
-	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll, "", "", 0, *out);
+iiAdminVaultArchive(*coll, *action) {
+	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *action, "", "", 0, *out);
 }
 
 # \brief Enable indexing on vault target.
