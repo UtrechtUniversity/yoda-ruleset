@@ -587,31 +587,24 @@ def get_groups_on_category(ctx, category):
 def get_group_data_sizes(ctx, group_name, ref_period=None):
     """Get group data sizes and return as a list of values.
 
-    List: [research_storage, vault_storage, revision_storage, total_storage]
     If no reference period is specified return closest to today.
 
     :param ctx:        Combined type of a callback and rei struct
     :param group_name: Name of group to get data sizes of
     :param ref_period: Reference period written as 'YYYY-MM'
 
-    :returns: Group data sizes
+    :returns: List with group data sizes, [research_storage, vault_storage, revision_storage, total_storage]
     """
     # Get most recent information present for this group
     if ref_period:
         md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS + ref_period
-
-        iter = genquery.Query(ctx,
-                              ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                              "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
-                              offset=0, limit=1, output=genquery.AS_LIST)
     else:
-        dt = datetime.today()
-        md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
+        md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS
 
-        iter = genquery.Query(ctx,
-                              ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                              "META_USER_ATTR_NAME <= '" + md_storage_date + "' AND USER_NAME = '" + group_name + "'",
-                              offset=0, limit=1, output=genquery.AS_LIST)
+    iter = genquery.Query(ctx,
+                          ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
+                          "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
+                          offset=0, limit=1, output=genquery.AS_LIST)
 
     for row in list(iter):
         # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""

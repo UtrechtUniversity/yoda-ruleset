@@ -57,32 +57,23 @@ def api_response_paginated_group_found_one(api_response):
     assert len(body["data"]["items"]) == 1
 
 
-@given(parsers.parse("the Yoda resources full year group data API is queried with {group}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda resources full year differentiated group data API is queried with {group}"), target_fixture="api_response")
 def api_resource_full_year_group_data(user, group):
     return api_request(
         user,
-        "resource_full_year_group_data",
+        "resource_full_year_differentiated_group_storage",
         {'group_name': group}
     )
 
 
-@then('monthly storage data for group is found')
-def api_response_monthly_storage_for_group(api_response):
+@then('storage data for group is found')
+def api_response_storage_for_group(api_response):
     _, body = api_response
 
-    assert body["data"]["months"]
-    assert body["data"]["tiers"]
-    assert body["data"]["total_storage"]
-
-
-@then('monthly storage data for a datamanager is found')
-def api_response_monthly_storage_for_dm(api_response):
-    _, body = api_response
-
-    # check presence all keys
-    assert body["data"][0]["category"]
-    assert body["data"][0]["tier"]
-    assert body["data"][0]["storage"]
+    assert body["data"]["labels"]
+    assert body["data"]["research"]
+    assert body["data"]["revision"]
+    assert body["data"]["vault"]
 
 
 @given('the Yoda resources monthly category stats API is queried', target_fixture="api_response")
@@ -98,11 +89,12 @@ def api_get_monthly_category_stats_export_dm(user):
 def api_response_storage_data_for_export(api_response):
     _, body = api_response
 
-    assert body["data"][0]["category"]
-    assert body["data"][0]["subcategory"]
-    assert body["data"][0]["storage"]
-    assert body["data"][0]["groupname"]
-    assert body["data"][0]["tier"]
+    assert "dates" in body["data"]
+    assert "storage" in body["data"]
+    assert "category" in body["data"]["storage"][0]
+    assert "subcategory" in body["data"]["storage"][0]
+    assert "groupname" in body["data"]["storage"][0]
+    assert "storage" in body["data"]["storage"][0]
 
 
 @given('the Yoda resources category stats API is queried', target_fixture="api_response")

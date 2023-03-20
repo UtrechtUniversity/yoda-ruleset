@@ -160,7 +160,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # API error introduces post-error in requesting application.
     if coll_target == "/" + zone + "/home":
-        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage', {"bla": "bla", "bla2": "bla2bla2"})
+        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage')
 
     # Check if target is a research folder. I.e. none-vault folder.
     parts = coll_target.split('/')
