@@ -105,8 +105,20 @@
         }
       },
       "Affiliation": {
-        "ui:description": "The organizational or institutional affiliation of the creator"
+        "ui:description": "The organizational or institutional affiliation of the creator",
+        "items": {
+          "Affiliation_Name": {
+            "ui:help": "Name",
+            "ui:field": "ror",
+            "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/languages.json",
+            "ui:default": "English"
+          },
+          "Affiliation_Identifier": {
+            "ui:help": "The affiliation ROR component in react"
+          }
+        }
       },
+
       "Person_Identifier": {
         "ui:description": "Person identifier of creator of the data package",
         "items": {
@@ -136,7 +148,18 @@
         "ui:help": "The type of contributor. List of values is derived from DataCite"
       },
       "Affiliation": {
-        "ui:description": "The organizational or institutional affiliation of the contributor"
+        "ui:description": "The organizational or institutional affiliation of the creator",
+        "items": {
+          "Affiliation_Name": {
+            "ui:help": "Name"
+          },
+          "Affiliation_Identifier": {
+            "ui:help": "The affiliation ROR identifier",
+            "ui:field": "vocabulary",
+            "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/languages.json",
+            "ui:default": "English"
+          }
+        }
       },
       "Person_Identifier": {
         "ui:description": "Person identifier of contributor of the data package",

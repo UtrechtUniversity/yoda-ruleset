@@ -814,14 +814,14 @@ def process_publication(ctx, vault_package):
         if verbose:
             log.write(ctx, "Uploading landing page.")
         random_id = publication_state["randomId"]
-        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+#        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
             # Remove version from DOI.
             if verbose:
                 log.write(ctx, "Updating base DOI landing page.")
             random_id = random_id.rsplit(".", 1)[0]
-            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+#            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 

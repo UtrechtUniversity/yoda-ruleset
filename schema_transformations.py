@@ -107,6 +107,33 @@ def _default1_default2(ctx, m):
     return m
 
 
+def _default2_default3(ctx, m):
+    """
+    Capality to add an ROR identifier to affiliation fields
+    """
+    if m.get('Creator', False):
+        # For this contributor step through all its affiliations
+        for creator in m['Creator']:
+            new_affiliations = []
+            for affiliation in creator['Affiliation']:
+                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+            # contrib['Affiliation2'] = new_affiliations
+            creator['Affiliation'] = new_affiliations
+
+    if m.get('Contributor', False):
+        # For this contributor step through all its affiliations
+        for contrib in m['Contributor']:
+            new_affiliations = []
+            for affiliation in contrib['Affiliation']:
+                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+            # contrib['Affiliation2'] = new_affiliations
+            contrib['Affiliation'] = new_affiliations
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-3/metadata.json')
+
+    return m
+
+
 def _dag0_default2(ctx, m):
     """
     Transform dag-0 data to the default-2 schema definition
@@ -548,6 +575,8 @@ def get(src_id, dst_id):
                        {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
                        'https://yoda.uu.nl/schemas/default-1/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
+                       'https://yoda.uu.nl/schemas/default-2/metadata.json':
+                       {'https://yoda.uu.nl/schemas/default-3/metadata.json': _default2_default3},
                        'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1},
                        'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
