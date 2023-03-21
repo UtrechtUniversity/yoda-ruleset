@@ -220,7 +220,12 @@ def get_creators(combi):
     for creator in combi.get('Creator', []):
         affiliations = []
         for aff in creator.get('Affiliation', []):
-            affiliations.append({'name': aff})
+            if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
+                affiliations.append({"name": aff['Affiliation_Name'],
+                                     "affiliationIdentifier": "https://ror.org/{}".format(aff['Affiliation_Identifier']),
+                                     "affiliationIdentifierScheme": "ROR"})
+            else:
+                affiliations.append({'name': aff['Affiliation_Name']})
         name_ids = []
         for pid in creator.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
@@ -249,7 +254,13 @@ def get_contributors(combi):
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            affiliations.append({'name': aff})
+            if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
+                affiliations.append({"name": aff['Affiliation_Name'],
+                                     "affiliationIdentifier": 'https://ror.org/{}'.format(aff['Affiliation_Identifier']),
+                                     "affiliationIdentifierScheme": "ROR"})
+            else:
+                affiliations.append({'name': aff['Affiliation_Name']})
+
         name_ids = []
         for pid in person.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
@@ -271,7 +282,13 @@ def get_contributors(combi):
     for person in combi.get('ContactPerson', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            affiliations.append({'name': aff})
+            if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
+                affiliations.append({"name": aff['Affiliation_Name'],
+                                     "affiliationIdentifier": 'https://ror.org/{}'.format(aff['Affiliation_Identifier']),
+                                     "affiliationIdentifierScheme": "ROR"})
+            else:
+                affiliations.append({'name': aff['Affiliation_Name']})
+
         name_ids = []
         for pid in person.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
