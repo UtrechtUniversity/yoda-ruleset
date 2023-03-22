@@ -48,7 +48,7 @@ Feature: Resources API
             | researcher  | research-deposit-test  |
             | datamanager | research-deposit-test  |
     
-    @deposit-api-test
+    @depositapitest
     Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
         Given user <user> is authenticated
         And the Yoda resources full year differentiated group data API is queried with <group>
@@ -56,7 +56,7 @@ Feature: Resources API
 	    And storage data for group is found
 
         Examples:
-            | user        | group                  |
+            | user       | group                  |
             | researcher  | research-deposit-test  |
             | datamanager | research-deposit-test  |
 
