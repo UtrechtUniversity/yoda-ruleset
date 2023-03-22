@@ -52,7 +52,7 @@ def api_resource_browse_group_data(ctx,
         groups_deposit = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
         groups_intake = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
         groups_grp = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
-        groups_datarequest = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups_datarequest = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'datarequests-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
         groups = list(set(groups_research + groups_deposit + groups_intake + groups_grp + groups_datarequest))
     else:
         categories = get_categories(ctx)
@@ -62,7 +62,7 @@ def api_resource_browse_group_data(ctx,
         groups_deposit_member = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups_intake_member = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups_grp_member = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups_datarequest_member = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_datarequest_member = [a for a in genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'datarequests-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups = list(set(groups_research_member + groups_deposit_member + groups_intake_member + groups_grp_member + groups_datarequest_member + groups_dm))
 
     # groups.sort()
@@ -421,7 +421,7 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'datarequests-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
