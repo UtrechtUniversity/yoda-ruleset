@@ -210,8 +210,8 @@ def vault_create_archive(ctx, coll):
     try:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archiving")
         collection.create(ctx, coll + "/archive")
-	if data_object.exists(ctx, coll + "/License.txt"):
-	    data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
+        if data_object.exists(ctx, coll + "/License.txt"):
+            data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
         collection.rename(ctx, coll + "/original", coll + "/archive/data")
         create_archive(ctx, coll)
         collection.remove(ctx, coll + "/archive")
