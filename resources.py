@@ -54,7 +54,16 @@ def api_resource_browse_group_data(ctx,
         groups_deposit = [a for a
                           in genquery.Query(ctx, "USER_GROUP_NAME",
                                             "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
-        groups = list(set(groups_research + groups_deposit))
+        groups_intake = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups_grp = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups_datarequest = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone))]
+        groups = list(set(groups_research + groups_deposit + groups_intake + groups_grp + groups_datarequest))
     else:
         categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories, search_groups)
@@ -65,7 +74,16 @@ def api_resource_browse_group_data(ctx,
         groups_deposit_member = [a for a
                                  in genquery.Query(ctx, "USER_GROUP_NAME",
                                                    "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
+        groups_intake_member = [a for a
+                                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                    "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_grp_member = [a for a
+                                 in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                   "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_datarequest_member = [a for a
+                                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                    "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups = list(set(groups_research_member + groups_deposit_member + groups_intake_member + groups_grp_member + groups_datarequest_member + groups_dm))
 
     # groups.sort()
     group_list = []
@@ -224,7 +242,7 @@ def api_resource_category_stats(ctx):
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
         for group in groups:
-            if group.startswith(('research', 'deposit')):
+            if group.startswith(('research', 'deposit', 'intake', 'grp', 'datarequest')):
                 # Only check the most recent storage measurement
                 iter = list(genquery.Query(ctx,
                             ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
@@ -295,7 +313,7 @@ def api_resource_monthly_category_stats(ctx):
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
         for group in groups:
-            if group.startswith(('research', 'deposit')):
+            if group.startswith(('research', 'deposit', 'intake', 'grp', 'datarequest')):
                 group_storage[group] = []
                 group_catdata[group] = {'category': category,
                                         'subcategory': get_group_category_info(ctx, group)['subcategory']}
@@ -309,7 +327,7 @@ def api_resource_monthly_category_stats(ctx):
             # for all groups in category
             groups = get_groups_on_categories(ctx, [category])
             for group in groups:
-                if group.startswith(('research', 'deposit')):
+                if group.startswith(('research', 'deposit', 'intake', 'grp', 'datarequest')):
                     storage = get_group_data_sizes(ctx, group, date_reference)
                     group_storage[group].append(storage[3])
 
@@ -326,7 +344,7 @@ def api_resource_monthly_category_stats(ctx):
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
         for group in groups:
-            if group.startswith(('research', 'deposit')):
+            if group.startswith(('research', 'deposit', 'intake', 'grp', 'datarequest')):
                 storage = get_group_data_sizes(ctx, group, date_reference)
                 group_storage[group].append(storage[3])
 
@@ -402,6 +420,34 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
         for row in iter:
             groupName = row[0]
             groups.append(groupName)
+        
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            groupName = row[0]
+            groups.append(groupName)
+
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            groupName = row[0]
+            groups.append(groupName)
+        
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            "USER_GROUP_NAME like 'datarequest-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            groupName = row[0]
+            groups.append(groupName)
+        
 
     return groups
 
@@ -462,8 +508,8 @@ def rule_resource_store_monthly_storage_statistics(ctx):
         for group in groups:
             # COLLECT GROUP DATA
             # Per group collect totals for vault, research and revision
-            # only look at research or deposit groups
-            if group.startswith(('research', 'deposit')):
+            # Look at research, deposit, intake, grp and datarequest groups
+            if group.startswith(('research', 'deposit', 'intake', 'grp', 'datarequest')):
                 # RESEARCH AND VAULT SPACE
                 for step in steps:
                     total[step] = 0
@@ -511,24 +557,51 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     if row[0] != '':
                         total['revision'] += int(row[0])
 
+                # For intake, grp and datarequest groups
+                total['other'] = 0
+                group_path = '/' + zone + '/home/' + group
+                
+                for folder in ['self', 'subfolders']:
+                    if folder == 'self':
+                        whereClause = "COLL_NAME = '" + group_path + "'"
+                    else:
+                        whereClause = "COLL_NAME like '" + group_path + "/%'"
+
+                iter = genquery.row_iterator(
+                    "SUM(DATA_SIZE)",
+                    whereClause,
+                    genquery.AS_LIST, ctx
+                )
+                for row in iter:
+                    if row[0] != '':
+                        total['other'] += int(row[0])
+
                 # STORE GROUP DATA
                 # STORAGE_TOTAL_REVISION_2023_01_09
                 # constructed this way to be backwards compatible (not using json.dump)
 
                 # [category, research, vault, revision, total]
                 storage_total = total['research'] + total['vault'] + total['revision']
+                
                 storage_val = "[\"{}\", {}, {}, {}, {}]".format(category, total['research'], total['vault'], total['revision'], storage_total)
+                storage_val_other = "[\"{}\", {}, {}, {}, {}]".format(category, 0, 0, 0, total['other'])
 
                 # Only store if storage_total>0???
                 # Sla maar wel op want anders niet duidelijk of het gebeurd is
 
                 # write as metadata (kv-pair) to current group
-                avu.associate_to_group(ctx, group, md_storage_date, storage_val)
+                if group.startswith(('research', 'deposit')):
+                    log.write(ctx, 'In first if')
+                    log.write(ctx,group)
+                    log.write(ctx,storage_val)
+                    avu.associate_to_group(ctx, group, md_storage_date, storage_val)
+                if group.startswith(('intake', 'grp', 'datarequest')):
+                    avu.associate_to_group(ctx, group, md_storage_date, storage_val_other)
 
-                log.write(ctx, 'All group data collected and stored for current month')
+                log.write(ctx, 'Research, Vault and Revision data collected and stored for current month')
             else:  # except Exception:
-                log.write(ctx, 'SKIPPING GROUP AS NOT prefixed with either research- or deposit-')
-
+                log.write(ctx, 'SKIPPING GROUP AS NOT prefixed with either research-, deposit-, intake-, grp- or datarequest-')
+                log.write(ctx, group)
     return 'ok'
 
 
