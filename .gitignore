@@ -26,5 +26,5 @@ __pycache__/
 # Pyenv local config
 .python-version
 
-# Access tokens for DB
+# Data Access tokens DB
 accesstokens.db
