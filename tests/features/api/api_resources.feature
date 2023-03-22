@@ -47,18 +47,6 @@ Feature: Resources API
             | user        | group                  |
             | researcher  | research-deposit-test  |
             | datamanager | research-deposit-test  |
-    
-    @depositapitest
-    Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
-        Given user <user> is authenticated
-        And the Yoda resources full year differentiated group data API is queried with <group>
-	    Then the response status code is "200"
-	    And storage data for group is found
-
-        Examples:
-            | user       | group                  |
-            | researcher  | research-deposit-test  |
-            | datamanager | research-deposit-test  |
 
     @intake
     Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
