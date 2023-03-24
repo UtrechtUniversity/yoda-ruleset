@@ -925,11 +925,12 @@
                 "Affiliation_Name": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation name",
-                  "default": "Utrecht University"
+                  "default": "Def Utrecht University"
                 },
                 "Affiliation_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Ror"
+                  "title": "Ror",
+                  "default": "Def ROR CREAT"
                 }
               }
             }
@@ -1004,11 +1005,12 @@
                 "Affiliation_Name": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation name",
-                  "default": "Utrecht University"
+                  "default": "Def Utrecht University"
                 },
                 "Affiliation_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Ror"
+                  "title": "Ror",
+                  "default": "Def ROR CREAT"
                 }
               }
             }
