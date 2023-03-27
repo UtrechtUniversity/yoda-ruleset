@@ -181,6 +181,7 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
     research = []
     vault = []
     revision = []
+    total = []
     iter = genquery.row_iterator(
         "ORDER(META_USER_ATTR_NAME), META_USER_ATTR_VALUE",
         "USER_NAME = '{}' AND META_USER_ATTR_NAME like '{}%%' AND USER_TYPE = 'rodsgroup'".format(group_name, constants.UUMETADATAGROUPSTORAGETOTALS),
@@ -197,9 +198,10 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
         research.append(temp[1])
         vault.append(temp[2])
         revision.append(temp[3])
+        total.append(temp[4])
 
-    # example: {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400]}
-    return {'labels': labels, 'research': research, 'vault': vault, 'revision': revision}
+    # example: {'labels': ['2022-06-01', '2022-06-02', '2022-06-03'], 'research': [123, 456, 789], 'vault': [666, 777, 888], 'revision': [200, 300, 400], 'total': [989, 1533, 2077]}
+    return {'labels': labels, 'research': research, 'vault': vault, 'revision': revision, 'total': total}
 
 
 @api.make()
