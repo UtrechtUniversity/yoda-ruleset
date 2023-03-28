@@ -1,30 +1,19 @@
 Feature: Statistics UI
 
-    Scenario Outline: Viewing storage details of a research group
+    Scenario Outline: Viewing storage details of a group
         Given user <user> is logged in
         And module "stats" is shown
         When groupdetails contains initial text
-        When user views statistics of group research-initial
+        When user views statistics of group <group>
         Then statistics graph is shown
 
         Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
+            | user        | group            |
+            | researcher  | research-initial |
+            | researcher  | deposit-pilot    |
+            | datamanager | research-initial |
+            | datamanager | deposit-pilot    |
 
-
-    Scenario Outline: Viewing storage details of a deposit group
-        Given user <user> is logged in
-        And module "stats" is shown
-        When groupdetails contains initial text
-        When user views statistics of group deposit-pilot
-        Then statistics graph is shown
-
-        Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
-    
     
     Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
         Given user <user> is logged in
@@ -34,6 +23,7 @@ Feature: Statistics UI
         Examples:
             | user           | categories      |
             | technicaladmin | test-automation |
+            | technicaladmin | intake-intake2  |
             | datamanager    | test-automation |
 
 
