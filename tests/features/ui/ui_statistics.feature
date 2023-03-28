@@ -4,63 +4,21 @@ Feature: Statistics UI
         Given user <user> is logged in
         And module "stats" is shown
         When groupdetails contains initial text
-        When user views statistics of group research-initial
+        When user views statistics of group <group>
         Then statistics graph is shown
 
         Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
-
-
-    Scenario Outline: Viewing storage details of a deposit group
-        Given user <user> is logged in
-        And module "stats" is shown
-        When groupdetails contains initial text
-        When user views statistics of group deposit-pilot
-        Then statistics graph is shown
-
-        Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
-    
-    Scenario Outline: Viewing storage details of a grp group
-        Given user <user> is logged in
-        And module "stats" is shown
-        When groupdetails contains initial text
-        When user views statistics of group grp-intake-initial
-        Then statistics graph is shown
-
-        Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
-
-
-    Scenario Outline: Viewing storage details of a intake group
-        Given user <user> is logged in
-        And module "stats" is shown
-        When groupdetails contains initial text
-        When user views statistics of group intake-test2
-        Then statistics graph is shown
-
-        Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
-
-    Scenario Outline: Viewing storage details of a datarequests group
-        Given user <user> is logged in
-        And module "stats" is shown
-        When groupdetails contains initial text
-        When user views statistics of group datarequests-research-datamanagers
-        Then statistics graph is shown
-
-        Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
+            | user        | group                              |
+            | researcher  | research-initial                   |
+            | datamanager | research-initial                   |
+            | researcher  | deposit-pilot                      |
+            | datamanager | deposit-pilot                      |
+            | researcher  | grp-intake-initial                 |
+            | datamanager | grp-intake-initial                 |
+            | researcher  | intake-test2                       |
+            | datamanager | intake-test2                       |
+            | researcher  | datarequests-research-datamanagers |
+            | datamanager | datarequests-research-datamanagers |
 
 
     Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
