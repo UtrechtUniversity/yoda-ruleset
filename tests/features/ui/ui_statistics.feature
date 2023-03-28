@@ -23,7 +23,7 @@ Feature: Statistics UI
         Examples:
             | user           | categories      |
             | technicaladmin | test-automation |
-            | technicaladmin | intake-intake2  |
+            | technicaladmin | intake-intake   |
             | datamanager    | test-automation |
 
 
