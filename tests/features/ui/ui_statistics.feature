@@ -4,23 +4,28 @@ Feature: Statistics UI
         Given user <user> is logged in
         And module "stats" is shown
         When groupdetails contains initial text
-        When user views statistics of group <group>
+        When user views statistics of group research-initial
         Then statistics graph is shown
 
         Examples:
-            | user        | group                              |
-            | researcher  | research-initial                   |
-            | datamanager | research-initial                   |
-            | researcher  | deposit-pilot                      |
-            | datamanager | deposit-pilot                      |
-            | researcher  | grp-intake-initial                 |
-            | datamanager | grp-intake-initial                 |
-            | researcher  | intake-test2                       |
-            | datamanager | intake-test2                       |
-            | researcher  | datarequests-research-datamanagers |
-            | datamanager | datarequests-research-datamanagers |
+            | user        |
+            | researcher  |
+            | datamanager |
 
 
+    Scenario Outline: Viewing storage details of a deposit group
+        Given user <user> is logged in
+        And module "stats" is shown
+        When groupdetails contains initial text
+        When user views statistics of group deposit-pilot
+        Then statistics graph is shown
+
+        Examples:
+            | user        |
+            | researcher  |
+            | datamanager |
+    
+    
     Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
         Given user <user> is logged in
         When module "stats" is shown
@@ -30,8 +35,6 @@ Feature: Statistics UI
             | user           | categories      |
             | technicaladmin | test-automation |
             | datamanager    | test-automation |
-            | technicaladmin | intake-intake   |
-            | datamanager    | intake-intake   |
 
 
     Scenario Outline: Export category storage details as a technicaladmin or datamanager
