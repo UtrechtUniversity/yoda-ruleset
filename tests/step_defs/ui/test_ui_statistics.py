@@ -14,6 +14,8 @@ from pytest_bdd import (
     when,
 )
 
+import time
+
 scenarios('../../features/ui/ui_statistics.feature')
 
 
@@ -31,7 +33,7 @@ def ui_statistics_group_view(browser, group):
 
         items = browser.find_by_css('#group-browser tr')
         for item in items:
-            time.sleep(10)
+            time.sleep(5)
             if item.value.find(group) > -1:
                 item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                 return True
