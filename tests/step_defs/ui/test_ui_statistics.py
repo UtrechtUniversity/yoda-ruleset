@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -14,7 +15,6 @@ from pytest_bdd import (
     when,
 )
 
-import time
 
 scenarios('../../features/ui/ui_statistics.feature')
 
