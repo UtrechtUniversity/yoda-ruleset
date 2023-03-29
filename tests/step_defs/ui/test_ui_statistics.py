@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -32,14 +33,17 @@ def ui_statistics_group_view(browser, group):
         # Next page available, button is not disabled.
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
         while (attempts < 3):
+            time.sleep(10)
             items = browser.find_by_css('#group-browser tr')
             for item in items:
                 if item.value.find(group) > -1:
+                    time.sleep(10)
                     item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                     result = True
                     break
                 else:
                     # Group not found, try next page.
+                    time.sleep(10)
                     browser.find_by_id('group-browser_next').click()
             attempts += 1
         return result
