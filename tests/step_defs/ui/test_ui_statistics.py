@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
-
 from pathlib import Path
 
 from pytest_bdd import (
