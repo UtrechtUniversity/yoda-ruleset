@@ -33,14 +33,15 @@ def ui_statistics_group_view(browser, group):
 
         items = browser.find_by_css('#group-browser tr')
         for item in items:
-            console.log(item.value.find(group))
             time.sleep(5)
             if item.value.find(group) > -1:
+                time.sleep(5)
                 item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                 time.sleep(5)
                 return True
             else:
                 # Group not found, try next page.
+                time.sleep(5)
                 browser.find_by_id('group-browser_next').click()
                 time.sleep(5)
 
