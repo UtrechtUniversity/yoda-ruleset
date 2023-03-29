@@ -8,11 +8,16 @@ Feature: Statistics UI
         Then statistics graph is shown
 
         Examples:
-            | user        | group            |
-            | researcher  | research-initial |
-            | researcher  | deposit-pilot    |
-            | datamanager | research-initial |
-            | datamanager | deposit-pilot    |
+            | user        | group                              |
+            | researcher  | research-initial                   |
+            | researcher  | deposit-pilot                      |
+            | researcher  | grp-intake-initial                 |
+            | researcher  | intake-test2                       |
+            | datamanager | research-initial                   |
+            | datamanager | deposit-pilot                      |
+            | datamanager | grp-intake-initial                 |
+            | datamanager | intake-test2                       |
+            | datamanager | datarequests-research-datamanagers |
 
     
     Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
