@@ -839,7 +839,7 @@ def datarequest_process_expired_review_periods(ctx, request_ids):
         status_set(ctx, request_id, status.REVIEWED)
 
 
-def file_write_and_lock(ctx, coll_path, filename, data, readers):
+def file_write_and_lock(ctx, coll_path, filename, data, readers, writers):
     """Grant temporary write permission and write file to disk.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -847,6 +847,7 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
     :param filename:  Name of file
     :param data:      The data to be written to disk
     :param readers:   Array of user names that should be given read access to the file
+    :param writers:   Array of user names that should be given write access to the file
     """
 
     file_path = "{}/{}".format(coll_path, filename)
@@ -861,8 +862,12 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
     for reader in readers:
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
+    # Grant write permission to writers
+    for writer in writers:
+        msi.set_acl(ctx, "default", "write", writer, file_path)
+
     # Revoke temporary write permission (unless read permissions were set on the invoking user)
-    if not user.full_name(ctx) in readers:
+    if not user.full_name(ctx) in readers or user.full_name(ctx) in writers:
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
@@ -976,8 +981,8 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         else:
             return
 
-    # Grant read permissions on data request
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    # Grant appropriate permissions on data request
+    msi.set_acl(ctx, "default", "write", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     # Revoke write permission
@@ -1099,7 +1104,7 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
                                          ATTACHMENTS_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "write", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
 
@@ -1186,7 +1191,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_PM], [GROUP_DM])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
 
@@ -1276,7 +1281,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_PM], [GROUP_DM])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
 
@@ -1398,12 +1403,12 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Write form data to disk
     try:
         # Determine who is permitted to read
-        permitted_to_read = [GROUP_DM, GROUP_PM]
+        permitted_to_read = [GROUP_PM]
         if 'assign_to' in data.keys():
             permitted_to_read = permitted_to_read + data['assign_to'][:]
 
         # Write form data to disk
-        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read)
+        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read, [GROUP_DM])
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
 
@@ -1925,7 +1930,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME,
                                          filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "write", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
     msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
 
@@ -1999,7 +2004,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
                                          filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "write", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
     msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
 
