@@ -14,7 +14,7 @@ from pytest_bdd import (
     then,
     when,
 )
-from selenium.webdriver.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException
 
 scenarios('../../features/ui/ui_statistics.feature')
 
