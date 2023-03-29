@@ -44,7 +44,7 @@ def ui_statistics_group_view(browser, group):
                     time.sleep(3)
                     browser.find_by_id('group-browser_next').click()
             except StaleElementReferenceException:
-                browser.refresh()
+                browser.refresh
                 if item.value.find(group) > -1:
                     time.sleep(3)
                     item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
