@@ -41,7 +41,7 @@ def ui_statistics_group_view(browser, group):
                 browser.reload()
                 if item.value.find(group) > -1:
                     # browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
-                    commentr = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.ID, '.list-group-item[data-name={}]'.format(group))))
+                    commentr = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.list-group-item[data-name={}]'.format(group))))
                     commentr.click()
                     return True
                 else:
