@@ -14,10 +14,6 @@ from pytest_bdd import (
     when,
 )
 from selenium.common.exceptions import StaleElementReferenceException
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.support.ui import WebDriverWait
-
 
 scenarios('../../features/ui/ui_statistics.feature')
 
@@ -34,9 +30,10 @@ def ui_statistics_group_view(browser, group):
     while next_page:
         # Next page available, button is not disabled.
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
-        browser.implicitly_wait(5)
+        browser.implicitly_wait(10)
         items = browser.find_by_css('#group-browser tbody td')
         for item in items:
+            print(item)
             try:
                 if item.value.find(group) > -1:
                     browser.implicitly_wait(10)
@@ -46,7 +43,7 @@ def ui_statistics_group_view(browser, group):
                     # Group not found, try next page.
                     browser.find_by_id('group-browser_next').click()
             except StaleElementReferenceException:
-                browser.implicitly_wait(5)
+                browser.implicitly_wait(10)
                 if item.value.find(group) > -1:
                     browser.implicitly_wait(10)
                     browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
