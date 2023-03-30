@@ -32,9 +32,9 @@ def ui_statistics_group_view(browser, group):
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
 
         items = browser.find_by_css('#group-browser tbody td')
-        print(items)
         for item in items:
             try:
+                browser.reload()
                 if item.value.find(group) > -1:
                     browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                     return True
@@ -44,7 +44,7 @@ def ui_statistics_group_view(browser, group):
             except StaleElementReferenceException:
                 browser.reload()
                 if item.value.find(group) > -1:
-                    item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
+                    browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                     return True
                 else:
                     # Group not found, try next page.
