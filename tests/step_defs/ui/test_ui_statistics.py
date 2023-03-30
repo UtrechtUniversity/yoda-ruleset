@@ -14,6 +14,10 @@ from pytest_bdd import (
     when,
 )
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 
 scenarios('../../features/ui/ui_statistics.feature')
 
@@ -36,7 +40,9 @@ def ui_statistics_group_view(browser, group):
             try:
                 browser.reload()
                 if item.value.find(group) > -1:
-                    browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
+                    # browser.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
+                    commentr = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.ID, '.list-group-item[data-name={}]'.format(group))))
+                    commentr.click()
                     return True
                 else:
                     # Group not found, try next page.
