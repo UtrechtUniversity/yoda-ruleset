@@ -165,7 +165,7 @@ def getSubcategories(ctx, category):
     # to `categories` if the category name matches.
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
@@ -310,7 +310,7 @@ def api_group_data(ctx):
         # Check whether schema_id is present on group level.
         # If not, collect it from the corresponding category
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
@@ -341,7 +341,14 @@ def api_group_data(ctx):
     # if "System" in group_hierarchy:
     #    group_hierarchy.move_to_end("System", last=False)
 
-    return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    # Per category the group data has to be ordered by subcat asc as well
+    subcat_ordered_group_hierarchy = OrderedDict()
+    for cat in new_group_hierarchy:
+        subcats_data = new_group_hierarchy[cat]
+        # order on subcat level per category
+        subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
+
+    return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def user_is_a_datamanager(ctx):

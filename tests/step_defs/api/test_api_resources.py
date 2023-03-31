@@ -57,32 +57,24 @@ def api_response_paginated_group_found_one(api_response):
     assert len(body["data"]["items"]) == 1
 
 
-@given(parsers.parse("the Yoda resources full year group data API is queried with {group}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda resources full year differentiated group data API is queried with {group}"), target_fixture="api_response")
 def api_resource_full_year_group_data(user, group):
     return api_request(
         user,
-        "resource_full_year_group_data",
+        "resource_full_year_differentiated_group_storage",
         {'group_name': group}
     )
 
 
-@then('monthly storage data for group is found')
-def api_response_monthly_storage_for_group(api_response):
+@then('storage data for group is found')
+def api_response_storage_for_group(api_response):
     _, body = api_response
 
-    assert body["data"]["months"]
-    assert body["data"]["tiers"]
-    assert body["data"]["total_storage"]
-
-
-@then('monthly storage data for a datamanager is found')
-def api_response_monthly_storage_for_dm(api_response):
-    _, body = api_response
-
-    # check presence all keys
-    assert body["data"][0]["category"]
-    assert body["data"][0]["tier"]
-    assert body["data"][0]["storage"]
+    assert body["data"]["labels"]
+    assert body["data"]["research"]
+    assert body["data"]["revision"]
+    assert body["data"]["vault"]
+    assert body["data"]["total"]
 
 
 @given('the Yoda resources monthly category stats API is queried', target_fixture="api_response")
@@ -98,11 +90,12 @@ def api_get_monthly_category_stats_export_dm(user):
 def api_response_storage_data_for_export(api_response):
     _, body = api_response
 
-    assert body["data"][0]["category"]
-    assert body["data"][0]["subcategory"]
-    assert body["data"][0]["storage"]
-    assert body["data"][0]["groupname"]
-    assert body["data"][0]["tier"]
+    assert "dates" in body["data"]
+    assert "storage" in body["data"]
+    assert "category" in body["data"]["storage"][0]
+    assert "subcategory" in body["data"]["storage"][0]
+    assert "groupname" in body["data"]["storage"][0]
+    assert "storage" in body["data"]["storage"][0]
 
 
 @given('the Yoda resources category stats API is queried', target_fixture="api_response")
@@ -119,75 +112,7 @@ def api_response_category_statistics_found(api_response):
     _, body = api_response
 
     assert body['data'][0]['category']
-    assert body['data'][0]['tier']
     assert body['data'][0]['storage']
-
-
-@given('the Yoda resources API is queried for all resources and tiers', target_fixture="api_response")
-def api_resource_and_tier_data(user):
-    return api_request(
-        user,
-        "resource_resource_and_tier_data",
-        {}
-    )
-
-
-@then('list of resources and tiers is found')
-def api_response_list_of_resources_and_tiers(api_response):
-    _, body = api_response
-
-    # {'tier': 'Standard', 'name': 'dev001_2', 'id': '10018'}
-    assert body['data'][0]['tier']
-    assert body['data'][0]['name']
-    assert body['data'][0]['id']
-
-
-@given(parsers.parse("the Yoda resources API is queried for tier_name of {resource_name}"), target_fixture="api_response")
-def api_get_tier_on_resource(user, resource_name):
-    return api_request(
-        user,
-        "resource_tier",
-        {"res_name": resource_name}
-    )
-
-
-@then(parsers.parse("tier name {tier_name} is found"))
-def api_response_tier_name_for_resource(api_response, tier_name):
-    _, body = api_response
-
-    assert body['data'] == tier_name
-
-
-@given('the Yoda resources API is queried for all available tiers', target_fixture="api_response")
-def api_get_tiers(user):
-    return api_request(
-        user,
-        "resource_get_tiers",
-        {}
-    )
-
-
-@then(parsers.parse("list with {tier_name} is found"))
-def api_response_all_tiers(api_response, tier_name):
-    _, body = api_response
-
-    assert tier_name in body['data']
-
-
-@given(parsers.parse("the Yoda resources API is requested to save tier {tier_name} for resource {resource_name}"), target_fixture="api_response")
-def api_save_tier_for_resource(user, resource_name, tier_name):
-    return api_request(
-        user,
-        "resource_save_tier",
-        {"resource_name": resource_name, "tier_name": tier_name}
-    )
-
-
-@then('tier is saved successfully for resource')
-def api_response_save_tier_name_successful(api_response):
-    _, body = api_response
-
-    assert body['status'] == 'ok'
 
 
 @then('full year storage data is found')

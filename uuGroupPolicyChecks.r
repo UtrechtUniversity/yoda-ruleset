@@ -508,10 +508,24 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
         } else {
             *reason = "Cannot modify settings of other user.";
         }
+	# User setting: Number of items
+	} else if (*attribute == "org_settings_number_of_items") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User setting: Initial list to be presented in group manager: Tree or flat list
+    } else if (*attribute == "org_settings_group_manager_view") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
     # User notifications
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
-	} else {
-		*reason = "Invalid user attribute name.";
-	}
+    } else {
+	*reason = "Invalid user attribute name.";
+    }
 }

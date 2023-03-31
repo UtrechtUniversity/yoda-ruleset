@@ -1,11 +1,10 @@
 # coding=utf-8
 """Statistics UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
-import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -25,14 +24,18 @@ def ui_statistics_group_details_initial_state(browser):
 
 @when(parsers.parse("user views statistics of group {group}"))
 def ui_statistics_group_view(browser, group):
-    items = browser.find_by_css('#group-browser tr')
-
-    for item in items:
-        if item.value.find(group) > -1:
-            item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
-            time.sleep(2)
-            return True
-
+    next_page = True
+    while next_page:
+        # Next page available, button is not disabled.
+        next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
+        items = browser.find_by_css('#group-browser tr')
+        for item in items:
+            if item.value.find(group) > -1:
+                item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
+                return True
+        else:
+            # Group not found, try next page.
+            browser.find_by_id('group-browser_next').click()
     assert False
 
 
@@ -48,11 +51,6 @@ def ui_statistics_export(browser):
 @then('statistics graph is shown')
 def ui_statistics_graph_shown(browser):
     assert browser.is_text_not_present("No storage information found.", wait_time=1)
-
-
-@then('statistics graph is not shown')
-def ui_statistics_graph_not_shown(browser):
-    assert browser.is_text_present("No storage information found.", wait_time=1)
 
 
 @then(parsers.parse("storage for {categories} is shown"))
@@ -97,56 +95,3 @@ def ui_statistics_csv_downloaded(browser, tmpdir):
             return
 
     raise AssertionError()
-
-
-# Resource tier management tests
-@then('resource view is shown')
-def ui_resource_view_is_shown(browser):
-    assert browser.find_by_css('.resources')
-
-
-@when(parsers.parse("user updates {resource_name} from {old_tier} to {new_tier} and {tier_action} tier"))
-def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, new_tier, tier_action):
-    # Find index of resource_name in resource table
-    index = 0
-    for resource in browser.find_by_css('.resource'):
-        if resource.value.find(resource_name) >= 0:
-            break
-        index = index + 1
-
-    # Check if tier is set correctly
-    assert(browser.find_by_css('.resource-tier')[index].value.find(old_tier) >= 0)  # noqa
-
-    # Click in resource table on row resource_name
-    browser.find_by_css('.resource')[index].click()
-
-    # Activate tier select
-    browser.find_by_css('.select2-selection').click()
-
-    browser.find_by_css('.select2-search__field').fill(new_tier)
-    create_new_tier = ''
-    if tier_action == 'create':
-        create_new_tier = ' (create)'
-        browser.find_by_text(new_tier + create_new_tier)[0].click()
-    else:
-        # click on already present option
-        time.sleep(3)
-        browser.find_by_css('.select2-results__option').click()
-
-    # Click update tier button
-    browser.find_by_css('.update-resource-properties-btn').click()
-
-
-@then(parsers.parse("{resource_name} has tier {new_tier}"))
-def ui_resource_has_tier(browser, resource_name, new_tier):
-    # Find index of resource_name in resource table
-    browser.visit(browser.url)
-    time.sleep(3)
-    index = 0
-    for resource in browser.find_by_css('.resource', wait_time=30):
-        if resource.value.find(resource_name) >= 0:
-            break
-        index = index + 1
-
-    # Check if tier is set correctly
-    assert (browser.find_by_css('.resource', wait_time=30)[index].value.find(new_tier) >= 0)

@@ -12,6 +12,7 @@ if sys.version_info > (2, 7):
 import genquery
 import irods_types
 
+import data_object
 import msi
 
 
@@ -173,12 +174,22 @@ def copy(ctx, path_org, path_copy):
     This may raise a error.UUError if the collection does not exist, or when
     the user does not have write permission.
     """
-    msi.coll_rsync(ctx,
-                   path_org,
-                   path_copy,
-                   '',
-                   'IRODS_TO_IRODS',
-                   irods_types.BytesBuf())
+    create(ctx, path_copy)
+    for row in genquery.row_iterator("DATA_NAME",
+                                     "COLL_NAME = '{}'".format(path_org),
+                                     genquery.AS_LIST,
+                                     ctx):
+        data_obj = row[0]
+        data_object.copy(ctx,
+                         path_org + "/" + data_obj,
+                         path_copy + "/" + data_obj)
+
+    for row in genquery.row_iterator("COLL_NAME",
+                                     "COLL_PARENT_NAME = '{}'".format(path_org),
+                                     genquery.AS_LIST,
+                                     ctx):
+        coll = row[0]
+        copy(ctx, coll, path_copy + coll[len(path_org):])
 
 
 def move(ctx, path_org, path_move):
@@ -191,12 +202,7 @@ def move(ctx, path_org, path_move):
     This may raise a error.UUError if the collection does not exist, or when
     the user does not have write permission.
     """
-    msi.coll_rsync(ctx,
-                   path_org,
-                   path_move,
-                   '',
-                   'IRODS_TO_IRODS',
-                   irods_types.BytesBuf())
+    copy(ctx, path_org, path_move)
     msi.rm_coll(ctx,
                 path_org,
                 '',
