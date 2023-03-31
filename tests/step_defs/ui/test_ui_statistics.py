@@ -13,7 +13,7 @@ from pytest_bdd import (
     then,
     when,
 )
-from selenium.common.exceptions import StaleElementReferenceException
+
 
 scenarios('../../features/ui/ui_statistics.feature')
 
@@ -30,25 +30,15 @@ def ui_statistics_group_view(browser, group):
     while next_page:
         # Next page available, button is not disabled.
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
-        browser.implicitly_wait(5)
+
         items = browser.find_by_css('#group-browser tr')
         for item in items:
-            try:
-                if item.value.find(group) > -1:
-                    item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
-                    return True
-                else:
-                    # Group not found, try next page.
-                    browser.find_by_id('group-browser_next').click()
-            except StaleElementReferenceException:
-                browser.implicitly_wait(10)
-                if item.value.find(group) > -1:
-                    item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
-                    return True
-                else:
-                    # Group not found, try next page.
-                    browser.find_by_id('group-browser_next').click()
-
+            if item.value.find(group) > -1:
+                item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
+                return True
+            else:
+                # Group not found, try next page.
+                browser.find_by_id('group-browser_next').click()
     assert False
 
 

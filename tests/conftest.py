@@ -18,12 +18,6 @@ from pytest_bdd import (
 )
 
 
-@pytest.fixture(scope='session')
-def splinter_webdriver():
-    """Override splinter webdriver name."""
-    return 'chrome'
-
-
 portal_url = ""
 api_url = ""
 roles = {}
