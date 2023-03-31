@@ -46,14 +46,14 @@ def ui_deposit_open_search_data_access_type_visible(browser, data_access):
 
 @when('all fields contain correct data')
 def ui_deposit_open_search_contains_correct_data(browser):
-    required_text = ['Jane Doe (Principal Investigator)',
+    required_text = ['María José Carreño Quiñones (Group Leader)',
                      'UI test',
                      'Aut aspernatur quia perferendis et',
                      'Keyword1',
                      'Earth sciences - Geochemistry',
                      'Project1',
-                     'Jane Doe, Utrecht University, Principal Investigator',
-                     'John Doe',
+                     'Борис Николаевич Ельцин, University Džemal Bijedić of Mostar, Contact Person from External Institute',
+                     'Tấn Dũng Nguyễn',
                      '2000-01-01 - 2010-01-01',
                      'Reference to a publication',
                      'Another reference to a publication']

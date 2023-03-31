@@ -50,7 +50,7 @@ def api_get_revision_list(user, path):
     )
 
 
-@then('revisions list is found')
+@then('revisions list is returned')
 def api_response_list_found(api_response):
     _, body = api_response
 

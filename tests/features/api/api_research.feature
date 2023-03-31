@@ -113,8 +113,8 @@ Feature: Research API
         And file <file> does not exist in <collection>
 
         Examples:
-            | collection                      | file                       |
-            | /tempZone/home/research-initial | upload_test_file.txt       |
+            | collection                      | file                 |
+            | /tempZone/home/research-initial | upload_test_file.txt |
 
 
     Scenario Outline: Research folder delete

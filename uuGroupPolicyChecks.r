@@ -111,6 +111,17 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
     }
 }
 
+# \brief Check if indicated expiration date is valid
+#
+# \param[in]  expiration_date
+# \param[out] valid
+#
+uuGroupExpirationDateIsValid(*expiration_date, *valid) {
+    *result = "";
+    rule_group_expiration_date_validate(*expiration_date, *result);
+    *valid = bool(*result);
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -119,15 +130,17 @@ uuGroupSchemaIdIsValid(*schema_id, *valid) {
 # \param[in]  groupName   the new group name
 # \param[in]  category
 # \param[in]  subcategory
+# \param[in]  schema_id
+# \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; writeLine("serverLog","In CanGroupAdd RODSADMIN");}
 
 	*allowed = 0;
 	*reason  = "";
@@ -151,14 +164,22 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 
 					*vaultName = "vault-*base";
 					uuGroupExists(*vaultName, *vaultExists);
+					# Extra check for situations that a vault path is already present
+					uuGroupVaultPathExists(*vaultName, *vaultPathExists);
 
-					if (*roExists || *vaultExists) {
+					if (*roExists || *vaultExists || *vaultPathExists) {
 						*reason = "This group name is not available.";
 					} else {
 						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
 						if (*schemaIdValid) {
-							# Last check.
-							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+							# Check expiration date
+							uuGroupExpirationDateIsValid(*expiration_date, *expirationDateValid);
+							if (*expirationDateValid) {
+							    # Last check.
+    							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+							} else {
+							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
+							}
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
@@ -240,7 +261,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  groupName the group name
-# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification')
+# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification', 'schema_id', 'expiration_date')
 # \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
@@ -282,6 +303,13 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 				*allowed = 1;
 			} else {
 				*reason = "The chosen schema id is invalid for this group.";
+			}
+		} else if (*attribute == "expiration_date") {
+			uuGroupExpirationDateIsValid(*value, *expirationDateValid);
+			if (*expirationDateValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen expiration date is invalid.";
 			}
 		} else {
 			*reason = "Invalid group attribute name.";
@@ -480,10 +508,24 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
         } else {
             *reason = "Cannot modify settings of other user.";
         }
+	# User setting: Number of items
+	} else if (*attribute == "org_settings_number_of_items") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User setting: Initial list to be presented in group manager: Tree or flat list
+    } else if (*attribute == "org_settings_group_manager_view") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
     # User notifications
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
-	} else {
-		*reason = "Invalid user attribute name.";
-	}
+    } else {
+	*reason = "Invalid user attribute name.";
+    }
 }

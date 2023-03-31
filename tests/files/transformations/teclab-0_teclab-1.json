@@ -1,0 +1,114 @@
+{
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/teclab-0/metadata.json"
+        }
+    ],
+    "Discipline": [
+        "Analogue modelling of geologic processes"
+    ],
+    "Lab": [
+        "aa45f98e5c098237d0c57b58e5f953e1"
+    ],
+    "Version": "Version 1.0",
+    "Language": "en - English",
+    "Collected": {
+        "Start_Date": "2022-11-01",
+        "End_Date": "2022-11-02"
+    },
+    "GeoLocation": [
+        {
+            "geoLocationBox": {},
+            "Description_Temporal": {}
+        }
+    ],
+    "Main_Setting": [
+        "basin plain setting"
+    ],
+    "Process_Hazard": [
+        "deformation"
+    ],
+    "Geological_Structure": [
+        "fault"
+    ],
+    "Geomorphical_Feature": [
+        "alluvial and fluvial features"
+    ],
+    "Material": [
+        "Air"
+    ],
+    "Apparatus": [
+        "2D Convection box"
+    ],
+    "Software": [
+        "CloudCompare"
+    ],
+    "Measured_Property": [
+        "Bulk modulus"
+    ],
+    "Retention_Period": 10,
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
+            },
+            "Affiliation": [
+                "University Džemal Bijedić of Mostar"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
+        }
+    ],
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Affiliation": [
+                "University of Göttingen"
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Affiliation": [
+                "École des Beaux-Arts"
+            ]
+        }
+    ],
+    "Contact": [
+        {
+            "Name": {
+                "Given_Name": "Jenny",
+                "Family_Name": "Doe"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ]
+        }
+    ],
+    "License": "Custom",
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "Title": "API test teclab-0",
+    "Description": "API test teclab-0",
+    "Data_Type": "Dataset",
+    "Data_Classification": "Public"
+}

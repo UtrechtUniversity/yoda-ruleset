@@ -4,7 +4,11 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+import os
 import time
+from collections import OrderedDict
+from urllib.parse import urlparse
 
 from pytest_bdd import (
     given,
@@ -133,39 +137,26 @@ def api_vault_get_published_packages(user, vault):
 
 @given(parsers.parse("the Yoda meta form save API is queried with metadata on datapackage in {vault}"), target_fixture="api_response")
 def api_meta_form_save_vault(user, vault, data_package):
+
+    _, body = api_request(
+        user,
+        "meta_form_load",
+        {"coll": vault + "/" + data_package}
+    )
+
+    path = urlparse(body['data']['schema']['$id']).path
+    schema = path.split("/")[2]
+
+    cwd = os.getcwd()
+    with open("{}/files/{}.json".format(cwd, schema)) as f:
+        metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
+
+    # Change metadata version.
+    metadata["Version"] = "2.0"
     return api_request(
         user,
         "meta_form_save",
-        {"coll": vault + "/" + data_package,
-         "metadata": {
-             "links": [{
-                 "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-2/metadata.json"
-             }],
-             "Language": "en - English",
-             "Retention_Period": 10,
-             "Creator": [{
-                 "Name": {
-                     "Given_Name": "Test",
-                     "Family_Name": "Test"
-                 },
-                 "Affiliation": ["Utrecht University"],
-                 "Person_Identifier": [{}]
-             }],
-             "Discipline": [
-                 "Natural Sciences - Computer and information sciences (1.2)"
-             ],
-             "Tag": [
-                 "Tag_youre_it",
-                 "No_tag_backs"
-             ],
-             "Data_Access_Restriction": "Restricted - available upon request",
-             "Title": "API test datamanager vault save metadata",
-             "Description": "Test",
-             "Data_Type": "Dataset",
-             "Data_Classification": "Public",
-             "License": "Creative Commons Attribution 4.0 International Public License"
-         }}
+        {"coll": vault + "/" + data_package, "metadata": metadata}
     )
 
 

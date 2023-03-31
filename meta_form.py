@@ -99,8 +99,7 @@ def humanize_validation_error(e):
         return 'This field contains an error: ' + ' -> '.join(path_out)
 
 
-@api.make()
-def api_meta_form_load(ctx, coll):
+def load(ctx, coll):
     """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
@@ -224,12 +223,16 @@ def api_meta_form_load(ctx, coll):
                                  + 'Please contact your datamanager.')
 
     elif space is pathutil.Space.VAULT:
+
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)
         can_edit  = (groups.user_is_datamanager(ctx, category, user_full_name)
                      and (status == constants.vault_package_state.UNPUBLISHED
                           or status == constants.vault_package_state.PUBLISHED
                           or status == constants.vault_package_state.DEPUBLISHED))
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
+
+        if meta_path is None:
+            return api.Error('missing_metadata', 'No metadata file could be found for this data package.')
 
         # Try to load the metadata file.
         try:
@@ -271,8 +274,7 @@ def api_meta_form_load(ctx, coll):
             'is_locked': is_locked}
 
 
-@api.make()
-def api_meta_form_save(ctx, coll, metadata):
+def save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -319,3 +321,10 @@ def api_meta_form_save(ctx, coll, metadata):
         jsonutil.write(ctx, json_path, metadata)
     except error.UUError:
         return api.Error('internal', 'Could not save yoda-metadata.json')
+
+
+"""API to retrieve all information required to load a metadata form in either the research or vault space."""
+api_meta_form_load = api.make()(load)
+
+"""API to validate and store JSON metadata for a given collection."""
+api_meta_form_save = api.make()(save)

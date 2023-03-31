@@ -11,7 +11,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request
+from conftest import api_request, roles
 
 scenarios('../../features/api/api_group.feature')
 
@@ -74,6 +74,7 @@ def api_group_create(user, group_name):
          "category": "api-test",
          "subcategory": "api-test",
          "schema_id": "default-2",
+         "expiration_date": "",
          "description": "",
          "data_classification": "public"}
     )
@@ -163,8 +164,11 @@ def then_users_found_match(api_response, users):
     _, body = api_response
 
     users = users.split(", ")
-    users.sort()
-    assert body["data"] == users
+
+    for user in users:
+        user_name, zone_name = user.split("#")
+        full_name = "{}#{}".format(roles[user_name]["username"], zone_name)
+        assert full_name in set(body["data"])
 
 
 @then(parsers.parse("group {group} exists"))

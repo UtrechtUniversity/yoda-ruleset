@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from datetime import datetime
 
 import genquery
 import requests
@@ -20,6 +21,7 @@ __all__ = ['api_group_data',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
+           'rule_group_expiration_date_validate',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -64,8 +66,8 @@ def getGroupData(ctx):
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description":
-            # Deal with legacy use of '.' for empty description metadata.
+        elif attr == "description" or attr == "expiration_date":
+            # Deal with legacy use of '.' for empty description metadata and expiration date.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
@@ -163,7 +165,7 @@ def getSubcategories(ctx, category):
     # to `categories` if the category name matches.
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
@@ -308,11 +310,12 @@ def api_group_data(ctx):
         # Check whether schema_id is present on group level.
         # If not, collect it from the corresponding category
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
             'schema_id': group['schema_id'],
+            'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -338,7 +341,14 @@ def api_group_data(ctx):
     # if "System" in group_hierarchy:
     #    group_hierarchy.move_to_end("System", last=False)
 
-    return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    # Per category the group data has to be ordered by subcat asc as well
+    subcat_ordered_group_hierarchy = OrderedDict()
+    for cat in new_group_hierarchy:
+        subcats_data = new_group_hierarchy[cat]
+        # order on subcat level per category
+        subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
+
+    return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def user_is_a_datamanager(ctx):
@@ -495,21 +505,10 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
-        # First create the group. Note that the rodsadmin actor will become a groupmanager
-
-        # when no matching category schema-id is found, fall back to yoda instance default
-        schema_id = 'default'
-        iter = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_NAME = '/{}/yoda/schemas/{}'".format(user.zone(ctx), category),
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            schema_id = category
-
-        response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id, '', 'unspecified', '', '')['arguments']
-        status = response[6]
-        message = response[7]
+        # First create the group. Note that the actor will become a groupmanager
+        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '')['arguments']
+        status = response[7]
+        message = response[8]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
@@ -595,7 +594,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                             continue
                         else:
                             managers.remove(username)
-                    log.write(ctx, "CSV import - Removing user {} from group {}".format(user, usergroupname))
+                    log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
 
                     response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
                     status = response[2]
@@ -907,6 +906,26 @@ def rule_group_check_external_user(ctx, username):
     return '0'
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_group_expiration_date_validate(ctx, expiration_date):
+    """Validation of expiration date.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param expiration_date: String containing date that has to be validated
+
+    :returns: Indication whether expiration date is an accepted value
+    """
+    if expiration_date in ["", "."]:
+        return 'true'
+
+    try:
+        if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+        return 'true'
+    except ValueError:
+        return 'false'
+
+
 @api.make()
 def api_group_search_users(ctx, pattern):
     (username, zone_name) = user.from_str(ctx, pattern)
@@ -942,7 +961,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -950,15 +969,16 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, descript
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
     :param schema_id:           Schema-id for the group to be created
+    :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, description, data_classification, '', '')['arguments']
-        status = response[6]
-        message = response[7]
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, '', '')['arguments']
+        status = response[7]
+        message = response[8]
         if status == '0':
             return api.Result.ok()
         else:

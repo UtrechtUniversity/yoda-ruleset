@@ -12,6 +12,7 @@ from datetime import datetime
 
 import genquery
 import irods_types
+from dateutil import parser
 
 import folder
 import groups
@@ -71,6 +72,13 @@ def api_vault_approve(ctx, coll):
 
     :returns: API status
     """
+    # Check for previous version.
+    previous_version = get_previous_version(ctx, coll)
+
+    # Add related data package metadata for new and previous version.
+    if previous_version:
+        meta_add_new_version(ctx, coll, previous_version)
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
     if ret[0] == '':
@@ -152,7 +160,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # API error introduces post-error in requesting application.
     if coll_target == "/" + zone + "/home":
-        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage', {"bla": "bla", "bla2": "bla2bla2"})
+        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage')
 
     # Check if target is a research folder. I.e. none-vault folder.
     parts = coll_target.split('/')
@@ -249,8 +257,10 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
                                 collection.data_objects(ctx, coll, recursive=True))
 
-    # If JSON is considered unpreservable, ignore yoda-metadata.json.
-    data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
+    # Exclude Yoda metadata files
+    data_names = itertools.ifilter(lambda
+                                   x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x),
+                                   data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
@@ -395,7 +405,10 @@ def api_vault_system_metadata(ctx, coll):
     )
 
     for row in iter:
-        modified_date = row[0]
+        # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
+        # modified_date = date.fromisoformat(row[0])
+        modified_date = parser.parse(row[0])
+        modified_date = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
         system_metadata["Modified date"] = "{}".format(modified_date)
 
     # Landingpage URL.
@@ -410,29 +423,16 @@ def api_vault_system_metadata(ctx, coll):
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
-    # Previous version.
-    previous_version = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        previous_version = row[0]
+    # Check for previous version.
+    previous_version = get_previous_version(ctx, coll)
+    if previous_version:
         previous_version_doi = get_doi(ctx, previous_version)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
 
     # Persistent Identifier DOI.
-    package_doi = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
-        genquery.AS_LIST, ctx
-    )
+    package_doi = get_doi(ctx, coll)
 
-    for row in iter:
-        package_doi = row[0]
+    if package_doi:
         if previous_version:
             persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
         else:
@@ -1197,6 +1197,76 @@ def get_doi(ctx, path):
     return None
 
 
+def get_previous_version(ctx, path):
+    """Get the previous version of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the previous version of
+
+    :return: Data package path or None
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
+
+
+def get_title(ctx, path):
+    """Get the title of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the title of
+
+    :return: Data package title
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = 'usr_0_s'" % (path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return "(no title)"
+
+
+def meta_add_new_version(ctx, new_version, previous_version):
+    """Add new version related data package metadata to data package in a vault.
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param new_version:      Path to new version of data package in the vault
+    :param previous_version: Path to previous version of data package in the vault
+    """
+    form = meta_form.load(ctx, new_version)
+    schema = form["schema"]
+    metadata = form["metadata"]
+
+    # Only add related data package if it is in the schema.
+    if "Related_Datapackage" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+            },
+            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Title": "{}".format(get_title(ctx, previous_version))
+        }
+
+        if "Related_Datapackage" in metadata:
+            metadata["Related_Datapackage"].append(data_package)
+        else:
+            metadata["Related_Datapackage"] = [data_package]
+
+        meta_form.save(ctx, new_version, metadata)
+
+
 @api.make()
 def api_vault_get_published_packages(ctx, path):
     """Get the path and DOI of latest versions of published data package in a vault.
@@ -1227,7 +1297,15 @@ def api_vault_get_published_packages(ctx, path):
 
             # Remove older versions of data packages.
             data_packages.pop(doi, None)
-            for v in range(version - 1, 1, -1):
+            for v in range(version - 1, 0, -1):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
-    return dict(sorted(data_packages.items(), key=lambda x: x[1]))
+    # Sort on path with timestamp.
+    data_packages = dict(sorted(data_packages.items(), key=lambda x: x[1]))
+
+    # Retrieve title of data package.
+    published_packages = {}
+    for doi, path in data_packages.items():
+        published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
+
+    return published_packages

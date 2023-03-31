@@ -1,27 +1,123 @@
 Feature: Resources API
 
-    Scenario Outline: Get the research groups a user is member or datamanager of
+    Scenario Outline: Get the paginated research groups a user is member or datamanager of
         Given user <user> is authenticated
-        And the Yoda resources API is queried for all research groups
+        And the Yoda resources browse group data API is queried
         Then the response status code is "200"
         And group <group> is found
 
         Examples:
-            | user        | group             |
-            | researcher  | research-initial  |
-            | datamanager | research-initial  |
+            | user        | group            |
+            | researcher  | research-initial |
+            | datamanager | research-initial |
 
 
-    Scenario Outline: Get a full year of monthly storage data starting from current month and look back one year
+    Scenario Outline: Get paginated result when searching for one specific research group
         Given user <user> is authenticated
-        And the Yoda resources full year group data API is queried with <group>
+        And the Yoda resources API is queried for a paginated range of research groups filtered on group <group>
+        Then the response status code is "200"
+        And group <group> is found
+        And only 1 group is found
+
+        Examples:
+            | user        | group           |        
+            | researcher  | research-core-1 |
+            | datamanager | research-core-1 |
+
+
+    @deposit
+    Scenario Outline: Get paginated result when searching for one specific deposit group
+        Given user <user> is authenticated
+        And the Yoda resources API is queried for a paginated range of research groups filtered on group <group>
+        Then the response status code is "200"
+        And group <group> is found
+        And only 1 group is found
+
+        Examples:
+            | user        | group         |
+            | researcher  | deposit-pilot |
+            | datamanager | deposit-pilot |
+
+
+    @intake
+    Scenario Outline: Get paginated result when searching for one specific intake / grp group
+        Given user <user> is authenticated
+        And the Yoda resources API is queried for a paginated range of research groups filtered on group <group>
+        Then the response status code is "200"
+        And group <group> is found
+        And only 1 group is found
+
+        Examples:
+            | user        | group              |
+            | researcher  | intake-test2       |
+            | datamanager | intake-test2       |
+            | researcher  | grp-intake-initial |
+            | datamanager | grp-intake-initial |
+
+
+
+    Scenario Outline: Get a full year of storage data for research group
+        Given user <user> is authenticated
+        And the Yoda resources full year differentiated group data API is queried with <group>
 	    Then the response status code is "200"
-	    And monthly storage data for group is found
+	    And storage data for group is found
+
+        Examples:
+            | user        | group            |
+            | researcher  | research-initial |
+            | datamanager | research-initial |
+
+
+    @deposit
+    Scenario Outline: Get a full year of storage data for deposit group
+        Given user <user> is authenticated
+        And the Yoda resources full year differentiated group data API is queried with <group>
+	    Then the response status code is "200"
+	    And storage data for group is found
+
+        Examples:
+            | user        | group         |
+            | researcher  | deposit-pilot |
+            | datamanager | deposit-pilot |
+
+
+    @intake
+    Scenario Outline: Get a full year of storage data for intake group
+        Given user <user> is authenticated
+        And the Yoda resources full year differentiated group data API is queried with <group>
+	    Then the response status code is "200"
+	    And storage data for group is found
 
         Examples:
             | user        | group             |
             | researcher  | research-initial  |
             | datamanager | research-initial  |
+    
+    @deposit
+    Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
+        Given user <user> is authenticated
+        And the Yoda resources full year differentiated group data API is queried with <group>
+	    Then the response status code is "200"
+	    And storage data for group is found
+
+        Examples:
+            | user        | group                  |
+            | researcher  | research-deposit-test  |
+            | datamanager | research-deposit-test  |
+
+    @intake
+    Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
+        Given user <user> is authenticated
+        And the Yoda resources full year differentiated group data API is queried with <group>
+	    Then the response status code is "200"
+	    And storage data for group is found
+
+        Examples:
+            | user        | group              |
+            | researcher  | intake-test2       |
+            | datamanager | intake-test2       |
+            | researcher  | grp-intake-initial |
+            | datamanager | grp-intake-initial |
 
 
     Scenario Outline: Collect storage stats of last month for categories
@@ -45,49 +141,4 @@ Feature: Resources API
         Examples:
             | user           |
             | technicaladmin |
-			| datamanager    |
-
-
-    Scenario Outline: List of all resources and corresponding tier data.
-        Given user <user> is authenticated
-        And the Yoda resources API is queried for all resources and tiers
-        Then the response status code is "200"
-        And list of resources and tiers is found
-
-        Examples:
-            | user           |
-			| technicaladmin |
-
-
-    Scenario Outline: Request the tiername for a resource
-        Given user <user> is authenticated
-        And the Yoda resources API is queried for tier_name of <resource_name>
-        Then the response status code is "200"
-        And tier name <tier_name> is found
-
-        Examples:
-            | user           | resource_name | tier_name |
-            | technicaladmin | irodsResc     | Standard  |
-
-
-    Scenario Outline: Request all available tiers
-        Given user <user> is authenticated
-        And the Yoda resources API is queried for all available tiers
-	    Then the response status code is "200"
-	    And list with <tier_name> is found
-
-        Examples:
-            | user           | tier_name |
-            | technicaladmin | Standard  |
-
-
-    Scenario Outline: Save tier for given resource
-        Given user <user> is authenticated
-        And the Yoda resources API is requested to save tier <tier_name> for resource <resource_name>
-        Then the response status code is "200"
-        And tier is saved successfully for resource
-
-        Examples:
-            | user           | resource_name | tier_name   |
-            | technicaladmin | irodsResc     | NonStandard |
-            | technicaladmin | irodsResc     | Standard    |
+            | datamanager    |
