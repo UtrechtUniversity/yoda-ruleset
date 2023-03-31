@@ -28,7 +28,6 @@ def ui_statistics_group_view(browser, group):
     while next_page:
         # Next page available, button is not disabled.
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
-
         items = browser.find_by_css('#group-browser tr')
         for item in items:
             if item.value.find(group) > -1:
@@ -37,7 +36,6 @@ def ui_statistics_group_view(browser, group):
         else:
             # Group not found, try next page.
             browser.find_by_id('group-browser_next').click()
-
     assert False
 
 
