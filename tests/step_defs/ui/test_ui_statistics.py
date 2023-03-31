@@ -14,7 +14,6 @@ from pytest_bdd import (
     when,
 )
 
-
 scenarios('../../features/ui/ui_statistics.feature')
 
 
@@ -26,19 +25,18 @@ def ui_statistics_group_details_initial_state(browser):
 @when(parsers.parse("user views statistics of group {group}"))
 def ui_statistics_group_view(browser, group):
     next_page = True
-
     while next_page:
         # Next page available, button is not disabled.
         next_page = len(browser.find_by_css('#group-browser_next.disabled')) == 0
-
+        browser.implicitly_wait(10)
         items = browser.find_by_css('#group-browser tr')
         for item in items:
             if item.value.find(group) > -1:
                 item.find_by_css('.list-group-item[data-name={}]'.format(group)).click()
                 return True
-            else:
-                # Group not found, try next page.
-                browser.find_by_id('group-browser_next').click()
+        else:
+            # Group not found, try next page.
+            browser.find_by_id('group-browser_next').click()
     assert False
 
 
