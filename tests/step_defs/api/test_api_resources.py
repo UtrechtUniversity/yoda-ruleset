@@ -74,6 +74,7 @@ def api_response_storage_for_group(api_response):
     assert body["data"]["research"]
     assert body["data"]["revision"]
     assert body["data"]["vault"]
+    assert body["data"]["total"]
 
 
 @given('the Yoda resources monthly category stats API is queried', target_fixture="api_response")

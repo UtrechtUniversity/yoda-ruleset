@@ -227,6 +227,7 @@ def api_user_authenticated(user):
 @when(parsers.parse('user {user} logs in'))
 def ui_login(browser, user):
     url = "{}/user/gate".format(portal_url)
+    browser.driver.maximize_window()
     browser.visit(url)
 
     # Fill in username
