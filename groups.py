@@ -160,7 +160,7 @@ def getSubcategories(ctx, category):
     # to `categories` if the category name matches.
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
