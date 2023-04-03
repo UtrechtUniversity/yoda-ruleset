@@ -132,6 +132,16 @@ def vault_archival_status(ctx, coll):
     return False
 
 
+def vault_bagitor(ctx, coll):
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIBAGITOR),
+                                     genquery.AS_LIST,
+                                     ctx):
+        return row[0]
+
+    return False
+
+
 def create_bagit_archive(ctx, archive, coll, resource):
     # create manifest
     data_object.write(ctx, coll + "/manifest-sha256.txt",
@@ -308,6 +318,7 @@ def vault_download(ctx, actor, coll):
     try:
         # Prepare for download.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "bagit")
+        avu.set_on_coll(ctx, coll, constants.IIBAGITOR, actor)
         provenance.log_action(ctx, actor, coll, "bagit scheduled", False)
 
         return "Success"
@@ -319,6 +330,8 @@ def vault_download_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "bagit":
         return "Invalid"
     try:
+        actor = vault_bagitor(ctx, coll)
+        avu.rm_from_coll(ctx, coll, constants.IIBAGITOR, actor)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
         create_bagit_archive(ctx, coll + "/download.tar", coll, TAPE_ARCHIVE_RESC)
 
@@ -326,7 +339,7 @@ def vault_download_archive(ctx, coll):
         provenance.log_action(ctx, "system", coll, "bagit completed", False)
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
 
-        notifications.set(ctx, actor, actor, coll, "Bagit ready for download")
+        notifications.set(ctx, "system", actor, coll, "Bagit ready for download")
 
         return "Success"
     except Exception:
