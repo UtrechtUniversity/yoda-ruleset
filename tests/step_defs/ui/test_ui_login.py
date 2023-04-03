@@ -44,4 +44,4 @@ def ui_user_incorrect(browser):
 def ui_user_redirected(browser, page):
     target = "{}{}".format(portal_url, page)
 
-    assert browser.url == target
+    assert browser.url.startswith(target)

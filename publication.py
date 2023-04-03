@@ -750,6 +750,8 @@ def process_publication(ctx, vault_package):
                 log.write(ctx, "Error while checking DOI availability.")
             publication_state["status"] = "Retry"
 
+        save_publication_state(ctx, vault_package, publication_state)
+
         if publication_state["status"] == "Retry":
             if verbose:
                 log.write(ctx, "Error status after checking DOI availability.")

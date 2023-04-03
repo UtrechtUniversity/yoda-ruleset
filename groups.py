@@ -165,7 +165,7 @@ def getSubcategories(ctx, category):
     # to `categories` if the category name matches.
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
@@ -310,7 +310,7 @@ def api_group_data(ctx):
         # Check whether schema_id is present on group level.
         # If not, collect it from the corresponding category
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
