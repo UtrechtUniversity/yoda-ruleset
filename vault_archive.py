@@ -345,7 +345,7 @@ def vault_download_archive(ctx, coll):
     except Exception:
         # remove bagit
         try:
-            data_object.remove(ctx, coll + "/bagit.tar")
+            data_object.remove(ctx, coll + "/download.tar")
         except Exception:
             pass
         # remove temporary files
