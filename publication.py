@@ -833,7 +833,7 @@ def process_publication(ctx, vault_package):
         if verbose:
             log.write(ctx, "Uploading to MOAI.")
         random_id = publication_state["randomId"]
-        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+        # copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
             # Remove version from DOI.

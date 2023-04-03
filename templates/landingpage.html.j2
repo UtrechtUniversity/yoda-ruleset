@@ -375,10 +375,14 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in creator.Affiliation %}
-                                            {% if affiliation.Affiliation_Identifier | length > 0 %}
-                                                <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                            {% if affiliation is mapping %}
+                                                {% if affiliation.Affiliation_Identifier | length > 0 %}
+                                                    <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                                {% else %}
+                                                    {{ affiliation.Affiliation_Name }}
+                                                {% endif %}
                                             {% else %}
-                                                {{ affiliation.Affiliation_Name }}
+                                                {{ affiliation }}
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
@@ -419,10 +423,14 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contributor.Affiliation %}
-                                            {% if affiliation.Affiliation_Identifier | length > 0 %}
-                                                <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                            {% if affiliation is mapping %}
+                                                {% if affiliation.Affiliation_Identifier | length > 0 %}
+                                                    <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                                {% else %}
+                                                    {{ affiliation.Affiliation_Name }}
+                                                {% endif %}
                                             {% else %}
-                                                {{ affiliation.Affiliation_Name }}
+                                                {{ affiliation }}
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
