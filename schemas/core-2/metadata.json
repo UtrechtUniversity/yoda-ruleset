@@ -701,7 +701,7 @@
                 },
                 "Affiliation_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "ROR identifier"
+                  "title": "Affiliation identifier"
                 }
               }
             }

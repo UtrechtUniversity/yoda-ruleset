@@ -928,7 +928,7 @@
                 },
                 "Affiliation_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "ROR identifier"
+                  "title": "Affiliation identifier"
                 }
               }
             }
@@ -1006,7 +1006,7 @@
                 },
                 "Affiliation_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "ROR identifier"
+                  "title": "Affiliation identifier"
                 }
               }
             }
