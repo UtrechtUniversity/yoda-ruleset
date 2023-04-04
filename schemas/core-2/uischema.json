@@ -33,7 +33,7 @@
         "items": {
           "ui:description": "The organizational or institutional affiliation of the creator",
           "ui:field": "ror",
-          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/languages.json"
+          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json"
         }
       },
       "Person_Identifier": {
