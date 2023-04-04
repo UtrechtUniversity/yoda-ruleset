@@ -333,7 +333,7 @@ def vault_download_archive(ctx, coll):
         actor = vault_bagitor(ctx, coll)
         avu.rm_from_coll(ctx, coll, constants.IIBAGITOR, actor)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
-        create_bagit_archive(ctx, coll + "/download.tar", coll, TAPE_ARCHIVE_RESC)
+        create_bagit_archive(ctx, coll + "/download.zip", coll, TAPE_ARCHIVE_RESC)
 
         data_object.remove(ctx, coll + "/manifest-sha256.txt")
         provenance.log_action(ctx, "system", coll, "bagit completed", False)
@@ -345,7 +345,7 @@ def vault_download_archive(ctx, coll):
     except Exception:
         # remove bagit
         try:
-            data_object.remove(ctx, coll + "/download.tar")
+            data_object.remove(ctx, coll + "/download.zip")
         except Exception:
             pass
         # remove temporary files
