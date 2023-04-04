@@ -53,7 +53,8 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
-           'rule_datarequest_review_period_expiration_check']
+           'rule_datarequest_review_period_expiration_check',
+           'rule_datarequest_sync_avus']
 
 
 ###################################################
@@ -698,6 +699,14 @@ def rule_datarequest_review_period_expiration_check(ctx):
     qcoll    = Query(ctx, ccols, criteria, output=AS_DICT)
     if len(list(qcoll)) > 0:
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_datarequest_sync_avus(ctx, request_id):
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    data = datarequest_get(ctx, request_id)
+    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
 
 
 ###################################################
