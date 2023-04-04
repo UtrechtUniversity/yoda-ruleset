@@ -132,6 +132,23 @@ def vault_archival_status(ctx, coll):
     return False
 
 
+def vault_downloadable(ctx, coll):
+    if coll.endswith("/original"):
+        return False
+    for row in genquery.row_iterator("DATA_SIZE",
+                                     "COLL_NAME = '{}' AND DATA_NAME = 'download.zip'".format(coll),
+                                     genquery.AS_LIST,
+                                     ctx):
+        return False
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                     genquery.AS_LIST,
+                                     ctx):
+        return True
+
+    return False
+
+
 def vault_bagitor(ctx, coll):
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
                                      "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIBAGITOR),
@@ -434,6 +451,9 @@ def api_vault_download(ctx, coll):
     :returns: API status
     """
     if pathutil.info(coll).space != pathutil.Space.VAULT:
+        return "Invalid"
+
+    if not vault_downloadable(ctx, coll):
         return "Invalid"
 
     if vault_archival_status(ctx, coll):
