@@ -30,10 +30,16 @@
         }
       },
       "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the creator",
         "items": {
-          "ui:description": "The organizational or institutional affiliation of the creator",
           "ui:field": "ror",
-          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json"
+          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
+          "Affiliation_Name": {
+            "ui:help": "Name of the affiliation"
+          },
+          "Affiliation_Identifier": {
+            "ui:help": "Identifier for affiliation (e.g. an ROR)"
+          }
         }
       },
       "Person_Identifier": {
