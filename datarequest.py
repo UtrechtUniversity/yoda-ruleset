@@ -53,8 +53,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
-           'rule_datarequest_review_period_expiration_check',
-           'rule_datarequest_sync_avus']
+           'rule_datarequest_review_period_expiration_check']
 
 
 ###################################################
@@ -701,8 +700,7 @@ def rule_datarequest_review_period_expiration_check(ctx):
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_datarequest_sync_avus(ctx, request_id):
+def datarequest_sync_avus(ctx, request_id):
     """Sometimes data requests are manually edited in place (e.g. for small
     textual changes). This in-place editing is done on the datarequest.json
     file.
@@ -713,11 +711,8 @@ def rule_datarequest_sync_avus(ctx, request_id):
     we need to resynchronize the AVUs with the updated contents of the
     datarequest.json.
 
-    This rule does exactly that. It takes exactly 1 numeric argument (the
+    This function does exactly that. It takes exactly 1 numeric argument (the
     request ID of the data request).
-
-    This rule can be called manually from the command line like this:
-    irule -r irods_rule_engine_plugin-python-instance -F tools/datarequest-sync-avus.r *request_id=REQUEST_ID_HERE
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request

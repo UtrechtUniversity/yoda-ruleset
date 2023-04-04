@@ -534,7 +534,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
                   and pathutil.basename(info.subpath) == datarequest.DATAREQUEST + datarequest.JSON_EXT):
             request_id = pathutil.dirname(info.subpath)
             log.write(ctx, 'datarequest JSON <{}> modified by {}, ingesting'.format(path, username))
-            ctx.rule_datarequest_sync_avus(request_id)
+            datarequest.datarequest_sync_avus(request_id)
 
     except Exception as e:
         # The rules on metadata are run synchronously and could fail.
