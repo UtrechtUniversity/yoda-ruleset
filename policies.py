@@ -521,8 +521,8 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
             # Path is a metadata file, ingest.
             log.write(ctx, 'metadata JSON <{}> modified by {}, ingesting'.format(path, username))
             ctx.rule_meta_modified_post(path, username, zone)
-        elif (info.space is pathutil.Space.DATAREQUEST 
-                  and pathutil.basename(info.subpath) == datarequest.DATAREQUEST + datarequest.JSON_EXT):
+        elif (info.space is pathutil.Space.DATAREQUEST
+              and pathutil.basename(info.subpath) == datarequest.DATAREQUEST + datarequest.JSON_EXT):
             request_id = pathutil.dirname(info.subpath)
             ctx.rule_datarequest_sync_avus(request_id)
 
