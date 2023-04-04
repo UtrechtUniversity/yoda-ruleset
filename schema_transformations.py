@@ -109,7 +109,7 @@ def _default1_default2(ctx, m):
 
 def _default2_default3(ctx, m):
     """
-    Capality to add an ROR identifier to affiliation fields
+    Capality to add an ROR identifier to affiliation fields for creators and contributors
     """
     if m.get('Creator', False):
         # For this contributor step through all its affiliations
@@ -130,6 +130,24 @@ def _default2_default3(ctx, m):
             contrib['Affiliation'] = new_affiliations
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-3/metadata.json')
+
+    return m
+
+
+def _core1_core2(ctx, m):
+    """
+    Capality to add an ROR identifier to affiliation fields for creators
+    """
+    if m.get('Creator', False):
+        # For this contributor step through all its affiliations
+        for creator in m['Creator']:
+            new_affiliations = []
+            for affiliation in creator['Affiliation']:
+                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+            # contrib['Affiliation2'] = new_affiliations
+            creator['Affiliation'] = new_affiliations
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/core-2/metadata.json')
 
     return m
 
@@ -577,6 +595,8 @@ def get(src_id, dst_id):
                        {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
                        'https://yoda.uu.nl/schemas/default-2/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-3/metadata.json': _default2_default3},
+                       'https://yoda.uu.nl/schemas/core-1/metadata.json':
+                       {'https://yoda.uu.nl/schemas/core-2/metadata.json': _core1_core2},
                        'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1},
                        'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
