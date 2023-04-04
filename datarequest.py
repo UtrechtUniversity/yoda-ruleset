@@ -718,6 +718,11 @@ def rule_datarequest_sync_avus(ctx, request_id):
 
     This rule can be called manually from the command line like this:
     irule -r irods_rule_engine_plugin-python-instance -F tools/datarequest-sync-avus.r *request_id=REQUEST_ID_HERE
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :raises UUError:   request_id is not a digit.
     """
     # Confirm that request_id is a digit
     if not request_id.isdigit():
