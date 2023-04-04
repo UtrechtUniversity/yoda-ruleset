@@ -738,9 +738,6 @@ def rule_datarequest_sync_avus(ctx, request_id):
     # Re-set the AVUs
     avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
 
-    # Log call
-    log.write(ctx, "Datarequest {} changed. AVUs updated.".format(request_id))
-
 
 ###################################################
 #          Datarequest workflow API calls         #
