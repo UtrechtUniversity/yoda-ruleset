@@ -1421,11 +1421,13 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Set date of end of review period as metadata on the datarequest
-    current_timestamp               = int(time.time())
-    review_period_length_in_seconds = data['review_period_length'] * 86400
-    end_of_review_period_timestamp  = str(current_timestamp + review_period_length_in_seconds)
-    metadata_set(ctx, request_id, "endOfReviewPeriod", end_of_review_period_timestamp)
+    # Set date of end of review period as metadata on the datarequest (if
+    # accepted for review)
+    if data['decision'] == 'Accepted for review':
+        current_timestamp               = int(time.time())
+        review_period_length_in_seconds = data['review_period_length'] * 86400
+        end_of_review_period_timestamp  = str(current_timestamp + review_period_length_in_seconds)
+        metadata_set(ctx, request_id, "endOfReviewPeriod", end_of_review_period_timestamp)
 
     # Write form data to disk
     try:
