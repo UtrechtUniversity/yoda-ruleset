@@ -98,7 +98,17 @@
         }
       },
       "Affiliation": {
-        "ui:description": "The organizational or institutional affiliation of the creator"
+        "ui:description": "The organizational or institutional affiliation of the creator",
+        "items": {
+          "ui:field": "ror",
+          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
+          "Affiliation_Name": {
+            "ui:help": "Name of the affiliation"
+          },
+          "Affiliation_Identifier": {
+            "ui:help": "Identifier for affiliation (e.g. an ROR)"
+          }
+        }
       },
       "Person_Identifier": {
         "ui:description": "Person identifier of creator of the data package",
@@ -131,9 +141,18 @@
       "Email": {
         "ui:help": "The e-mail of the contact person"
       },
-
       "Affiliation": {
-        "ui:description": "The organizational or institutional affiliation of the contributor"
+        "ui:description": "The organizational or institutional affiliation of the creator",
+        "items": {
+          "ui:field": "ror",
+          "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
+          "Affiliation_Name": {
+            "ui:help": "Name of the affiliation"
+          },
+          "Affiliation_Identifier": {
+            "ui:help": "Identifier for affiliation (e.g. an ROR)"
+          }
+        }
       },
       "Person_Identifier": {
         "ui:description": "Person identifier of contributor of the data package",
