@@ -59,7 +59,7 @@
                 </div>
                 <p class="description">{{ description }}</p>
                 <div class="tags">
-                    <label>Tags</label>
+                    <label>Keywords</label>
                     {% for tag in tags %}
                     <span class="tag">{{ tag }}</span>
                     {% endfor %}
@@ -306,7 +306,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Related datapackage</label>
+                                <label>Related resource</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ pack.Title }}</span>
@@ -374,13 +374,18 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
-                                    {% if creator.Affiliation is string %}
-                                        {{ creator.Affiliation }}
-                                    {% else %}
                                         {% for affiliation in creator.Affiliation %}
-                                            {{ affiliation }}{{ ", " if not loop.last }}
+                                            {% if affiliation is mapping %}
+                                                {% if affiliation.Affiliation_Identifier | length > 0 %}
+                                                    <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                                {% else %}
+                                                    {{ affiliation.Affiliation_Name }}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ affiliation }}
+                                            {% endif %}
+                                            {{ ", " if not loop.last }}
                                         {% endfor %}
-                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -418,7 +423,16 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contributor.Affiliation %}
-                                            {{ affiliation }}{{ ", " if not loop.last }}
+                                            {% if affiliation is mapping %}
+                                                {% if affiliation.Affiliation_Identifier | length > 0 %}
+                                                    <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                                {% else %}
+                                                    {{ affiliation.Affiliation_Name }}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ affiliation }}
+                                            {% endif %}
+                                            {{ ", " if not loop.last }}
                                         {% endfor %}
                                 </span>
                             </div>
@@ -481,7 +495,16 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contact.Affiliation %}
-                                            {{ affiliation }}{{ ", " if not loop.last }}
+                                            {% if affiliation is mapping %}
+                                                {% if affiliation.Affiliation_Identifier | length > 0 %}
+                                                    <a href="{{ affiliation.Affiliation_Identifier }}">{{ affiliation.Affiliation_Name }}</a>
+                                                {% else %}
+                                                    {{ affiliation.Affiliation_Name }}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ affiliation }}
+                                            {% endif %}
+                                            {{ ", " if not loop.last }}
                                         {% endfor %}
                                 </span>
                             </div>
