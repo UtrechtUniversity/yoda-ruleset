@@ -129,6 +129,22 @@ def _default2_default3(ctx, m):
             # contrib['Affiliation2'] = new_affiliations
             contrib['Affiliation'] = new_affiliations
 
+    # Rename Tags to Keywords
+    if m.get('Tag', False):
+        keywords = []
+        for tag in m['Tag']:
+            keywords.append(tag)
+        m['Keywords'] = keywords
+        m.pop('Tag')
+
+    # Rename Related_Datapackage to Related_Resource
+    if m.get('Related_Datapackage', False):
+        resources = []
+        for resource in m['Related_Datapackage']:
+            resources.append(resource)
+        m['Related_Resource'] = resources
+        m.pop('Related_Datapackage')
+
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-3/metadata.json')
 
     return m
