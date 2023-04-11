@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -32,22 +32,22 @@ __all__ = ['rule_meta_validate',
 def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
-    return filter(lambda x: type(x) in (dict, OrderedDict)
-                  and 'rel' in x
-                  and 'href' in x
-                  and type(x['rel']) is str
-                  and type(x['href']) is str,
-                  metadata['links'])
+
+    return [x for x in metadata['links'] if type(x) in (dict, OrderedDict)
+            and 'rel' in x
+            and 'href' in x
+            and type(x['rel']) is str
+            and type(x['href']) is str]
 
 
 def metadata_get_schema_id(metadata):
-    desc = list(filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata)))
+    desc = list([x for x in metadata_get_links(metadata) if x['rel'] == 'describedby'])
     if len(desc) > 0:
         return desc[0]['href']
 
 
 def metadata_set_schema_id(metadata, schema_id):
-    other_links = list(filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata)))
+    other_links = list([x for x in metadata_get_links(metadata) if x['rel'] != 'describedby'])
 
     metadata['links'] = [OrderedDict([
         ['rel',  'describedby'],
@@ -93,7 +93,7 @@ def get_json_metadata_errors(callback,
     errors = validator.iter_errors(metadata)
 
     if ignore_required:
-        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+        errors = [e for e in errors if e.validator not in ['required', 'dependencies']]
 
     def transform_error(e):
         """Turn a ValidationError into a data structure for the frontend."""
