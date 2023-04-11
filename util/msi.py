@@ -6,7 +6,7 @@ With this module, we aim to unify microservice error handling by converting
 all errors to unambiguous Python exceptions.
 """
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import error
@@ -97,7 +97,7 @@ data_obj_read,    DataObjReadError    = make('DataObjRead',    'Could not read d
 data_obj_write,   DataObjWriteError   = make('DataObjWrite',   'Could not write data object')
 data_obj_close,   DataObjCloseError   = make('DataObjClose',   'Could not close data object')
 data_obj_copy,    DataObjCopyError    = make('DataObjCopy',    'Could not copy data object')
-data_obj_repl,    DataObjReplError    = make('DataObjRepl',   'Could not replicate data object')
+data_obj_repl,    DataObjReplError    = make('DataObjRepl',    'Could not replicate data object')
 data_obj_unlink,  DataObjUnlinkError  = make('DataObjUnlink',  'Could not remove data object')
 data_obj_rename,  DataObjRenameError  = make('DataObjRename',  'Could not rename data object')
 data_obj_chksum,  DataObjChksumError  = make('DataObjChksum',  'Could not checksum data object')
@@ -109,6 +109,7 @@ set_acl,          SetACLError         = make('SetACL',         'Could not set AC
 get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Icat time')
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
+bytes_buf_to_str, BytesBufToStr       = make('BytesBufToStr',  'Could not write bytes buffer to string')
 
 register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
 
