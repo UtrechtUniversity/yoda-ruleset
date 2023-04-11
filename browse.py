@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -286,7 +286,7 @@ def api_search(ctx,
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
                   limit=int(limit), case_sensitive=query_is_case_sensitive, output=AS_DICT)
 
-    datas = map(transform, list(qdata))
+    datas = list(map(transform, list(qdata)))
 
     return OrderedDict([('total', qdata.total_rows()),
                         ('items', datas)])
