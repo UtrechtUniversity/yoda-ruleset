@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import itertools
 import os
 import re
 import time
@@ -245,7 +244,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     :param coll:      Collection of folder to check
     :param list_name: Name of preservable file format list
 
-    :returns: Set of unpreservable file formats
+    :returns: List of unpreservable file formats
     """
     zone = pathutil.info(coll)[1]
 
@@ -254,16 +253,14 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
-    data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
-                                collection.data_objects(ctx, coll, recursive=True))
+    data_names = map(lambda x: pathutil.chop(x)[1],
+                     collection.data_objects(ctx, coll, recursive=True))
 
     # Exclude Yoda metadata files
-    data_names = itertools.ifilter(lambda
-                                   x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x),
-                                   data_names)
+    data_names = filter(lambda x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x), data_names)
 
     # Data names -> lowercase extensions, without the dot.
-    exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
+    exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
     exts -= set([''])
 
     # Return any ext that is not in the preservable list.
