@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -39,39 +39,6 @@ def _fold(x, **alg):
         return f([_fold(v, **alg) for v in x])
     else:
         return f(x)
-
-
-def _demote_strings(json_data):
-    """Transform unicode -> UTF-8 encoded strings recursively, for a given JSON structure.
-
-    Needed for handling unicode in JSON as long as we are still using Python2.
-    Both JSON string values and JSON object (dict) keys are transformed.
-
-    :param json_data: JSON structure to transform
-
-    :returns: JSON structure with unicode strings transformed to UTF-8 encoded strings
-    """
-    return _fold(json_data,
-                 unicode=lambda x: x.encode('utf-8'),
-                 OrderedDict=lambda x: OrderedDict([(k.encode('utf-8'), v) for k, v in x.items()]))
-
-
-def _promote_strings(json_data):
-    """Transform UTF-8 encoded strings -> unicode recursively, for a given JSON structure.
-
-    Needed for handling unicode in JSON as long as we are still using Python2.
-    Both JSON string values and JSON object (dict) keys are transformed.
-
-    May raise UnicodeDecodeError if strings are not proper UTF-8.
-
-    :param json_data: JSON structure to transform
-
-    :returns: JSON structure with UTF-8 encoded strings transformed to unicode strings
-    """
-    return _fold(json_data,
-                 str=lambda x: x.decode('utf-8'),
-                 OrderedDict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]),
-                 dict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]))
 
 
 def parse(text, want_bytes=True):
