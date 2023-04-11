@@ -163,6 +163,14 @@ def _core1_core2(ctx, m):
             # contrib['Affiliation2'] = new_affiliations
             creator['Affiliation'] = new_affiliations
 
+    # Rename Tags to Keywords
+    if m.get('Tag', False):
+        keywords = []
+        for tag in m['Tag']:
+            keywords.append(tag)
+        m['Keyword'] = keywords
+        m.pop('Tag')
+
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/core-2/metadata.json')
 
     return m
