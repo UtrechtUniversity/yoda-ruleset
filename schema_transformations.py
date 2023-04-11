@@ -134,7 +134,7 @@ def _default2_default3(ctx, m):
         keywords = []
         for tag in m['Tag']:
             keywords.append(tag)
-        m['Keywords'] = keywords
+        m['Keyword'] = keywords
         m.pop('Tag')
 
     # Rename Related_Datapackage to Related_Resource

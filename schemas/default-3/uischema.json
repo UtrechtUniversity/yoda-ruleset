@@ -39,10 +39,10 @@
       "ui:help": "An indication of the end date of the period covered by your data package"
     }
   },
-  "Tag": {
+  "Keyword": {
     "ui:description": "Free text field for adding (searchable) key words to your data package"
   },
-  "Related_Datapackage": {
+  "Related_Resource": {
     "items": {
       "Relation_Type": {
         "ui:help": "Relation to this resource"

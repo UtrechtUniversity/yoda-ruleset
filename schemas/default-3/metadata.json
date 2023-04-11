@@ -675,7 +675,7 @@
     "Data_Access_Restriction",
     "Discipline",
     "Language",
-    "Tag"
+    "Keyword"
   ],
   "properties": {
     "links": {
@@ -772,7 +772,7 @@
         "End_Date": ["Start_Date"]
       }
     },
-    "Tag": {
+    "Keyword": {
       "title": "Keywords",
       "type": "array",
       "minItems": 1,
@@ -782,7 +782,7 @@
         "default": null
       }
     },
-    "Related_Datapackage": {
+    "Related_Resource": {
       "title": "Related resource",
       "type": "array",
       "minItems": 1,
