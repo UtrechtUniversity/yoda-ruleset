@@ -45,15 +45,15 @@
   "Related_Datapackage": {
     "items": {
       "Relation_Type": {
-        "ui:help": "Relation to this data package"
+        "ui:help": "Relation to this resource"
       },
       "Title": {
-        "ui:help": "Title of the related data package"
+        "ui:help": "Title of the related resource"
       },
       "Persistent_Identifier": {
-        "ui:help": "Persistent identifier of the related data package",
+        "ui:help": "Persistent identifier of the related resource",
         "Identifier_Scheme": {
-          "ui:help": "Type of Persistent identifier of the related data package"
+          "ui:help": "Type of Persistent identifier of the related data resource"
         },
         "Identifier": {
           "ui:help": "The identifier as it can be resolved on the appropriate service"
