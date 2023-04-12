@@ -29,9 +29,9 @@ def _write(ctx, message):
     :param message: Message to write to log
     """
     if type(ctx) is rule.Context:
-        ctx.writeLine('serverLog', u'{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
+        ctx.writeString('serverLog', u'{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
     else:
-        ctx.writeLine('serverLog', message)
+        ctx.writeString('serverLog', message)
 
 
 def debug(ctx, message):
