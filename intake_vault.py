@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for intake vault."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -16,7 +16,7 @@ from util import *
 __all__ = ['rule_intake_to_vault']
 
 
-@rule.make(inputs=range(2), outputs=range(2, 2))
+@rule.make(inputs=list(range(2)), outputs=list(range(2, 2)))
 def rule_intake_to_vault(ctx, intake_root, vault_root):
     # 1. add to_vault_freeze metadata lock to the dataset
     # 2. check that dataset does not yet exist in the vault

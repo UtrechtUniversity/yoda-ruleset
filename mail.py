@@ -117,7 +117,7 @@ def wrapper(ctx, to, actor, subject, body):
     return '0', ''
 
 
-@rule.make(inputs=range(1), outputs=range(1, 3))
+@rule.make(inputs=[0], outputs=list(range(1, 3)))
 def rule_mail_test(ctx, to):
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')

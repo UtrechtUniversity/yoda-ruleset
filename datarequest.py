@@ -690,7 +690,7 @@ def cc_email_addresses_get(contact_object):
         return None
 
 
-@rule.make(inputs=range(0), outputs=range(2))
+@rule.make(inputs=[], outputs=list(range(2)))
 def rule_datarequest_review_period_expiration_check(ctx):
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))

@@ -93,12 +93,12 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
             if result is None:
                 return
 
-            result = map(transform, list(result) if type(result) is tuple else [result])
+            result = list(map(transform, list(result) if type(result) is tuple else [result]))
 
             if handler is Output.STORE:
                 if outputs is None:
                     # outputs not specified? overwrite all arguments.
-                    rule_args[:] = map(encode_val, result)
+                    rule_args[:] = list(map(encode_val, result))
                 else:
                     # set specific output arguments.
                     for i, x in zip(outputs, result):

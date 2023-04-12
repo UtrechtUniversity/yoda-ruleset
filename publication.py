@@ -1184,7 +1184,7 @@ def process_republication(ctx, vault_package):
     return publication_state["status"]
 
 
-@rule.make(inputs=range(4), outputs=range(4, 6))
+@rule.make(inputs=list(range(4)), outputs=list(range(4, 6)))
 def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
     """Rule interface for updating the publication of a vault package.
 
@@ -1338,12 +1338,12 @@ def get_collection_metadata(ctx, coll, prefix):
 
 
 """Rule interface for processing publication of a vault package."""
-rule_process_publication = rule.make(inputs=range(1), outputs=range(1, 3))(process_publication)
+rule_process_publication = rule.make(inputs=[0], outputs=list(range(1, 3)))(process_publication)
 
 
 """Rule interface for processing depublication of a vault package."""
-rule_process_depublication = rule.make(inputs=range(1), outputs=range(1, 3))(process_depublication)
+rule_process_depublication = rule.make(inputs=[0], outputs=list(range(1, 3)))(process_depublication)
 
 
 """Rule interface for processing republication of a vault package."""
-rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(process_republication)
+rule_process_republication = rule.make(inputs=[0], outputs=list(range(1, 3)))(process_republication)

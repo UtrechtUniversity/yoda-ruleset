@@ -402,15 +402,15 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
         found = True
         break
 
-    path = '{}/{}'.format(parent, basename)
-
     if not found:
-        log.write(ctx, "Data object <{}> was not found or path was collection".format(path))
+        log.write(ctx, "Data object with id <{}> was not found".format(data_id))
         return ""
 
     if int(data_size) > max_size:
         log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
+
+    path = '{}/{}'.format(parent, basename)
 
     groups = list(genquery.row_iterator(
         "USER_NAME, USER_ZONE",
@@ -531,7 +531,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
     return revision_id
 
 
-@rule.make(inputs=range(2), outputs=range(2, 3))
+@rule.make(inputs=list(range(2)), outputs=list(range(2, 3)))
 def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     """Step through entire revision store and apply the chosen bucket strategy.
 
