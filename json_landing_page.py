@@ -148,6 +148,11 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         tags = []
 
     try:
+        keywords = dictJsonData['Keyword']  # not mandatory
+    except KeyError:
+        keywords = []
+
+    try:
         apparatus = dictJsonData['Apparatus']
     except KeyError:
         apparatus = []
@@ -209,14 +214,24 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         inferred_deformation_behaviour = []
 
     # Route all domain specific keywords to tag area of landingpage
-    all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure
+    all_taggebles = (tags + keywords + apparatus + main_setting + process_hazard + geological_structure
                      + geomorphical_feature + material + monitoring + software + measured_property
                      + pore_fluid + ancillary_equipment + inferred_deformation_behaviour)
 
+    # from core-2 and default-3 'Datapackage' is renamed to 'Resource'
+    try:
+        related_resources = dictJsonData['Related_Resources']  # not mandatory
+    except KeyError:
+        related_resources = []
+
+    # Resources backward compatibility with older schema definitions
     try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
     except KeyError:
         related_datapackages = []
+
+    # Presence of rel_resources and rel_datapackage is mutually exlusive. 
+    all_related_resources = related_resources + related_datapackages
 
     try:
         creators = dictJsonData['Creator']
@@ -293,7 +308,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         data_classification=data_classification,
         collection_name=collection_name,
         last_modified_date=last_modified_date,
-        related_datapackages=related_datapackages,
+        related_resources=all_related_resources,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
         geolocations=geolocations,
         covered_geolocation_place=covered_geolocation_place)
