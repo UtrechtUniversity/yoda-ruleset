@@ -353,7 +353,7 @@ def get_group_category_info(ctx, groupName):
 
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME LIKE '%category'",
+        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
