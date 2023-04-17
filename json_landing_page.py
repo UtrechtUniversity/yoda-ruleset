@@ -230,7 +230,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         related_datapackages = []
 
-    # Presence of rel_resources and rel_datapackage is mutually exlusive. 
+    # Presence of rel_resources and rel_datapackage is mutually exlusive.
     all_related_resources = related_resources + related_datapackages
 
     try:
