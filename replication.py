@@ -152,9 +152,5 @@ def is_replication_blocked_by_admin(ctx):
     :returns: Boolean indicating if admin put replication on hold.
     """
     zone = user.zone(ctx)
-    iter = genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
-        genquery.AS_LIST, ctx
-    )
-    return len(list(iter)) > 0
+    path = "/{}/yoda/flags/stop_replication".format(zone)
+    return collection.exists(ctx, path)

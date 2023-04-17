@@ -363,12 +363,8 @@ def is_revision_blocked_by_admin(ctx):
     :returns: Boolean indicating if admin put replication on hold.
     """
     zone = user.zone(ctx)
-    iter = genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
-        genquery.AS_LIST, ctx
-    )
-    return (len(list(iter)) > 0)
+    path = "/{}/yoda/flags/stop_revisions".format(zone)
+    return collection.exists(ctx, path)
 
 
 def revision_create(ctx, resource, data_id, max_size, verbose):
