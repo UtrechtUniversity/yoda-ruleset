@@ -141,6 +141,8 @@ def _default2_default3(ctx, m):
     if m.get('Related_Datapackage', False):
         resources = []
         for resource in m['Related_Datapackage']:
+            # Only use the identifier regarding relation type
+            resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
             resources.append(resource)
         m['Related_Resource'] = resources
         m.pop('Related_Datapackage')
@@ -170,6 +172,18 @@ def _core1_core2(ctx, m):
             keywords.append(tag)
         m['Keyword'] = keywords
         m.pop('Tag')
+
+    """ No related datapackages in core
+    # Rename Related_Datapackage to Related_Resource
+    if m.get('Related_Datapackage', False):
+        resources = []
+        for resource in m['Related_Datapackage']:
+            # Only use the identifier regarding relation type
+            resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
+            resources.append(resource)
+        m['Related_Resource'] = resources
+        m.pop('Related_Datapackage')
+    """
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/core-2/metadata.json')
 
