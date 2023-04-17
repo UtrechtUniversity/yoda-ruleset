@@ -14,13 +14,13 @@ __all__ = ['rule_json_datacite_create_combi_metadata_json',
 
 @rule.make()
 def rule_json_datacite_create_combi_metadata_json(ctx,
-                                                    metadataJsonPath,
-                                                    combiJsonPath,
-                                                    lastModifiedDateTime,
-                                                    yodaDOI,
-                                                    publicationDate,
-                                                    openAccessLink,
-                                                    licenseUri):
+                                                  metadataJsonPath,
+                                                  combiJsonPath,
+                                                  lastModifiedDateTime,
+                                                  yodaDOI,
+                                                  publicationDate,
+                                                  openAccessLink,
+                                                  licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param ctx:                  Combined type of a callback and rei struct
@@ -34,23 +34,23 @@ def rule_json_datacite_create_combi_metadata_json(ctx,
     :param licenseUri:           URI to license of publication
     """
     json_datacite_create_combi_metadata_json(ctx,
-                                               metadataJsonPath,
-                                               combiJsonPath,
-                                               lastModifiedDateTime,
-                                               yodaDOI,
-                                               publicationDate,
-                                               openAccessLink,
-                                               licenseUri)
+                                             metadataJsonPath,
+                                             combiJsonPath,
+                                             lastModifiedDateTime,
+                                             yodaDOI,
+                                             publicationDate,
+                                             openAccessLink,
+                                             licenseUri)
 
 
 def json_datacite_create_combi_metadata_json(ctx,
-                                               metadataJsonPath,
-                                               combiJsonPath,
-                                               lastModifiedDateTime,
-                                               yodaDOI,
-                                               publicationDate,
-                                               openAccessLink,
-                                               licenseUri):
+                                             metadataJsonPath,
+                                             combiJsonPath,
+                                             lastModifiedDateTime,
+                                             yodaDOI,
+                                             publicationDate,
+                                             openAccessLink,
+                                             licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param ctx:                  Combined type of a callback and rei struct
