@@ -220,7 +220,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
 
     # from core-2 and default-3 'Datapackage' is renamed to 'Resource'
     try:
-        related_resources = dictJsonData['Related_Resources']  # not mandatory
+        related_resources = dictJsonData['Related_Resource']  # not mandatory
     except KeyError:
         related_resources = []
 
