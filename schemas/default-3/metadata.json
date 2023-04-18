@@ -208,19 +208,76 @@
     "optionsRelationType": {
       "type": "string",
       "enum": [
-        "IsSupplementTo: Current datapackage is supplement to",
-        "IsSupplementedBy: Current datapackage is supplemented by",
-        "IsContinuedBy: Current datadatapackage is continued by",
-        "Continues: Continues this current dataset",
-        "IsNewVersionOf: Current datapackage is new version of",
-        "IsPreviousVersionOf: Current datapackage is previous version of",
-        "IsPartOf: Current datapackage is part of",
-        "HasPart: Is part of current datapackage",
-        "IsReferencedBy: Current datapackage is referenced by",
-        "References: Current datapackages references",
-        "IsVariantFormOf: Current datapackage is variant of",
-        "IsOriginalFormOf: Current datapackage is original of",
-        "IsSourceOf: Raw data for this current datapackage"
+        "IsCitedBy",
+        "Cites",
+        "IsSupplementTo",
+        "IsSupplementedBy",
+        "IsContinuedBy",
+        "Continues",
+        "IsDescribedBy",
+        "Describes",
+        "HasMetadata",
+        "IsMetadataFor",
+        "HasVersion",
+        "IsVersionOf",
+        "IsNewVersionOf",
+        "IsPreviousVersionOf",
+        "IsPartOf",
+        "HasPart",
+        "IsPublishedIn",
+        "IsReferencedBy",
+        "References",
+        "IsDocumentedBy",
+        "Documents",
+        "IsCompiledBy",
+        "Compiles",
+        "IsVariantFormOf",
+        "IsOriginalFormOf",
+        "IsIdenticalTo",
+        "IsReviewedBy",
+        "Reviews",
+        "IsDerivedFrom",
+        "IsSourceOf",
+        "IsRequiredBy",
+        "Requires",
+        "IsObsoletedBy",
+        "Obsoletes"
+      ],
+      "enumNames": [
+        "IsCitedBy: indicates that B includes A in a citation",
+        "Cites: indicates that A includes B in a citation",
+        "IsSupplementTo: indicates that A is a supplement to B",
+        "IsSupplementedBy: indicates that B is a supplement to A",
+        "IsContinuedBy: indicates A is continued by the work B",
+        "Continues: indicates A is a continuation of the work B",
+        "IsDescribedBy: indicates A is described by B",
+        "Describes: indicates A describes B",
+        "HasMetadata: indicates resource A has additional metadata B",
+        "IsMetadataFor: indicates additional metadata A for a resource B",
+        "HasVersion: indicates A has a version (B)",
+        "IsVersionOf: indicates A is a version of B",
+        "IsNewVersionOf: indicates A is a new edition of B, where the new edition has been modified or updated",
+        "IsPreviousVersionOf: indicates A is a previous edition of B",
+        "IsPartOf: indicates A is a portion of B; may be used for elements of a series",
+        "HasPart: indicates A includes the part B",
+        "IsPublishedIn: indicates A is published inside B, but is independent of other things published inside of B",
+        "IsReferencedBy: indicates A is used as a source of information by B",
+        "References: indicates B is used as a source of information for A",
+        "IsDocumentedBy: indicates B is documentation about/explaining A; e.g. points to software documentation",
+        "Documents: indicates A is documentation about B; e.g. points to software documentation",
+        "IsCompiledBy: indicates B is used to compile or create A",
+        "Compiles: indicates B is the result of a compile or creation event using A",
+        "IsVariantFormOf: indicates A is a variant or different form of B",
+        "IsOriginalFormOf: indicates A is the original form of B",
+        "IsIdenticalTo: indicates that A is identical to B, for use when there is a need to register two separate instances of the same resource",
+        "IsReviewedBy: indicates that A is reviewed by B",
+        "Reviews: indicates that A is a review of B",
+        "IsDerivedFrom: indicates B is a source upon which A is based",
+        "IsSourceOf: indicates A is a source upon which B is based",
+        "IsRequiredBy: Indicates A is required by B",
+        "Requires: Indicates A requires B",
+        "IsObsoletedBy: Indicates A is replaced by B",
+        "Obsoletes : Indicates A replaces B"
       ]
     },
     "optionsISO639-1": {
@@ -675,7 +732,7 @@
     "Data_Access_Restriction",
     "Discipline",
     "Language",
-    "Tag"
+    "Keyword"
   ],
   "properties": {
     "links": {
@@ -772,7 +829,7 @@
         "End_Date": ["Start_Date"]
       }
     },
-    "Tag": {
+    "Keyword": {
       "title": "Keywords",
       "type": "array",
       "minItems": 1,
@@ -782,7 +839,7 @@
         "default": null
       }
     },
-    "Related_Datapackage": {
+    "Related_Resource": {
       "title": "Related resource",
       "type": "array",
       "minItems": 1,
