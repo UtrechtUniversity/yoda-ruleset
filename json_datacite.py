@@ -224,7 +224,7 @@ def get_creators(combi):
     for creator in combi.get('Creator', []):
         affiliations = []
         for aff in creator.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -262,7 +262,7 @@ def get_contributors(combi):
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -293,7 +293,7 @@ def get_contributors(combi):
     for person in combi.get('ContactPerson', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
