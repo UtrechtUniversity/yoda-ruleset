@@ -2,7 +2,7 @@
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
 __version__   = '1.8.0'
-__copyright__ = 'Copyright (c) 2015-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2015-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
@@ -20,7 +20,7 @@ __author__    =  ('Felix Croes'
 from browse                 import *
 from folder                 import *
 from groups                 import *
-from json_datacite41        import *
+from json_datacite          import *
 from json_landing_page      import *
 from mail                   import *
 from meta                   import *
