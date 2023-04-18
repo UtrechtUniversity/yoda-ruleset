@@ -13,7 +13,7 @@ Feature: Schema API
             | researcher  | default-0 |
             | researcher  | default-1 |
             | researcher  | default-2 |
-			| researcher  | default-3 |
+            | researcher  | default-3 |
             | datamanager | core-0    |
             | datamanager | core-1    |
             | datamanager | default-0 |
