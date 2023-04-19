@@ -418,20 +418,27 @@ uuGroupGetCategories(*categories) {
 # \param[out] subcategory
 #
 uuGroupGetCategory(*groupName, *category, *subcategory) {
-	*category    = "";
-	*subcategory = "";
-	foreach (
-		*item in
-		SELECT META_USER_ATTR_NAME, META_USER_ATTR_VALUE
-		WHERE  USER_GROUP_NAME = '*groupName'
-		  AND  META_USER_ATTR_NAME LIKE '%category'
-	) {
-		if (*item."META_USER_ATTR_NAME" == 'category') {
-			*category = *item."META_USER_ATTR_VALUE";
-		} else if (*item."META_USER_ATTR_NAME" == 'subcategory') {
-			*subcategory = *item."META_USER_ATTR_VALUE";
-		}
-	}
+       *category    = "";
+       *subcategory = "";
+
+       foreach (
+               *catitem in
+               SELECT META_USER_ATTR_NAME, META_USER_ATTR_VALUE
+               WHERE  USER_GROUP_NAME = '*groupName'
+                 AND  META_USER_ATTR_NAME = 'category'
+       ) {
+               *category = *catitem."META_USER_ATTR_VALUE";
+       }
+
+       foreach (
+               *subcatitem in
+               SELECT META_USER_ATTR_NAME, META_USER_ATTR_VALUE
+               WHERE  USER_GROUP_NAME = '*groupName'
+                 AND  META_USER_ATTR_NAME = 'subcategory'
+       ) {
+               *subcategory = *subcatitem."META_USER_ATTR_VALUE";
+       }
+
 }
 
 # \brief Get a group's desription.
