@@ -200,5 +200,5 @@ Feature: Group UI
             | user        | search | suggestions |
             | researcher  | yoda   | 5           |
             | datamanager | yoda   | 5           |
-            | researcher  | core   | 2           |
-            | datamanager | core   | 2           |
+            | researcher  | core   | 3           |
+            | datamanager | core   | 3           |
