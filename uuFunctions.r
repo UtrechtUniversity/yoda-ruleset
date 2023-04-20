@@ -3,7 +3,7 @@
 #        within iRODS functions are defined differently from rules. A function should have
 #        no side effects and should always return a value instead of mutating an output parameter
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015-2022, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2023, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \function uuiso8601  Return irods style timestamp in iso8601 format
@@ -80,6 +80,8 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 # The metadata value indicates the source and destination resource.
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
-uuReplicateBatch(*verbose) {
-    rule_replicate_batch(*verbose);
+# \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
+# \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
+uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max) {
+    rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max);
 }

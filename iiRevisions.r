@@ -2,7 +2,7 @@
 # \brief     Revision management. Each new file or file modification creates
 #            a timestamped backup file in the revision store.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2023, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # Scheduled revision creation batch job.
@@ -10,8 +10,10 @@
 # Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
-uuRevisionBatch(*verbose) {
-    rule_revision_batch(*verbose);
+# \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
+# \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
+uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max) {
+    rule_revision_batch(*verbose, *balance_id_min, *balance_id_max);
 }
 
 

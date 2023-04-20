@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+import time
 from collections import OrderedDict
 from datetime import datetime
 
@@ -312,11 +313,21 @@ def api_group_data(ctx):
         if "schema_id" not in group:
             group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
+        creation_date = ""
+        iter = genquery.row_iterator(
+            "COLL_CREATE_TIME",
+            "COLL_NAME = '/tempZone/home/{}'".format(group['name']),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            creation_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[0])))
+
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
             'schema_id': group['schema_id'],
             'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
+            'creation_date': creation_date,
             'members': members
         }
 
