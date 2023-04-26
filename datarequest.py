@@ -567,7 +567,7 @@ def datarequest_schema_get(ctx, schema_name):
     :returns: Dict with schema and UI schema
     """
     # Define paths to schema and uischema
-    coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
+    coll_path = "/{}{}/{}".format(user.zone(ctx), SCHEMACOLLECTION, version)
     schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
     uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
 
