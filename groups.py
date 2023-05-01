@@ -5,9 +5,9 @@ __copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+import time
 from collections import OrderedDict
 from datetime import datetime
-import time
 
 import genquery
 import requests
