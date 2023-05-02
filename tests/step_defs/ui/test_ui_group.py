@@ -31,6 +31,7 @@ def ui_group_check_properties_panel_admin(browser, group):
     # as admin the creation date should be shown
     assert browser.find_by_id('f-group-update-creation-date', wait_time=1).visible
 
+
 @when(parsers.parse("checks group properties as researcher for {group}"))
 def ui_group_check_properties_panel_researcher(browser, group):
     # strip off research partition
