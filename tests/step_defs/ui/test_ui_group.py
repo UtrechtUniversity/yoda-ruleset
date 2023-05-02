@@ -21,12 +21,15 @@ from conftest import roles
 scenarios('../../features/ui/ui_group.feature')
 
 
-@when(parsers.parse("checks group properties for {group}"))   # research-initial
+@when(parsers.parse("checks group properties for {group}"))
 def ui_group_check_properties_panel(browser, group):
     # strip off research partition
     grp = '-'.join(group.split('-')[1:])
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + grp + ']'
     assert browser.find_by_id('f-group-update-name').value == grp
+
+    # Check if creation data is present.
+    assert browser.find_by_id('f-group-update-creation-date', wait_time=1).visible
 
 
 @when(parsers.parse("correct row in tree is active for {group}"))
