@@ -22,7 +22,7 @@ scenarios('../../features/ui/ui_group.feature')
 
 
 @when(parsers.parse("checks group properties for {group}"))
-def ui_group_check_properties_panel_admin(browser, group):
+def ui_group_check_properties_panel(browser, group):
     # strip off research partition
     grp = '-'.join(group.split('-')[1:])
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + grp + ']'
