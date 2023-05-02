@@ -165,7 +165,7 @@ Feature: Group UI
         And module "group_manager" is shown
         When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
-        And checks group properties for <group>
+        And checks group properties as researcher for <group>
         And correct row in tree is active for <group>
         When user selects list view
         And correct row in list view is active for <group>
@@ -176,11 +176,11 @@ Feature: Group UI
 
 
     Scenario Outline: Select group in list view and check group properties are set and active in tree view
-        Given user researcher is logged in
+        Given user technicaladmin is logged in
         And module "group_manager" is shown
         When user selects list view
         When user selects group <group> in list view
-        When checks group properties for <group>
+        When checks group properties as admin for <group>
         And correct row in list view is active for <group>
         When user selects tree view
         And correct row in tree is active for <group>

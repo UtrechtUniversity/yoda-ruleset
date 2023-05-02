@@ -21,12 +21,25 @@ from conftest import roles
 scenarios('../../features/ui/ui_group.feature')
 
 
-@when(parsers.parse("checks group properties for {group}"))   # research-initial
-def ui_group_check_properties_panel(browser, group):
+@when(parsers.parse("checks group properties as admin for {group}"))
+def ui_group_check_properties_panel_admin(browser, group):
     # strip off research partition
     grp = '-'.join(group.split('-')[1:])
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + grp + ']'
     assert browser.find_by_id('f-group-update-name').value == grp
+
+    # as admin the creation date should be shown
+    assert browser.find_by_id('f-group-update-creation-date', wait_time=1).visible
+
+@when(parsers.parse("checks group properties as researcher for {group}"))
+def ui_group_check_properties_panel_researcher(browser, group):
+    # strip off research partition
+    grp = '-'.join(group.split('-')[1:])
+    assert browser.find_by_id('group-properties-group-name').value == '[research-' + grp + ']'
+    assert browser.find_by_id('f-group-update-name').value == grp
+
+    # as non admin the creation date should not be visible
+    assert not browser.find_by_id('f-group-update-creation-date', wait_time=1).visible
 
 
 @when(parsers.parse("correct row in tree is active for {group}"))
