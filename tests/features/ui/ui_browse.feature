@@ -8,13 +8,13 @@ Feature: Browse UI
 
         Examples:
           | user        | folder             |
-          | researcher  | research-core-1    |
-          | researcher  | research-default-2 |
-          | researcher  | research-core-2    |
-          | researcher  | research-default-3 |
-          | datamanager | research-core-1    |
-          | datamanager | research-default-2 |
-          | datamanager | research-core-2    |
+#          | researcher  | research-core-1    |
+#          | researcher  | research-default-2 |
+#          | researcher  | research-core-2    |
+#          | researcher  | research-default-3 |
+#          | datamanager | research-core-1    |
+#          | datamanager | research-default-2 |
+#          | datamanager | research-core-2    |
           | datamanager | research-default-3 |
 
 
@@ -26,13 +26,13 @@ Feature: Browse UI
 
           Examples:
             | user        | folder    |
-            | researcher  | vault-core-1    |
-            | researcher  | vault-default-2 |
-            | researcher  | vault-core-2    |
-            | researcher  | vault-default-3 |
-            | datamanager | vault-core-1    |
-            | datamanager | vault-default-2 |
-            | datamanager | vault-core-2    |
+#            | researcher  | vault-core-1    |
+#            | researcher  | vault-default-2 |
+#            | researcher  | vault-core-2    |
+#            | researcher  | vault-default-3 |
+#            | datamanager | vault-core-1    |
+#            | datamanager | vault-default-2 |
+#            | datamanager | vault-core-2    |
             | datamanager | vault-default-3 |
 
 

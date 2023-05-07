@@ -6,7 +6,8 @@
         }
     ], 
     "Language": "en - English", 
-    "Retention_Period": 10, 
+    "Retention_Period": 10,
+    "Data_Type": "Dataset",
     "Creator": [
         {
             "Name": {
@@ -34,8 +35,8 @@
         }
     ], 
     "Data_Access_Restriction": "Open - freely retrievable", 
-    "Title": "API test default-0", 
-    "Description": "API test default-2============================================= dssdfsdfsdfsdfsdsdf", 
+    "Title": "API test default-2", 
+    "Description": "API test default-2", 
     "Data_Classification": "Public", 
     "Version": "1.0", 
     "License": "Custom", 

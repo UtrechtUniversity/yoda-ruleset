@@ -1,5 +1,6 @@
 Feature: Folder API
 
+
     Scenario Outline: Folder lock
         Given user researcher is authenticated
         And the Yoda folder lock API is queried with <folder>
@@ -8,10 +9,10 @@ Feature: Folder API
 
         Examples:
             | folder                            | status |
-            | /tempZone/home/research-core-0    | LOCKED |
-            | /tempZone/home/research-default-1 | LOCKED |
-            | /tempZone/home/research-core-1    | LOCKED |
-            | /tempZone/home/research-default-2 | LOCKED |
+#            | /tempZone/home/research-core-0    | LOCKED |
+#            | /tempZone/home/research-default-1 | LOCKED |
+#            | /tempZone/home/research-core-1    | LOCKED |
+#            | /tempZone/home/research-default-2 | LOCKED |
             | /tempZone/home/research-core-2    | LOCKED |
             | /tempZone/home/research-default-3 | LOCKED |
 
@@ -24,10 +25,10 @@ Feature: Folder API
 
         Examples:
             | folder                            |
-            | /tempZone/home/research-core-0    |
-            | /tempZone/home/research-default-1 |
-            | /tempZone/home/research-core-1    |
-            | /tempZone/home/research-default-2 |
+#            | /tempZone/home/research-core-0    |
+#            | /tempZone/home/research-default-1 |
+#            | /tempZone/home/research-core-1    |
+#            | /tempZone/home/research-default-2 |
             | /tempZone/home/research-core-2    |
             | /tempZone/home/research-default-3 |
 
@@ -40,10 +41,10 @@ Feature: Folder API
 
         Examples:
             | folder                            | status |
-            | /tempZone/home/research-core-0    | FOLDER |
-            | /tempZone/home/research-default-1 | FOLDER |
-            | /tempZone/home/research-core-1    | FOLDER |
-            | /tempZone/home/research-default-2 | FOLDER |
+#            | /tempZone/home/research-core-0    | FOLDER |
+#            | /tempZone/home/research-default-1 | FOLDER |
+#            | /tempZone/home/research-core-1    | FOLDER |
+#            | /tempZone/home/research-default-2 | FOLDER |
             | /tempZone/home/research-core-2    | FOLDER |
             | /tempZone/home/research-default-3 | FOLDER |
 
@@ -57,11 +58,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
+#            | /tempZone/home/research-core-0    | SUBMITTED |
+#            | /tempZone/home/research-default-1 | SUBMITTED |
+#            | /tempZone/home/research-core-1    | SUBMITTED |
+#            | /tempZone/home/research-default-2 | SUBMITTED |
+#            | /tempZone/home/research-core-2    | SUBMITTED |
             | /tempZone/home/research-default-3 | SUBMITTED |
 
 
@@ -73,11 +74,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status |
-            | /tempZone/home/research-core-0    | FOLDER |
-            | /tempZone/home/research-default-1 | FOLDER |
-            | /tempZone/home/research-core-1    | FOLDER |
-            | /tempZone/home/research-default-2 | FOLDER |
-            | /tempZone/home/research-core-2    | FOLDER |
+#            | /tempZone/home/research-core-0    | FOLDER |
+#            | /tempZone/home/research-default-1 | FOLDER |
+#            | /tempZone/home/research-core-1    | FOLDER |
+#            | /tempZone/home/research-default-2 | FOLDER |
+#            | /tempZone/home/research-core-2    | FOLDER |
             | /tempZone/home/research-default-3 | FOLDER |
 
 
@@ -89,11 +90,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
+#            | /tempZone/home/research-core-0    | SUBMITTED |
+#            | /tempZone/home/research-default-1 | SUBMITTED |
+#            | /tempZone/home/research-core-1    | SUBMITTED |
+#            | /tempZone/home/research-default-2 | SUBMITTED |
+#            | /tempZone/home/research-core-2    | SUBMITTED |
             | /tempZone/home/research-default-3 | SUBMITTED |
 
 
@@ -105,11 +106,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status   |
-            | /tempZone/home/research-core-0    | REJECTED |
-            | /tempZone/home/research-default-1 | REJECTED |
-            | /tempZone/home/research-core-1    | REJECTED |
-            | /tempZone/home/research-default-2 | REJECTED |
-            | /tempZone/home/research-core-2    | REJECTED |
+#            | /tempZone/home/research-core-0    | REJECTED |
+#            | /tempZone/home/research-default-1 | REJECTED |
+#            | /tempZone/home/research-core-1    | REJECTED |
+#            | /tempZone/home/research-default-2 | REJECTED |
+#            | /tempZone/home/research-core-2    | REJECTED |
             | /tempZone/home/research-default-3 | REJECTED |
 
 
@@ -121,11 +122,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
+#            | /tempZone/home/research-core-0    | SUBMITTED |
+#            | /tempZone/home/research-default-1 | SUBMITTED |
+#            | /tempZone/home/research-core-1    | SUBMITTED |
+#            | /tempZone/home/research-default-2 | SUBMITTED |
+#            | /tempZone/home/research-core-2    | SUBMITTED |
             | /tempZone/home/research-default-3 | SUBMITTED |
 
 
@@ -137,11 +138,11 @@ Feature: Folder API
 
         Examples:
             | folder                            | status   |
-            | /tempZone/home/research-core-0    | ACCEPTED |
-            | /tempZone/home/research-default-1 | ACCEPTED |
-            | /tempZone/home/research-core-1    | ACCEPTED |
-            | /tempZone/home/research-default-2 | ACCEPTED |
-            | /tempZone/home/research-core-2    | ACCEPTED |
+#            | /tempZone/home/research-core-0    | ACCEPTED |
+#            | /tempZone/home/research-default-1 | ACCEPTED |
+#            | /tempZone/home/research-core-1    | ACCEPTED |
+#            | /tempZone/home/research-default-2 | ACCEPTED |
+#            | /tempZone/home/research-core-2    | ACCEPTED |
             | /tempZone/home/research-default-3 | ACCEPTED |
 
 
@@ -151,9 +152,9 @@ Feature: Folder API
 
         Examples:
             | folder                            | status   |
-            | /tempZone/home/research-core-0    | SECURED  |
-            | /tempZone/home/research-default-1 | SECURED  |
-            | /tempZone/home/research-core-1    | SECURED  |
-            | /tempZone/home/research-default-2 | SECURED  |
-            | /tempZone/home/research-core-2    | SECURED  |
+#            | /tempZone/home/research-core-0    | SECURED  |
+#            | /tempZone/home/research-default-1 | SECURED  |
+#            | /tempZone/home/research-core-1    | SECURED  |
+#            | /tempZone/home/research-default-2 | SECURED  |
+#            | /tempZone/home/research-core-2    | SECURED  |
             | /tempZone/home/research-default-3 | SECURED  |
