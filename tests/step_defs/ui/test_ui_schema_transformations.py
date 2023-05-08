@@ -85,9 +85,6 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
     with open(download_dir, encoding='utf-8') as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
-    #with open('keys.json', encoding='utf-8') as fh:
-    # data = json.load(fh)
-
     # Remove the downloaded yoda-metadata.json file.
     os.remove(download_dir)
 
@@ -125,4 +122,3 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
         elif schema_to == "default-3":
             assert metadata["Keyword"] == ["yoda"]
             assert metadata["Creator"][0]["Affiliation"][0]["Affiliation_Name"] == "Utrecht University"
-
