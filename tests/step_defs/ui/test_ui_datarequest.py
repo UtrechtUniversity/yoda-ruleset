@@ -54,7 +54,7 @@ def ui_datarequest_fill_form(browser):
     time.sleep(1)
 
     timestamp = time.strftime("%Y-%m-%d %H:%M")
-    title = f"UI test: {timestamp}"
+    title = "UI test: {}".format(timestamp)
 
     browser.find_by_id('yoda_datarequest_study_information_title').fill(title)
 
