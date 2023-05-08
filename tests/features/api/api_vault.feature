@@ -8,11 +8,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -25,11 +25,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -42,11 +42,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -59,11 +59,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -76,11 +76,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#      | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -91,11 +91,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -107,11 +107,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -124,11 +124,11 @@ Feature: Vault API
 
         Examples:
             | vault                          | list |
-#           | /tempZone/home/vault-core-0    | 4TU  |
-#            | /tempZone/home/vault-default-1 | DANS |
-#            | /tempZone/home/vault-core-1    | 4TU  |
-#            | /tempZone/home/vault-default-2 | DANS |
-#            | /tempZone/home/vault-core-2    | 4TU  |
+            | /tempZone/home/vault-core-0    | 4TU  |
+            | /tempZone/home/vault-default-1 | DANS |
+            | /tempZone/home/vault-core-1    | 4TU  |
+            | /tempZone/home/vault-default-2 | DANS |
+            | /tempZone/home/vault-core-2    | 4TU  |
             | /tempZone/home/vault-default-3 | DANS |
 
 
@@ -141,11 +141,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -157,11 +157,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -172,11 +172,11 @@ Feature: Vault API
         Then the response status code is "200"
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -188,11 +188,11 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
 
 
@@ -211,9 +211,9 @@ Feature: Vault API
 
         Examples:
             | vault                          |
-#            | /tempZone/home/vault-core-0    |
-#            | /tempZone/home/vault-default-1 |
-#            | /tempZone/home/vault-core-1    |
-#            | /tempZone/home/vault-default-2 |
-#            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |

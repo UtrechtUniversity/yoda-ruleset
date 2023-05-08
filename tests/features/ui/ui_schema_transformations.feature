@@ -12,9 +12,9 @@ Feature: Schema transformations UI
 
         Examples:
             | folder             | schema_from | schema_to |
-#            | research-default-1 | default-0   | default-1 |
-#            | research-default-2 | default-1   | default-2 |
+            | research-default-1 | default-0   | default-1 |
+            | research-default-2 | default-1   | default-2 |
             | research-default-3 | default-2   | default-3 |
-#            | research-default-2 | dag-0       | default-2 |
-#            | research-teclab-1  | teclab-0    | teclab-1  |
-#            | research-hptlab-1  | hptlab-0    | hptlab-1  |
+            | research-default-2 | dag-0       | default-2 |
+            | research-teclab-1  | teclab-0    | teclab-1  |
+            | research-hptlab-1  | hptlab-0    | hptlab-1  |
