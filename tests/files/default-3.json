@@ -13,7 +13,7 @@
             "Affiliation": [
                 {
                     "Affiliation_Name": "Utrecht University",
-                    "Affiliation_Identifier": ""
+                    "Affiliation_Identifier": "https://ror.org/04pp8hn57"
                 }
             ],
             "Person_Identifier": [
@@ -28,7 +28,7 @@
             "Affiliation": [
                 {
                     "Affiliation_Name": "University Džemal Bijedić of Mostar",
-                    "Affiliation_Identifier": ""
+                    "Affiliation_Identifier": "https://ror.org/00ey4b732"
                 }
             ],
             "Person_Identifier": [
@@ -45,7 +45,7 @@
             "Affiliation": [
                 {
                     "Affiliation_Name": "University of Göttingen",
-                    "Affiliation_Identifier": ""
+                    "Affiliation_Identifier": "https://ror.org/01y9bpm73"
                 }
             ]
         },
@@ -56,12 +56,12 @@
             },
             "Affiliation": [
                 {
-                    "Affiliation_Name": "École des Beaux-Arts",
-                    "Affiliation_Identifier": ""
+                    "Affiliation_Name": "École Nationale Supérieure des Beaux-Arts",
+                    "Affiliation_Identifier": "https://ror.org/01cdn3r29"
                 }
             ]
         }
-    ], 
+    ],
     "Data_Access_Restriction": "Restricted - available upon request",
     "links": [
         {
