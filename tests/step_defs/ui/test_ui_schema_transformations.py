@@ -81,13 +81,14 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
     else:
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/yoda-metadata.json")
 
-    with open(download_dir) as f:
+    # assert download_dir == '1'
+    with open(download_dir, encoding='utf-8') as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     # Remove the downloaded yoda-metadata.json file.
     os.remove(download_dir)
 
-    # Check actual content after transformation.
+    # Check actual content after transformation for each schema version
     assert metadata['links'][0]['href'] == "https://yoda.uu.nl/schemas/{}/metadata.json".format(schema_to)
     assert metadata["License"] == "Custom"
     assert metadata["Data_Access_Restriction"] == "Open - freely retrievable"
@@ -115,5 +116,9 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
     if schema_from != "default-0":
         assert metadata["Data_Type"] == "Dataset"
 
-    if schema_from != "dag-0" and schema_to == "default-2":
-        assert metadata["Tag"] == ["yoda"]
+    if schema_from != "dag-0":
+        if schema_to == "default-2":
+            assert metadata["Tag"] == ["yoda"]
+        elif schema_to == "default-3":
+            assert metadata["Keyword"] == ["yoda"]
+            assert metadata["Creator"][0]["Affiliation"][0]["Affiliation_Name"] == "Utrecht University"
