@@ -1,45 +1,45 @@
 {
     "links": [
         {
-            "rel": "describedby", 
+            "rel": "describedby",
             "href": "https://yoda.uu.nl/schemas/default-2/metadata.json"
         }
-    ], 
-    "Language": "en - English", 
+    ],
+    "Language": "en - English",
     "Retention_Period": 10,
     "Data_Type": "Dataset",
     "Creator": [
         {
             "Name": {
-                "Family_Name": "JosÃ© CarreÃ±o QuiÃ±ones", 
+                "Family_Name": "JosÃ© CarreÃ±o QuiÃ±ones",
                 "Given_Name": "MarÃ­a"
-            }, 
+            },
             "Affiliation": [
                 "Utrecht University"
-            ], 
+            ],
             "Person_Identifier": [
                 {}
             ]
-        }, 
+        },
         {
             "Name": {
-                "Family_Name": "ÐÐ¸ÐºÐ¾Ð»Ð°ÐµÐ²Ð¸Ñ‡ Ð•Ð»ÑŒÑ†Ð¸Ð½", 
+                "Family_Name": "ÐÐ¸ÐºÐ¾Ð»Ð°ÐµÐ²Ð¸Ñ‡ Ð•Ð»ÑŒÑ†Ð¸Ð½",
                 "Given_Name": "Ð‘Ð¾Ñ€Ð¸Ñ"
-            }, 
+            },
             "Affiliation": [
                 "University DÅ¾emal BijediÄ‡ of Mostar"
-            ], 
+            ],
             "Person_Identifier": [
                 {}
             ]
         }
-    ], 
-    "Data_Access_Restriction": "Open - freely retrievable", 
-    "Title": "API test default-2", 
-    "Description": "API test default-2", 
-    "Data_Classification": "Public", 
-    "Version": "1.0", 
-    "License": "Custom", 
+    ],
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "Title": "API test default-2",
+    "Description": "API test default-2",
+    "Data_Classification": "Public",
+    "Version": "1.0",
+    "License": "Custom",
     "Tag": [
         "yoda"
     ]

@@ -1,6 +1,5 @@
 Feature: Folder API
 
-
     Scenario Outline: Folder lock
         Given user researcher is authenticated
         And the Yoda folder lock API is queried with <folder>
