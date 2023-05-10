@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from datetime import datetime
 import re
+from datetime import datetime
 
 import genquery
 
@@ -218,7 +218,6 @@ def api_resource_category_stats(ctx):
     if len(categories) == 0:
         return categories
 
-
     # Continue for admins and datamanagers
     storage = {}
 
@@ -268,8 +267,8 @@ def api_resource_category_stats(ctx):
     cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
 
     def is_internal_user(username):
-        if not '@' in username:
-            return (username is not 'anonymous')
+        if '@' mpt in username:
+            return (username != 'anonymous')
         for domain in config.external_users_domain_filter:
             domain_pattern = '@{}$'.format(domain)
             if re.search(domain_pattern, username) is not None:
@@ -306,9 +305,9 @@ def api_resource_category_stats(ctx):
     # So the frontend can distinguish instance totals from real category totals
     users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
     all_storage.append({'category': "YODA_INSTANCE_TOTAL",
-                        'storage': {'total': misc.human_readable_size(instance_totals['total']), 
-                                    'research': misc.human_readable_size(instance_totals['research']), 
-                                    'vault': misc.human_readable_size(instance_totals['vault']), 
+                        'storage': {'total': misc.human_readable_size(instance_totals['total']),
+                                    'research': misc.human_readable_size(instance_totals['research']),
+                                    'vault': misc.human_readable_size(instance_totals['vault']),
                                     'revision': misc.human_readable_size(instance_totals['revision'])},
                         'users': users})
 
