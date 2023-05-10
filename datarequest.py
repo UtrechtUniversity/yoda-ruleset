@@ -924,6 +924,12 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # Set draft flag in form data
     data['draft'] = draft
 
+    # Set schema ID
+    data['links'] = [OrderedDict([
+        ['rel',  'describedby'],
+        ['href', SCHEMA_URI_PREFIX + SCHEMA_VERSION + '/datarequest/' + SCHEMA + '.json']
+    ])]
+
     # Set submission date in form data
     data['submission_timestamp'] = str(datetime.now().strftime('%s'))
 
@@ -1060,10 +1066,26 @@ def api_datarequest_get(ctx, request_id):
     datarequest_available_documents = available_documents_get(ctx, request_id, datarequest_type, datarequest_status)
 
     # Get request
-    datarequest = datarequest_get(ctx, request_id)
+    datarequest_json = datarequest_get(ctx, request_id)
+    datarequest = json.loads(datarequest_json)
+
+    # Get request schema version
+    if not 'links' in datarequest: # Schema version youth-0 doesn't link to its schema ID
+        datarequest_schema_version = "youth-0" 
+    else:
+        datarequest_links = [link for link in datarequest['links'] if link['rel'] == 'describedby']
+        datarequest_schema_version_links_count = len(list(datarequest_links))
+        # Fail if not exactly one schema ID link is present
+        if datarequest_schema_version_links_count == 0:
+            return api.Error("datarequest_parse_fail", "This datarequest does not link to its schema ID.")
+        elif datarequest_schema_version_links_count > 1:
+            return api.Error("datarequest_parse_fail", "This datarequest contains more than one schema ID link.")
+        else:
+            datarequest_schema_id = datarequest_links[0]['href']
+            datarequest_schema_version = re.search(r'https://yoda.uu.nl/datarequest/schemas/(.*)/datarequest/schema.json', datarequest_schema_id).group(1)
 
     # Return JSON encoded results
-    return {'requestJSON': datarequest, 'requestType': datarequest_type,
+    return {'requestSchemaVersion': datarequest_schema_version, 'requestJSON': datarequest_json, 'requestType': datarequest_type,
             'requestStatus': datarequest_status, 'requestAvailableDocuments': datarequest_available_documents}
 
 
