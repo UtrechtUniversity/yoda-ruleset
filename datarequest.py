@@ -556,11 +556,11 @@ def datarequest_reviewers_get(ctx, request_id, pending=False):
 
 
 @api.make()
-def api_datarequest_schema_get(ctx, schema_name, version = SCHEMA_VERSION):
+def api_datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
     return datarequest_schema_get(ctx, schema_name, version)
 
 
-def datarequest_schema_get(ctx, schema_name, version = SCHEMA_VERSION):
+def datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
     """Get schema and UI schema of a datarequest form
 
     :param ctx:         Combined type of a callback and rei struct
@@ -1070,8 +1070,8 @@ def api_datarequest_get(ctx, request_id):
     datarequest = json.loads(datarequest_json)
 
     # Get request schema version
-    if not 'links' in datarequest: # Schema version youth-0 doesn't link to its schema ID
-        datarequest_schema_version = "youth-0" 
+    if 'links' not in datarequest: # Schema version youth-0 doesn't link to its schema ID
+        datarequest_schema_version = "youth-0"
     else:
         datarequest_links = [link for link in datarequest['links'] if link['rel'] == 'describedby']
         datarequest_schema_version_links_count = len(list(datarequest_links))
