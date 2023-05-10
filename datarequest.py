@@ -66,7 +66,9 @@ YODA_PORTAL_FQDN  = config.yoda_portal_fqdn
 
 JSON_EXT          = ".json"
 
-SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
+SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas"
+SCHEMA_URI_PREFIX = "https://yoda.uu.nl/datarequest/schemas/"
+SCHEMA_VERSION    = "youth-1"
 SCHEMA            = "schema"
 UISCHEMA          = "uischema"
 
@@ -554,15 +556,16 @@ def datarequest_reviewers_get(ctx, request_id, pending=False):
 
 
 @api.make()
-def api_datarequest_schema_get(ctx, schema_name):
-    return datarequest_schema_get(ctx, schema_name)
+def api_datarequest_schema_get(ctx, schema_name, version = SCHEMA_VERSION):
+    return datarequest_schema_get(ctx, schema_name, version)
 
 
-def datarequest_schema_get(ctx, schema_name):
+def datarequest_schema_get(ctx, schema_name, version = SCHEMA_VERSION):
     """Get schema and UI schema of a datarequest form
 
     :param ctx:         Combined type of a callback and rei struct
     :param schema_name: Name of schema
+    :param version:     Version of schema
 
     :returns: Dict with schema and UI schema
     """
