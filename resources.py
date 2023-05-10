@@ -213,6 +213,13 @@ def api_resource_category_stats(ctx):
 
     categories = get_categories(ctx)
 
+    # None admins (researcher for instance) do not find categories.
+    # This makes sure the table is not presented in the frontend.
+    if len(categories) == 0:
+        return categories
+
+
+    # Continue for admins and datamanagers
     storage = {}
 
     # Go through current groups of current categories.
@@ -244,22 +251,25 @@ def api_resource_category_stats(ctx):
     # Totalization for the entire instance.
     instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
 
-    # user counts
-
+    # Member counts
     cat_members = {}
     members_total = []
     for category in categories:
         members = []
+        # this information is only available for yoda-admins
         for groupname in get_groups_on_categories(ctx, [category]):
             group_members = list(group.members(ctx, groupname))
             for gm in group_members:
                 members.append(gm[0])
                 members_total.append(gm[0])
+        # deduplicate member list
         cat_members[category] = list(set(members))
 
-    cat_members['YODA_INSTANCE_TOTAL'] = list(set(members))
+    cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
 
     def is_internal_user(username):
+        if not '@' in username:
+            return (username is not 'anonymous')
         for domain in config.external_users_domain_filter:
             domain_pattern = '@{}$'.format(domain)
             if re.search(domain_pattern, username) is not None:
@@ -287,20 +297,20 @@ def api_resource_category_stats(ctx):
             storage_humanized[type] = misc.human_readable_size(1.0 * storage[category][type])
             instance_totals[type] += 1.0 * storage[category][type]
 
-        # only admins are entitled to see!!!!!!
         users = {'internals': count_internals(cat_members[category]), 'externals': count_externals(cat_members[category])}
         all_storage.append({'category': category,
-                           'storage': storage_humanized,
-                           'users': users})
+                            'storage': storage_humanized,
+                            'users': users})
 
-    if user.is_admin(ctx):
-        users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
-        all_storage.append({'category': "YODA_INSTANCE_TOTAL",
-                           'storage': {'total': misc.human_readable_size(instance_totals['total']), 
-                                      'research': misc.human_readable_size(instance_totals['research']), 
-                                      'vault': misc.human_readable_size(instance_totals['vault']), 
-                                      'revision': misc.human_readable_size(instance_totals['revision'])},
-                           'users': users})
+    # Add the yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL
+    # So the frontend can distinguish instance totals from real category totals
+    users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
+    all_storage.append({'category': "YODA_INSTANCE_TOTAL",
+                        'storage': {'total': misc.human_readable_size(instance_totals['total']), 
+                                    'research': misc.human_readable_size(instance_totals['research']), 
+                                    'vault': misc.human_readable_size(instance_totals['vault']), 
+                                    'revision': misc.human_readable_size(instance_totals['revision'])},
+                        'users': users})
 
     return sorted(all_storage, key=lambda d: d['category'])
 
