@@ -267,7 +267,7 @@ def api_resource_category_stats(ctx):
     cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
 
     def is_internal_user(username):
-        if '@' mpt in username:
+        if '@' not in username:
             return (username != 'anonymous')
         for domain in config.external_users_domain_filter:
             domain_pattern = '@{}$'.format(domain)
