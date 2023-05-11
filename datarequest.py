@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -1070,7 +1070,7 @@ def api_datarequest_get(ctx, request_id):
     datarequest = json.loads(datarequest_json)
 
     # Get request schema version
-    if 'links' not in datarequest: # Schema version youth-0 doesn't link to its schema ID
+    if 'links' not in datarequest:  # Schema version youth-0 doesn't link to its schema ID
         datarequest_schema_version = "youth-0"
     else:
         datarequest_links = [link for link in datarequest['links'] if link['rel'] == 'describedby']
