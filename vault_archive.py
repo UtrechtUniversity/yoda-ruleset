@@ -173,13 +173,15 @@ def vault_bagitor(ctx, coll):
 
 
 def create_bagit_archive(ctx, archive, coll, resource):
-    # create manifest
+    # Create manifest file.
+    log.write(ctx, "Creating manifest file for data package <{}>".format(coll))
     data_object.write(ctx, coll + "/manifest-sha256.txt",
                       package_manifest(ctx, coll))
     msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
                         irods_types.BytesBuf())
 
-    # create archive
+    # Create archive.
+    log.write(ctx, "Creating archive file for data package <{}>".format(coll))
     ret = msi.archive_create(ctx, archive, coll, resource, 0)
     if ret < 0:
         raise Exception("Archive creation failed: {}".format(ret))
@@ -193,11 +195,13 @@ def extract_bagit_archive(ctx, archive, coll):
 
 
 def create_archive(ctx, coll):
+    log.write(ctx, "Creating archive of data package <{}>".format(coll))
     user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
     system_metadata = package_system_metadata(ctx, coll)
     provenance_log = package_provenance_log(ctx, system_metadata)
 
     # create extra archive files
+    log.write(ctx, "Generating metadata for archive of data package <{}>".format(coll))
     data_object.copy(ctx, user_metadata, coll + "/archive/user-metadata.json")
     data_object.write(ctx, coll + "/archive/system-metadata.json",
                       jsonutil.dump(system_metadata))
@@ -210,6 +214,7 @@ def create_archive(ctx, coll):
 
     # create bagit archive
     create_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
+    log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
     ctx.dmput(package_archive_path(ctx, coll), "", "REG")
 
 
@@ -238,6 +243,8 @@ def vault_archive(ctx, actor, coll):
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
 
+        log.write(ctx, "Data package <{}> scheduled for archving by <{}>".format(coll, actor))
+
         return "Success"
 
     except Exception:
@@ -248,6 +255,7 @@ def vault_create_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "archive":
         return "Invalid"
     try:
+        log.write(ctx, "Start archival of data package <{}>".format(coll))
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archiving")
         collection.create(ctx, coll + "/archive")
         if data_object.exists(ctx, coll + "/License.txt"):
@@ -258,6 +266,7 @@ def vault_create_archive(ctx, coll):
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
         provenance.log_action(ctx, "system", coll, "archive completed", False)
+        log.write(ctx, "Finished archival of data package <{}>".format(coll))
 
         return "Success"
     except Exception:
@@ -274,6 +283,7 @@ def vault_create_archive(ctx, coll):
 
         provenance.log_action(ctx, "system", coll, "archive failed", False)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archival failed")
+        log.write(ctx, "Archival of data package <{}> failed".format(coll))
 
         return "Failure"
 
@@ -283,6 +293,7 @@ def vault_unarchive(ctx, actor, coll):
         # Prepare for unarchival.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
         provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
+        log.write(ctx, "Request retrieval of data package <{}> from tape".format(coll))
         ctx.dmget(package_archive_path(ctx, coll), "", "OFL")
 
         # Send notifications to datamanagers.
@@ -291,6 +302,8 @@ def vault_unarchive(ctx, actor, coll):
         for datamanager in datamanagers:
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
+
+        log.write(ctx, "Data package <{}> scheduled for unarchving by <{}>".format(coll, actor))
 
         return "Success"
 
@@ -302,6 +315,7 @@ def vault_extract_archive(ctx, coll):
     if vault_archival_status(ctx, coll) != "extract":
         return "Invalid"
     try:
+        log.write(ctx, "Start unarchival of data package <{}>".format(coll))
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
 
         extract_archive(ctx, coll)
@@ -312,11 +326,13 @@ def vault_extract_archive(ctx, coll):
 
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
         provenance.log_action(ctx, "system", coll, "unarchive completed", False)
+        log.write(ctx, "Finished unarchival of data package <{}>".format(coll))
 
         return "Success"
     except Exception:
         provenance.log_action(ctx, "system", coll, "unarchive failed", False)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extraction failed")
+        log.write(ctx, "Unarchival of data package <{}> failed".format(coll))
 
         return "Failure"
 
@@ -329,6 +345,7 @@ def update(ctx, coll, attr):
 
 def vault_update_archive(ctx, coll):
     try:
+        log.write(ctx, "Start update of archived data package <{}>".format(coll))
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
 
         extract_archive(ctx, coll)
@@ -338,9 +355,12 @@ def vault_update_archive(ctx, coll):
         collection.remove(ctx, coll + "/archive")
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
+        log.write(ctx, "Finished update of archived data package <{}>".format(coll))
         return "Success"
     except Exception:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update failed")
+        log.write(ctx, "Update of archived data package <{}> failed".format(coll))
+
         return "Failure"
 
 
@@ -349,7 +369,7 @@ def vault_download(ctx, actor, coll):
         # Prepare for download.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "bagit")
         avu.set_on_coll(ctx, coll, constants.IIBAGITOR, actor)
-        provenance.log_action(ctx, actor, coll, "bagit scheduled", False)
+        provenance.log_action(ctx, actor, coll, "download scheduled", False)
 
         return "Success"
     except Exception:
@@ -366,10 +386,11 @@ def vault_download_archive(ctx, coll):
         create_bagit_archive(ctx, coll + "/download.zip", coll, TAPE_ARCHIVE_RESC)
 
         data_object.remove(ctx, coll + "/manifest-sha256.txt")
-        provenance.log_action(ctx, "system", coll, "bagit completed", False)
+        provenance.log_action(ctx, "system", coll, "creating download archive completed", False)
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
 
-        notifications.set(ctx, "system", actor, coll, "Bagit ready for download")
+        notifications.set(ctx, "system", actor, coll, "archive ready for download")
+        log.write(ctx, "Archive of data package <{}> ready for download".format(coll))
 
         return "Success"
     except Exception:
@@ -384,7 +405,7 @@ def vault_download_archive(ctx, coll):
         except Exception:
             pass
 
-        provenance.log_action(ctx, "system", coll, "bagit failed", False)
+        provenance.log_action(ctx, "system", coll, "creating download archive failed", False)
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
 
         return "Failure"
