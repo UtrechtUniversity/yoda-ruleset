@@ -75,30 +75,56 @@ uuTreeWalkCollection(
 		}
 		if (*error == 0 ) {
 			# then increase depth to walk through the subcollections
-			foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *path) {
-			msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
-			uuTreeWalkCollection(
+			*listList = list();
+			*list = list();
+			foreach (*row in SELECT ORDER_DESC(COLL_NAME) WHERE COLL_PARENT_NAME = *path) {
+				msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
+				if (size(*list) == 100) {
+					*listList = cons(*list, *listList);
+					*list = list();
+				}
+				*list = cons(*subCollectionPath, *list);
+			}
+			*listList = cons(*list, *listList);
+
+			foreach(*list in *listList) {
+				foreach (*subCollectionPath in *list) {
+					uuTreeWalkCollection(
 						*direction,
 						*subCollectionPath,
 						*buffer,
 						*ruleToProcess,
 						*error
-				);
+					);
+				}
 			}
 		}
 	}
 	if (*direction == "reverse") {
 		# first deal with any subcollections within this collection
 		if (*error == 0) {
-			foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *path) {
+			*listList = list();
+			*list = list();
+			foreach (*row in SELECT ORDER_DESC(COLL_NAME) WHERE COLL_PARENT_NAME = *path) {
 				msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
-				uuTreeWalkCollection(
+				if (size(*list) == 100) {
+					*listList = cons(*list, *listList);
+					*list = list();
+				}
+				*list = cons(*subCollectionPath, *list);
+			}
+			*listList = cons(*list, *listList);
+
+			foreach(*list in *listList) {
+				foreach (*subCollectionPath in *list) {
+					uuTreeWalkCollection(
 						*direction,
 						*subCollectionPath,
 						*buffer,
 						*ruleToProcess,
 						*error
-				);
+					);
+				}
 			}
 		}
 		# when done then process the dataobjects directly located within this collection

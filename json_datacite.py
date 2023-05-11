@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Functions for transforming Yoda JSON to DataCite 4.1 JSON."""
+"""Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from dateutil import parser
 
 from util import *
 
-__all__ = ['rule_json_datacite41_create_combi_metadata_json',
-           'rule_json_datacite41_create_datacite_json']
+__all__ = ['rule_json_datacite_create_combi_metadata_json',
+           'rule_json_datacite_create_datacite_json']
 
 
 @rule.make()
-def rule_json_datacite41_create_combi_metadata_json(ctx,
-                                                    metadataJsonPath,
-                                                    combiJsonPath,
-                                                    lastModifiedDateTime,
-                                                    yodaDOI,
-                                                    publicationDate,
-                                                    openAccessLink,
-                                                    licenseUri):
+def rule_json_datacite_create_combi_metadata_json(ctx,
+                                                  metadataJsonPath,
+                                                  combiJsonPath,
+                                                  lastModifiedDateTime,
+                                                  yodaDOI,
+                                                  publicationDate,
+                                                  openAccessLink,
+                                                  licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param ctx:                  Combined type of a callback and rei struct
@@ -33,24 +33,24 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
     :param openAccessLink:       Open access link to data of publication
     :param licenseUri:           URI to license of publication
     """
-    json_datacite41_create_combi_metadata_json(ctx,
-                                               metadataJsonPath,
-                                               combiJsonPath,
-                                               lastModifiedDateTime,
-                                               yodaDOI,
-                                               publicationDate,
-                                               openAccessLink,
-                                               licenseUri)
+    json_datacite_create_combi_metadata_json(ctx,
+                                             metadataJsonPath,
+                                             combiJsonPath,
+                                             lastModifiedDateTime,
+                                             yodaDOI,
+                                             publicationDate,
+                                             openAccessLink,
+                                             licenseUri)
 
 
-def json_datacite41_create_combi_metadata_json(ctx,
-                                               metadataJsonPath,
-                                               combiJsonPath,
-                                               lastModifiedDateTime,
-                                               yodaDOI,
-                                               publicationDate,
-                                               openAccessLink,
-                                               licenseUri):
+def json_datacite_create_combi_metadata_json(ctx,
+                                             metadataJsonPath,
+                                             combiJsonPath,
+                                             lastModifiedDateTime,
+                                             yodaDOI,
+                                             publicationDate,
+                                             openAccessLink,
+                                             licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param ctx:                  Combined type of a callback and rei struct
@@ -83,11 +83,11 @@ def json_datacite41_create_combi_metadata_json(ctx,
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path):
-    return json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path)
+def rule_json_datacite_create_datacite_json(ctx, landing_page_url, combi_path):
+    return json_datacite_create_datacite_json(ctx, landing_page_url, combi_path)
 
 
-def json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path):
+def json_datacite_create_datacite_json(ctx, landing_page_url, combi_path):
     """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -122,14 +122,14 @@ def json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path):
             "dates": get_dates(combi),
             "language": get_language(combi),
             "types": get_resource_type(combi),
-            "relatedIdentifiers": get_related_datapackages(combi),
+            "relatedIdentifiers": get_related_resources(combi),
             "version": get_version(combi),
             "rightsList": get_rights_list(combi),
             "descriptions": get_descriptions(combi),
             "geoLocations": get_geo_locations(combi),
             "fundingReferences": get_funders(combi),
             "url": landing_page_url,
-            "schemaVersion": "http://datacite.org/schema/kernel-4"
+            "schemaVersion": "http://datacite.org/schema/kernel-4"    # schemaversion to be adjusted!!!!
         }
     }
     return metadata
@@ -175,6 +175,10 @@ def get_subjects(combi):
     for discipline in combi.get('Discipline', []):
         subjects.append({'subjectScheme': 'OECD FOS 2007', 'subject': discipline})
 
+    for keyword in combi.get('Keyword', []):
+        subjects.append({'subject': keyword, 'subjectScheme': 'Keyword'})
+
+    # for backward compatibility. Tag will become obsolete
     for tag in combi.get('Tag', []):
         subjects.append({'subject': tag, 'subjectScheme': 'Keyword'})
 
@@ -220,7 +224,7 @@ def get_creators(combi):
     for creator in combi.get('Creator', []):
         affiliations = []
         for aff in creator.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -258,7 +262,7 @@ def get_contributors(combi):
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -289,7 +293,7 @@ def get_contributors(combi):
     for person in combi.get('ContactPerson', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if aff is dict:
+            if isinstance(aff, dict):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -401,7 +405,7 @@ def get_resource_type(combi):
     return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
-def get_related_datapackages(combi):
+def get_related_resources(combi):
     """Get list in DataCite format containing related datapackages."""
     """
   "relatedIdentifiers": [
@@ -413,8 +417,18 @@ def get_related_datapackages(combi):
   ],
     """
     related_dps = []
+
     try:
         for rel in combi['Related_Datapackage']:
+            related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                                'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                                'relationType': rel['Relation_Type'].split(':')[0]})
+    except KeyError:
+        pass
+
+    # For backward compatibility
+    try:
+        for rel in combi['Related_Resource']:
             related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
                                 'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
                                 'relationType': rel['Relation_Type'].split(':')[0]})

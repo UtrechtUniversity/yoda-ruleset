@@ -9,7 +9,7 @@
   "Discipline": {
     "ui:description": "Categorize your research to a (sub)discipline"
   },
-  "Tag": {
+  "Keyword": {
     "ui:description": "Free text field for adding (searchable) key words to your data package"
   },
   "Data_Type": {

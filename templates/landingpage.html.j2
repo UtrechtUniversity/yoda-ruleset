@@ -58,10 +58,10 @@
                     <span>{{ data_access_restriction }}</span>
                 </div>
                 <p class="description">{{ description }}</p>
-                <div class="tags">
-                    <label>Tags</label>
+                <div class="keywords">
+                    <label>Keywords</label>
                     {% for tag in tags %}
-                    <span class="tag">{{ tag }}</span>
+                    <span class="keyword">{{ tag }}</span>
                     {% endfor %}
                 </div>
                 <hr />
@@ -298,7 +298,7 @@
                         </div>
                     </div>
 
-                    {% for pack in related_datapackages %}
+                    {% for pack in related_resources %}
                     {% if pack.Relation_Type %}
                     {% if loop.first %}
                     <div class="group">
@@ -306,7 +306,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Related datapackage</label>
+                                <label>Related resource</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ pack.Title }}</span>

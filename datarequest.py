@@ -700,6 +700,38 @@ def rule_datarequest_review_period_expiration_check(ctx):
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
 
+def datarequest_sync_avus(ctx, request_id):
+    """Sometimes data requests are manually edited in place (e.g. for small
+    textual changes). This in-place editing is done on the datarequest.json
+    file.
+
+    The contents of this file are set as AVUs on the file itself. This is only
+    done once, at the submission of the datarequest. Therefore, to keep the AVUs
+    of datarequest.json files accurate after a manual edit of the data request,
+    we need to resynchronize the AVUs with the updated contents of the
+    datarequest.json.
+
+    This function does exactly that. It takes exactly 1 numeric argument (the
+    request ID of the data request).
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :raises UUError:   request_id is not a digit.
+    """
+    # Confirm that request_id is a digit
+    if not request_id.isdigit():
+        raise error.UUError('request_id is not a digit.')
+
+    # Get request data
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    data = datarequest_get(ctx, request_id)
+
+    # Re-set the AVUs
+    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
+
+
 ###################################################
 #          Datarequest workflow API calls         #
 ###################################################
@@ -1389,11 +1421,13 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Set date of end of review period as metadata on the datarequest
-    current_timestamp               = int(time.time())
-    review_period_length_in_seconds = data['review_period_length'] * 86400
-    end_of_review_period_timestamp  = str(current_timestamp + review_period_length_in_seconds)
-    metadata_set(ctx, request_id, "endOfReviewPeriod", end_of_review_period_timestamp)
+    # Set date of end of review period as metadata on the datarequest (if
+    # accepted for review)
+    if data['decision'] == 'Accepted for review':
+        current_timestamp               = int(time.time())
+        review_period_length_in_seconds = data['review_period_length'] * 86400
+        end_of_review_period_timestamp  = str(current_timestamp + review_period_length_in_seconds)
+        metadata_set(ctx, request_id, "endOfReviewPeriod", end_of_review_period_timestamp)
 
     # Write form data to disk
     try:

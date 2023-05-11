@@ -1,6 +1,12 @@
 name: "Python 2 lint"
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+    - 'tests/**'
+  pull_request:
+    paths-ignore:
+    - 'tests/**'
 
 jobs:
   flake8:

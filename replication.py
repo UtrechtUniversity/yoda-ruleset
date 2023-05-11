@@ -91,8 +91,11 @@ def rule_replicate_batch(ctx, verbose):
 
             # Actual replication
             try:
-                # Ensure first replica has checksum before replication.
-                msi.data_obj_chksum(ctx, path, "replNum=0", irods_types.BytesBuf())
+                try:
+                    # Ensure first replica has checksum before replication.
+                    msi.data_obj_chksum(ctx, path, "", irods_types.BytesBuf())
+                except Exception:
+                    pass
 
                 # Workaround the PREP deadlock issue: Restrict threads to 1.
                 ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
@@ -152,9 +155,5 @@ def is_replication_blocked_by_admin(ctx):
     :returns: Boolean indicating if admin put replication on hold.
     """
     zone = user.zone(ctx)
-    iter = genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
-        genquery.AS_LIST, ctx
-    )
-    return len(list(iter)) > 0
+    path = "/{}/yoda/flags/stop_replication".format(zone)
+    return collection.exists(ctx, path)
