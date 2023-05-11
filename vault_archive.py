@@ -112,12 +112,25 @@ def package_archive_path(ctx, coll):
 
 
 def vault_archivable(ctx, coll):
+    minimum = int(config.data_package_archive_minimum)
+    maximum = int(config.data_package_archive_maximum)
+
+    # No archive limits configured.
+    if minimum < 0 and maximum < 0:
+        return True
+
     if not coll.endswith("/original"):
         for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
                                          genquery.AS_LIST,
                                          ctx):
-            return (collection.size(ctx, coll) >= int(config.data_package_limit))
+            coll_size = collection.size(ctx, coll)
+
+            # Data package size is inside archive limits.
+            if ((coll_size >= minimum and maximum < 0)
+               or (minimum < 0 and coll_size <= maximum)
+               or (coll_size >= minimum and coll_size <= maximum)):
+                return True
 
     return False
 
