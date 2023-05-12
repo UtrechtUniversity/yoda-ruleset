@@ -222,9 +222,9 @@ def create_archive(ctx, coll):
 def extract_archive(ctx, coll):
     while True:
         state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
-        if state != "UNM":
+        if state != "UNM" and state != "MIG":
             break
-        time.sleep(1)
+        time.sleep(10)
 
     if state != "DUL" and state != "REG" and state != "INV":
         log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
