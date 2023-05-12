@@ -191,6 +191,7 @@ def create_bagit_archive(ctx, archive, coll, resource):
 def extract_bagit_archive(ctx, archive, coll):
     ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
     if ret < 0:
+        log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))
         raise Exception("Archive extraction failed: {}".format(ret))
 
 
@@ -224,7 +225,9 @@ def extract_archive(ctx, coll):
         if state != "UNM":
             break
         time.sleep(1)
+
     if state != "DUL" and state != "REG" and state != "INV":
+        log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
         raise Exception("Archive is not available")
 
     extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
