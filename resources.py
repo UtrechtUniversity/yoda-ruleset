@@ -15,7 +15,7 @@ __all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_full_year_differentiated_group_storage',
-           'rule_resource_store_monthly_storage_statistics',
+           'rule_resource_store_storage_statistics',
            'rule_resource_transform_old_storage_data',
            'rule_resource_research',
            'rule_resource_vault']
@@ -423,13 +423,8 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 
 
 @rule.make()
-def rule_resource_store_monthly_storage_statistics(ctx):
-    # @rule.make()
-    # def rule_resource_store_group_storage_statistics(ctx):
+def rule_resource_store_storage_statistics(ctx):
     """
-    !!! Function has to be renamed as name does not correspond to its actual function
-
-
     For all categories present, store all found storage data for each group belonging to these categories.
 
     Store as metadata on group level as [category, research, vault, revision, total]
