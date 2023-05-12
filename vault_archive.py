@@ -215,12 +215,12 @@ def create_archive(ctx, coll):
     # create bagit archive
     create_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
     log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
-    ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_host, "REG")
+    ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")
 
 
 def extract_archive(ctx, coll):
     while True:
-        state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_host, "")["arguments"][2]
+        state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
         if state != "UNM":
             break
         time.sleep(1)
@@ -294,7 +294,7 @@ def vault_unarchive(ctx, actor, coll):
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
         provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
         log.write(ctx, "Request retrieval of data package <{}> from tape".format(coll))
-        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_host, "OFL")
+        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
 
         # Send notifications to datamanagers.
         datamanagers = folder.get_datamanagers(ctx, coll)
@@ -340,7 +340,7 @@ def vault_extract_archive(ctx, coll):
 def update(ctx, coll, attr):
     if pathutil.info(coll).space == pathutil.Space.VAULT and attr != constants.IIARCHIVEATTRNAME and attr != constants.UUPROVENANCELOG and vault_archival_status(ctx, coll) == "archived":
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
-        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_host, "OFL")
+        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
 
 
 def vault_update_archive(ctx, coll):
