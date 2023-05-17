@@ -120,8 +120,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     try:
         language = ''
         language_id = dictJsonData['Language']
-        schema_lang_ids = json_schema['definitions']['optionsLanguage']['enum']
-        schema_lang_names = json_schema['definitions']['optionsLanguage']['enumNames']
+        schema_lang_ids = json_schema['definitions']['optionsISO639-1']['enum']
+        schema_lang_names = json_schema['definitions']['optionsISO639-1']['enumNames']
         index = schema_lang_ids.index(language_id)
         language = schema_lang_names[index]
     except KeyError:
