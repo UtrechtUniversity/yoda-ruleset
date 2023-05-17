@@ -582,14 +582,24 @@ def api_vault_collection_details(ctx, path):
     if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
         research_path = research_name
 
-    return {"basename": basename,
-            "status": status,
-            "metadata": metadata,
-            "has_datamanager": has_datamanager,
-            "is_datamanager": is_datamanager,
-            "vault_action_pending": vault_action_pending,
-            "research_group_access": research_group_access,
-            "research_path": research_path}
+    import vault_archive
+    result = {
+        "basename": basename,
+        "status": status,
+        "metadata": metadata,
+        "has_datamanager": has_datamanager,
+        "is_datamanager": is_datamanager,
+        "vault_action_pending": vault_action_pending,
+        "research_group_access": research_group_access,
+        "research_path": research_path,
+        "downloadable": vault_archive.vault_downloadable(ctx, path)
+    }
+    if config.enable_data_package_archive:
+        result["archive"] = {
+            "archivable": vault_archive.vault_archivable(ctx, path),
+            "status": vault_archive.vault_archival_status(ctx, path)
+        }
+    return result
 
 
 @api.make()
@@ -1309,3 +1319,16 @@ def api_vault_get_published_packages(ctx, path):
         published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
 
     return published_packages
+
+
+def update_archive(ctx, coll, attr=None):
+    """Potentially update archive after metadata changed.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+    :param attr: The AVU that was changed, if any
+    """
+    if config.enable_data_package_archive:
+        import vault_archive
+
+        vault_archive.update(ctx, coll, attr)

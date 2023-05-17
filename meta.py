@@ -455,6 +455,7 @@ def rule_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_vault(ctx, path)
+        vault.update_archive(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
         ingest_metadata_research(ctx, path)
     elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
