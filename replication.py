@@ -100,7 +100,7 @@ def rule_replicate_batch(ctx, verbose):
                 # Mark as correctly replicated
                 count_ok += 1
             except msi.Error as e:
-                log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
+                log.write(ctx, 'ERROR - The file {} could not be replicated from {} to {}: {}'.format(file, from_path, to_path, str(e)))
 
                 if print_verbose:
                     log.write(ctx, "Batch replication retry: copying {} from {} to {}".format(path, data_resc_name, to_path))
