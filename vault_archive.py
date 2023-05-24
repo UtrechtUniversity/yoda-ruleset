@@ -215,6 +215,7 @@ def create_archive(ctx, coll):
 
     # create bagit archive
     create_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
+    msi.data_obj_chksum(ctx, coll + "/archive.tar", "", irods_types.BytesBuf())
     log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
     ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")
 
