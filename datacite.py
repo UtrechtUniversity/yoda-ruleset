@@ -18,7 +18,12 @@ def metadata_post(ctx, payload):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
-    response = requests.post(url, auth=auth, data=payload, headers=headers, timeout=30)
+    response = requests.post(url,
+                             auth=auth,
+                             data=payload,
+                             headers=headers,
+                             timeout=30,
+                             verify=config.datacite_tls_verify)
 
     return response.status_code
 
@@ -29,7 +34,12 @@ def metadata_put(ctx, doi, payload):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
-    response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
+    response = requests.put(url,
+                            auth=auth,
+                            data=payload,
+                            headers=headers,
+                            timeout=30,
+                            verify=config.datacite_tls_verify)
 
     return response.status_code
 
@@ -40,7 +50,11 @@ def metadata_get(ctx, doi):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
-    response = requests.get(url, auth=auth, headers=headers, timeout=30)
+    response = requests.get(url,
+                            auth=auth,
+                            headers=headers,
+                            timeout=30,
+                            verify=config.datacite_tls_verify)
 
     return response.status_code
 
