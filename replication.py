@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import hashlib
 import random
 
 import genquery
@@ -36,7 +37,7 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max):
+def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
@@ -50,6 +51,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max):
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
     :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param batch_size_limit: Maximum number of items to be processed within one batch
 
     """
     count         = 0
@@ -69,7 +71,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max):
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE', 'DATA_RESC_NAME'],
                     "META_DATA_ATTR_NAME = '{}'".format(attr),
-                    offset=0, limit=1000, output=genquery.AS_LIST))
+                    offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
@@ -90,7 +92,9 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max):
                 balance_id = int(info[2])
             elif len(info) == 2:
                 backwards_compatibility = True
-                balance_id = int(balance_id_min)
+                # Determine a balance_id for this dataobject based on its path.
+                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
             else:
                 # Not replicable.
                 log.write(ctx, "ERROR - Invalid replication data for {}".format(path))

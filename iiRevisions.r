@@ -12,8 +12,9 @@
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 # \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
 # \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
-uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max) {
-    rule_revision_batch(*verbose, *balance_id_min, *balance_id_max);
+# \param[in] batch_size_limit  Maximum number of items to be processed in a batch job
+uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit) {
+    rule_revision_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit);
 }
 
 

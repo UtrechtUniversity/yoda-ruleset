@@ -82,6 +82,7 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 # \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
 # \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
-uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max) {
-    rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max);
+# \param[in] batch_size_limit  Maximum number of items to be processed within one batch
+uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit) {
+    rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit);
 }

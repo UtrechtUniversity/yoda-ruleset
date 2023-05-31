@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import datetime
+import hashlib
 import os
 import random
 import time
@@ -261,7 +262,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
 
 
 @rule.make()
-def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max):
+def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects (in research space) marked with 'org_revision_scheduled' metadata.
@@ -274,6 +275,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max):
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
     :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param batch_size_limit: Maximum number of items to be processed within one batch
 
     """
     count         = 0
@@ -294,7 +296,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max):
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
                     "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%'".format(attr, user.zone(ctx), constants.IIGROUPPREFIX),
-                    offset=0, limit=1000, output=genquery.AS_LIST))
+                    offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked revision process.
             if is_revision_blocked_by_admin(ctx):
@@ -305,6 +307,9 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max):
             data_id = row[0]
             path    = row[1] + "/" + row[2]
 
+            test = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
+            log.write(ctx, 'test hashlib: {}'.format(test))
+
             # Metadata value contains resc and balace id for load balancing purposes.
             info = row[3].split(',')
             if len(info) == 2:
@@ -313,7 +318,9 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max):
             else:
                 # Backwards compatability with revision metadata created in v1.8 or earlier.
                 resc = row[3]
-                balance_id = int(balance_id_min)
+                # Determine a balance_id for this dataobject based on its path.
+                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
 
             # Check whether balance id is within the range for this job.
             if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
