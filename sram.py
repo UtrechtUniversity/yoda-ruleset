@@ -4,34 +4,29 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
-import random
-import string
-import json
-
 import requests
-import mail
 
+import mail
 from util import *
 
 
 def sram_post_collaboration(ctx, payload):
     """Create SRAM Collaborative Organisation Identifier."""
-    
+
     url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
-    
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer '+ config.sram_api_key}
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     response = requests.post(url, json=payload, headers=headers, timeout=30)
     data = response.json()
 
     return data
 
+
 def sram_get_uid(ctx, co_identifier, user_name, group_name):
     """Get SRAM Collaboration member uid."""
 
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
-    
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer '+ config.sram_api_key}
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     response = requests.get(url, headers=headers, timeout=30)
     data = response.json()
@@ -42,12 +37,12 @@ def sram_get_uid(ctx, co_identifier, user_name, group_name):
 
     return uid
 
+
 def sram_delete_collaboration(ctx, co_identifier):
     """Delete SRAM Collaborative Organisation."""
-    
+
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
-    
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer '+ config.sram_api_key}
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     response = requests.delete(url, headers=headers, timeout=30)
     data = response.status_code
@@ -57,10 +52,9 @@ def sram_delete_collaboration(ctx, co_identifier):
 
 def sram_delete_collab_membership(ctx, co_identifier, uid):
     """Delete SRAM Collaborative Organisation membership."""
-    
+
     url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uid)
-    
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer '+ config.sram_api_key}
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     response = requests.delete(url, headers=headers, timeout=30)
     data = response.status_code
