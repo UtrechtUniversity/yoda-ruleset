@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import itertools
 import json
 import time
 
@@ -21,42 +20,13 @@ from util import *
 __all__ = ['api_vault_archive',
            'api_vault_archival_status',
            'api_vault_extract',
-           'api_vault_download',
            'rule_vault_archive',
            'rule_vault_create_archive',
            'rule_vault_extract_archive',
-           'rule_vault_update_archive',
-           'rule_vault_download_archive']
+           'rule_vault_update_archive']
 
 
 TAPE_ARCHIVE_RESC = "mockTapeArchive"
-
-
-def package_manifest(ctx, coll):
-    """Generate a BagIt manifest of collection.
-
-    Manifest with a complete listing of each file name along with
-    a corresponding checksum to permit data integrity checking.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to generate manifest of
-
-    :returns: String with BagIt manifest
-    """
-    length = len(coll) + 1
-    return "\n".join([
-        data_object.decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
-        for row in itertools.chain(
-            genquery.row_iterator("COLL_NAME, ORDER(DATA_NAME), DATA_CHECKSUM",
-                                  "COLL_NAME = '{}'".format(coll),
-                                  genquery.AS_LIST,
-                                  ctx),
-            genquery.row_iterator("ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
-                                  "COLL_NAME like '{}/%'".format(coll),
-                                  genquery.AS_LIST,
-                                  ctx))
-        if row[0] != coll or not row[1].startswith("yoda-metadata")
-    ]) + "\n"
 
 
 def package_system_metadata(ctx, coll):
@@ -136,63 +106,7 @@ def vault_archivable(ctx, coll):
 
 
 def vault_archival_status(ctx, coll):
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
-                                     genquery.AS_LIST,
-                                     ctx):
-        return row[0]
-
-    return False
-
-
-def vault_downloadable(ctx, coll):
-    if coll.endswith("/original"):
-        return False
-    for row in genquery.row_iterator("DATA_SIZE",
-                                     "COLL_NAME = '{}' AND DATA_NAME = 'download.zip'".format(coll),
-                                     genquery.AS_LIST,
-                                     ctx):
-        return False
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
-                                     genquery.AS_LIST,
-                                     ctx):
-        return True
-
-    return False
-
-
-def vault_bagitor(ctx, coll):
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIBAGITOR),
-                                     genquery.AS_LIST,
-                                     ctx):
-        return row[0]
-
-    return False
-
-
-def create_bagit_archive(ctx, archive, coll, resource):
-    # Create manifest file.
-    log.write(ctx, "Creating manifest file for data package <{}>".format(coll))
-    data_object.write(ctx, coll + "/manifest-sha256.txt",
-                      package_manifest(ctx, coll))
-    msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
-                        irods_types.BytesBuf())
-
-    # Create archive.
-    log.write(ctx, "Creating archive file for data package <{}>".format(coll))
-    ret = msi.archive_create(ctx, archive, coll, resource, 0)
-    if ret < 0:
-        raise Exception("Archive creation failed: {}".format(ret))
-    ctx.iiCopyACLsFromParent(archive, "default")
-
-
-def extract_bagit_archive(ctx, archive, coll):
-    ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
-    if ret < 0:
-        log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))
-        raise Exception("Archive extraction failed: {}".format(ret))
+    return bagit.status(ctx, coll)
 
 
 def create_archive(ctx, coll):
@@ -214,7 +128,7 @@ def create_archive(ctx, coll):
                         irods_types.BytesBuf())
 
     # create bagit archive
-    create_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
+    bagit.create(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
     msi.data_obj_chksum(ctx, coll + "/archive.tar", "", irods_types.BytesBuf())
     log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
     ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")
@@ -231,7 +145,7 @@ def extract_archive(ctx, coll):
         log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
         raise Exception("Archive is not available")
 
-    extract_bagit_archive(ctx, coll + "/archive.tar", coll + "/archive")
+    bagit.extract(ctx, coll + "/archive.tar", coll + "/archive")
 
 
 def vault_archive(ctx, actor, coll):
@@ -307,7 +221,7 @@ def vault_unarchive(ctx, actor, coll):
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
 
-        log.write(ctx, "Data package <{}> scheduled for unarchving by <{}>".format(coll, actor))
+        log.write(ctx, "Data package <{}> scheduled for unarchiving by <{}>".format(coll, actor))
 
         return "Success"
 
@@ -364,53 +278,6 @@ def vault_update_archive(ctx, coll):
     except Exception:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update failed")
         log.write(ctx, "Update of archived data package <{}> failed".format(coll))
-
-        return "Failure"
-
-
-def vault_download(ctx, actor, coll):
-    try:
-        # Prepare for download.
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "bagit")
-        avu.set_on_coll(ctx, coll, constants.IIBAGITOR, actor)
-        provenance.log_action(ctx, actor, coll, "download scheduled", False)
-
-        return "Success"
-    except Exception:
-        return "Failure"
-
-
-def vault_download_archive(ctx, coll):
-    if vault_archival_status(ctx, coll) != "bagit":
-        return "Invalid"
-    try:
-        actor = vault_bagitor(ctx, coll)
-        avu.rm_from_coll(ctx, coll, constants.IIBAGITOR, actor)
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
-        create_bagit_archive(ctx, coll + "/download.zip", coll, TAPE_ARCHIVE_RESC)
-
-        data_object.remove(ctx, coll + "/manifest-sha256.txt")
-        provenance.log_action(ctx, "system", coll, "creating download archive completed", False)
-        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
-
-        notifications.set(ctx, "system", actor, coll, "archive ready for download")
-        log.write(ctx, "Archive of data package <{}> ready for download".format(coll))
-
-        return "Success"
-    except Exception:
-        # remove bagit
-        try:
-            data_object.remove(ctx, coll + "/download.zip")
-        except Exception:
-            pass
-        # remove temporary files
-        try:
-            data_object.remove(ctx, coll + "/manifest-sha256.txt")
-        except Exception:
-            pass
-
-        provenance.log_action(ctx, "system", coll, "creating download archive failed", False)
-        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
 
         return "Failure"
 
@@ -479,39 +346,12 @@ def api_vault_extract(ctx, coll):
         return "Failure"
 
 
-@api.make()
-def api_vault_download(ctx, coll):
-    """Request to download a vault data package.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection of vault data package to download
-
-    :returns: API status
-    """
-    if pathutil.info(coll).space != pathutil.Space.VAULT:
-        return "Invalid"
-
-    if not vault_downloadable(ctx, coll):
-        return "Invalid"
-
-    if vault_archival_status(ctx, coll):
-        return "Invalid"
-
-    try:
-        ctx.iiAdminVaultArchive(coll, "download")
-        return "Success"
-    except Exception:
-        return "Failure"
-
-
 @rule.make(inputs=[0, 1, 2], outputs=[3])
 def rule_vault_archive(ctx, actor, coll, action):
     if action == "archive":
         return vault_archive(ctx, actor, coll)
     elif action == "extract":
         return vault_unarchive(ctx, actor, coll)
-    elif action == "download":
-        return vault_download(ctx, actor, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -527,8 +367,3 @@ def rule_vault_extract_archive(ctx, coll):
 @rule.make(inputs=[0], outputs=[1])
 def rule_vault_update_archive(ctx, coll):
     return vault_update_archive(ctx, coll)
-
-
-@rule.make(inputs=[0], outputs=[1])
-def rule_vault_download_archive(ctx, coll):
-    return vault_download_archive(ctx, coll)
