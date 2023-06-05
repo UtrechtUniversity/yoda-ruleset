@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import hashlib
@@ -109,8 +109,6 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             # Check whether balance id is within the range for this job
             if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
                 # Skip this one and go to the next data object to be replicated.
-                if print_verbose:
-                    log.write(ctx, "Batch replication: skipping {} due to load balancing: range {} {}".format(path, balance_id_min, balance_id_max))
                 continue
 
             # For totalization only count the dataobjects that are within the specified balancing range

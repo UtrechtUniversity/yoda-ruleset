@@ -307,9 +307,6 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
             data_id = row[0]
             path    = row[1] + "/" + row[2]
 
-            test = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
-            log.write(ctx, 'test hashlib: {}'.format(test))
-
             # Metadata value contains resc and balace id for load balancing purposes.
             info = row[3].split(',')
             if len(info) == 2:
@@ -325,8 +322,6 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
             # Check whether balance id is within the range for this job.
             if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
                 # Skip this one and go to the next data object for revision creation.
-                if print_verbose:
-                    log.write(ctx, "Batch revision: skipping {} due to load balancing: range {} {}".format(path, balance_id_min, balance_id_max))
                 continue
 
             # For getting the total count only the data objects within the wanted range
