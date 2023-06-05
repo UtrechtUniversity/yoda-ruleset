@@ -5,8 +5,6 @@ __copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
-import json
-import time
 
 import genquery
 import irods_types
@@ -62,7 +60,7 @@ def create(ctx, archive, coll, resource):
                         irods_types.BytesBuf())
 
     try:
-    # Create archive.
+        # Create archive.
         log.write(ctx, "Creating archive file for data package <{}>".format(coll))
         ret = msi.archive_create(ctx, archive, coll, resource, 0)
     except Exception:
