@@ -134,10 +134,11 @@ uuGroupExpirationDateIsValid(*expiration_date, *valid) {
 # \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
+# \param[in]  co_identifier
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *co_identifier, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	*allowed = 0;
@@ -305,6 +306,9 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			} else {
 				*reason = "The chosen expiration date is invalid.";
 			}
+		} else if (*attribute == "co_identifier") {
+			*allowed = 1;
+			*reason = "";
 		} else {
 			*reason = "Invalid group attribute name.";
 		}
