@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """Functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import datetime
+import hashlib
 import os
+import random
 import time
 
 import genquery
@@ -255,17 +257,26 @@ def resource_modified_post_revision(ctx, resource, zone, path):
         if not pathutil.basename(path) in constants.UUBLOCKLIST:
             # now create revision asynchronously by adding indication org_revision_scheduled
             msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
+            # Add random id to metadata for load balancing of revision batches
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource + ',' + str(random.randint(1, 64)))
 
 
 @rule.make()
-def rule_revision_batch(ctx, verbose):
+def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects (in research space) marked with 'org_revision_scheduled' metadata.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    For load balancing purposes each data object has been randomly assigned a number (balance_id) between 1-64.
+    To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
+    The corresponding job will only process data objets with a balance id within the range.
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
+    :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param batch_size_limit: Maximum number of items to be processed within one batch
+
     """
     count         = 0
     count_ok      = 0
@@ -279,17 +290,14 @@ def rule_revision_batch(ctx, verbose):
     if is_revision_blocked_by_admin(ctx):
         log.write(ctx, "Batch revision job is stopped")
     else:
-        log.write(ctx, "Batch revision job started")
+        log.write(ctx, "Batch revision job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
 
-        # Get list of data objects (in research space) scheduled for revision.
-        iter = genquery.row_iterator(
-            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%'".format(attr, user.zone(ctx), constants.IIGROUPPREFIX),
-            genquery.AS_LIST, ctx
-        )
+        # Get list up to 1000 data objects (in research space) scheduled for revision.
+        iter = list(genquery.Query(ctx,
+                    ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
+                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%'".format(attr, user.zone(ctx), constants.IIGROUPPREFIX),
+                    offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
-            count += 1
-
             # Stop further execution if admin has blocked revision process.
             if is_revision_blocked_by_admin(ctx):
                 log.write(ctx, "Batch revision job is stopped")
@@ -298,12 +306,31 @@ def rule_revision_batch(ctx, verbose):
             # Perform scheduled revision creation for one data object.
             data_id = row[0]
             path    = row[1] + "/" + row[2]
-            resc    = row[3]
+
+            # Metadata value contains resc and balace id for load balancing purposes.
+            info = row[3].split(',')
+            if len(info) == 2:
+                resc = info[0]
+                balance_id = int(info[1])
+            else:
+                # Backwards compatability with revision metadata created in v1.8 or earlier.
+                resc = row[3]
+                # Determine a balance_id for this dataobject based on its path.
+                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
+
+            # Check whether balance id is within the range for this job.
+            if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
+                # Skip this one and go to the next data object for revision creation.
+                continue
+
+            # For getting the total count only the data objects within the wanted range
+            count += 1
 
             if print_verbose:
                 log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
-            id = revision_create(ctx, resc, data_id, constants.UUMAXREVISIONSIZE, verbose)
+            revision_created = revision_create(ctx, resc, data_id, constants.UUMAXREVISIONSIZE, verbose)
 
             # Remove revision_scheduled flag no matter if it succeeded or not.
             # rods should have been given own access via policy to allow AVU
@@ -314,7 +341,6 @@ def rule_revision_batch(ctx, verbose):
             # try removing attr/resc meta data
             avu_deleted = False
             try:
-                # avu.rm_from_data(ctx, path, attr, resc)
                 avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
                 avu_deleted = True
             except Exception:
@@ -331,8 +357,8 @@ def rule_revision_batch(ctx, verbose):
                     log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
             # now back to the created revision
-            if id:
-                log.write(ctx, "Revision created for {} ID={}".format(path, id))
+            if revision_created:
+                log.write(ctx, "Revision created for {}".format(path))
                 count_ok += 1
                 # Revision creation OK. Remove any existing error indication attribute.
                 iter2 = genquery.row_iterator(
@@ -376,9 +402,9 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
     :param max_size: Max size of files in bytes
     :param verbose:	 Whether to print messages for troubleshooting to log (1: yes, 0: no)
 
-    :returns: Data object ID of created revision
+    :returns: True / False as an indication whether a revision was successfully created
     """
-    revision_id = ""
+    revision_created = False
     print_verbose = verbose
     found = False
 
@@ -402,11 +428,11 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
 
     if not found:
         log.write(ctx, "Data object <{}> was not found or path was collection".format(path))
-        return ""
+        return False
 
     if int(data_size) > max_size:
         log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
-        return ""
+        return False
 
     groups = list(genquery.row_iterator(
         "USER_NAME, USER_ZONE",
@@ -418,10 +444,10 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
         (group_name, user_zone) = groups[0]
     elif len(groups) == 0:
         log.write(ctx, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
-        return ""
+        return False
     else:
         log.write(ctx, "Cannot find unique owner of data object <{}>. Skipping.".format(path))
-        return ""
+        return False
 
     # All revisions are stored in a group with the same name as the research group in a system collection
     # When this collection is missing, no revisions will be created. When the group manager is used to
@@ -444,7 +470,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             try:
                 msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
             except msi.Error:
-                return ""
+                return False
 
         if collection.exists(ctx, rev_coll):
             # Rods may not have own access yet.
@@ -456,7 +482,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
                 msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
             except error.UUError:
                 log.write(ctx, "ERROR - Failed to create staging area at <{}>".format(rev_coll))
-                return ""
+                return False
 
         rev_path = rev_coll + "/" + rev_filename
 
@@ -469,49 +495,10 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             ofFlags = 'forceFlag=++++numThreads=1'
             msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
 
-            # Genquery cannot be used as path names containing "'" result in errors.
-            # Therefore, a different approach is taken here.
-
-            # Possibly there could be another rev_path already around accompanied with an original_data_id AVU
-            # Therefore, use associate the new original_data_id and afterwards draw conclusions.
-            # This way rev_path can have 1 or more of original_data_id.
-            try:
-                avu.associate_to_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-            except msi.Error:
-                log.write(ctx, 'ERROR - associating original_data_id {} to path: {}'.format(data_id, rev_path))
-                return ""
-
-            count = 0
-            for avu_item in avu.of_data(ctx, rev_path):
-                # Count the number of original_data_id avu's as there should only be 1
-                if avu_item[0] == constants.UUORGMETADATAPREFIX + "original_data_id":
-                    count += 1
-
-            if count == 0:
-                log.write(ctx, "failed to find data object id for revision <{}>. Aborting.".format(rev_path))
-                return ""
-            elif count > 1:
-                log.write(ctx, "failed to find unique data object id for revision <{}>. Aborting.".format(rev_path))
-
-                # Get back to the previous situation so remove the origin_data_id that was added the latest
-                avu.rm_from_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-                return ""
-
-            # Revision was created correctly.
-            # Determine data-id of created revision
-            rows = list(genquery.row_iterator(
-                "DATA_ID",
-                "META_DATA_ATTR_NAME = '{}' AND META_DATA_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX + "original_data_id", data_id),
-                genquery.AS_LIST, ctx
-            ))
-
-            if len(rows) == 1:
-                revision_id = rows[0][0]
-            else:
-                log.write(ctx, "failed to find unique data object id for revision of data id <{}>. Aborting.".format(data_id))
-                return ""
+            revision_created = True
 
             # Add original metadata to revision data object.
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
@@ -522,9 +509,8 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
             log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
-            return ''
 
-    return revision_id
+    return revision_created
 
 
 @rule.make(inputs=range(2), outputs=range(2, 3))
