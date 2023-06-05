@@ -994,13 +994,13 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
             import datetime
             import session_vars
 
-            date_time = expiration_date+'000000'
-            date=datetime.datetime.strptime(date_time, "%Y-%m-%d%H%M%S")
+            date_time = expiration_date + '000000'
+            date = datetime.datetime.strptime(date_time, "%Y-%m-%d%H%M%S")
             epoch = datetime.datetime.utcfromtimestamp(0)
             epoch_date = int((date - epoch).total_seconds())
 
             payload = {
-                "name": 'yoda-'+group_name,
+                "name": 'yoda-' + group_name,
                 "short_name": group_name,
                 "description": description,
                 "disable_join_requests": False,
@@ -1071,12 +1071,12 @@ def api_group_delete(ctx, group_name):
             "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
             genquery.AS_LIST, ctx
         )
-        
+
         for row in iter:
             if (row[0]):
                 sram_group = True
                 co_identifier = row[0]
-        if sram_group == True:
+        if sram_group:
             response_sram = sram.sram_delete_collaboration(ctx, co_identifier)
             if response_sram != 204:
                 message = response_sram['message']
@@ -1132,7 +1132,6 @@ def api_group_user_add(ctx, username, group_name):
     :returns: Dict with API status result
     """
     try:
-        import session_vars
         import re
         sram_group = False
         co_identifier = ''
@@ -1143,26 +1142,26 @@ def api_group_user_add(ctx, username, group_name):
             "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
             genquery.AS_LIST, ctx
         )
-        
+
         for row in iter:
             if (row[0]):
                 sram_group = True
                 co_identifier = row[0]
-        
-        if sram_group == True:
+
+        if sram_group:
             # Validate email
             if (re.match(regex, username)):
                 log.write(ctx, "Valid Email")
             else:
                 log.write(ctx, "Invalid Email")
                 return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
- 
+
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
         if status == '0':
-            if sram_group == True:
-                response_email = sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
+            if sram_group:
+                sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
@@ -1227,13 +1226,13 @@ def api_group_remove_user_from_group(ctx, username, group_name):
             "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
             genquery.AS_LIST, ctx
         )
-        
+
         for row in iter:
             if (row[0]):
                 sram_group = True
                 co_identifier = row[0]
-        
-        if sram_group == True:
+
+        if sram_group:
             uid = sram.sram_get_uid(ctx, co_identifier, username, group_name)
             if uid == '':
                 return api.Error('SRAM_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
@@ -1242,7 +1241,7 @@ def api_group_remove_user_from_group(ctx, username, group_name):
                 if response_sram != 204:
                     message = response_sram['message']
                     return api.Error('SRAM_error', message)
-        
+
         response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
