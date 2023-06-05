@@ -51,3 +51,7 @@ token_lifetime                 =
 enable_tape_archive            =
 
 temporary_files                =
+
+enable_sram                    =
+sram_rest_api_url              =
+sram_api_key                   =

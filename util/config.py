@@ -117,7 +117,10 @@ config = Config(environment=None,
                 epic_key=None,
                 epic_certificate=None,
                 temporary_files=[],
-                external_users_domain_filter=[])
+                external_users_domain_filter=[],
+                sram_rest_api_url=None,
+                sram_api_key=None,
+                enable_sram=False)
 
 # }}}
 

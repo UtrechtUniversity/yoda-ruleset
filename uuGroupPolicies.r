@@ -83,10 +83,11 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*groupName,
 				*policyKv."category",
 				*policyKv."subcategory",
-                                *policyKv."schema_id",
-                                *policyKv."expiration_date",
+				*policyKv."schema_id",
+				*policyKv."expiration_date",
 				*policyKv."description",
 				*policyKv."data_classification",
+				*policyKv."co_identifier",
 				*allowed, *reason
 			);
 
@@ -528,12 +529,15 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		if (*policyKv."data_classification" != "") {
 			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
 		}
-                if (*policyKv."schema_id" != "") {
-                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
-                }
-                if (*policyKv."expiration_date" != "") {
-                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "expiration_date", *policyKv."expiration_date", "", ""));
-                }
+		if (*policyKv."schema_id" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
+		}
+		if (*policyKv."expiration_date" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "expiration_date", *policyKv."expiration_date", "", ""));
+		}
+		if (*policyKv."co_identifier" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "co_identifier", *policyKv."co_identifier", "", ""));
+		}
 	}
 
     # Put the group name in the policyKv to assist the acl policy.
