@@ -12,8 +12,8 @@ from datetime import datetime
 import genquery
 import requests
 
-import sram
 import schema
+import sram
 from util import *
 
 __all__ = ['api_group_data',
