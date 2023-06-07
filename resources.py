@@ -311,7 +311,8 @@ def api_resource_category_stats(ctx):
                                     'revision': misc.human_readable_size(instance_totals['revision'])},
                         'users': users})
 
-    return sorted(all_storage, key=lambda d: d['category'])
+    return {'categories': sorted(all_storage, key=lambda d: d['category']),
+            'external_filter': ', '.join(config.external_users_domain_filter)}
 
 
 @api.make()
