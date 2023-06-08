@@ -30,7 +30,7 @@ def sram_post_collaboration(payload):
 
 def sram_get_uid(co_identifier, user_name):
     """Get SRAM Collaboration member uid.
-    
+
     :param co_identifier: SRAM CO identifier
     :param user_name: Name of the user
 
@@ -69,7 +69,7 @@ def sram_delete_collaboration(co_identifier):
 
 def sram_delete_collab_membership(co_identifier, uid):
     """Delete SRAM Collaborative Organisation membership.
-    
+
     :param co_identifier: SRAM CO identifier
     :param uid: Unique id of the user
 
@@ -87,7 +87,7 @@ def sram_delete_collab_membership(co_identifier, uid):
 
 def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
     """Send invitation email to newly added user to the group.
-    
+
     :param ctx: Combined type of a ctx and rei struct
     :param group_name: Name of the group the user is to invited to join
     :param username: Name of the user to be invited
@@ -95,7 +95,7 @@ def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
 
     :returns: Sends the invitation mail to the user
     """
-    
+
     return mail.send(ctx,
                      to=username,
                      cc='',

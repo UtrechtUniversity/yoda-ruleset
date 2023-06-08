@@ -9,9 +9,8 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 
-import session_vars
-
 import genquery
+import session_vars
 import requests
 
 import schema
@@ -1230,17 +1229,17 @@ def sram_enabled(ctx, group_name):
     :param ctx: Combined type of a ctx and rei struct
     :param group_name: Name of the group
 
-    :returns: enable_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
-    
+    :returns: enable_sram_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
+
     """
     enable_sram_flag = False
     co_identifier = ''
 
     iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE",
-            "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
-            genquery.AS_LIST, ctx
-        )
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
+        genquery.AS_LIST, ctx
+    )
 
     for row in iter:
         if (row[0]):
