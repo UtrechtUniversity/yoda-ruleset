@@ -121,7 +121,7 @@ config = Config(environment=None,
                 sram_rest_api_url=None,
                 sram_api_key=None,
                 enable_sram=True,
-                sram_tls_verify=False)
+                sram_tls_verify=True)
 
 # }}}
 
