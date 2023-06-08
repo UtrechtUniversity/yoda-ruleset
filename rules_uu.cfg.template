@@ -55,3 +55,4 @@ temporary_files                =
 enable_sram                    =
 sram_rest_api_url              =
 sram_api_key                   =
+sram_tls_verify                =
