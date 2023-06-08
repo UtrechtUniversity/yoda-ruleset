@@ -10,8 +10,8 @@ from collections import OrderedDict
 from datetime import datetime
 
 import genquery
-import session_vars
 import requests
+import session_vars
 
 import schema
 import sram
