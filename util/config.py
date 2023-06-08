@@ -122,7 +122,8 @@ config = Config(environment=None,
                 external_users_domain_filter=[],
                 sram_rest_api_url=None,
                 sram_api_key=None,
-                enable_sram=False)
+                enable_sram=True,
+                sram_tls_verify=False)
 
 # }}}
 
