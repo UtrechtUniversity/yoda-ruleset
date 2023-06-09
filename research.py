@@ -650,7 +650,7 @@ def api_research_collection_details(ctx, path):
     # Check if vault is accessible.
     vault_path = ""
     vault_name = group.replace("research-", "vault-", 1)
-    vault_coll ='/'.join(path.split('/')[0:3])
+    vault_coll = '/'.join(path.split('/')[0:3])
     if collection.exists(ctx, vault_coll + "/" + vault_name):
         vault_path = vault_name
 
