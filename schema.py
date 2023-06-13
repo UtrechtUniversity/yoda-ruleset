@@ -31,7 +31,7 @@ def api_schema_get_schemas_and_default(ctx):
     else:
         schema_default = config.default_schema_id
 
-    return {'schemas': get_selectable_schemas(ctx), 
+    return {'schemas': get_selectable_schemas(ctx),
             'schema_default': schema_default}
 
 
