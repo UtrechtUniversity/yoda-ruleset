@@ -11,12 +11,32 @@ import genquery
 import meta
 from util import *
 
-__all__ = ['api_schema_get_schemas']
+__all__ = ['api_schema_get_schemas',
+           'api_schema_get_schemas_and_default']
 
 
 @api.make()
 def api_schema_get_schemas(ctx):
-    """Retrieve schemas."""
+    """Retrieve selectable schemas and make available through API."""
+    return get_selectable_schemas(ctx)
+
+
+@api.make()
+def api_schema_get_schemas_and_default(ctx):
+    """Retrieve selectable schemas and the default schema for this Yoda istance.
+       Make available through API.
+    """
+    if not config.default_schema_id:
+        schema_default = ''
+    else:
+        schema_default = config.default_schema_id
+
+    return {'schemas': get_selectable_schemas(ctx), 
+            'schema_default': schema_default}
+
+
+def get_selectable_schemas(ctx):
+    """ Get all selectable schemas within the yoda instance """
     schemas = []
 
     iter = genquery.row_iterator(
