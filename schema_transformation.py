@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
+           'rule_batch_transform_vault_metadata_orcid',
            'rule_get_transformation_info',
            'api_transform_metadata']
 
@@ -204,6 +205,140 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
             "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
             "rule_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
+
+
+# TODO: @rule.make
+def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
+    """
+    Transform all metadata JSON files in the vault to the active schema.
+
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
+    """
+
+    coll_id = int(rule_args[0])
+    batch   = int(rule_args[1])
+    pause   = float(rule_args[2])
+    delay   = int(rule_args[3])
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+
+    # Check one batch of metadata schemas.
+
+    # Find all research and vault collections, ordered by COLL_ID.
+    iter = genquery.row_iterator(
+        "ORDER(COLL_ID), COLL_NAME",
+        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
+        genquery.AS_LIST, callback)
+
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        path_parts = coll_name.split('/')
+
+        # Transformation is limited to ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
+        # /tempZone/home/vault-core-1/
+
+        log.write(callback, coll_name)
+
+        if path_parts[3].replace('vault-', '') in ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
+            try:
+                # Get vault package path.
+                vault_package = '/'.join(path_parts[:5])
+                metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
+                log.write(callback, metadata_path)
+                if metadata_path  != '':
+                    # PREVENT EACH VAULT METADATA.JSON FILE FROM BEING REWRITTEN
+                    # Prevent transformation of every latest metadata.json file.
+                    # Possibly an individual file does not contain ORCID or illformatted ORCID.
+                    # Skip these files!
+                    metadata = jsonutil.read(callback, metadata_path)
+
+                    # Correct the incorrect orcids
+                    result = transform_orcid(callback, metadata)
+                    log.write(callback, result)
+                    if result['data_changed']:
+                        # orcid's have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
+
+                        coll, data = os.path.split(metadata_path)
+
+                        new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
+                        # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+                        jsonutil.write(callback, new_path, result['metadata'])
+                        copy_acls_from_parent(callback, new_path, "default")
+                        callback.rule_provenance_log_action("system", coll, "updated metadata schema")
+                        log.write(callback, "Transformed ORCIDs for: %s" % (new_path))
+
+            except Exception:
+                pass
+
+            # Sleep briefly between checks.
+            time.sleep(pause)
+
+        # The next collection to check must have a higher COLL_ID.
+        coll_id += 1
+    else:
+        # All done.
+        coll_id = 0
+        log.write(callback, "[METADATA] Finished updating metadata.")
+
+    if coll_id != 0:
+        # Check the next batch after a delay.
+        callback.delayExec(
+            "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
+            "rule_batch_transform_vault_metadata_orcid('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "")
+
+
+def transform_orcid(ctx, m):
+    """
+    Transform all present orcid's into the correct format. If possible!
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform
+
+    :returns: Dict with indication whether data has changed and transformed JSON object with regard to ORCID
+    """
+    data_changed = False
+    # Only Creators and Contributors hold Person identifiers that can hold ORCIDs that could possibly be ill formatted
+    for pi_holder in ['Creator', 'Contributor']:
+        if m.get(pi_holder, False):
+            for holder in m[pi_holder]:
+                for pi in holder['Person_Identifier']:
+                    if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
+                        # if incorrect ORCID format => try to correct
+                        if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", pi.get('Name_Identifier', None)):
+                            log.write(ctx, 'to be corrected')
+                            log.write(ctx, pi['Name_Identifier'])
+                            log.write(ctx, correctify_orcid(pi['Name_Identifier']))
+                            pi['Name_Identifier'] = correctify_orcid(pi['Name_Identifier'])
+                            data_changed = True
+
+    return {'metadata': m, 'data_changed': data_changed}
+
+
+def correctify_orcid(org_orcid):
+    """ Function to hopefully correct illformatted ORCIDs """
+    # Get rid of all spaces
+
+    orcid = org_orcid.replace(' ','')
+
+    orcs = orcid.split('/')
+
+    # the last part should hold a valid id like eg: 1234-1234-1234-123X
+    # If not, it is impossible to correct it to the valid orcid format
+    if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", orcs[-1]):
+        # return original value
+        return org_orcid
+
+    return "https://orcid.org/{}".format(orcs[-1])
+
+
+
 
 
 def html(f):
