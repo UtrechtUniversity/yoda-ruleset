@@ -240,17 +240,13 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
         coll_name = row[1]
         path_parts = coll_name.split('/')
 
-        # Transformation is limited to ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
-        # /tempZone/home/vault-core-1/
-
-        log.write(callback, coll_name)
+        # ORCID-correction is limited to ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
 
         if path_parts[3].replace('vault-', '') in ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
             try:
                 # Get vault package path.
                 vault_package = '/'.join(path_parts[:5])
                 metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
-                log.write(callback, metadata_path)
                 if metadata_path  != '':
                     # PREVENT EACH VAULT METADATA.JSON FILE FROM BEING REWRITTEN
                     # Prevent transformation of every latest metadata.json file.
@@ -258,14 +254,14 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
                     # Skip these files!
                     metadata = jsonutil.read(callback, metadata_path)
 
-                    # Correct the incorrect orcids
+                    # Correct the incorrect orcid(s) if possible
+                    # result is a dict containing 'data_changed' 'metadata'
                     result = transform_orcid(callback, metadata)
-                    log.write(callback, result)
+
+                    # In order to minimize changes within the vault only save a new metadata.json if there actually has been at least one orcid correction.
                     if result['data_changed']:
-                        # orcid's have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
-
+                        # orcid('s) has/have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
                         coll, data = os.path.split(metadata_path)
-
                         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
                         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
                         jsonutil.write(callback, new_path, result['metadata'])
@@ -284,7 +280,7 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
     else:
         # All done.
         coll_id = 0
-        log.write(callback, "[METADATA] Finished updating metadata.")
+        log.write(callback, "[METADATA] Finished correcting ORCID's within vault metadata.")
 
     if coll_id != 0:
         # Check the next batch after a delay.
@@ -312,11 +308,11 @@ def transform_orcid(ctx, m):
                     if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
                         # if incorrect ORCID format => try to correct
                         if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", pi.get('Name_Identifier', None)):
-                            log.write(ctx, 'to be corrected')
-                            log.write(ctx, pi['Name_Identifier'])
-                            log.write(ctx, correctify_orcid(pi['Name_Identifier']))
-                            pi['Name_Identifier'] = correctify_orcid(pi['Name_Identifier'])
-                            data_changed = True
+                            corrected_orcid = correctify_orcid(pi['Name_Identifier'])
+                            # Only it an actual correction took place change the value and mark this data as 'changed'.
+                            if corrected_orcid != pi['Name_Identifier']:
+                                pi['Name_Identifier'] = correctify_orcid(pi['Name_Identifier'])
+                                data_changed = True
 
     return {'metadata': m, 'data_changed': data_changed}
 
@@ -325,7 +321,7 @@ def correctify_orcid(org_orcid):
     """ Function to hopefully correct illformatted ORCIDs """
     # Get rid of all spaces
 
-    orcid = org_orcid.replace(' ','')
+    orcid = org_orcid.replace(' ', '')
 
     orcs = orcid.split('/')
 
@@ -336,9 +332,6 @@ def correctify_orcid(org_orcid):
         return org_orcid
 
     return "https://orcid.org/{}".format(orcs[-1])
-
-
-
 
 
 def html(f):
