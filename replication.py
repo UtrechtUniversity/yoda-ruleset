@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import hashlib
+import random
 
 import genquery
 import irods_types
@@ -27,20 +30,29 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
-        ctx.msi_add_avu('-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource), "")
+        # Add random id for replication balancing purposes
+        ctx.msi_add_avu('-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{},{}".format(source_resource, target_resource, random.randint(1, 64)), "")
     except Exception:
         pass
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose):
+def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
     The metadata value indicates the source and destination resource.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    For load balancing purposes each data object has been randomly assigned a number (balance_id) between 1-64.
+    To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
+    The corresponding job will only process data objets with a balance id within the range.
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
+    :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param batch_size_limit: Maximum number of items to be processed within one batch
+
     """
     count         = 0
     count_ok      = 0
@@ -53,26 +65,37 @@ def rule_replicate_batch(ctx, verbose):
     if is_replication_blocked_by_admin(ctx):
         log.write(ctx, "Batch replication job is stopped")
     else:
-        log.write(ctx, "Batch replication job started")
+        log.write(ctx, "Batch replication job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
 
-        # Get list of data objects scheduled for replication.
-        iter = genquery.row_iterator(
-            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE, DATA_RESC_NAME",
-            "META_DATA_ATTR_NAME = '{}'".format(attr),
-            genquery.AS_LIST, ctx
-        )
+        # Get list up to 1000 data objects scheduled for replication.
+        iter = list(genquery.Query(ctx,
+                    ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE', 'DATA_RESC_NAME'],
+                    "META_DATA_ATTR_NAME = '{}'".format(attr),
+                    offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
                 log.write(ctx, "Batch replication job is stopped")
                 break
 
-            count += 1
             path = row[1] + "/" + row[2]
-            rescs = row[3]
-            data_resc_name = row[4]
-            xs = rescs.split(',')
-            if len(xs) != 2:
+
+            # Metadata value contains from_path, to_path and balace id for load balancing purposes.
+            info = row[3].split(',')
+            from_path = info[0]
+            to_path = info[1]
+
+            # Backwards compatability with replication metadata created in v1.8 or earlier.
+            backwards_compatibility = False
+
+            if len(info) == 3:
+                balance_id = int(info[2])
+            elif len(info) == 2:
+                backwards_compatibility = True
+                # Determine a balance_id for this dataobject based on its path.
+                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
+            else:
                 # Not replicable.
                 log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
                 try:
@@ -83,8 +106,14 @@ def rule_replicate_batch(ctx, verbose):
                 # Go to next record and skip further processing.
                 continue
 
-            from_path = xs[0]
-            to_path = xs[1]
+            # Check whether balance id is within the range for this job
+            if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
+                # Skip this one and go to the next data object to be replicated.
+                continue
+
+            # For totalization only count the dataobjects that are within the specified balancing range
+            count += 1
+            data_resc_name = row[4]
 
             if print_verbose:
                 log.write(ctx, "Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
@@ -124,7 +153,10 @@ def rule_replicate_batch(ctx, verbose):
             # rods should have been given own access via policy to allow AVU changes
             avu_deleted = False
             try:
-                avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))  # use wildcard cause rm_from_data causes problems
+                if backwards_compatibility:
+                    avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
+                else:
+                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 avu_deleted = True
             except Exception:
                 avu_deleted = False
@@ -135,7 +167,10 @@ def rule_replicate_batch(ctx, verbose):
                     # The object's ACLs may have changed.
                     # Force the ACL and try one more time.
                     msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))  # use wildcard cause rm_from_data causes problems
+                    if backwards_compatibility:
+                        avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
+                    else:
+                        avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 except Exception:
                     # error => report it but still continue
                     log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
