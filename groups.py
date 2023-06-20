@@ -974,7 +974,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, enable_sram):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, sram_group):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -985,18 +985,22 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
-    :param enable_sram:         Generates SRAM CO Identifier of the group
+    :param sram_group:          Generates SRAM CO Identifier of the group
 
     :returns: Dict with API status result
     """
     try:
         co_identifier = ''
-        if (enable_sram == 'true'):
+
+        # Post SRAM collaboration if group is a SRAM group.
+        if config.enable_sram and sram_group == 'true':
+            # Generate expiry date.
             date_time = expiration_date + '000000'
             date = datetime.strptime(date_time, "%Y-%m-%d%H%M%S")
             epoch = datetime.utcfromtimestamp(0)
             epoch_date = int((date - epoch).total_seconds())
 
+            # Build SRAM payload.
             payload = {
                 "name": 'yoda-' + group_name,
                 "short_name": group_name,
@@ -1012,7 +1016,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
 
             if "error" in response_sram:
                 message = response_sram['message']
-                return api.Error('SRAM_error', message)
+                return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
 
@@ -1060,15 +1064,14 @@ def api_group_delete(ctx, group_name):
     :returns: Dict with API status result
     """
     try:
+        # Delete SRAM collaboration if group is a SRAM group.
         if config.enable_sram:
-            result = sram_enabled(ctx, group_name)
-            sram_group = result[0]
-            co_identifier = result[1]
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
                 response_sram = sram.sram_delete_collaboration(co_identifier)
                 if response_sram != 204:
                     message = response_sram['message']
-                    return api.Error('SRAM_error', message)
+                    return api.Error('sram_error', message)
 
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
         status = response[1]
@@ -1122,24 +1125,22 @@ def api_group_user_add(ctx, username, group_name):
     try:
         sram_group = False
         co_identifier = ''
-        regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
         if config.enable_sram:
-            result = sram_enabled(ctx, group_name)
-            sram_group = result[0]
-            co_identifier = result[1]
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
+                # Email regex.
+                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+
                 # Validate email
-                if (re.match(regex, username)):
-                    log.write(ctx, "Valid Email")
-                else:
-                    log.write(ctx, "Invalid Email")
+                if not re.match(regex, username):
                     return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
         if status == '0':
+            # Send invitation mail for SRAM CO.
             if config.enable_sram:
                 if sram_group:
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
@@ -1199,18 +1200,16 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
         if config.enable_sram:
-            result = sram_enabled(ctx, group_name)
-            sram_group = result[0]
-            co_identifier = result[1]
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
                 uid = sram.sram_get_uid(co_identifier, username)
                 if uid == '':
-                    return api.Error('SRAM_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+                    return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
                 else:
                     response_sram = sram.sram_delete_collab_membership(co_identifier, uid)
                     if response_sram != 204:
                         message = response_sram['message']
-                        return api.Error('SRAM_error', message)
+                        return api.Error('sram_error', message)
 
         response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1226,11 +1225,10 @@ def api_group_remove_user_from_group(ctx, username, group_name):
 def sram_enabled(ctx, group_name):
     """Checks if the group is SRAM enabled
 
-    :param ctx: Combined type of a ctx and rei struct
+    :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group
 
     :returns: enable_sram_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
-
     """
     enable_sram_flag = False
     co_identifier = ''
@@ -1242,7 +1240,7 @@ def sram_enabled(ctx, group_name):
     )
 
     for row in iter:
-        if (row[0]):
+        if row[0]:
             enable_sram_flag = True
             co_identifier = row[0]
 
