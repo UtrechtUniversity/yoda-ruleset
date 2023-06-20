@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   flake8:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [2.7]
@@ -12,9 +12,13 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        # setup-python stopped supporting Python 2.7, use https://github.com/MatteoH2O1999/setup-python
+        uses: MatteoH2O1999/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
+          allow-build: info
+          cache-build: true
+          cache: pip
 
       - name: Install dependencies
         run: |
