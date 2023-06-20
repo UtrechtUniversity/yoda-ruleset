@@ -120,9 +120,10 @@ config = Config(environment=None,
                 epic_certificate=None,
                 temporary_files=[],
                 external_users_domain_filter=[],
+                enable_sram=True,
                 sram_rest_api_url=None,
                 sram_api_key=None,
-                enable_sram=True,
+                sram_verbose_logging=False,
                 sram_tls_verify=True)
 
 # }}}

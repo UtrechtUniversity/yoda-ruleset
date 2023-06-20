@@ -1012,7 +1012,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
                 "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
             }
 
-            response_sram = sram.sram_post_collaboration(payload)
+            response_sram = sram.sram_post_collaboration(ctx, payload)
 
             if "error" in response_sram:
                 message = response_sram['message']
@@ -1068,7 +1068,7 @@ def api_group_delete(ctx, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                response_sram = sram.sram_delete_collaboration(co_identifier)
+                response_sram = sram.sram_delete_collaboration(ctx, co_identifier)
                 if response_sram != 204:
                     message = response_sram['message']
                     return api.Error('sram_error', message)
@@ -1202,11 +1202,11 @@ def api_group_remove_user_from_group(ctx, username, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                uid = sram.sram_get_uid(co_identifier, username)
+                uid = sram.sram_get_uid(ctx, co_identifier, username)
                 if uid == '':
                     return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
                 else:
-                    response_sram = sram.sram_delete_collab_membership(co_identifier, uid)
+                    response_sram = sram.sram_delete_collab_membership(ctx, co_identifier, uid)
                     if response_sram != 204:
                         message = response_sram['message']
                         return api.Error('sram_error', message)
