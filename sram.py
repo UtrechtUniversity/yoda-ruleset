@@ -11,76 +11,104 @@ import mail
 from util import *
 
 
-def sram_post_collaboration(payload):
+def sram_post_collaboration(ctx, payload):
     """Create SRAM Collaborative Organisation Identifier.
 
+    :param ctx:     Combined type of a callback and rei struct
     :param payload: JSON object with required information
 
     :returns: JSON object with new collaboration details
     """
-
     url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "post {}: {}".format(url, payload))
 
     response = requests.post(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
     data = response.json()
 
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
+
     return data
 
 
-def sram_get_uid(co_identifier, user_name):
+def sram_get_uid(ctx, co_identifier, user_name):
     """Get SRAM Collaboration member uid.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
-    :param user_name: Name of the user
+    :param user_name:     Name of the user
 
     :returns: Unique id of the user
     """
-
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
+    if config.sram_verbose_logging:
+        log.write(ctx, "post {}".format(url))
+
     response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
     data = response.json()
-    uid = ''
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
+
+    uuid = ''
     for key in data['collaboration_memberships']:
         if key['user']['email'] == user_name.split('#')[0]:
-            uid = key['user']['uid']
+            uuid = key['user']['uid']
 
-    return uid
+    if config.sram_verbose_logging:
+        log.write(ctx, "user_name: {}, uuid: {}".format(user_name.split('#')[0], uuid))
+
+    return uuid
 
 
-def sram_delete_collaboration(co_identifier):
+def sram_delete_collaboration(ctx, co_identifier):
     """Delete SRAM Collaborative Organisation.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
 
     :returns: HTTP status code of the response
     """
-
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
+    if config.sram_verbose_logging:
+        log.write(ctx, "post {}".format(url))
+
     response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
     data = response.status_code
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
 
     return data
 
 
-def sram_delete_collab_membership(co_identifier, uid):
+def sram_delete_collab_membership(ctx, co_identifier, uuid):
     """Delete SRAM Collaborative Organisation membership.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
-    :param uid: Unique id of the user
+    :param uuid:          Unique id of the user
 
     :returns: HTTP status code of the response
     """
-
-    url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uid)
+    url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uuid)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "post {}".format(url))
 
     response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
     data = response.status_code
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
 
     return data
 
