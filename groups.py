@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -206,7 +206,6 @@ def user_role(ctx, group_name, user):
     """
     groups = getGroupData(ctx)
     if '#' not in user:
-        import session_vars
         user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
@@ -753,7 +752,6 @@ def _are_roles_equivalent(a, b):
 def group_user_exists(ctx, group_name, username, include_readonly):
     groups = getGroupData(ctx)
     if '#' not in username:
-        import session_vars
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     if not include_readonly:
@@ -994,25 +992,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
 
         # Post SRAM collaboration if group is a SRAM group.
         if config.enable_sram and sram_group == 'true':
-            # Generate expiry date.
-            date_time = expiration_date + '000000'
-            date = datetime.strptime(date_time, "%Y-%m-%d%H%M%S")
-            epoch = datetime.utcfromtimestamp(0)
-            epoch_date = int((date - epoch).total_seconds())
-
-            # Build SRAM payload.
-            payload = {
-                "name": 'yoda-' + group_name,
-                "short_name": group_name,
-                "description": description,
-                "disable_join_requests": False,
-                "disclose_member_information": True,
-                "disclose_email_information": True,
-                "expiry_date": epoch_date,
-                "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
-            }
-
-            response_sram = sram.sram_post_collaboration(ctx, payload)
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
 
             if "error" in response_sram:
                 message = response_sram['message']
