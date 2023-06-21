@@ -47,7 +47,7 @@ def sram_get_uid(ctx, co_identifier, user_name):
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     if config.sram_verbose_logging:
-        log.write(ctx, "post {}".format(url))
+        log.write(ctx, "get {}".format(url))
 
     response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
     data = response.json()
@@ -55,15 +55,15 @@ def sram_get_uid(ctx, co_identifier, user_name):
     if config.sram_verbose_logging:
         log.write(ctx, "response: {}".format(data))
 
-    uuid = ''
+    uid = ''
     for key in data['collaboration_memberships']:
         if key['user']['email'] == user_name.split('#')[0]:
-            uuid = key['user']['uid']
+            uid = key['user']['uid']
 
     if config.sram_verbose_logging:
-        log.write(ctx, "user_name: {}, uuid: {}".format(user_name.split('#')[0], uuid))
+        log.write(ctx, "user_name: {}, uuid: {}".format(user_name.split('#')[0], uid))
 
-    return uuid
+    return uid
 
 
 def sram_delete_collaboration(ctx, co_identifier):
@@ -72,7 +72,7 @@ def sram_delete_collaboration(ctx, co_identifier):
     :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
 
-    :returns: HTTP status code of the response
+    :returns: Boolean indicating of deletion of collaboration succeeded
     """
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
@@ -81,22 +81,21 @@ def sram_delete_collaboration(ctx, co_identifier):
         log.write(ctx, "post {}".format(url))
 
     response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
-    data = response.status_code
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(data))
+        log.write(ctx, "response: {}".format(response.status_code))
 
-    return data
+    return response.status_code == 204
 
 
-def sram_delete_collab_membership(ctx, co_identifier, uuid):
+def sram_delete_collaboration_membership(ctx, co_identifier, uuid):
     """Delete SRAM Collaborative Organisation membership.
 
     :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
     :param uuid:          Unique id of the user
 
-    :returns: HTTP status code of the response
+    :returns: Boolean indicating of deletion of collaboration membership succeeded
     """
     url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uuid)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
@@ -105,12 +104,11 @@ def sram_delete_collab_membership(ctx, co_identifier, uuid):
         log.write(ctx, "post {}".format(url))
 
     response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
-    data = response.status_code
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(data))
+        log.write(ctx, "response: {}".format(response.status_code))
 
-    return data
+    return response.status_code == 204
 
 
 def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):

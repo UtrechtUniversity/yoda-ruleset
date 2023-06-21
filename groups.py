@@ -1068,8 +1068,7 @@ def api_group_delete(ctx, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                response_sram = sram.sram_delete_collaboration(ctx, co_identifier)
-                if response_sram != 204:
+                if not sram.sram_delete_collaboration(ctx, co_identifier):
                     message = response_sram['message']
                     return api.Error('sram_error', message)
 
@@ -1206,8 +1205,7 @@ def api_group_remove_user_from_group(ctx, username, group_name):
                 if uid == '':
                     return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
                 else:
-                    response_sram = sram.sram_delete_collab_membership(ctx, co_identifier, uid)
-                    if response_sram != 204:
+                    if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
                         message = response_sram['message']
                         return api.Error('sram_error', message)
 
