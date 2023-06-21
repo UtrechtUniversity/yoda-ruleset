@@ -448,19 +448,44 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
                     avu.set_on_data(ctx, path, key, scope[key])
 
 
-def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
+def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_duplicate_avu_error=False):
     """Add a dataset error to all given dataset toplevels.
 
     :param ctx:                    Combined type of a callback and rei struct
     :param top_levels:             A list of toplevel datasets
     :param is_collection_toplevel: Indication of whether it is a collection or object
     :param text:                   Error text
+    :param suppress_duplicate_avu_error: If an AVU already exists, suppress the irods-error. Allow for this situation
     """
     for tl in top_levels:
         if is_collection_toplevel:
-            avu.associate_to_coll(ctx, tl, "dataset_error", text)
+            try:
+                avu.associate_to_coll(ctx, tl, "dataset_error", text)
+            except msi.Error as e:
+                # irods errorcode 809000 is CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+                if suppress_duplicate_avu_error and str(e).find("809000") > -1:
+                    log.write(ctx, "Trying to associate dataset_error already present on collection:")
+                    log.write(ctx, tl)
+                    log.write(ctx, "Suppress irods error handling for AVU:")
+                    log.write(ctx, "A: dataset_error")
+                    log.write(ctx, "V: " + text)
+                else:
+                    # Re-raise exception
+                    raise exception(None, None, None, e)
         else:
-            avu.associate_to_data(ctx, tl, "dataset_error", text)
+            try:
+                avu.associate_to_data(ctx, tl, "dataset_error", text)
+            except msi.Error as e:
+                # irods errorcode 809000 is CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+                if suppress_duplicate_avu_error and str(e).find("809000") > -1:
+                    log.write(ctx, "Trying to associate dataset_error already present on dataobject:")
+                    log.write(ctx, tl)
+                    log.write(ctx, "Suppress irods error handling for AVU:")
+                    log.write(ctx, "A: dataset_error")
+                    log.write(ctx, "V: " + text)
+                else:
+                    # Re-raise exception
+                    raise exception(None, None, None, e)
 
 
 def dataset_get_ids(ctx, coll):
@@ -526,7 +551,8 @@ def intake_check_dataset(ctx, root, dataset_id):
 
     # check presence of wave, pseudo-ID and experiment
     if '' in [components['wave'], components['experiment_type'], components['pseudocode']]:
-        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing")
+        # Suppress error handing and continue normal processing should a situation arise where Wepv missing is already present on the dataobject/collection
+        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing", True)
 
     for tl in tl_objects:
         # Save the aggregated counts of #objects, #warnings, #errors on object level
