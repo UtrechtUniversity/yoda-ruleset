@@ -26,10 +26,10 @@ def api_schema_get_schemas_and_default(ctx):
     """Retrieve selectable schemas and the default schema for this Yoda istance.
        Make available through API.
     """
-    if not config.default_schema_id:
+    if not config.default_yoda_schema:
         schema_default = ''
     else:
-        schema_default = config.default_schema_id
+        schema_default = config.default_yoda_schema
 
     return {'schemas': get_selectable_schemas(ctx),
             'schema_default': schema_default}
@@ -93,7 +93,8 @@ def get_schema_collection(ctx, rods_zone, group_name):
         # If not, fall back to default schema collection.
         # /tempZone/yoda/schemas/default/metadata.json
         schema_path = '/' + rods_zone + '/yoda/schemas/' + category
-        schema_coll = 'default'
+
+        schema_coll = config.default_yoda_schema
 
         iter = genquery.row_iterator(
             "COLL_NAME",

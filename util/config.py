@@ -119,7 +119,7 @@ config = Config(environment=None,
                 epic_certificate=None,
                 temporary_files=[],
                 external_users_domain_filter=[],
-                default_schema_id=None)
+                default_yoda_schema=None)
 
 # }}}
 
