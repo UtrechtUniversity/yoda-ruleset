@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -493,6 +493,9 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
 # resource need to trigger policies (e.g. asynchronous replication) by default.
 def resource_should_trigger_policies(resource):
     if resource in config.resource_primary:
+        return True
+
+    if resource in config.resource_vault:
         return True
 
     for pattern in config.resource_trigger_pol:

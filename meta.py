@@ -542,7 +542,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Copy the file, with its ACLs.
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
-        msi.data_obj_copy(ctx, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, json_path, dest, 'destRescName={}++++verifyChksum='.format(config.resource_vault), irods_types.BytesBuf())
     except error.UUError:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
                    .format(json_path, dest))
