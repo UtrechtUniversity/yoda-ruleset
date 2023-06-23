@@ -1,5 +1,5 @@
 {
-  "$id": "https://yoda.uu.nl/datarequest/schemas/youth-1/schema.json",
+  "$id": "https://yoda.uu.nl/datarequest/schemas/youth-1/datarequest/schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "definitions": {
     "stringNormal": {
