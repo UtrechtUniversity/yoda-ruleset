@@ -31,3 +31,22 @@ def schema_exists(api_response, schema):
 
     assert body['data']
     assert schema in body['data']
+
+
+@given('the Yoda schema get schemas with default schema API is queried', target_fixture="api_response")
+def api_group_data(user):
+    return api_request(
+        user,
+        "schema_get_schemas_and_default",
+        {}
+    )
+
+
+@then(parsers.parse('schemas exist and default schema is present and valid'))
+def schema_exists(api_response):
+    _, body = api_response
+
+    assert body['data']['schemas']
+    assert body['data']['schema_default']
+    # Make sure that default schema actually exists
+    assert body['data']['schema_default'] in body['data']['schemas']
