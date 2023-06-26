@@ -492,6 +492,15 @@ def ui_group_schema_properties_update_correct(browser, category, subcategory, ex
     assert div.find_by_css('.select2-chosen').text == subcategory
 
 
+@when(parsers.parse("new group has {category} and {subcategory} set"))
+def ui_group_schema_properties_update_correct(browser, category, subcategory):
+    div = browser.find_by_id('s2id_f-group-create-category')
+    assert div.find_by_css('.select2-chosen').text == category
+    div = browser.find_by_id('s2id_f-group-create-subcategory')
+    assert div.find_by_css('.select2-chosen').text == subcategory
+
+
+
 @when(parsers.parse("check whether datamanager group properties {group} and {category} are correct"))
 def ui_group_schema_properties_correct(browser, group, category):
     assert browser.find_by_id('f-group-update-name').value == group

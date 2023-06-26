@@ -110,6 +110,19 @@ Feature: Group UI
             | test-automation | test-automation | ui-test-group | teclab-1  | 2030-12-25       |
 
 
+    Scenario Outline: Create new research group starting from same (sub)category of active group at that moment
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        When user opens add group dialog
+        And new group has <category> and <subcategory> set       
+       
+        Examples:
+            | category        | subcategory | group            |
+            | test-automation | initial     | research-initial |
+
+
     Scenario Outline: Group research update
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
@@ -202,3 +215,4 @@ Feature: Group UI
             | datamanager | yoda   | 5           |
             | researcher  | core   | 3           |
             | datamanager | core   | 3           |
+
