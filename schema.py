@@ -16,18 +16,12 @@ __all__ = ['api_schema_get_schemas']
 
 @api.make()
 def api_schema_get_schemas(ctx):
-    """Retrieve selectable schemas and default schema."""
-    if not config.default_yoda_schema:
-        schema_default = ''
-    else:
-        schema_default = config.default_yoda_schema
+    """Retrieve selectable schemas and default schema.
 
-    return {'schemas': get_selectable_schemas(ctx),
-            'schema_default': schema_default}
+    :param ctx: Combined type of a callback and rei struct
 
-
-def get_selectable_schemas(ctx):
-    """Get all selectable schemas within the yoda instance."""
+    :returns: Dit with schemas and default schema.
+    """
     schemas = []
 
     iter = genquery.row_iterator(
@@ -40,7 +34,13 @@ def get_selectable_schemas(ctx):
         schema = row[0].split('/')[-1]
         schemas.append(schema)
 
-    return schemas
+    if not config.default_yoda_schema:
+        schema_default = ''
+    else:
+        schema_default = config.default_yoda_schema
+
+    return {'schemas': schemas,
+            'schema_default': schema_default}
 
 
 def get_schema_collection(ctx, rods_zone, group_name):
