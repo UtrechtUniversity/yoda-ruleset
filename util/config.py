@@ -103,6 +103,7 @@ config = Config(environment=None,
                 data_package_archive_fqdn=None,
                 data_package_archive_minimum=0,
                 data_package_archive_maximum=0,
+                data_package_archive_resource=None,
                 enable_data_package_reference=False,
                 enable_tokens=False,
                 enable_tape_archive=False,
@@ -119,7 +120,12 @@ config = Config(environment=None,
                 epic_certificate=None,
                 temporary_files=[],
                 external_users_domain_filter=[],
-                default_yoda_schema=None)
+                default_yoda_schema=None,
+                enable_sram=True,
+                sram_rest_api_url=None,
+                sram_api_key=None,
+                sram_verbose_logging=False,
+                sram_tls_verify=True)
 
 # }}}
 

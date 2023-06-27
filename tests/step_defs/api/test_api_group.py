@@ -76,7 +76,8 @@ def api_group_create(user, group_name):
          "schema_id": "default-2",
          "expiration_date": "",
          "description": "",
-         "data_classification": "public"}
+         "data_classification": "public",
+         "sram_group": ""}
     )
 
 

@@ -73,6 +73,24 @@ uuGroupCategoryNameIsValid(*name)
 uuGroupSubcategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
+# \brief Check if co_identifier is valid.
+#
+# CO Identifier must:
+#
+# - contain only letters, numbers, and hyphens
+#
+# \param[in] name
+# \param[out] valid
+#
+uuGroupCOIdentifierIsValid(*name, *valid) {
+	if (*name like regex ``[0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12}`` || *name == '') {
+		*valid = true;
+	}
+	else {
+		*valid = false;
+	}
+}
+
 # \brief Check if a data classification is valid in combination with a group name.
 #
 # The valid set of classifications depends on the group prefix.
@@ -134,10 +152,11 @@ uuGroupExpirationDateIsValid(*expiration_date, *valid) {
 # \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
+# \param[in]  co_identifier
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiration_date, *schema_id, *description, *dataClassification, *co_identifier, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	*allowed = 0;
@@ -174,10 +193,17 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 							uuGroupExpirationDateIsValid(*expiration_date, *expirationDateValid);
 							if (*expirationDateValid) {
 							    # Last check.
-    							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+								uuGroupCOIdentifierIsValid(*co_identifier, *coIdentifierValid);
+								if(*coIdentifierValid) {
+									uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+								}
+								else{
+									*reason = "Invalid SRAM CO Identifier when adding group: '*co_identifier'";
+								}
 							} else {
 							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
 							}
+							
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
@@ -304,6 +330,14 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 				*allowed = 1;
 			} else {
 				*reason = "The chosen expiration date is invalid.";
+			}
+		} else if (*attribute == "co_identifier") {
+			uuGroupCOIdentifierIsValid(*value, *coIdentifierValid);
+			if(*coIdentifierValid) {
+				*allowed = 1;
+			}
+			else{
+				*reason = "The CO Identifier is invalid";
 			}
 		} else {
 			*reason = "Invalid group attribute name.";

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -66,7 +66,9 @@ YODA_PORTAL_FQDN  = config.yoda_portal_fqdn
 
 JSON_EXT          = ".json"
 
-SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
+SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas"
+SCHEMA_URI_PREFIX = "https://yoda.uu.nl/datarequest/schemas/"
+SCHEMA_VERSION    = "youth-1"
 SCHEMA            = "schema"
 UISCHEMA          = "uischema"
 
@@ -554,20 +556,21 @@ def datarequest_reviewers_get(ctx, request_id, pending=False):
 
 
 @api.make()
-def api_datarequest_schema_get(ctx, schema_name):
-    return datarequest_schema_get(ctx, schema_name)
+def api_datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
+    return datarequest_schema_get(ctx, schema_name, version)
 
 
-def datarequest_schema_get(ctx, schema_name):
+def datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
     """Get schema and UI schema of a datarequest form
 
     :param ctx:         Combined type of a callback and rei struct
     :param schema_name: Name of schema
+    :param version:     Version of schema
 
     :returns: Dict with schema and UI schema
     """
     # Define paths to schema and uischema
-    coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
+    coll_path = "/{}{}/{}".format(user.zone(ctx), SCHEMACOLLECTION, version)
     schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
     uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
 
@@ -921,6 +924,12 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # Set draft flag in form data
     data['draft'] = draft
 
+    # Set schema ID
+    data['links'] = [OrderedDict([
+        ['rel',  'describedby'],
+        ['href', SCHEMA_URI_PREFIX + SCHEMA_VERSION + '/datarequest/' + SCHEMA + '.json']
+    ])]
+
     # Set submission date in form data
     data['submission_timestamp'] = str(datetime.now().strftime('%s'))
 
@@ -1057,10 +1066,26 @@ def api_datarequest_get(ctx, request_id):
     datarequest_available_documents = available_documents_get(ctx, request_id, datarequest_type, datarequest_status)
 
     # Get request
-    datarequest = datarequest_get(ctx, request_id)
+    datarequest_json = datarequest_get(ctx, request_id)
+    datarequest = json.loads(datarequest_json)
+
+    # Get request schema version
+    if 'links' not in datarequest:  # Schema version youth-0 doesn't link to its schema ID
+        datarequest_schema_version = "youth-0"
+    else:
+        datarequest_links = [link for link in datarequest['links'] if link['rel'] == 'describedby']
+        datarequest_schema_version_links_count = len(list(datarequest_links))
+        # Fail if not exactly one schema ID link is present
+        if datarequest_schema_version_links_count == 0:
+            return api.Error("datarequest_parse_fail", "This datarequest does not link to its schema ID.")
+        elif datarequest_schema_version_links_count > 1:
+            return api.Error("datarequest_parse_fail", "This datarequest contains more than one schema ID link.")
+        else:
+            datarequest_schema_id = datarequest_links[0]['href']
+            datarequest_schema_version = re.search(r'https://yoda.uu.nl/datarequest/schemas/(.*)/datarequest/schema.json', datarequest_schema_id).group(1)
 
     # Return JSON encoded results
-    return {'requestJSON': datarequest, 'requestType': datarequest_type,
+    return {'requestSchemaVersion': datarequest_schema_version, 'requestJSON': datarequest_json, 'requestType': datarequest_type,
             'requestStatus': datarequest_status, 'requestAvailableDocuments': datarequest_available_documents}
 
 

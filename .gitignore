@@ -28,3 +28,4 @@ __pycache__/
 
 # Data Access tokens DB
 accesstokens.db
+.vscode/settings.json

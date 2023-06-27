@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -11,8 +11,10 @@ from datetime import datetime
 
 import genquery
 import requests
+import session_vars
 
 import schema
+import sram
 from util import *
 
 __all__ = ['api_group_data',
@@ -204,7 +206,6 @@ def user_role(ctx, group_name, user):
     """
     groups = getGroupData(ctx)
     if '#' not in user:
-        import session_vars
         user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
@@ -517,7 +518,7 @@ def apply_data(ctx, data, allow_update, delete_users):
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '')['arguments']
+        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '', '')['arguments']
         status = response[7]
         message = response[8]
 
@@ -751,7 +752,6 @@ def _are_roles_equivalent(a, b):
 def group_user_exists(ctx, group_name, username, include_readonly):
     groups = getGroupData(ctx)
     if '#' not in username:
-        import session_vars
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     if not include_readonly:
@@ -972,7 +972,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, sram_group):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -983,13 +983,26 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
+    :param sram_group:          Generates SRAM CO Identifier of the group
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, '', '')['arguments']
-        status = response[7]
-        message = response[8]
+        co_identifier = ''
+
+        # Post SRAM collaboration if group is a SRAM group.
+        if config.enable_sram and sram_group == 'true':
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+
+            if "error" in response_sram:
+                message = response_sram['message']
+                return api.Error('sram_error', message)
+            else:
+                co_identifier = response_sram['identifier']
+
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
+        status = response[8]
+        message = response[9]
         if status == '0':
             return api.Result.ok()
         else:
@@ -1031,6 +1044,14 @@ def api_group_delete(ctx, group_name):
     :returns: Dict with API status result
     """
     try:
+        # Delete SRAM collaboration if group is a SRAM group.
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                if not sram.sram_delete_collaboration(ctx, co_identifier):
+                    message = response_sram['message']
+                    return api.Error('sram_error', message)
+
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
         status = response[1]
         message = response[2]
@@ -1081,10 +1102,27 @@ def api_group_user_add(ctx, username, group_name):
     :returns: Dict with API status result
     """
     try:
+        sram_group = False
+        co_identifier = ''
+
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                # Email regex.
+                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+
+                # Validate email
+                if not re.match(regex, username):
+                    return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
+
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
         if status == '0':
+            # Send invitation mail for SRAM CO.
+            if config.enable_sram:
+                if sram_group:
+                    sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
@@ -1140,6 +1178,17 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     """
     # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                uid = sram.sram_get_uid(ctx, co_identifier, username)
+                if uid == '':
+                    return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+                else:
+                    if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
+                        message = response_sram['message']
+                        return api.Error('sram_error', message)
+
         response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
@@ -1149,3 +1198,28 @@ def api_group_remove_user_from_group(ctx, username, group_name):
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+def sram_enabled(ctx, group_name):
+    """Checks if the group is SRAM enabled
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group
+
+    :returns: enable_sram_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
+    """
+    enable_sram_flag = False
+    co_identifier = ''
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if row[0]:
+            enable_sram_flag = True
+            co_identifier = row[0]
+
+    return enable_sram_flag, co_identifier
