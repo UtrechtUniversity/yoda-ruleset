@@ -110,6 +110,10 @@ get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Ic
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
 
+archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
+archive_index,    ArchiveIndexError   = make('ArchiveIndex',   'Could not index archive')
+archive_extract,  ArchiveExtractError = make('ArchiveExtract', 'Could not extract from archive')
+
 register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
 
 string_2_key_val_pair, String2KeyValPairError = \

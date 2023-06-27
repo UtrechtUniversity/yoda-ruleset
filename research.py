@@ -4,8 +4,6 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import binascii
-
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
@@ -652,7 +650,8 @@ def api_research_collection_details(ctx, path):
     # Check if vault is accessible.
     vault_path = ""
     vault_name = group.replace("research-", "vault-", 1)
-    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + vault_name):
+    vault_coll = '/'.join(path.split('/')[0:3])
+    if collection.exists(ctx, vault_coll + "/" + vault_name):
         vault_path = vault_name
 
     return {"basename": basename,
@@ -661,13 +660,6 @@ def api_research_collection_details(ctx, path):
             "is_datamanager": is_datamanager,
             "lock_count": lock_count,
             "vault_path": vault_path}
-
-
-def decode_checksum(checksum):
-    if checksum is None:
-        return "0"
-    else:
-        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
 
 
 @api.make()
@@ -684,7 +676,7 @@ def api_research_manifest(ctx, coll):
         "COLL_NAME = '{}'".format(coll),
         genquery.AS_LIST, ctx
     )
-    checksums = [{"name": row[0], "checksum": decode_checksum(row[1])} for row in iter]
+    checksums = [{"name": row[0], "checksum": data_object.decode_checksum(row[1])} for row in iter]
 
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
@@ -692,6 +684,6 @@ def api_research_manifest(ctx, coll):
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
-    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "checksum": decode_checksum(row[2])} for row in iter_sub]
+    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "checksum": data_object.decode_checksum(row[2])} for row in iter_sub]
 
     return checksums + checksums_sub

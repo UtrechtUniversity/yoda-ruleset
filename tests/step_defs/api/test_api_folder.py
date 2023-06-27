@@ -100,7 +100,7 @@ def api_response(user, folder):
     schema = path.split("/")[2]
 
     cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, schema)) as f:
+    with open("{}/files/{}.json".format(cwd, schema), encoding="utf8") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     http_status, _ = api_request(

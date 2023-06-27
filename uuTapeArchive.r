@@ -114,7 +114,7 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
         # This is because if the data is not on disk, but iRODS tries to access it, DMF is flooded by 1 request every 3 seconds,
         # per each file, until interrupted or data is staged.
         if(*MDcounter == 0) {
-              dmattr(*CONTEXT.physical_path, *dmfs);
+              dmattr(*CONTEXT.physical_path, ARCHIVERESOURCEHOST, *dmfs);
               uuTapeArchiveSetState(*CONTEXT.logical_path, *CONTEXT.physical_path, *time);
         }
 
@@ -128,7 +128,7 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
             # These two lines are for auto-staging
             # By commenting out the dmget call, you can disable auto stage
             # but then you need to manually call the dmget via another
-            dmget(*CONTEXT.physical_path, *dmfs);
+            dmget(*CONTEXT.physical_path, ARCHIVERESOURCEHOST, *dmfs);
             failmsg(-1,*CONTEXT.logical_path++" is still on tape, but queued to be staged." );
         } else {
             failmsg(-1,*CONTEXT.logical_path++" is either not on the tape archive, or something broke internal to the system.");
@@ -137,14 +137,27 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
 }
 
 
+# \brief Perform dmput command.
+#
+# \param[in] data Physical path of data object.
+# \param[in] dmfs Current DMF state of data object.
+#
+dmput(*data, *hostAddress, *dmfs) {
+    #if (*dmfs not like "DUL" && *dmfs not like "OFL" && *dmfs not like "UNM" && *dmfs not like "MIG") {
+        msiExecCmd("dmput", *data, *hostAddress, "", "", *dmRes);
+        msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
+        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmput started: *data. Returned Status - *dmStat.");
+    #}
+}
+
+
 # \brief Perform dmget command.
 #
 # \param[in] data Physical path of data object.
 # \param[in] dmfs Current DMF state of data object.
 #
-dmget(*data, *dmfs) {
+dmget(*data, *hostAddress, *dmfs) {
     #if (*dmfs not like "DUL" && *dmfs not like "REG" && *dmfs not like "UNM" && *dmfs not like "MIG") {
-        *hostAddress = ARCHIVERESOURCEHOST;
         msiExecCmd("dmget", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
         writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmget started: *data. Returned Status - *dmStat.");
@@ -157,8 +170,7 @@ dmget(*data, *dmfs) {
 # \param[in]  data Physical path of data object.
 # \param[out] dmfs Current DMF state of data object.
 #
-dmattr(*data, *dmfs) {
-    *hostAddress = ARCHIVERESOURCEHOST;
+dmattr(*data, *hostAddress, *dmfs) {
     msiExecCmd("dmattr", *data, *hostAddress, "", "", *dmRes);
     msiGetStdoutInExecCmdOut(*dmRes, *dmfs);
     *dmfs = trimr(*dmfs, "\n");

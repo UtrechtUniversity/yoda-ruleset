@@ -163,7 +163,7 @@ Feature: Group UI
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects tree view
-        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects group <group> in subcategory <subcategory> and category <category>
         And checks group properties for <group>
         And correct row in tree is active for <group>
         When user selects list view
@@ -178,8 +178,8 @@ Feature: Group UI
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects list view
-        When user selects group <group> in list view
-        When checks group properties for <group>
+        And user selects group <group> in list view
+        And checks group properties for <group>
         And correct row in list view is active for <group>
         When user selects tree view
         And correct row in tree is active for <group>

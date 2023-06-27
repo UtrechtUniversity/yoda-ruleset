@@ -240,6 +240,12 @@ iiAdminVaultActions() {
 	msiExecCmd("admin-vaultactions.sh", uuClientFullName, "", "", 0, *out);
 }
 
+# \brief Prepare to archive a data package in the vault
+#
+iiAdminVaultArchive(*coll, *action) {
+	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *action, "", "", 0, *out);
+}
+
 # \brief Enable indexing on vault target.
 iiEnableIndexing(*target) {
     msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -10,7 +10,6 @@ from datetime import datetime
 
 import genquery
 import irods_types
-import jsonschema
 
 import avu_json
 import provenance
@@ -88,21 +87,67 @@ def get_json_metadata_errors(callback,
         metadata = jsonutil.read(callback, metadata_path)
 
     # Perform validation and filter errors.
-    validator = jsonschema.Draft7Validator(schema)
+    # Validation is handed to a Python 3 interpreter to validate with the Draft201909 validator.
+    # This can be removed when we can use Python 3 in the ruleset (iRODS 4.3.x).
+    # validator = jsonschema.Draft7Validator(schema)
+    #
+    # errors = validator.iter_errors(metadata)
+    #
+    # if ignore_required:
+    #     errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+    #
+    # def transform_error(e):
+    #     """Turn a ValidationError into a data structure for the frontend."""
+    #     return {'message':     e.message,
+    #             'path':        list(e.path),
+    #             'schema_path': list(e.schema_path),
+    #             'validator':   e.validator}
+    #
+    # return map(transform_error, errors)
 
-    errors = validator.iter_errors(metadata)
+    # Can't serialize OrderedDict, so transform to dicts.
+    import json
+    schema = json.loads(json.dumps(schema))
+    metadata = json.loads(json.dumps(metadata))
 
-    if ignore_required:
-        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+    # Create gateway to Python 3.6.
+    import execnet
+    gw = execnet.makegateway("popen//python=python3.6")
 
-    def transform_error(e):
-        """Turn a ValidationError into a data structure for the frontend."""
-        return {'message':     e.message,
-                'path':        list(e.path),
-                'schema_path': list(e.schema_path),
-                'validator':   e.validator}
+    channel = gw.remote_exec("""
+        import jsonschema
+        errors = []
+        while 1:
+            schema, metadata, ignore_required = channel.receive()
+            if schema is None:
+                break
 
-    return map(transform_error, errors)
+            # Perform validation and filter errors.
+            validator = jsonschema.Draft201909Validator(schema)
+            errors = validator.iter_errors(metadata)
+
+            if ignore_required:
+                errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+
+            def transform_error(e):
+                return {'message':     e.message,
+                        'path':        list(e.path),
+                        'schema_path': list(e.schema_path),
+                        'validator':   e.validator}
+
+            errors = list(map(transform_error, errors))
+        channel.send(errors)
+    """)
+
+    channel.send((schema, metadata, ignore_required))
+    channel.send((None, None, None))
+    errors = channel.receive()
+
+    # Log metadata errors.
+    for error in errors:
+        log.write(callback, error)
+
+    return errors
 
 
 def is_json_metadata_valid(callback,
@@ -455,6 +500,7 @@ def rule_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_vault(ctx, path)
+        vault.update_archive(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
         ingest_metadata_research(ctx, path)
     elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
@@ -541,7 +587,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Copy the file, with its ACLs.
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
-        msi.data_obj_copy(ctx, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, json_path, dest, 'destRescName={}++++verifyChksum='.format(config.resource_vault), irods_types.BytesBuf())
     except error.UUError:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
                    .format(json_path, dest))

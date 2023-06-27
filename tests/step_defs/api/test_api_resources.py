@@ -111,8 +111,8 @@ def api_monthly_stats(user):
 def api_response_category_statistics_found(api_response):
     _, body = api_response
 
-    assert body['data'][0]['category']
-    assert body['data'][0]['storage']
+    assert body['data']['categories'][0]['category']
+    assert body['data']['categories'][0]['storage']
 
 
 @then('full year storage data is found')

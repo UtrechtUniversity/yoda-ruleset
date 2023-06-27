@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import binascii
+
 import genquery
 import irods_types
 
@@ -175,3 +177,16 @@ def name_from_id(ctx, data_id):
     x = genquery.Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
     if x is not None:
         return '/'.join(x)
+
+
+def decode_checksum(checksum):
+    """Decode data object checksum.
+
+    :param checksum: Base64 encoded SHA256 checksum
+
+    :returns: Data object's SHA256 checksum
+    """
+    if checksum is None:
+        return "0"
+    else:
+        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")

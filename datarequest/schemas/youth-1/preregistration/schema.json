@@ -1,4 +1,5 @@
 {
+  "$id": "https://yoda.uu.nl/datarequest/schemas/youth-1/preregistration/schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "title": "Preregistration",

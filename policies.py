@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -16,6 +16,7 @@ import policies_folder_status
 import policies_intake
 import replication
 import revisions
+import vault
 from util import *
 
 
@@ -443,8 +444,11 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
         status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 
-    elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
-        policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+    elif info.space is pathutil.Space.VAULT:
+        if attr == constants.IIVAULTSTATUSATTRNAME:
+            policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+        elif attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
+            vault.update_archive(ctx, obj_name, attr)
 
     # Send emails after datarequest status transition if appropriate
     elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
@@ -489,6 +493,9 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
 # resource need to trigger policies (e.g. asynchronous replication) by default.
 def resource_should_trigger_policies(resource):
     if resource in config.resource_primary:
+        return True
+
+    if resource in config.resource_vault:
         return True
 
     for pattern in config.resource_trigger_pol:

@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -24,6 +25,7 @@ def ui_statistics_group_details_initial_state(browser):
 
 @when(parsers.parse("user views statistics of group {group}"))
 def ui_statistics_group_view(browser, group):
+    time.sleep(1)
     next_page = True
     while next_page:
         # Next page available, button is not disabled.

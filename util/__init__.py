@@ -33,6 +33,10 @@ import config
 # that imports * from util.
 from config import config
 
+if config.enable_data_package_archive or config.enable_data_package_download:
+    import bagit
+
+
 if config.environment == 'development':
     import irods_type_info
     ping = api_ping = api.make()(lambda ctx, x=42: x)
