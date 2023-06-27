@@ -11,8 +11,7 @@ import genquery
 import meta
 from util import *
 
-__all__ = ['api_schema_get_schemas',
-           'api_schema_get_schemas_and_default']
+__all__ = ['api_schema_get_schemas']
 
 
 @api.make()
