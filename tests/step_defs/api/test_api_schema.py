@@ -1,7 +1,7 @@
 # coding=utf-8
 """Schema API feature tests."""
 
-__copyright__ = 'Copyright (c) 2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2022-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -29,24 +29,16 @@ def api_group_data(user):
 def schema_exists(api_response, schema):
     _, body = api_response
 
-    assert body['data']
-    assert schema in body['data']
+    assert body['data']['schemas']
+    assert schema in body['data']['schemas']
 
 
-@given('the Yoda schema get schemas with default schema API is queried', target_fixture="api_response")
-def api_group_data(user):
-    return api_request(
-        user,
-        "schema_get_schemas_and_default",
-        {}
-    )
-
-
-@then(parsers.parse('schemas exist and default schema is present and valid'))
-def schema_exists(api_response):
+@then(parsers.parse('default schema is present'))
+def default_schema_present(api_response):
     _, body = api_response
 
     assert body['data']['schemas']
     assert body['data']['schema_default']
-    # Make sure that default schema actually exists
+
+    # Ensure that default schema actually exists.
     assert body['data']['schema_default'] in body['data']['schemas']

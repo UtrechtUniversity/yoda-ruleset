@@ -18,13 +18,12 @@ Feature: Schema API
             | datamanager | core-1    |
             | datamanager | default-0 |
             | datamanager | default-1 |
-	    | datamanager | default-2 |
+	          | datamanager | default-2 |
             | datamanager | default-3 |
 
 
     Scenario Outline: Schema get schemas and default schema
-        Given user <user> is authenticated
-        And the Yoda schema get schemas with default schema API is queried
+        Given user researcher is authenticated
+        And the Yoda schema get schemas API is queried
         Then the response status code is "200"
-        And schemas exist and default schema is present and valid
-
+        And default schema is present

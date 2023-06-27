@@ -485,12 +485,13 @@ def ui_group_schema_properties_schema_correct(browser, group, category, subcateg
     div = browser.find_by_id('s2id_f-group-update-subcategory')
     assert div.find_by_css('.select2-chosen').text == subcategory
 
+
 @when(parsers.parse("check whether research group properties {group}, {category}, {subcategory} and {expiration_date} for user {user}"), target_fixture="api_response")
 def ui_group_schema_properties_default_schema_correct(browser, group, category, subcategory, expiration_date, user):
     # Get the default_schema_id from the yoda configuration
     result = api_request(
         user,
-        "schema_get_schemas_and_default",
+        "schema_get_schemas",
         {}
     )
     default_schema_id = list(result)[1]['data']['schema_default']
