@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -72,6 +72,7 @@ class Config(object):
 
 # Note: Must name all valid config items.
 config = Config(environment=None,
+                default_yoda_schema=None,
                 resource_primary=[],
                 resource_trigger_pol=[],
                 resource_replica=[],
