@@ -17,15 +17,7 @@ __all__ = ['api_schema_get_schemas',
 
 @api.make()
 def api_schema_get_schemas(ctx):
-    """Retrieve selectable schemas and make available through API."""
-    return get_selectable_schemas(ctx)
-
-
-@api.make()
-def api_schema_get_schemas_and_default(ctx):
-    """Retrieve selectable schemas and the default schema for this Yoda istance.
-       Make available through API.
-    """
+    """Retrieve selectable schemas and default schema."""
     if not config.default_yoda_schema:
         schema_default = ''
     else:
@@ -36,7 +28,7 @@ def api_schema_get_schemas_and_default(ctx):
 
 
 def get_selectable_schemas(ctx):
-    """ Get all selectable schemas within the yoda instance """
+    """Get all selectable schemas within the yoda instance."""
     schemas = []
 
     iter = genquery.row_iterator(
