@@ -270,10 +270,14 @@ def api_resource_category_stats(ctx):
         if '@' not in username:
             return (username != 'anonymous')
         for domain in config.external_users_domain_filter:
-            domain_pattern = '@{}$'.format(domain)
+            # for backward compatibilty purposes only use last 2 parts of domain specification
+            # Some domains might have been declared including subdomains.
+            parts = domain.split('.')
+            domain_pattern = "\@[0-9a-z]*\.{}\.{}|@{}.{}$".format(parts[-2], parts[-1], parts[-2], parts[-1])
             if re.search(domain_pattern, username) is not None:
                 return True
         return False
+
 
     def count_externals(members):
         count = 0
