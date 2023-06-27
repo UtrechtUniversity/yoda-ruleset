@@ -105,8 +105,8 @@ Feature: Group UI
         And check whether research group properties <group>, <category>, <subcategory> and <expiration_date> for user functionaladminpriv
 
         Examples:
-            | category        | subcategory     | group                        | expiration_date  |
-            | test-automation | test-automation | ui-test-group-default-schema | 2030-12-25       |
+            | category        | subcategory     | group         | expiration_date |
+            | test-automation | test-automation | ui-test-group | 2030-12-25      |
            
 
     Scenario Outline: Group research update
