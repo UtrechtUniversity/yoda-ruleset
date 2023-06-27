@@ -84,7 +84,6 @@ def get_schema_collection(ctx, rods_zone, group_name):
         # If not, fall back to default schema collection.
         # /tempZone/yoda/schemas/default/metadata.json
         schema_path = '/' + rods_zone + '/yoda/schemas/' + category
-
         schema_coll = config.default_yoda_schema
 
         iter = genquery.row_iterator(
