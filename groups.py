@@ -518,7 +518,7 @@ def apply_data(ctx, data, allow_update, delete_users):
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '', '')['arguments']
+        response = ctx.uuGroupAdd(groupname, category, subcategory, config.default_yoda_schema, '', '', 'unspecified', '', '', '')['arguments']
         status = response[7]
         message = response[8]
 
