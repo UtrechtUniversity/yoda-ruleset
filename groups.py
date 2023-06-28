@@ -866,6 +866,10 @@ def rule_group_provision_external_user(rule_args, ctx, rei):
     elif status == 200 or status == 201 or status == 409:
         status = 0
         message = ""
+    elif status == 500:
+        status = 0
+        message = """Error: could not provision external user service.\n"
+                     Please contact a Yoda administrator"""
 
     rule_args[3] = status
     rule_args[4] = message
