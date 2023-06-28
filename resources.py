@@ -281,7 +281,6 @@ def api_resource_category_stats(ctx):
                 return True
         return False
 
-
     def count_externals(members):
         count = 0
         for mb in members:
