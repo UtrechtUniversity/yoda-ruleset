@@ -290,8 +290,8 @@ def user_role(ctx, group_name, user):
             return "normal"
         elif user in group["read"]:
             return "reader"
-    else:
-        return "none"
+
+    return "none"
 
 
 def user_is_datamanager(ctx, category, user):
