@@ -996,16 +996,36 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
                   "title": "Type"
-                },
-                "Name_Identifier": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Identifier"
+                }
+              },
+              "if": {
+                "properties": {
+                  "Name_Identifier_Scheme": {
+                    "const": "ORCID"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "Name_Identifier": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Identifier",
+                    "pattern": "(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "Name_Identifier": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Identifier"
+                  }
                 }
               },
               "dependencies": {
@@ -1074,16 +1094,36 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
                   "title": "Type"
-                },
-                "Name_Identifier": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Identifier"
+                }
+              },
+              "if": {
+                "properties": {
+                  "Name_Identifier_Scheme": {
+                    "const": "ORCID"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "Name_Identifier": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Identifier",
+                    "pattern": "(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "Name_Identifier": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Identifier"
+                  }
                 }
               },
               "dependencies": {
@@ -1092,9 +1132,6 @@
               }
             }
           }
-        },
-        "dependencies": {
-          "Given_Name": ["Contributor_Type", "Affiliation"]
         }
       }
     },
