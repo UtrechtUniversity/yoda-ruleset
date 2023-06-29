@@ -552,13 +552,6 @@ def validate_data(ctx, data, allow_update):
 
     :returns: Errors if found any
     """
-    def is_internal_user(username):
-        for domain in config.external_users_domain_filter:
-            domain_pattern = '@{}$'.format(domain)
-            if re.search(domain_pattern, username) is not None:
-                return True
-        return False
-
     errors = []
     for (category, subcategory, groupname, managers, members, viewers) in data:
 
@@ -934,6 +927,10 @@ def rule_group_provision_external_user(rule_args, ctx, rei):
     elif status == 200 or status == 201 or status == 409:
         status = 0
         message = ""
+    elif status == 500:
+        status = 0
+        message = """Error: could not provision external user service.\n"
+                     Please contact a Yoda administrator"""
 
     rule_args[3] = status
     rule_args[4] = message
@@ -972,6 +969,20 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
 
 
+def is_internal_user(username):
+    for domain in config.external_users_domain_filter:
+        parts = domain.split('.')
+        if parts[0] == '*':
+            # Wildcard - search including subdomains
+            domain_pattern = "\@([0-9a-z]*\.){0,2}" + parts[-2] + "\." + parts[-1]
+        else:
+            # No wildcard - search for exact match
+            domain_pattern = "@{}$".format(domain)
+        if re.search(domain_pattern, username) is not None:
+            return True
+    return False
+
+
 @rule.make(inputs=[0], outputs=[1])
 def rule_group_check_external_user(ctx, username):
     """Check that a user is external.
@@ -981,14 +992,9 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
-    user_and_domain = username.split("@")
-
-    if len(user_and_domain) == 2:
-        domain = user_and_domain[1]
-        if domain not in config.external_users_domain_filter:
-            return '1'
-
-    return '0'
+    if is_internal_user(username):
+        return '0'
+    return '1'
 
 
 @rule.make(inputs=[0], outputs=[1])
