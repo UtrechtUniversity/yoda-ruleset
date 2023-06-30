@@ -167,7 +167,7 @@
         }
       },
       "Person_Identifier": {
-        "ui:description": "Person identifier of creator of the data package",
+        "ui:description": "Person identifier of contributor of the data package",
         "items": {
           "ui:field": "person_identifier",
           "Name_Identifier_Scheme": {
