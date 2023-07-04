@@ -107,13 +107,13 @@ def ui_pub_open_system_metadata(browser):
 
 @then('landingpage content matches yoda-metadata.json')
 def ui_pub_check_landingpage_content(browser, tmpdir):
-    tags = browser.find_by_css('.tag')
-    assert len(tags) == 9  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
+    keywords = browser.find_by_css('.keyword')
+    assert len(keywords) == 9  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
 
     # Build list with tag values
     landingpage_tag_values = []
-    for i in range(len(tags)):
-        landingpage_tag_values.append(tags[i].text)
+    for i in range(len(keywords)):
+        landingpage_tag_values.append(keywords[i].text)
 
     # take yoda-metadata.json into account
     root_dir = Path(tmpdir).parent
