@@ -28,6 +28,8 @@ jobs:
         uses: MatteoH2O1999/setup-python@v1.4.1
         with:
           python-version: ${{ matrix.python-version }}
+          allow-build: info
+          cache-build: true
 
       - name: Install dependencies
         run: |
