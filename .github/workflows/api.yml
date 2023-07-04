@@ -24,7 +24,8 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        # setup-python stopped supporting Python 2.7, use https://github.com/MatteoH2O1999/setup-python
+        uses: MatteoH2O1999/setup-python@v1.4.1
         with:
           python-version: ${{ matrix.python-version }}
 
