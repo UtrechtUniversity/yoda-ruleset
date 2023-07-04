@@ -206,17 +206,16 @@ def api_resource_category_stats(ctx):
     """Collect storage stats of last month for categories.
     Storage is summed up for each category.
 
-    :param ctx:      Combined type of a callback and rei struct
+    :param ctx: Combined type of a callback and rei struct
 
     :returns: Storage stats of last month for a list of categories
     """
-
     categories = get_categories(ctx)
 
-    # None admins (researcher for instance) do not find categories.
+    # Non-admin users don't have access to category storage statistics.
     # This makes sure the table is not presented in the frontend.
     if len(categories) == 0:
-        return categories
+        return {'categories': []), 'external_filter': ''}
 
     # Continue for admins and datamanagers
     storage = {}
