@@ -31,7 +31,7 @@ __all__ = ['api_group_data',
            'api_group_remove_user_from_group']
 
 
-def getGroupData(ctx):
+def getGroupsData(ctx):
     """Return groups and related data."""
     groups = {}
 
@@ -98,13 +98,88 @@ def getGroupData(ctx):
                         pass
             elif not name.startswith("vault-"):
                 try:
-                    # Ardinary group.
+                    # Ordinary group.
                     group = groups[name]
                     group["members"].append(user)
                 except KeyError:
                     pass
 
     return groups.values()
+
+
+def getGroupData(ctx, name):
+    """Get data for one group."""
+    group = None
+
+    # First query: obtain a list of group attributes.
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        attr = row[0]
+        value = row[1]
+
+        if group is None:
+            group = {
+                "name": name,
+                "managers": [],
+                "members": [],
+                "read": []
+            }
+
+        # Update group with this information.
+        if attr in ["data_classification", "category", "subcategory"]:
+            group[attr] = value
+        elif attr == "description":
+            # Deal with legacy use of '.' for empty description metadata.
+            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+            group[attr] = '' if value == '.' else value
+        elif attr == "manager":
+            group["managers"].append(value)
+
+    if group is None or name.startswith("vault-"):
+        return group
+
+    # Second query: obtain group memberships.
+    iter = genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        user = row[0]
+        zone = row[1]
+
+        if name != user and name != "rodsadmin" and name != "public":
+            group["members"].append(user + "#" + zone)
+
+    if name.startswith("research-"):
+        name = name[9:]
+    elif name.startswith("initial-"):
+        name = name[8:]
+    else:
+        return group
+
+    # Third query: obtain group read memberships.
+    name = "read-" + name
+    iter = genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        user = row[0]
+        zone = row[1]
+
+        if user != name:
+            group["read"].append(user + "#" + zone)
+
+    return group
 
 
 def getCategories(ctx):
@@ -196,22 +271,20 @@ def user_role(ctx, group_name, user):
 
     :returns: User role ('none' | 'reader' | 'normal' | 'manager')
     """
-    groups = getGroupData(ctx)
+    groups = getGroupData(ctx, group_name)
     if '#' not in user:
         import session_vars
         user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
-    groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
-
-    if groups:
-        if user in groups[0]["managers"]:
+    if group:
+        if user in group["managers"]:
             return "manager"
-        elif user in groups[0]["members"]:
+        elif user in group["members"]:
             return "normal"
-        elif user in groups[0]["read"]:
+        elif user in group["read"]:
             return "reader"
-    else:
-        return "none"
+
+    return "none"
 
 
 def user_is_datamanager(ctx, category, user):
@@ -266,9 +339,9 @@ def api_group_data(ctx):
     :returns: Group hierarchy, user type and user zone
     """
     if user.is_admin(ctx):
-        groups = getGroupData(ctx)
+        groups = getGroupsData(ctx)
     else:
-        groups    = getGroupData(ctx)
+        groups    = getGroupsData(ctx)
         full_name = user.full_name(ctx)
 
         categories = getDatamanagerCategories(ctx)
@@ -333,17 +406,18 @@ def api_group_data(ctx):
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
-    groups = getGroupData(ctx)
+    group = getGroupData(ctx, group_name)
     if '#' not in username:
         import session_vars
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
-    if not include_readonly:
-        groups = list(filter(lambda group: group_name == group["name"] and username in group["members"], groups))
+    if group:
+        if not include_readonly:
+            return username in group["members"]
+        else:
+            return username in group["read"] or username in group["members"]
     else:
-        groups = list(filter(lambda group: group_name == group["name"] and (username in group["read"] or username in group["members"]), groups))
-
-    return len(groups) == 1
+        return False
 
 
 def rule_group_user_exists(rule_args, callback, rei):
