@@ -1,3 +1,4 @@
+@api
 Feature: Provenance API
 
     Scenario Outline: Provenance log

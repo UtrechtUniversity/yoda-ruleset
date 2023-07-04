@@ -1,4 +1,4 @@
-@sram
+@api @sram
 Feature: Group API
 
     Scenario Outline: Group creation

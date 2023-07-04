@@ -1,3 +1,4 @@
+@api
 Feature: Revisions API
 
     Scenario Outline: Search revisions on file name

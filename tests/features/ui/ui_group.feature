@@ -1,3 +1,4 @@
+@ui
 Feature: Group UI
 
     Scenario Outline: Group member add

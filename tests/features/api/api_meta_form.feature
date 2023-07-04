@@ -1,3 +1,4 @@
+@api
 Feature: Meta form API
 
     Background:

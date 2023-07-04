@@ -1,3 +1,4 @@
+@api
 Feature: Folder API
 
     Scenario Outline: Folder lock

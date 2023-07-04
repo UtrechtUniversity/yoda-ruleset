@@ -1,3 +1,4 @@
+@api
 Feature: Schema API
 
     Scenario Outline: Schema get schemas

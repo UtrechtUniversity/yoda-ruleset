@@ -1,3 +1,4 @@
+@ui
 Feature: Publication UI
 
     Scenario Outline: Publication of teclab datapackage and test landing page output

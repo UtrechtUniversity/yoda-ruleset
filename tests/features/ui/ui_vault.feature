@@ -1,3 +1,4 @@
+@ui
 Feature: Vault UI
 
     Scenario Outline: Vault submit

@@ -1,3 +1,4 @@
+@api
 Feature: Vault API
 
     Scenario Outline: Vault meta form save in vault

@@ -1,4 +1,4 @@
-@deposit
+@api @deposit
 Feature: Deposit API (restricted)
 
     Scenario: Deposit created

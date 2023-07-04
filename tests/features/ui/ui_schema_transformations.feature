@@ -1,3 +1,4 @@
+@ui
 Feature: Schema transformations UI
 
     Scenario Outline: Transformation of metadata by a user

@@ -1,3 +1,4 @@
+@ui
 Feature: Settings UI
 
     Scenario Outline: Save user settings for mail notifications

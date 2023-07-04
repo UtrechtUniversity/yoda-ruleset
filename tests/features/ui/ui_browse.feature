@@ -1,3 +1,4 @@
+@ui
 Feature: Browse UI
 
     Scenario Outline: Browsing to a folder in the research space

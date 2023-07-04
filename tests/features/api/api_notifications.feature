@@ -1,3 +1,4 @@
+@api
 Feature: Notifications API
 
     Scenario Outline: Notifications load

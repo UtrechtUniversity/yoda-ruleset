@@ -1,4 +1,4 @@
-@datarequest
+@ui @datarequest
 Feature: Datarequest UI
 
     Scenario Outline: Datarequest submit

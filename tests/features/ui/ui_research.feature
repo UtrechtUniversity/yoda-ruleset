@@ -1,3 +1,4 @@
+@ui
 Feature: Research UI
 
     Background:
