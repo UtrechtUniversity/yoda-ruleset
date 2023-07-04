@@ -1,3 +1,4 @@
+@api
 Feature: Resources API
 
     Scenario Outline: Get the paginated research groups a user is member or datamanager of

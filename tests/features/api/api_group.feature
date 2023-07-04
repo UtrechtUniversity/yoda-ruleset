@@ -1,3 +1,4 @@
+@api
 Feature: Group API
 
     Scenario Outline: Group data

@@ -1,4 +1,4 @@
-@archive
+@api @archive
 Feature: Vault Archive API
 
     Scenario Outline: Vault archival status

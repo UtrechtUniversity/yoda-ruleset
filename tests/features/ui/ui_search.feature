@@ -1,3 +1,4 @@
+@ui
 Feature: Search UI
 
     Scenario Outline: Search file

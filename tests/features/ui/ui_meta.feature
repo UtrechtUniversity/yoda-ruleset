@@ -1,3 +1,4 @@
+@ui
 Feature: Meta UI
 
     Background:

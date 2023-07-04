@@ -1,4 +1,4 @@
-@deposit
+@ui @deposit
 Feature: Deposit UI
 
     Scenario Outline: Deposit open and restricted data package

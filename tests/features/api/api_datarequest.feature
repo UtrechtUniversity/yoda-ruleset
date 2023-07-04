@@ -1,4 +1,4 @@
-@datarequest
+@api @datarequest
 Feature: Datarequest API
 
     Scenario: Datarequest browse

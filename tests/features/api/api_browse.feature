@@ -1,3 +1,4 @@
+@api
 Feature: Browse API
 
     Scenario Outline: Browse folder

@@ -1,3 +1,4 @@
+@ui
 Feature: Login UI
 
     Scenario Outline: User login flow

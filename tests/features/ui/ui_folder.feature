@@ -1,3 +1,4 @@
+@ui
 Feature: Folder UI
 
     Scenario Outline: Folder lock

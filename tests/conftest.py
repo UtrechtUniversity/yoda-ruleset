@@ -28,7 +28,10 @@ deposit = False
 intake = False
 archive = False
 sram = False
+skip_api = False
+skip_ui = False
 run_all = False
+verbose_test = False
 
 
 def pytest_addoption(parser):
@@ -37,8 +40,11 @@ def pytest_addoption(parser):
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
     parser.addoption("--sram", action="store_true", default=False, help="Run group SRAM tests")
+    parser.addoption("--skip-ui", action="store_true", default=False, help="Skip UI tests")
+    parser.addoption("--skip-api", action="store_true", default=False, help="Skip API tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
     parser.addoption("--environment", action="store", default="environments/development.json", help="Specify configuration file")
+    parser.addoption("--verbose-test", action="store_true", default=False, help="Print additional information for troubleshooting purposes")
 
 
 def pytest_configure(config):
@@ -48,6 +54,8 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "archive: Run vault archive tests")
     config.addinivalue_line("markers", "sram: Run group SRAM tests")
     config.addinivalue_line("markers", "all: Run all tests")
+    config.addinivalue_line("markers", "ui: UI test")
+    config.addinivalue_line("markers", "api: API test")
 
     global environment
     environment = config.getoption("--environment")
@@ -64,18 +72,30 @@ def pytest_configure(config):
     global roles
     roles = configuration.get("roles", {})
 
+    global verbose_test
+    verbose_test = config.getoption("--verbose-test")
+
     # Store cookies for each user.
     for role, user in roles.items():
         csrf, session = login(user["username"], user["password"])
         user_cookies[role] = (csrf, session)
 
-    global datarequest, deposit, intake, archive, sram, run_all
+    global datarequest, deposit, intake, archive, sram, run_all, skip_api, skip_ui
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
     archive = config.getoption("--archive")
     sram = config.getoption("--sram")
+    skip_ui = config.getoption("--skip-ui")
+    skip_api = config.getoption("--skip-api")
     run_all = config.getoption("--all")
+
+    if skip_ui and run_all:
+        pytest.exit("Error: arguments --skip-ui and --all are incompatible.")
+
+    if skip_api and run_all:
+        pytest.exit("Error: arguments --skip-api and --all are incompatible.")
+
     if run_all:
         datarequest = True
         deposit = True
@@ -103,6 +123,12 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'sram' and not sram:
         marker = pytest.mark.skip(reason="Skip group SRAM")
+    elif tag == 'api' and skip_api:
+        marker = pytest.mark.skip(reason="Skip API tests")
+        marker(function)
+        return True
+    elif tag == "ui" and skip_ui:
+        marker = pytest.mark.skip(reason="Skip UI tests")
         marker(function)
         return True
     elif tag == "fail":
@@ -135,6 +161,8 @@ def login(user, password):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     url = "{}/user/login".format(portal_url)
+    if verbose_test:
+        print("Login for user {} (retrieve CSRF token) ...".format(user))
 
     client = requests.session()
 
@@ -144,6 +172,8 @@ def login(user, password):
     csrf = p.findall(content)[0]
 
     # Login as user.
+    if verbose_test:
+        print("Login for user {} (main login) ...".format(user))
     login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
     response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
     session = client.cookies['__Host-session']
@@ -155,6 +185,8 @@ def login(user, password):
     csrf = p.findall(content)[0]
 
     # Return CSRF and session cookies.
+    if verbose_test:
+        print("Login for user {} completed.".format(user))
     return csrf, session
 
 
@@ -170,6 +202,8 @@ def api_request(user, request, data, timeout=10):
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
+    if verbose_test:
+        print("Processing API request for user {} with data {}".format(user, json.dumps(data)))
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
     # Remove debug info from response body.
@@ -188,6 +222,8 @@ def upload_data(user, file, folder, file_content="test"):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Make POST request.
+    if verbose_test:
+        print("Processing upload for user {} with folder {} and file {}.".format(user, folder, file))
     url = portal_url + "/research/upload"
 
     files = {"csrf_token": (None, csrf),
@@ -217,6 +253,8 @@ def post_form_data(user, request, files):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Make POST request.
+    if verbose_test:
+        print("Processing form post for user {} with request {}.".format(user, request))
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
     cookies = {'__Host-session': session}

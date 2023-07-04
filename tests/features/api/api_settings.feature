@@ -1,3 +1,4 @@
+@api
 Feature: Settings API
 
     Scenario Outline: Settings Save

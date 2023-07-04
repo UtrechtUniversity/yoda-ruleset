@@ -1,4 +1,4 @@
-@archive
+@ui @archive
 Feature: Vault Archive UI
 
     Scenario Outline: Vault archive

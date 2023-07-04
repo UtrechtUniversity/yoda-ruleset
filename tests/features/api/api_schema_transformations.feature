@@ -1,3 +1,4 @@
+@api
 Feature: Schema transformations API
 
     Scenario Outline: Transformation of metadata

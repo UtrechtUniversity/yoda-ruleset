@@ -1,3 +1,4 @@
+@api
 Feature: Token API
 
     Scenario Outline: Token generate
