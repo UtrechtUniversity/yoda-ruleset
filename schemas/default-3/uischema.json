@@ -107,7 +107,7 @@
       "Affiliation": {
         "ui:description": "The organizational or institutional affiliation of the creator",
         "items": {
-          "ui:field": "ror",
+          "ui:field": "affiliation_identifier",
           "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
           "Affiliation_Name": {
             "ui:help": "Name of the affiliation"
@@ -148,7 +148,7 @@
       "Affiliation": {
         "ui:description": "The organizational or institutional affiliation of the contributor",
         "items": {
-          "ui:field": "ror",
+          "ui:field": "affiliation_identifier",
           "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
           "Affiliation_Name": {
             "ui:help": "Name of the affiliation"
