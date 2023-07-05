@@ -1,6 +1,6 @@
 {
   "$id": "https://yoda.uu.nl/schemas/core-2/metadata.json",
-  "$schema": "http://json-schema.org/draft-07/schema",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "definitions": {
     "stringNormal": {
       "type": "string",
@@ -590,6 +590,8 @@
   },
   "title": "",
   "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": true,
   "required": [
     "Title",
     "Description",
@@ -701,7 +703,7 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": true,
+              "additionalProperties": false,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
