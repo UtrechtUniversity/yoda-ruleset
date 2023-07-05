@@ -126,13 +126,15 @@
           },
           "Name_Identifier": {
             "ui:help": "Identifier as it can be resolved on the appropriate service",
-            "ui:help-ORCID": "Fill in ORCID identifier",
-            "ui:help-DAI": "Fill in DAI identifier",
-            "ui:field-mask-ORCID": "https://orcid.org/9999-9999-9999-999*",
             "ui:field-placeholder": "Please enter identifier",
+            "ui:help-ORCID": "Fill in ORCID identifier",
             "ui:field-placeholder-ORCID": "https://orcid.org/0009-0005-4692-1299",
-            "ui:field-placeholder-DAI": "Enter a DAI",
-            "ui:field-placeholder-ISNI": "000000012146438X"
+            "ui:field-mask-ORCID": "https://orcid.org/9999-9999-9999-999*",
+            "ui:help-DAI": "Fill in DAI identifier",
+            "ui:field-placeholder-DAI": "info:eu-repo/dai/nl/123456785",
+            "ui:help-ISNI": "Fill in ISNI identifier",
+            "ui:field-placeholder-ISNI": "https://isni.org/isni/000000012146438X",
+            "ui:field-mask-ISNI": "https://isni.org/isni/999999999999999*",
           }
         }
       }
