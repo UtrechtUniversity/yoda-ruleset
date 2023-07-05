@@ -134,7 +134,7 @@
             "ui:field-placeholder-DAI": "info:eu-repo/dai/nl/123456785",
             "ui:help-ISNI": "Fill in ISNI identifier",
             "ui:field-placeholder-ISNI": "https://isni.org/isni/000000012146438X",
-            "ui:field-mask-ISNI": "https://isni.org/isni/999999999999999*",
+            "ui:field-mask-ISNI": "https://isni.org/isni/999999999999999*"
           }
         }
       }
