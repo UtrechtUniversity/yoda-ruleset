@@ -1,4 +1,7 @@
 {
+  "links": {
+    "ui:disabled": true
+  },  
   "Title": {
     "ui:help": "The title of your data package"
   },
