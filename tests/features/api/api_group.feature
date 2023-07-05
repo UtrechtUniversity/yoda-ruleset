@@ -126,7 +126,10 @@ Feature: Group API
         Given user technicaladmin is authenticated
         And the Yoda API for processing csv group data API is queried
         Then the response status code is "200"
-        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup"
+        And user "functionaladminpriv@yoda.test" is now a member of the group "research-csvtestgroup"
+        And user "datamanager@yoda.test" is now a member of the group "research-csvtestgroup"
+        And user "researcher@yoda.test" is now a member of the group "research-csvtestgroup"
+        And user "viewer@yoda.test" is now a member of the group "research-csvtestgroup"
 
 
     Scenario Outline: Group delete
