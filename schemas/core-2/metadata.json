@@ -590,7 +590,6 @@
   },
   "title": "",
   "type": "object",
-  "additionalProperties": false,
   "unevaluatedProperties": true,
   "required": [
     "Title",
@@ -751,6 +750,34 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Open - freely retrievable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Creative Commons Attribution 4.0 International Public License",
+              "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+              "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
+              "Creative Commons Zero v1.0 Universal",
+              "Open Data Commons Attribution License (ODC-By) v1.0",
+              "Custom"
+            ],
+            "title": "License"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
     {
       "if": {
         "properties": {
