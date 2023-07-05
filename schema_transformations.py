@@ -109,15 +109,21 @@ def _default1_default2(ctx, m):
 
 def _default2_default3(ctx, m):
     """
-    Capality to add an ROR identifier to affiliation fields for creators and contributors
+    Add affiliation identifiers to creators and contributors.
+
+    Tags are renamed to Keywords and Related Datapackage to Related Resource.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-2)
+
+    :returns: Transformed (default-3) JSON object
     """
     if m.get('Creator', False):
-        # For this contributor step through all its affiliations
+        # For this creator step through all its affiliations
         for creator in m['Creator']:
             new_affiliations = []
             for affiliation in creator['Affiliation']:
                 new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
             creator['Affiliation'] = new_affiliations
 
     if m.get('Contributor', False):
@@ -126,7 +132,6 @@ def _default2_default3(ctx, m):
             new_affiliations = []
             for affiliation in contrib['Affiliation']:
                 new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
             contrib['Affiliation'] = new_affiliations
 
     # Rename Tags to Keywords
@@ -154,15 +159,21 @@ def _default2_default3(ctx, m):
 
 def _core1_core2(ctx, m):
     """
-    Capality to add an ROR identifier to affiliation fields for creators
+    Add affiliation identifiers to creators.
+
+    Tags are renamed to Keywords.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (core-1)
+
+    :returns: Transformed (core-2) JSON object
     """
     if m.get('Creator', False):
-        # For this contributor step through all its affiliations
+        # For this creator step through all its affiliations
         for creator in m['Creator']:
             new_affiliations = []
             for affiliation in creator['Affiliation']:
                 new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
             creator['Affiliation'] = new_affiliations
 
     # Rename Tags to Keywords
@@ -172,18 +183,6 @@ def _core1_core2(ctx, m):
             keywords.append(tag)
         m['Keyword'] = keywords
         m.pop('Tag')
-
-    """ No related datapackages in core
-    # Rename Related_Datapackage to Related_Resource
-    if m.get('Related_Datapackage', False):
-        resources = []
-        for resource in m['Related_Datapackage']:
-            # Only use the identifier regarding relation type
-            resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
-            resources.append(resource)
-        m['Related_Resource'] = resources
-        m.pop('Related_Datapackage')
-    """
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/core-2/metadata.json')
 
