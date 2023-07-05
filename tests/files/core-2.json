@@ -39,14 +39,13 @@
             ]
         }
     ],
-    "Data_Access_Restriction": "Restricted - available upon request",
+    "Data_Access_Restriction": "Open - freely retrievable",
     "links": [
         {
             "rel": "describedby",
-            "href": "https://yoda.uu.nl/schemas/core-1/metadata.json"
+            "href": "https://yoda.uu.nl/schemas/core-2/metadata.json"
         }
     ],
-    "Retention_Period": 10,
     "Title": "API test core-2",
     "Description": "API test core-2",
     "Data_Classification": "Public",
