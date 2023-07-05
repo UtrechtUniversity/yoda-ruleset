@@ -709,8 +709,7 @@
   },
   "title": "",
   "type": "object",
-  "additionalProperties": false,
-  "unevaluatedProperties": true,
+  "unevaluatedProperties": false,
   "required": [
     "links",
     "Title",

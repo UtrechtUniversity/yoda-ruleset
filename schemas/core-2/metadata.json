@@ -590,7 +590,7 @@
   },
   "title": "",
   "type": "object",
-  "unevaluatedProperties": true,
+  "unevaluatedProperties": false,
   "required": [
     "Title",
     "Description",
