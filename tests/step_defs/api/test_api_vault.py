@@ -151,8 +151,9 @@ def api_meta_form_save_vault(user, vault, data_package):
     with open("{}/files/{}.json".format(cwd, schema), encoding="utf8") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
-    # Change metadata version.
-    metadata["Version"] = "2.0"
+    # Change metadata title.
+    metadata["Title"] = "{} - update".format(metadata["Title"])
+
     return api_request(
         user,
         "meta_form_save",

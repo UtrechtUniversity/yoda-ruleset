@@ -62,7 +62,7 @@
             ]
         }
     ],
-    "Data_Access_Restriction": "Restricted - available upon request",
+    "Data_Access_Restriction": "Open - freely retrievable",
     "links": [
         {
             "rel": "describedby",
