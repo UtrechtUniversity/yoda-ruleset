@@ -717,7 +717,7 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": false,
+              "unevaluatedProperties": false,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
@@ -725,30 +725,96 @@
                   "title": "Type"
                 }
               },
-              "if": {
-                "properties": {
-                  "Name_Identifier_Scheme": {
-                    "const": "ORCID"
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ORCID"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://orcid.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "DAI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "Author identifier (Scopus)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ResearcherID (Web of Science)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://www.researcherid.com/rid/[A-Z]-[0-9]{4}-[0-9]{4}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ISNI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://isni.org/isni/[0-9]{15}[0-9X]"
+                      }
+                    }
                   }
                 }
-              },
-              "then": {
-                "properties": {
-                  "Name_Identifier": {
-                    "$ref": "#/definitions/stringNormal",
-                    "title": "Identifier",
-                    "pattern": "(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
-                  }
-                }
-              },
-              "else": {
-                "properties": {
-                  "Name_Identifier": {
-                    "$ref": "#/definitions/stringNormal",
-                    "title": "Identifier"
-                  }
-                }
-              },
+              ],
               "dependencies": {
                 "Name_Identifier_Scheme": ["Name_Identifier"],
                 "Name_Identifier": ["Name_Identifier_Scheme"]
