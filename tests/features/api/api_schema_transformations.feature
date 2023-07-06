@@ -8,6 +8,7 @@ Feature: Schema transformations API
 
         Examples:
             | schema_from | schema_to |
+            | core-1      | core-2    |
             | default-0   | default-1 |
             | default-1   | default-2 |
             | default-2   | default-3 |

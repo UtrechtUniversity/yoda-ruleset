@@ -1,46 +1,86 @@
 {
+    "Discipline": [
+        "Natural Sciences - Mathematics (1.1)"
+    ],
+    "Language": "en - English",
+    "Tag": [
+        "test"
+    ],
+    "Data_Type": "Dataset",
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
+            },
+            "Affiliation": [
+                "University Džemal Bijedić of Mostar"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Affiliation": [
+                "University of Göttingen"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Affiliation": [
+                "École des Beaux-Arts"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Data_Access_Restriction": "Restricted - available upon request",
     "links": [
         {
             "rel": "describedby",
             "href": "https://yoda.uu.nl/schemas/default-2/metadata.json"
         }
     ],
-    "Language": "en - English",
     "Retention_Period": 10,
-    "Data_Type": "Dataset",
-    "Creator": [
-        {
-            "Name": {
-                "Family_Name": "JosÃ© CarreÃ±o QuiÃ±ones",
-                "Given_Name": "MarÃ­a"
-            },
-            "Affiliation": [
-                "Utrecht University"
-            ],
-            "Person_Identifier": [
-                {}
-            ]
-        },
-        {
-            "Name": {
-                "Family_Name": "ÐÐ¸ÐºÐ¾Ð»Ð°ÐµÐ²Ð¸Ñ‡ Ð•Ð»ÑŒÑ†Ð¸Ð½",
-                "Given_Name": "Ð‘Ð¾Ñ€Ð¸Ñ"
-            },
-            "Affiliation": [
-                "University DÅ¾emal BijediÄ‡ of Mostar"
-            ],
-            "Person_Identifier": [
-                {}
-            ]
-        }
-    ],
-    "Data_Access_Restriction": "Open - freely retrievable",
     "Title": "API test default-2",
     "Description": "API test default-2",
     "Data_Classification": "Public",
-    "Version": "1.0",
-    "License": "Custom",
-    "Tag": [
-        "yoda"
-    ]
+    "License": "Custom"
 }
