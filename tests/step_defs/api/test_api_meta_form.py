@@ -1,7 +1,7 @@
 # coding=utf-8
 """Meta form API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -174,7 +174,7 @@ def api_meta_form_save(user, collection):
                  "Affiliation": [{
                      "Affiliation_Name": "Utrecht University",
                      "Affiliation_Identifier": "https://ror.org/04pp8hn57"
-                     }],
+                 }],
                  "Person_Identifier": [{}]
              }],
              "Data_Access_Restriction": "Open - freely retrievable",
