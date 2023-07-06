@@ -19,7 +19,7 @@ LONG_METADATA = {
     "links": [
         {
             "rel": "describedby",
-            "href": "https://yoda.uu.nl/schemas/default-0/metadata.json"
+            "href": "https://yoda.uu.nl/schemas/default-3/metadata.json"
         }
     ],
     "Discipline": [
@@ -37,17 +37,17 @@ LONG_METADATA = {
         "Start_Date": "2021-07-02",
         "End_Date": "2021-07-11"
     },
-    "Tag": [
+    "Keyword": [
         "Tag_youre_it",
         "No_tag_backs"
     ],
-    "Related_Datapackage": [
+    "Related_Resource": [
         {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "ARK",
                 "Identifier": "Some_id1234"
             },
-            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Relation_Type": "IsNewVersionOf",
             "Title": "Some data package"
         }
     ],
@@ -58,6 +58,7 @@ LONG_METADATA = {
             "Award_Number": "Super award #42"
         }
     ],
+    "Data_Type": "Dataset",
     "Creator": [
         {
             "Name": {
@@ -65,14 +66,17 @@ LONG_METADATA = {
                 "Family_Name": "Carreño Quiñones"
             },
             "Affiliation": [
-                "Utrecht University"
+                {
+                    "Affiliation_Name": "Utrecht University",
+                    "Affiliation_Identifier": "https://ror.org/04pp8hn57"
+                }
             ],
             "Person_Identifier": [
                 {
                     "Name_Identifier_Scheme": "ORCID",
-                    "Name_Identifier": "Orchid_flower"
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
                 }
-            ],
+            ]
         },
         {
             "Name": {
@@ -80,10 +84,16 @@ LONG_METADATA = {
                 "Family_Name": "Ельцин"
             },
             "Affiliation": [
-                "Utrecht University"
+                {
+                    "Affiliation_Name": "University Džemal Bijedić of Mostar",
+                    "Affiliation_Identifier": "https://ror.org/00ey4b732"
+                }
             ],
             "Person_Identifier": [
-                {}
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
             ]
         }
     ],
@@ -93,15 +103,17 @@ LONG_METADATA = {
                 "Given_Name": "Tấn Dũng",
                 "Family_Name": "Nguyễn"
             },
-            "Contributor_Type": "ContactPerson",
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "University of Göttingen",
+                    "Affiliation_Identifier": "https://ror.org/01y9bpm73"
+                }
+            ],
             "Person_Identifier": [
                 {
                     "Name_Identifier_Scheme": "ORCID",
-                    "Name_Identifier": "Orchid_2"
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
                 }
-            ],
-            "Affiliation": [
-                "University of Göttingen"
             ]
         },
         {
@@ -110,11 +122,20 @@ LONG_METADATA = {
                 "Family_Name": "Guðmundsdóttir"
             },
             "Affiliation": [
-                "École des Beaux-Arts"
+                {
+                    "Affiliation_Name": "École Nationale Supérieure des Beaux-Arts",
+                    "Affiliation_Identifier": "https://ror.org/01cdn3r29"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
             ]
         }
     ],
-    "Data_Access_Restriction": "Restricted - available upon request",
+    "Data_Access_Restriction": "Open - freely retrievable",
     "Title": "Title of the data package",
     "Description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vulputate, nulla a sollicitudin cursus, est nisl mattis nunc, nec convallis lectus libero eget dolor. Donec id nibh diam. Maecenas sagittis lacus at laoreet sodales. Phasellus sit amet pretium lorem. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Pellentesque sed ante vel dolor convallis vestibulum. Donec non blandit lorem, vitae pulvinar sem. Nullam a varius arcu. Etiam et nulla ante. Cras fermentum quis mauris id elementum. Proin est ante, iaculis eget tempor ac, ultrices tincidunt arcu.\n\nMorbi non finibus turpis, et maximus nisi. Donec nisi mauris, ultrices sit amet leo ut, egestas lacinia sapien. Donec ut elit a sapien blandit pellentesque. Ut tincidunt tortor a justo vulputate maximus. Maecenas vitae ullamcorper massa, ut faucibus ipsum. Fusce vulputate, tellus et cursus pretium, dolor quam ullamcorper dui, nec sollicitudin purus quam in est. Pellentesque purus risus, tristique rutrum erat vitae, cursus suscipit ipsum. Nam vehicula congue leo, sed accumsan massa blandit commodo. Maecenas id tortor elementum, consequat nibh vel, aliquet purus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed euismod ac velit ac facilisis. Fusce quis viverra mi. In sit amet ante et felis porta accumsan at nec turpis. Maecenas venenatis nec dui quis hendrerit.\n\nClass aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Etiam ut nisi fringilla felis posuere tempor. Duis mi ligula, pellentesque et mi sed, laoreet venenatis justo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in tincidunt ante. Nam ullamcorper felis eu metus fringilla, eu mollis purus faucibus. Pellentesque et pulvinar eros. In hac habitasse platea dictumst.\n\nDonec blandit, lacus et lobortis vulputate, leo purus tempus urna, vulputate porta nisi nulla eget quam. Sed vitae turpis risus. In hac habitasse platea dictumst. Pellentesque feugiat libero turpis, sed scelerisque libero rutrum in. Sed non sagittis ligula. Maecenas congue metus magna, ut sollicitudin leo mattis sed. Nunc sodales nec mi eget commodo. Praesent consectetur quis sapien ut vehicula.\n\nPhasellus vitae justo sed ipsum aliquet pretium. Nam posuere posuere ipsum eget efficitur. Morbi ultrices in est non posuere. Nulla dignissim libero sed mi tincidunt, sit amet mattis nunc iaculis. Mauris nunc erat, maximus sit amet sem vel, mattis vestibulum diam. Pellentesque libero lacus, fermentum finibus purus nec, bibendum auctor magna. Curabitur nisl purus, tristique in tempor tincidunt, molestie vitae lectus.Lorem ipsum dolor sit amet, consectetur adipis",
     "Version": "3.384",
@@ -135,12 +156,12 @@ def api_meta_form_save(user, collection):
          "metadata": {
              "links": [{
                  "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
+                 "href": "https://yoda.uu.nl/schemas/default-3/metadata.json"
              }],
              "Discipline": [
                  "Natural Sciences - Computer and information sciences (1.2)"
              ],
-             "Tag": [
+             "Keyword": [
                  "api_test"
              ],
              "Language": "en - English",
@@ -150,10 +171,13 @@ def api_meta_form_save(user, collection):
                      "Given_Name": "Test",
                      "Family_Name": "Test"
                  },
-                 "Affiliation": ["Utrecht University"],
+                 "Affiliation": [{
+                     "Affiliation_Name": "Utrecht University",
+                     "Affiliation_Identifier": "https://ror.org/04pp8hn57"
+                     }],
                  "Person_Identifier": [{}]
              }],
-             "Data_Access_Restriction": "Restricted - available upon request",
+             "Data_Access_Restriction": "Open - freely retrievable",
              "Title": "Test",
              "Description": "Test",
              "Data_Type": "Dataset",
