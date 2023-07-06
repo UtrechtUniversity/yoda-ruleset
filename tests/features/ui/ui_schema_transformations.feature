@@ -12,7 +12,7 @@ Feature: Schema transformations UI
 
         Examples:
             | folder             | schema_from | schema_to |
-            | research-default-1 | core-1      | core-2    |
+            | research-core-2    | core-1      | core-2    |
             | research-default-1 | default-0   | default-1 |
             | research-default-2 | default-1   | default-2 |
             | research-default-3 | default-2   | default-3 |

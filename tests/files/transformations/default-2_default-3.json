@@ -4,7 +4,7 @@
     ],
     "Language": "en - English",
     "Tag": [
-        "test"
+        "yoda"
     ],
     "Data_Type": "Dataset",
     "Creator": [
@@ -71,7 +71,7 @@
             ]
         }
     ],
-    "Data_Access_Restriction": "Restricted - available upon request",
+    "Data_Access_Restriction": "Open - freely retrievable",
     "links": [
         {
             "rel": "describedby",
@@ -82,5 +82,5 @@
     "Title": "API test default-2",
     "Description": "API test default-2",
     "Data_Classification": "Public",
-    "License": "Custom"
+    "License": "Creative Commons Attribution 4.0 International Public License"
 }
