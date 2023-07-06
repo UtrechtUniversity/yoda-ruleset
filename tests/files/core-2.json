@@ -20,7 +20,10 @@
                 }
             ],
             "Person_Identifier": [
-                {}
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
             ]
         },
         {
@@ -35,7 +38,10 @@
                 }
             ],
             "Person_Identifier": [
-                {}
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
             ]
         }
     ],
