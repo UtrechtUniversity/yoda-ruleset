@@ -90,7 +90,6 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
 
     # Check actual content after transformation for each schema version
     assert metadata['links'][0]['href'] == "https://yoda.uu.nl/schemas/{}/metadata.json".format(schema_to)
-    assert metadata["License"] == "Custom"
     assert metadata["Data_Access_Restriction"] == "Open - freely retrievable"
     assert metadata["Title"] == "API test {}".format(schema_from)
     assert metadata["Description"] == "API test {}".format(schema_from)
@@ -110,8 +109,10 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
                                               "Family_Name": "",
                                               "Given_Name": "Earth sciences - Geochemistry"},
                                               "Contributor_Type": "ResearchGroup"}
+        assert metadata["License"] == "Custom"
     else:
         assert metadata["Data_Classification"] == "Public"
+        assert metadata["License"] == "Creative Commons Attribution 4.0 International Public License"
 
     if schema_from != "default-0":
         assert metadata["Data_Type"] == "Dataset"

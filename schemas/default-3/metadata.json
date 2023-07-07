@@ -1,6 +1,6 @@
 {
   "$id": "https://yoda.uu.nl/schemas/default-3/metadata.json",
-  "$schema": "http://json-schema.org/draft-07/schema",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "definitions": {
     "stringNormal": {
       "type": "string",
@@ -192,17 +192,6 @@
         "Sponsor",
         "Supervisor",
         "WorkPackageLeader"
-      ]
-    },
-    "optionsLicense": {
-      "type": "string",
-      "enum": [
-        "Creative Commons Attribution 4.0 International Public License",
-        "Creative Commons Attribution-ShareAlike 4.0 International Public License",
-        "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
-        "Creative Commons Zero v1.0 Universal",
-        "Open Data Commons Attribution License (ODC-By) v1.0",
-        "Custom"
       ]
     },
     "optionsRelationType": {
@@ -720,7 +709,7 @@
   },
   "title": "",
   "type": "object",
-  "additionalProperties": false,
+  "unevaluatedProperties": false,
   "required": [
     "links",
     "Title",
@@ -996,18 +985,104 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": false,
+              "unevaluatedProperties": false,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
                   "title": "Type"
-                },
-                "Name_Identifier": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Identifier"
                 }
               },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ORCID"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://orcid.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "DAI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "Author identifier (Scopus)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ResearcherID (Web of Science)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://www.researcherid.com/rid/[A-Z]-[0-9]{4}-[0-9]{4}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ISNI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://isni.org/isni/[0-9]{15}[0-9X]"
+                      }
+                    }
+                  }
+                }
+              ],
               "dependencies": {
                 "Name_Identifier_Scheme": ["Name_Identifier"],
                 "Name_Identifier": ["Name_Identifier_Scheme"]
@@ -1074,38 +1149,200 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "additionalProperties": false,
+              "unevaluatedProperties": false,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
                   "$ref": "#/definitions/optionsNameIdentifierScheme",
                   "title": "Type"
-                },
-                "Name_Identifier": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Identifier"
                 }
               },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ORCID"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://orcid.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "DAI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "Author identifier (Scopus)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ResearcherID (Web of Science)"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://www.researcherid.com/rid/[A-Z]-[0-9]{4}-[0-9]{4}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "Name_Identifier_Scheme": {
+                        "const": "ISNI"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "Name_Identifier": {
+                        "type": "string",
+                        "title": "Identifier",
+                        "pattern": "https://isni.org/isni/[0-9]{15}[0-9X]"
+                      }
+                    }
+                  }
+                }
+              ],
               "dependencies": {
                 "Name_Identifier_Scheme": ["Name_Identifier"],
                 "Name_Identifier": ["Name_Identifier_Scheme"]
               }
             }
           }
-        },
-        "dependencies": {
-          "Given_Name": ["Contributor_Type", "Affiliation"]
         }
       }
-    },
-    "License": {
-      "$ref": "#/definitions/optionsLicense",
-      "title": "License"
     },
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
       "title": "Data package access",
       "default": "Restricted - available upon request"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Open - freely retrievable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Creative Commons Attribution 4.0 International Public License",
+              "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+              "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
+              "Creative Commons Zero v1.0 Universal",
+              "Open Data Commons Attribution License (ODC-By) v1.0",
+              "Custom"
+            ],
+            "title": "License"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Restricted - available upon request"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Custom"
+            ],
+            "title": "License",
+            "default": "Custom"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Closed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Custom"
+            ],
+            "title": "License",
+            "default": "Custom"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "required": [
+        "Data_Access_Restriction"
+      ]
+    }
+  ]
 }
