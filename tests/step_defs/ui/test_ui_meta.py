@@ -25,7 +25,7 @@ def ui_metadata_fill(browser):
     for input in browser.find_by_css('input.is-invalid'):
         if input.visible:
             browser.driver.execute_script("document.getElementById(arguments[0]).scrollIntoView();", input["id"])
-			# Leaving out the sleep the scrolling into view does not work and 'uniteractable element' messages occur
+            # Leaving out the sleep the scrolling into view does not work and 'uniteractable element' messages occur
             time.sleep(1)
             input.fill('The quick brown fox jumps over the lazy dog')
 
@@ -45,19 +45,18 @@ def ui_metadata_check_person_id_field(browser):
     assert len(lookup_link) > 0
     assert lookup_link[0]['href'] == 'https://orcid.org/orcid-search/search?searchQuery='
 
-	# ORCID brings a specific pattern with it
+    # ORCID brings a specific pattern with it
     # Pattern test
     parent = lookup_link.find_by_xpath('..')
 
     assert parent.find_by_css('.form-control')[0]['placeholder'] == 'https://orcid.org/0009-0005-4692-1299'
     # Enter own orcid
     orcid = '1234-5678-1234-5678'
-    parent.find_by_css('.form-control')[0].fill(orcid.replace('-',''))
+    parent.find_by_css('.form-control')[0].fill(orcid.replace('-', ''))
     assert parent.find_by_css('.form-control')[0].value == 'https://orcid.org/' + orcid
 
-    ## Now handle SCOPUS
+    # SCOPUS
     fieldset.find_by_css('.select-box').click()
-
     fieldset.find_by_text('Author identifier (Scopus)').click()
 
     lookup_link = browser.links.find_by_partial_text('Lookup Scopus Author Identifier')
@@ -81,7 +80,7 @@ def ui_metadata_save(browser):
 @when('users clicks delete all metadata button')
 def ui_metadata_delete(browser):
     browser.find_by_css('.yodaButtons .btn-danger').click()
-	# Sleep required as it didn't work otherwise
+    # Sleep required as it didn't work otherwise
     time.sleep(1)
     browser.find_by_css('.confirm').click()
 

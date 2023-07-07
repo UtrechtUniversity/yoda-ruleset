@@ -6,18 +6,6 @@ Feature: Meta UI
         And /tempZone/home/research-initial is unlocked
 
 
-    Scenario Outline: Check person identifier functionality in metadata form
-        Given user researcher is logged in
-        And module "research" is shown
-        When user browses to folder <folder>
-        And user opens metadata form
-        And users checks person identifier field in metadata form
-
-        Examples:
-            | folder             |
-            | research-default-3 |
-
-
     Scenario Outline: Save metadata
         Given user researcher is logged in
         And module "research" is shown
@@ -43,3 +31,15 @@ Feature: Meta UI
         Examples:
             | folder           |
             | research-initial |
+
+
+    Scenario Outline: Check person identifier functionality in metadata form
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user opens metadata form
+        And users checks person identifier field in metadata form
+
+        Examples:
+            | folder             |
+            | research-default-3 |
