@@ -456,6 +456,8 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_du
     :param is_collection_toplevel: Indication of whether it is a collection or object
     :param text:                   Error text
     :param suppress_duplicate_avu_error: If an AVU already exists, suppress the irods-error. Allow for this situation
+
+    :raises Exception: Raises exception when associating error to collection or data object fails
     """
     for tl in top_levels:
         if is_collection_toplevel:
