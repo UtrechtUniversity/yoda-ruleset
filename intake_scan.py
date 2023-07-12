@@ -469,7 +469,7 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_du
                     log.write(ctx, "Trying to associate dataset_error already present on collection: {}".format(tl))
                     log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
                 else:
-                    raise exception(None, None, None, e)
+                    raise Exception(e)
         else:
             try:
                 avu.associate_to_data(ctx, tl, "dataset_error", text)
@@ -479,7 +479,7 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_du
                     log.write(ctx, "Trying to associate dataset_error already present on data object: {}".format(tl))
                     log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
                 else:
-                    raise exception(None, None, None, e)
+                    raise Exception(e)
 
 
 def dataset_get_ids(ctx, coll):
