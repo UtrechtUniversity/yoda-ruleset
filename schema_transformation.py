@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Functions for handling schema updates within any yoda-metadata file."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
-           'rule_batch_transform_vault_metadata_orcid',
+           'rule_batch_vault_metadata_correct_orcid_format',
            'rule_get_transformation_info',
            'api_transform_metadata']
 
@@ -208,9 +208,9 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
 
 
 # TODO: @rule.make
-def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
+def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
     """
-    Transform all metadata JSON files in the vault to the active schema.
+    Correct ORCID person identifier with invalid format in metadata JSON files in the vault.
 
     :param rule_args: [0] First COLL_ID to check - initial = 0
                       [1] Batch size, <= 256
@@ -228,7 +228,7 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
 
     # Check one batch of metadata schemas.
 
-    # Find all research and vault collections, ordered by COLL_ID.
+    # Find all vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
         "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
@@ -241,7 +241,6 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
         path_parts = coll_name.split('/')
 
         # ORCID-correction is limited to ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
-
         if path_parts[3].replace('vault-', '') in ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
             try:
                 # Get vault package path.
@@ -266,7 +265,7 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
                         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
                         jsonutil.write(callback, new_path, result['metadata'])
                         copy_acls_from_parent(callback, new_path, "default")
-                        callback.rule_provenance_log_action("system", coll, "updated metadata schema")
+                        callback.rule_provenance_log_action("system", coll, "updated person identifier metadata")
                         log.write(callback, "Transformed ORCIDs for: %s" % (new_path))
 
             except Exception:
@@ -286,7 +285,7 @@ def rule_batch_transform_vault_metadata_orcid(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
-            "rule_batch_transform_vault_metadata_orcid('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "rule_batch_vault_metadata_correct_orcid_format('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
 
 
@@ -300,14 +299,15 @@ def transform_orcid(ctx, m):
     :returns: Dict with indication whether data has changed and transformed JSON object with regard to ORCID
     """
     data_changed = False
-    # Only Creators and Contributors hold Person identifiers that can hold ORCIDs that could possibly be ill formatted
+
+    # Only Creators and Contributors hold Person identifiers that can hold ORCIDs.
     for pi_holder in ['Creator', 'Contributor']:
         if m.get(pi_holder, False):
             for holder in m[pi_holder]:
                 for pi in holder['Person_Identifier']:
                     if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
-                        # if incorrect ORCID format => try to correct
-                        if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", pi.get('Name_Identifier', None)):
+                        # If incorrect ORCID format => try to correct.
+                        if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", pi.get('Name_Identifier', None)):
                             corrected_orcid = correctify_orcid(pi['Name_Identifier'])
                             # Only it an actual correction took place change the value and mark this data as 'changed'.
                             if corrected_orcid != pi['Name_Identifier']:
@@ -318,17 +318,18 @@ def transform_orcid(ctx, m):
 
 
 def correctify_orcid(org_orcid):
-    """ Function to hopefully correct illformatted ORCIDs """
-    # Get rid of all spaces
-
+    """Function to correct illformatted ORCIDs."""
+    # Get rid of all spaces.
     orcid = org_orcid.replace(' ', '')
 
-    orcs = orcid.split('/')
+    # Upper-case X.
+    orcid = org_orcid.replace('x', 'X')
 
-    # the last part should hold a valid id like eg: 1234-1234-1234-123X
+    # The last part should hold a valid id like eg: 1234-1234-1234-123X.
     # If not, it is impossible to correct it to the valid orcid format
-    if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", orcs[-1]):
-        # return original value
+    orcs = orcid.split('/')
+    if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
+        # Return original value.
         return org_orcid
 
     return "https://orcid.org/{}".format(orcs[-1])
