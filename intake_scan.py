@@ -462,29 +462,21 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_du
             try:
                 avu.associate_to_coll(ctx, tl, "dataset_error", text)
             except msi.Error as e:
-                # irods errorcode 809000 is CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+                # iRODS errorcode 809000 (CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME)
                 if suppress_duplicate_avu_error and str(e).find("809000") > -1:
-                    log.write(ctx, "Trying to associate dataset_error already present on collection:")
-                    log.write(ctx, tl)
-                    log.write(ctx, "Suppress irods error handling for AVU:")
-                    log.write(ctx, "A: dataset_error")
-                    log.write(ctx, "V: " + text)
+                    log.write(ctx, "Trying to associate dataset_error already present on collection: {}".format(tl))
+                    log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
                 else:
-                    # Re-raise exception
                     raise exception(None, None, None, e)
         else:
             try:
                 avu.associate_to_data(ctx, tl, "dataset_error", text)
             except msi.Error as e:
-                # irods errorcode 809000 is CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+                # iRODS errorcode 809000 (CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME)
                 if suppress_duplicate_avu_error and str(e).find("809000") > -1:
-                    log.write(ctx, "Trying to associate dataset_error already present on dataobject:")
-                    log.write(ctx, tl)
-                    log.write(ctx, "Suppress irods error handling for AVU:")
-                    log.write(ctx, "A: dataset_error")
-                    log.write(ctx, "V: " + text)
+                    log.write(ctx, "Trying to associate dataset_error already present on data object: {}".format(tl))
+                    log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
                 else:
-                    # Re-raise exception
                     raise exception(None, None, None, e)
 
 
