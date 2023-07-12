@@ -1,5 +1,7 @@
-urllib3==1.26.5
-requests==2.25.0
-pytest-splinter4==0.3.0
-pytest_bdd==6.0.1
-pytest==7.1.2
+urllib3==1.26.13
+requests==2.31.0
+selenium==4.7.2
+pytest-splinter==3.3.2
+pytest_bdd==6.1.1
+pytest==7.4.0
+deepdiff==5.8.1
