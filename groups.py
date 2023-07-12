@@ -271,7 +271,7 @@ def user_role(ctx, group_name, user):
 
     :returns: User role ('none' | 'reader' | 'normal' | 'manager')
     """
-    groups = getGroupData(ctx, group_name)
+    group = getGroupData(ctx, group_name)
     if '#' not in user:
         import session_vars
         user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
