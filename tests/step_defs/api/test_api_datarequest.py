@@ -1,7 +1,7 @@
 # coding=utf-8
 """Datarequest API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from io import BytesIO
@@ -51,14 +51,8 @@ def api_datarequest_save(user):
                         "institution": "Institutioñ",
                         "department": "Départment",
                         "work_address": "Wörk address",
+                        "email": "principal_investigator@yoda.dev",
                         "phone": "+31 30 1234 5678"
-                    },
-                    "study_contact": {
-                        "name": "Contact nàme",
-                        "institution": "Contact institútion",
-                        "department": "Contact départment",
-                        "work_address": "Contact wôrk address",
-                        "phone": "+31 30 2345 6789"
                     },
                     "participating_researchers_array": [
                         {
@@ -66,25 +60,45 @@ def api_datarequest_save(user):
                             "institution": "Participating researcher instítution",
                             "department": "Participating researcher départment",
                             "work_address": "Participating researcher work addrẽss",
+                            "email": "participating_researcher@yoda.dev",
                             "phone": "+31 30 3456 7890"
                         }
                     ],
-                    "pi_is_contact": "No",
-                    "participating_researchers": "Yes",
-                    "cc_email_addresses": "cc1@example.invalid,cc2@example.invalid"
+                    "pi_is_contact": "Yes",
+                    "participating_researchers": "Yes"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
                                 "expId": 1,
+                                "expCohort": 0,
+                                "expWave": 0,
+                                "expType": 11,
+                                "expSubject": 5,
+                                "expName": 32,
+                                "expInfo": "Age of mother is withdrawn from the participant registration system. Age of the mother is calculated in years: difference in experiment date and date of birth rounded down in whole years",
+                                "expAdditionalRemarks": None
+                            },
+                            {
+                                "expId": 39,
+                                "expCohort": 0,
+                                "expWave": 1,
+                                "expType": 10,
+                                "expSubject": 5,
+                                "expName": 73,
+                                "expInfo": "Major life events in the past 12 months",
+                                "expAdditionalRemarks": None
+                            },
+                            {
+                                "expId": 383,
                                 "expCohort": 1,
-                                "expWave": 7,
-                                "expType": 0,
-                                "expSubject": 0,
-                                "expName": 5,
-                                "expInfo": "",
-                                "expAdditionalRemarks": ""
+                                "expWave": 9,
+                                "expType": 10,
+                                "expSubject": 4,
+                                "expName": 9,
+                                "expInfo": "The CoRonavIruS health Impact Survey (CRISIS) - baseline. Questionnaire taken in apr/may 2020 (round 1)",
+                                "expAdditionalRemarks": None
                             }
                         ]
                     },
@@ -153,6 +167,7 @@ def api_datarequest_submit(user, datarequest_id):
                         "institution": "Institutioñ",
                         "department": "Départment",
                         "work_address": "Wörk address",
+                        "email": "principal_investigator@yoda.dev",
                         "phone": "+31 30 1234 5678"
                     },
                     "study_contact": {
@@ -160,6 +175,7 @@ def api_datarequest_submit(user, datarequest_id):
                         "institution": "Contact institútion",
                         "department": "Contact départment",
                         "work_address": "Contact wôrk address",
+                        "email": "study_contact@yoda.dev",
                         "phone": "+31 30 2345 6789"
                     },
                     "participating_researchers_array": [
@@ -168,25 +184,46 @@ def api_datarequest_submit(user, datarequest_id):
                             "institution": "Participating researcher instítution",
                             "department": "Participating researcher départment",
                             "work_address": "Participating researcher work addrẽss",
+                            "email": "participating_researcher@yoda.dev",
                             "phone": "+31 30 3456 7890"
                         }
                     ],
                     "pi_is_contact": "No",
                     "participating_researchers": "Yes",
-                    "cc_email_addresses": "cc1@example.invalid,cc2@example.invalid"
+                    "cc_email_addresses": "cc_email_1@yoda.dev,cc_email_2@yoda.dev"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 8,
+                                "expId": 1,
+                                "expCohort": 0,
+                                "expWave": 0,
+                                "expType": 11,
+                                "expSubject": 5,
+                                "expName": 32,
+                                "expInfo": "Age of mother is withdrawn from the participant registration system. Age of the mother is calculated in years: difference in experiment date and date of birth rounded down in whole years",
+                                "expAdditionalRemarks": None
+                            },
+                            {
+                                "expId": 39,
+                                "expCohort": 0,
+                                "expWave": 1,
+                                "expType": 10,
+                                "expSubject": 5,
+                                "expName": 73,
+                                "expInfo": "Major life events in the past 12 months",
+                                "expAdditionalRemarks": None
+                            },
+                            {
+                                "expId": 383,
                                 "expCohort": 1,
-                                "expWave": 8,
-                                "expType": 0,
-                                "expSubject": 0,
-                                "expName": 51,
-                                "expInfo": "",
-                                "expAdditionalRemarks": ""
+                                "expWave": 9,
+                                "expType": 10,
+                                "expSubject": 4,
+                                "expName": 9,
+                                "expInfo": "The CoRonavIruS health Impact Survey (CRISIS) - baseline. Questionnaire taken in apr/may 2020 (round 1)",
+                                "expAdditionalRemarks": None
                             }
                         ]
                     },
@@ -219,8 +256,7 @@ def api_datarequest_submit(user, datarequest_id):
                     "attachments": {
                         "attachments": "Yes"
                     },
-                    "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report in a peer-reviewed journal"
+                    "purpose": "Analyses in order to publish"
                 }
             },
             "draft": False,
@@ -362,10 +398,11 @@ def api_datarequest_review_submit(user, datarequest_id):
                 "introduction": {},
                 "for_publishing": True,
                 "biological_samples": True,
-                "evaluation": "Approve",
-                "evaluation_rationale": "test",
-                "involvement_requested": "No",
-                "username": "dacmember"
+                "evaluation": "Yes",
+                "evaluation_rationale": "C'est terrible.",
+                "personal_involvement_requested": "Yes",
+                "other_involvement_requested": "Piet Pieterszoon\nJan Janszoon",
+                "username": "{}".format(roles["dacmember"]["username"])
             },
             "request_id": datarequest_id
         }
