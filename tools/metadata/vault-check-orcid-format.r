@@ -1,0 +1,74 @@
+#!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
+#
+# report on packages containing invalid ORCID's
+#
+import json
+import re
+
+import genquery
+import irods_types
+
+
+def get_metadata_as_dict(callback, path):
+    # Open iRODS file
+    ret_val = callback.msiDataObjOpen("objPath=" + path, 0)
+    file_desc = ret_val['arguments'][1]
+
+    # Read iRODS file
+    ret_val = callback.msiDataObjRead(file_desc, 2 ** 31 - 1, irods_types.BytesBuf())
+    read_buf = ret_val['arguments'][2]
+
+    # Convert BytesBuffer to string
+    ret_val = callback.msiBytesBufToStr(read_buf, "")
+    output_json = ret_val['arguments'][1]
+
+    # Close iRODS file
+    callback.msiDataObjClose(file_desc, 0)
+
+    return json.loads(output_json)
+
+
+def main(rule_args, callback, rei):
+    # Schemas preceding the ones containing the regex for orcid
+    schemas_to_be_checked = ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
+
+    for schema in schemas_to_be_checked:
+        callback.writeLine("stdout", "")
+        callback.writeLine("stdout", "SCHEMA: {}".format(schema))
+        packages = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_VALUE, DATA_NAME",
+            "META_COLL_ATTR_NAME = 'href' AND META_COLL_ATTR_VALUE like '%/{}/metadata.json' "
+            "AND COLL_NAME not like '%/original' AND COLL_NAME like '/%/home/vault-%' "
+            "AND DATA_NAME like 'yoda-metadata%.json'".format(schema),
+            genquery.AS_TUPLE,
+            callback)
+
+        for (coll, href, data) in packages:
+            # New package so when reporting orcid errors must be mentioned only once
+            wrote_package_line = False
+
+            md = get_metadata_as_dict(callback, coll + '/' + data)
+
+            for pi_holder in ['Creator', 'Contributor']:
+                if pi_holder in md:
+                    for holder in md[pi_holder]:
+                        for pi in holder.get('Person_Identifier', []):
+                            if pi.get('Name_Identifier_Scheme', None) == 'ORCID':
+                                if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9xX]$", pi['Name_Identifier']):
+                                    if not wrote_package_line:
+                                        # Only write this line once
+                                        callback.writeLine("stdout", "Package: {}".format(coll))
+                                        wrote_package_line = True
+
+                                    try:
+                                        callback.writeLine("stdout", "{}: {} {}".format(pi_holder, holder['Name']['Given_Name'], holder['Name']['Family_Name']))
+                                    except TypeError:
+                                        callback.writeLine("stdout", "{}: {}".format(pi_holder, holder['Name'].encode('utf-8')))
+                                    except UnicodeEncodeError:
+                                        callback.writeLine("stdout", "Warning: could not process " + coll + " due to encoding error.")
+                                    callback.writeLine("stdout", "      Erroneous ORCID: \"{}\"".format(pi['Name_Identifier']))
+                                    callback.writeLine("stdout", '----------------------------------')
+
+
+INPUT null
+OUTPUT ruleExecOut
