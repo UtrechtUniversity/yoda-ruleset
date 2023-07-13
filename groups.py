@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -11,8 +11,10 @@ from datetime import datetime
 
 import genquery
 import requests
+import session_vars
 
 import schema
+import sram
 from util import *
 
 __all__ = ['api_group_data',
@@ -37,7 +39,7 @@ __all__ = ['api_group_data',
            'api_group_remove_user_from_group']
 
 
-def getGroupData(ctx):
+def getGroupsData(ctx):
     """Return groups and related data."""
     groups = {}
 
@@ -104,13 +106,88 @@ def getGroupData(ctx):
                         pass
             elif not name.startswith("vault-"):
                 try:
-                    # Ardinary group.
+                    # Ordinary group.
                     group = groups[name]
                     group["members"].append(user)
                 except KeyError:
                     pass
 
     return groups.values()
+
+
+def getGroupData(ctx, name):
+    """Get data for one group."""
+    group = None
+
+    # First query: obtain a list of group attributes.
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        attr = row[0]
+        value = row[1]
+
+        if group is None:
+            group = {
+                "name": name,
+                "managers": [],
+                "members": [],
+                "read": []
+            }
+
+        # Update group with this information.
+        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
+            group[attr] = value
+        elif attr == "description" or attr == "expiration_date":
+            # Deal with legacy use of '.' for empty description metadata and expiration date.
+            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+            group[attr] = '' if value == '.' else value
+        elif attr == "manager":
+            group["managers"].append(value)
+
+    if group is None or name.startswith("vault-"):
+        return group
+
+    # Second query: obtain group memberships.
+    iter = genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        user = row[0]
+        zone = row[1]
+
+        if name != user and name != "rodsadmin" and name != "public":
+            group["members"].append(user + "#" + zone)
+
+    if name.startswith("research-"):
+        name = name[9:]
+    elif name.startswith("initial-"):
+        name = name[8:]
+    else:
+        return group
+
+    # Third query: obtain group read memberships.
+    name = "read-" + name
+    iter = genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        user = row[0]
+        zone = row[1]
+
+        if user != name:
+            group["read"].append(user + "#" + zone)
+
+    return group
 
 
 def getCategories(ctx):
@@ -202,22 +279,19 @@ def user_role(ctx, group_name, user):
 
     :returns: User role ('none' | 'reader' | 'normal' | 'manager')
     """
-    groups = getGroupData(ctx)
+    group = getGroupData(ctx, group_name)
     if '#' not in user:
-        import session_vars
         user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
-    groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
-
-    if groups:
-        if user in groups[0]["managers"]:
+    if group:
+        if user in group["managers"]:
             return "manager"
-        elif user in groups[0]["members"]:
+        elif user in group["members"]:
             return "normal"
-        elif user in groups[0]["read"]:
+        elif user in group["read"]:
             return "reader"
-    else:
-        return "none"
+
+    return "none"
 
 
 def user_is_datamanager(ctx, category, user):
@@ -272,9 +346,9 @@ def api_group_data(ctx):
     :returns: Group hierarchy, user type and user zone
     """
     if user.is_admin(ctx):
-        groups = getGroupData(ctx)
+        groups = getGroupsData(ctx)
     else:
-        groups    = getGroupData(ctx)
+        groups    = getGroupsData(ctx)
         full_name = user.full_name(ctx)
 
         categories = getDatamanagerCategories(ctx)
@@ -478,13 +552,6 @@ def validate_data(ctx, data, allow_update):
 
     :returns: Errors if found any
     """
-    def is_internal_user(username):
-        for domain in config.external_users_domain_filter:
-            domain_pattern = '@{}$'.format(domain)
-            if re.search(domain_pattern, username) is not None:
-                return True
-        return False
-
     errors = []
     for (category, subcategory, groupname, managers, members, viewers) in data:
 
@@ -517,9 +584,9 @@ def apply_data(ctx, data, allow_update, delete_users):
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, 'default', '', '', 'unspecified', '', '')['arguments']
-        status = response[7]
-        message = response[8]
+        response = ctx.uuGroupAdd(groupname, category, subcategory, config.default_yoda_schema, '', '', 'unspecified', '', '', '')['arguments']
+        status = response[8]
+        message = response[9]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
@@ -749,17 +816,17 @@ def _are_roles_equivalent(a, b):
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
-    groups = getGroupData(ctx)
+    group = getGroupData(ctx, group_name)
     if '#' not in username:
-        import session_vars
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
-    if not include_readonly:
-        groups = list(filter(lambda group: group_name == group["name"] and username in group["members"], groups))
+    if group:
+        if not include_readonly:
+            return username in group["members"]
+        else:
+            return username in group["read"] or username in group["members"]
     else:
-        groups = list(filter(lambda group: group_name == group["name"] and (username in group["read"] or username in group["members"]), groups))
-
-    return len(groups) == 1
+        return False
 
 
 def rule_group_user_exists(rule_args, callback, rei):
@@ -860,6 +927,10 @@ def rule_group_provision_external_user(rule_args, ctx, rei):
     elif status == 200 or status == 201 or status == 409:
         status = 0
         message = ""
+    elif status == 500:
+        status = 0
+        message = """Error: could not provision external user service.\n"
+                     Please contact a Yoda administrator"""
 
     rule_args[3] = status
     rule_args[4] = message
@@ -898,6 +969,20 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
 
 
+def is_internal_user(username):
+    for domain in config.external_users_domain_filter:
+        parts = domain.split('.')
+        if parts[0] == '*':
+            # Wildcard - search including subdomains
+            domain_pattern = "\@([0-9a-z]*\.){0,2}" + parts[-2] + "\." + parts[-1]
+        else:
+            # No wildcard - search for exact match
+            domain_pattern = "@{}$".format(domain)
+        if re.search(domain_pattern, username) is not None:
+            return True
+    return False
+
+
 @rule.make(inputs=[0], outputs=[1])
 def rule_group_check_external_user(ctx, username):
     """Check that a user is external.
@@ -907,14 +992,9 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
-    user_and_domain = username.split("@")
-
-    if len(user_and_domain) == 2:
-        domain = user_and_domain[1]
-        if domain not in config.external_users_domain_filter:
-            return '1'
-
-    return '0'
+    if is_internal_user(username):
+        return '0'
+    return '1'
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -972,7 +1052,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, sram_group):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -983,13 +1063,26 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
+    :param sram_group:          Generates SRAM CO Identifier of the group
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, '', '')['arguments']
-        status = response[7]
-        message = response[8]
+        co_identifier = ''
+
+        # Post SRAM collaboration if group is a SRAM group.
+        if config.enable_sram and sram_group == 'true':
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+
+            if "error" in response_sram:
+                message = response_sram['message']
+                return api.Error('sram_error', message)
+            else:
+                co_identifier = response_sram['identifier']
+
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
+        status = response[8]
+        message = response[9]
         if status == '0':
             return api.Result.ok()
         else:
@@ -1031,6 +1124,14 @@ def api_group_delete(ctx, group_name):
     :returns: Dict with API status result
     """
     try:
+        # Delete SRAM collaboration if group is a SRAM group.
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                if not sram.sram_delete_collaboration(ctx, co_identifier):
+                    message = response_sram['message']
+                    return api.Error('sram_error', message)
+
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
         status = response[1]
         message = response[2]
@@ -1081,10 +1182,27 @@ def api_group_user_add(ctx, username, group_name):
     :returns: Dict with API status result
     """
     try:
+        sram_group = False
+        co_identifier = ''
+
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                # Email regex.
+                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+
+                # Validate email
+                if not re.match(regex, username):
+                    return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
+
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
         if status == '0':
+            # Send invitation mail for SRAM CO.
+            if config.enable_sram:
+                if sram_group:
+                    sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
@@ -1140,6 +1258,17 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     """
     # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
+        if config.enable_sram:
+            sram_group, co_identifier = sram_enabled(ctx, group_name)
+            if sram_group:
+                uid = sram.sram_get_uid(ctx, co_identifier, username)
+                if uid == '':
+                    return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+                else:
+                    if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
+                        message = response_sram['message']
+                        return api.Error('sram_error', message)
+
         response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
@@ -1149,3 +1278,28 @@ def api_group_remove_user_from_group(ctx, username, group_name):
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+def sram_enabled(ctx, group_name):
+    """Checks if the group is SRAM enabled
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group
+
+    :returns: enable_sram_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
+    """
+    enable_sram_flag = False
+    co_identifier = ''
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if row[0]:
+            enable_sram_flag = True
+            co_identifier = row[0]
+
+    return enable_sram_flag, co_identifier

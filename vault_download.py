@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to copy packages to the vault and manage permissions of vault packages."""
+"""Functions to download vault data packages."""
 
 __copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'

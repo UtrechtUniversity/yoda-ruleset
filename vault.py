@@ -291,7 +291,8 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++verifyChksum='.format(config.resource_vault), 0)
+
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
@@ -343,7 +344,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            data_object.copy(ctx, license_txt, license_file)
+            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++verifyChksum='.format(config.resource_vault), 0)
 
             # Fix ACLs.
             try:

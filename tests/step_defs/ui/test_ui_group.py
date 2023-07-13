@@ -16,7 +16,7 @@ from pytest_bdd import (
     when,
 )
 
-from conftest import roles
+from conftest import api_request, roles
 
 scenarios('../../features/ui/ui_group.feature')
 
@@ -486,12 +486,39 @@ def ui_group_schema_properties_schema_correct(browser, group, category, subcateg
     assert div.find_by_css('.select2-chosen').text == subcategory
 
 
+@when(parsers.parse("check whether research group properties {group}, {category}, {subcategory} and {expiration_date} for user {user}"), target_fixture="api_response")
+def ui_group_schema_properties_default_schema_correct(browser, group, category, subcategory, expiration_date, user):
+    # Get the default_schema_id from the yoda configuration
+    result = api_request(
+        user,
+        "schema_get_schemas",
+        {}
+    )
+    default_schema_id = list(result)[1]['data']['schema_default']
+
+    assert browser.find_by_id('f-group-update-name').value == group
+    assert browser.find_by_id('f-group-update-schema-id').value == default_schema_id
+    assert browser.find_by_id('f-group-update-expiration-date').value == expiration_date
+    div = browser.find_by_id('s2id_f-group-update-category')
+    assert div.find_by_css('.select2-chosen').text == category
+    div = browser.find_by_id('s2id_f-group-update-subcategory')
+    assert div.find_by_css('.select2-chosen').text == subcategory
+
+
 @when(parsers.parse("check whether research group properties {category}, {subcategory} and {expiration_date} are correctly updated"))
 def ui_group_schema_properties_update_correct(browser, category, subcategory, expiration_date):
     assert browser.find_by_id('f-group-update-expiration-date').value == expiration_date
     div = browser.find_by_id('s2id_f-group-update-category')
     assert div.find_by_css('.select2-chosen').text == category
     div = browser.find_by_id('s2id_f-group-update-subcategory')
+    assert div.find_by_css('.select2-chosen').text == subcategory
+
+
+@when(parsers.parse("new group has {category} and {subcategory} set"))
+def ui_group_properties_prefilled_categories(browser, category, subcategory):
+    div = browser.find_by_id('s2id_f-group-create-category')
+    assert div.find_by_css('.select2-chosen').text == category
+    div = browser.find_by_id('s2id_f-group-create-subcategory')
     assert div.find_by_css('.select2-chosen').text == subcategory
 
 

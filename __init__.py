@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.8.0'
+__version__   = '1.9.0'
 __copyright__ = 'Copyright (c) 2015-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
+              + ', Roy van Elk'
               + ', Paul Frederiks'
+              + ', Sirjan Kaur'
               + ', Jan de Mooij'
               + ', Harm de Raaff'
               + ', Chris Smeele'
               + ', Ton Smeele'
+              + ', Sietse Snel'
               + ', Lazlo Westerhof')
 # (in alphabetical order)
 

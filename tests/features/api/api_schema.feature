@@ -18,5 +18,12 @@ Feature: Schema API
             | datamanager | core-1    |
             | datamanager | default-0 |
             | datamanager | default-1 |
-            | datamanager | default-2 |
+	          | datamanager | default-2 |
             | datamanager | default-3 |
+
+
+    Scenario Outline: Schema get schemas and default schema
+        Given user researcher is authenticated
+        And the Yoda schema get schemas API is queried
+        Then the response status code is "200"
+        And default schema is present

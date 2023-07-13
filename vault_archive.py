@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to copy packages to the vault and manage permissions of vault packages."""
+"""Functions to archive vault data packages."""
 
 __copyright__ = 'Copyright (c) 2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -24,9 +24,6 @@ __all__ = ['api_vault_archive',
            'rule_vault_create_archive',
            'rule_vault_extract_archive',
            'rule_vault_update_archive']
-
-
-TAPE_ARCHIVE_RESC = "mockTapeArchive"
 
 
 def package_system_metadata(ctx, coll):
@@ -128,7 +125,7 @@ def create_archive(ctx, coll):
                         irods_types.BytesBuf())
 
     # create bagit archive
-    bagit.create(ctx, coll + "/archive.tar", coll + "/archive", TAPE_ARCHIVE_RESC)
+    bagit.create(ctx, coll + "/archive.tar", coll + "/archive", config.data_package_archive_resource)
     msi.data_obj_chksum(ctx, coll + "/archive.tar", "", irods_types.BytesBuf())
     log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
     ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")

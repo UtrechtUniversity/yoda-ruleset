@@ -92,22 +92,34 @@ Feature: Group UI
         And find group member "viewer@yoda.test"
 
 
-    Scenario Outline: Group research create
+    Scenario Outline: Group research create with default schema id
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
         When user opens add group dialog
         And groupname is set to <group>
         And category is set to <category>
         And subcategory is set to <subcategory>
-        And schema id is set to <schema_id>
         And expiration date is set to <expiration_date>
         When user submits new group data
         And research group <group> is successfully created
-        And check whether research group properties <group>, <category>, <subcategory>, <schema_id> and <expiration_date> are correct
+        And check whether research group properties <group>, <category>, <subcategory> and <expiration_date> for user functionaladminpriv
 
         Examples:
-            | category        | subcategory     | group         | schema_id | expiration_date  |
-            | test-automation | test-automation | ui-test-group | teclab-1  | 2030-12-25       |
+            | category        | subcategory     | group         | expiration_date |
+            | test-automation | test-automation | ui-test-group | 2030-12-25      |
+           
+
+    Scenario Outline: Create new research group starting from same (sub)category of active group at that moment
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        When user opens add group dialog
+        And new group has <category> and <subcategory> set       
+       
+        Examples:
+            | category        | subcategory | group            |
+            | test-automation | initial     | research-initial |
 
 
     Scenario Outline: Group research update
@@ -202,3 +214,4 @@ Feature: Group UI
             | datamanager | yoda   | 5           |
             | researcher  | core   | 3           |
             | datamanager | core   | 3           |
+
