@@ -1,6 +1,6 @@
 #!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
 #
-# report on packages containing invalid ORCID's
+# Report vault data package metadata containing invalid ORCID person identifiers.
 #
 import json
 import re
