@@ -1,7 +1,7 @@
 # coding=utf-8
 """Group API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request, roles
 
-scenarios('../../features/api/api_group.feature')
+scenarios('../../features/api/api_group.feature', '../../features/api/api_group_sram.feature')
 
 
 @given('the Yoda group data API is queried', target_fixture="api_response")
@@ -78,6 +78,22 @@ def api_group_create(user, group_name):
          "description": "",
          "data_classification": "public",
          "sram_group": ""}
+    )
+
+
+@given(parsers.parse('the user creates a new SRAM group "{group_name}"'), target_fixture="api_response")
+def api_group_create_sram(user, group_name):
+    return api_request(
+        user,
+        "group_create",
+        {"group_name": group_name,
+         "category": "api-test-sram",
+         "subcategory": "api-test-sram",
+         "schema_id": "default-3",
+         "expiration_date": "",
+         "description": "",
+         "data_classification": "public",
+         "sram_group": "true"}
     )
 
 

@@ -27,6 +27,7 @@ datarequest = False
 deposit = False
 intake = False
 archive = False
+sram = False
 run_all = False
 
 
@@ -35,6 +36,7 @@ def pytest_addoption(parser):
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
+    parser.addoption("--sram", action="store_true", default=False, help="Run group SRAM tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
     parser.addoption("--environment", action="store", default="environments/development.json", help="Specify configuration file")
 
@@ -44,6 +46,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
     config.addinivalue_line("markers", "archive: Run vault archive tests")
+    config.addinivalue_line("markers", "sram: Run group SRAM tests")
     config.addinivalue_line("markers", "all: Run all tests")
 
     global environment
@@ -66,17 +69,19 @@ def pytest_configure(config):
         csrf, session = login(user["username"], user["password"])
         user_cookies[role] = (csrf, session)
 
-    global datarequest, deposit, intake, archive, run_all
+    global datarequest, deposit, intake, archive, sram, run_all
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
     archive = config.getoption("--archive")
+    sram = config.getoption("--sram")
     run_all = config.getoption("--all")
     if run_all:
         datarequest = True
         deposit = True
         intake = True
         archive = True
+        sram = True
 
 
 def pytest_bdd_apply_tag(tag, function):
@@ -94,6 +99,10 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'archive' and not archive:
         marker = pytest.mark.skip(reason="Skip vault archive")
+        marker(function)
+        return True
+    elif tag == 'sram' and not sram:
+        marker = pytest.mark.skip(reason="Skip group SRAM")
         marker(function)
         return True
     elif tag == "fail":
