@@ -43,6 +43,14 @@ def ui_schema_transformations_upload_metadata(user, schema_from, schema_to):
     )
 
 
+@when(parsers.parse("folder {folder} is unlocked"))
+def ui_folder_is_unlocked(browser, folder):
+    badge = browser.find_by_id('statusBadge')
+    if badge.value == "Locked":
+        browser.find_by_id('actionMenu').click()
+        browser.find_by_css('a.action-unlock').click()
+
+
 @when(parsers.parse("file {file} exists in folder"))
 def ui_schema_trans_file_exists(browser, file):
     browser.is_text_present(file)

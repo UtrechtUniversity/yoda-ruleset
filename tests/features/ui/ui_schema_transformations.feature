@@ -5,6 +5,7 @@ Feature: Schema transformations UI
         And module "research" is shown
         When metadata file <schema_from> for <schema_to> is uploaded by user researcher
         And user browses to folder <folder>
+        And folder <folder> is unlocked
         And file yoda-metadata.json exists in folder
         And user opens metadata form
         And user accepts transformation
