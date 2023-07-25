@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import genquery
 
-import datacite
 import json_datacite41
+import datacite
 import json_landing_page
 import meta
 import provenance
