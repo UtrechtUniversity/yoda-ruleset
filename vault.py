@@ -1251,7 +1251,7 @@ def get_title(ctx, path):
 
 
 def meta_add_new_version(ctx, new_version, previous_version):
-    """Add new version related data package metadata to data package in a vault.
+    """Add new version as related resource metadata to data package in a vault.
 
     :param ctx:              Combined type of a callback and rei struct
     :param new_version:      Path to new version of data package in the vault
@@ -1276,6 +1276,24 @@ def meta_add_new_version(ctx, new_version, previous_version):
             metadata["Related_Datapackage"].append(data_package)
         else:
             metadata["Related_Datapackage"] = [data_package]
+
+        meta_form.save(ctx, new_version, metadata)
+
+    # Only add related resource if it is in the schema.
+    elif "Related_Resource" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+            },
+            "Relation_Type": "IsNewVersionOf",
+            "Title": "{}".format(get_title(ctx, previous_version))
+        }
+
+        if "Related_Resource" in metadata:
+            metadata["Related_Resource"].append(data_package)
+        else:
+            metadata["Related_Resource"] = [data_package]
 
         meta_form.save(ctx, new_version, metadata)
 
