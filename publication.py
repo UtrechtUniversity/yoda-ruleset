@@ -5,9 +5,9 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
-import json_datacite
 
 import datacite
+import json_datacite
 import json_landing_page
 import meta
 import provenance
@@ -356,6 +356,7 @@ def post_metadata_to_datacite(ctx, publication_state, doi, send_method):
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
+    :param doi:                DataCite DOI to update metadata
     :param send_method:        http verb (either 'post' or 'put')
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
@@ -434,19 +435,20 @@ def remove_metadata_from_datacite(ctx, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-def mint_doi(ctx, publication_state, type_flag):  # Add param to store whether its base or version
+def mint_doi(ctx, publication_state, type_flag):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
+    :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
     import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)   # replace yoda with type flag
+    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
 
     if httpCode == 200:  # 201:
-        publication_state[type_flag + "DOIMinted"] = "yes"   # add a type flag
+        publication_state[type_flag + "DOIMinted"] = "yes"
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
         log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
@@ -507,6 +509,7 @@ def copy_landingpage_to_public_host(ctx, random_id, publication_config, publicat
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of DOI used for landingpage file
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -514,7 +517,6 @@ def copy_landingpage_to_public_host(ctx, random_id, publication_config, publicat
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    # randomId = publication_state["randomId"] ##### in case of base? ###### revert to original
     publicPath = yodaInstance + "/" + yodaPrefix + "/" + random_id + ".html"
 
     argv = publicHost + " inbox /var/www/landingpages/" + publicPath
@@ -532,6 +534,7 @@ def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of DOI used for MOAI metadata file
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -584,6 +587,7 @@ def check_doi_availability(ctx, publication_state, type_flag):
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
+    :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
     DOI = publication_state[type_flag + "DOI"]
     log.write(ctx, publication_state[type_flag + "DOI"])
