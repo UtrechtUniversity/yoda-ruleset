@@ -5,7 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
-import json_datacite41
+import json_datacite
 
 import datacite
 import json_landing_page
@@ -99,7 +99,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
     metadataJsonPath = meta.get_latest_vault_metadata_path(ctx, vaultPackage)
 
     # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-    json_datacite41.json_datacite41_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, versionDOI, publicationDate, openAccessLink, licenseUri)
+    json_datacite.json_datacite_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, versionDOI, publicationDate, openAccessLink, licenseUri)
 
     publication_state["combiJsonPath"] = combiJsonPath
 
@@ -344,7 +344,7 @@ def generate_datacite_json(ctx, publication_state):
     datacite_json_path = temp_coll + "/" + randomId + "-dataCite.json"
 
     # Based on content of *combiJsonPath, get DataciteJson as string
-    datacite_json = json_datacite41.json_datacite41_create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
+    datacite_json = json_datacite.json_datacite_create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
 
     data_object.write(ctx, datacite_json_path, jsonutil.dump(datacite_json))
 
