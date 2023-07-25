@@ -418,22 +418,22 @@ def get_related_resources(combi):
     """
     related_dps = []
 
-    try:
-        for rel in combi['Related_Datapackage']:
+    # For backwards compatibility.
+    for rel in combi['Related_Datapackage']:
+        try:
             related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
                                 'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
                                 'relationType': rel['Relation_Type'].split(':')[0]})
-    except KeyError:
-        pass
+        except KeyError:
+            pass
 
-    # For backward compatibility
-    try:
-        for rel in combi['Related_Resource']:
+    for rel in combi['Related_Resource']:
+        try:
             related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
                                 'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
                                 'relationType': rel['Relation_Type'].split(':')[0]})
-    except KeyError:
-        pass
+        except KeyError:
+            pass
 
     return related_dps
 
