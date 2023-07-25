@@ -1061,7 +1061,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 # Persistent Identifier DOI.
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
                     genquery.AS_LIST, callback
                 )
 
@@ -1200,7 +1200,7 @@ def get_doi(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (path),
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
         genquery.AS_LIST, ctx
     )
 
@@ -1290,36 +1290,71 @@ def api_vault_get_published_packages(ctx, path):
     :return: Dict of data packages with DOI
     """
     iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
+        "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, GROUP(COLL_NAME)",
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
         genquery.AS_LIST, ctx
     )
 
-    data_packages = {}
+    data_package = []
+    org_publ_info = []
+
     for row in iter:
-        data_packages[row[0]] = row[1]
+        org_publ_info.append([row[0], row[1], row[2]])
 
-    for doi, path in data_packages.items():
-        # Check if data package DOI has a version.
-        m = re.search("([0-9A-Z-/.]+).v(\d*)", doi)
 
-        # If data package DOI has a version.
-        if m:
-            doi = m.group(1)
-            version = int(m.group(2))
+    # Group by collection name
 
-            # Remove older versions of data packages.
-            data_packages.pop(doi, None)
-            for v in range(version - 1, 0, -1):
-                data_packages.pop("{}.v{}".format(doi, v), None)
+    coll_names = set(map(lambda x:x[2], org_publ_info))
+    grouped_coll_name = [[y[1] for y in org_publ_info if y[2]==x] for x in coll_names]
 
-    # Sort on path with timestamp.
-    data_packages = dict(sorted(data_packages.items(), key=lambda x: x[1]))
+    # If base DOI does not exist, remove from the list and add it in the data package
 
+    number_of_items = list(map(len, grouped_coll_name))
+
+    indices = [i for i, x in enumerate(number_of_items) if x < 3]
+
+    for item in indices:
+        data_package.append(grouped_coll_name[item])
+    
+    grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
+    log.write(ctx, '===== Data Package =====')
+    log.write(ctx, data_package)
+    log.write(ctx, '===== Grouped coll name =====')
+    log.write(ctx, grouped_coll_name)
+
+    # Group by base DOI 
+
+    base_dois = set(map(lambda x:x[0], grouped_coll_name))
+    log.write(ctx, base_dois)
+    grouped_base_dois = [[y[1:3] for y in grouped_coll_name if y[0]==x] for x in base_dois]
+    log.write(ctx, '===== Grouped Base DOIs =====')
+    log.write(ctx, grouped_base_dois)
+
+    # Sort by publication date
+
+    dates = [[datetime.strptime(x[0],"%Y-%m-%dT%H:%M:%S.%f") for x in y] for y in grouped_base_dois]
+    log.write(ctx, '===== Sorted List =====')
+    sorted_publ = [sorted(x, key = lambda x:datetime.strptime(x[0],"%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
+    log.write(ctx, sorted_publ)
+    log.write(ctx, '===== Latest Publications =====')
+    latest_publ = map(lambda x: x[-1], sorted_publ)
+    log.write(ctx,latest_publ)
+
+    # Append to data package
+    for items in latest_publ:
+        data_package.append(items)
+
+    data_package = [[[i, j, x[2]] for i, j in data_package if j == x[1]] for x in org_publ_info]
+    data_package = [x for x in data_package if x != []]
+    data_package = [element for innerList in data_package for element in innerList]
+    log.write(ctx, data_package)
+    
     # Retrieve title of data package.
     published_packages = {}
-    for doi, path in data_packages.items():
-        published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
+    for item in data_package:
+        published_packages[item[1]] = {"path": item[2], "title": get_title(ctx, item[2])}
+
+    log.write(ctx, published_packages)
 
     return published_packages
 
