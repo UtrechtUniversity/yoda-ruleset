@@ -376,6 +376,7 @@ def post_metadata_to_datacite(ctx, publication_state, doi, send_method):
         log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
+
 def post_draft_doi_to_datacite(ctx, publication_state):
     """Upload DOI to DataCite. This will register the DOI as a draft.
     This function is also a draft, and will have to be reworked!
@@ -433,7 +434,7 @@ def remove_metadata_from_datacite(ctx, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-def mint_doi(ctx, publication_state, type_flag): ##Add param to store whether its base or version
+def mint_doi(ctx, publication_state, type_flag):  # Add param to store whether its base or version
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -442,10 +443,10 @@ def mint_doi(ctx, publication_state, type_flag): ##Add param to store whether it
     import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload) ## replace yoda with type flag
+    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)   # replace yoda with type flag
 
     if httpCode == 200:  # 201:
-        publication_state[type_flag + "DOIMinted"] = "yes" ##add a type flag
+        publication_state[type_flag + "DOIMinted"] = "yes"   # add a type flag
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
         log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
@@ -650,7 +651,7 @@ def process_publication(ctx, vault_package):
         log.write(ctx, "there is a previous version")
     if "next_version" not in publication_state:
         log.write(ctx, "no next version - so the latest one")
-    if "previous_version" in publication_state and "next_version" not in publication_state: # If it is the latest version and there exists at least two versions of the publication
+    if "previous_version" in publication_state and "next_version" not in publication_state:   # If it is the latest version and there exists at least two versions of the publication
         log.write(ctx, "in if")
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
@@ -703,8 +704,8 @@ def process_publication(ctx, vault_package):
 
         save_publication_state(ctx, vault_package, publication_state)
 
-    elif "versionDOIAvailable" in publication_state or "DOIAvailable" in publication_state: ###
-        if publication_state["versionDOIAvailable"] == "no" :    ######
+    elif "versionDOIAvailable" in publication_state or "DOIAvailable" in publication_state:   #
+        if publication_state["versionDOIAvailable"] == "no":    #
 
             if verbose:
                 log.write(ctx, "Version DOI available: no")
@@ -848,7 +849,7 @@ def process_publication(ctx, vault_package):
             base_random_id = publication_state["baseRandomId"]
             if verbose:
                 log.write(ctx, "Updating base DOI landing page.")
-            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state) ### base random id
+            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)    # base random id
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -868,7 +869,7 @@ def process_publication(ctx, vault_package):
             base_random_id = publication_state["baseRandomId"]
             if verbose:
                 log.write(ctx, "Updating base DOI at MOAI.")
-            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state) ## base random id ###
+            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)   # base random id ###
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -893,7 +894,7 @@ def process_publication(ctx, vault_package):
     if "versionDOIMinted" not in publication_state and "DOIMinted" not in publication_state:
         if verbose:
             log.write(ctx, "Minting DOI.")
-        mint_doi(ctx, publication_state, 'version') ## see notes
+        mint_doi(ctx, publication_state, 'version')   # see notes
 
         if update_base_doi:
             if verbose:
@@ -991,7 +992,7 @@ def process_depublication(ctx, vault_package):
 
             if update_base_doi:
                 # Remove version from DOI.
-                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0] ## Do not need anymore
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]   # Do not need anymore
                 upload_metadata_to_datacite(ctx, publication_state, yoda_doi, hide=True)
         except msi.Error:
             publication_state["status"] = "Retry"
@@ -1139,7 +1140,7 @@ def process_republication(ctx, vault_package):
 
             if update_base_doi:
                 # Remove version from DOI.
-                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0] ## Do not need anymore
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]   # Do not need anymore
                 upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
