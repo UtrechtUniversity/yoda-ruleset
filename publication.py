@@ -5,8 +5,8 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
-
 import json_datacite41
+
 import datacite
 import json_landing_page
 import meta
