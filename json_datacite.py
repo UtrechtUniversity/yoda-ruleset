@@ -419,21 +419,23 @@ def get_related_resources(combi):
     related_dps = []
 
     # For backwards compatibility.
-    for rel in combi['Related_Datapackage']:
-        try:
-            related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
-                                'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
-                                'relationType': rel['Relation_Type'].split(':')[0]})
-        except KeyError:
-            pass
+    if "Related_Datapackage" in combi:
+        for rel in combi['Related_Datapackage']:
+            try:
+                related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                                    'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                                    'relationType': rel['Relation_Type'].split(':')[0]})
+            except KeyError:
+                pass
 
-    for rel in combi['Related_Resource']:
-        try:
-            related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
-                                'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
-                                'relationType': rel['Relation_Type'].split(':')[0]})
-        except KeyError:
-            pass
+    if "Related_Resource" in combi:
+        for rel in combi['Related_Resource']:
+            try:
+                related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                                    'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                                    'relationType': rel['Relation_Type'].split(':')[0]})
+            except KeyError:
+                pass
 
     return related_dps
 
