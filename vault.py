@@ -1313,7 +1313,7 @@ def api_vault_get_published_packages(ctx, path):
         genquery.AS_LIST, ctx
     )
 
-    data_package = []
+    data_packages = []
     org_publ_info = []
 
     for row in iter:
@@ -1324,51 +1324,35 @@ def api_vault_get_published_packages(ctx, path):
     grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] for x in coll_names]
 
     # If base DOI does not exist, remove from the list and add it in the data package
-
     number_of_items = list(map(len, grouped_coll_name))
-
     indices = [i for i, x in enumerate(number_of_items) if x < 3]
 
     for item in indices:
-        data_package.append(grouped_coll_name[item])
+        data_packages.append(grouped_coll_name[item])
 
     grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
-    log.write(ctx, '===== Data Package =====')
-    log.write(ctx, data_package)
-    log.write(ctx, '===== Grouped coll name =====')
-    log.write(ctx, grouped_coll_name)
 
     # Group by base DOI
-
     base_dois = set(map(lambda x: x[0], grouped_coll_name))
-    log.write(ctx, base_dois)
     grouped_base_dois = [[y[1:3] for y in grouped_coll_name if y[0] == x] for x in base_dois]
-    log.write(ctx, '===== Grouped Base DOIs =====')
-    log.write(ctx, grouped_base_dois)
 
     # Sort by publication date
-    log.write(ctx, '===== Sorted List =====')
     sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-    log.write(ctx, sorted_publ)
-    log.write(ctx, '===== Latest Publications =====')
     latest_publ = map(lambda x: x[-1], sorted_publ)
-    log.write(ctx, latest_publ)
 
     # Append to data package
     for items in latest_publ:
-        data_package.append(items)
+        data_packages.append(items)
 
-    data_package = [[[i, j, x[2]] for i, j in data_package if j == x[1]] for x in org_publ_info]
-    data_package = [x for x in data_package if x != []]
-    data_package = [element for innerList in data_package for element in innerList]
-    log.write(ctx, data_package)
+    # Get the path for publications
+    data_packages = [[[i, j, x[2]] for i, j in data_packages if j == x[1]] for x in org_publ_info]
+    data_packages = [x for x in data_packages if x != []]
+    data_packages = [element for innerList in data_packages for element in innerList]
 
-    # Retrieve title of data package.
+    # Retrieve title of data packages.
     published_packages = {}
-    for item in data_package:
+    for item in data_packages:
         published_packages[item[1]] = {"path": item[2], "title": get_title(ctx, item[2])}
-
-    log.write(ctx, published_packages)
 
     return published_packages
 
