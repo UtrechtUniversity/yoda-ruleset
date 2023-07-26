@@ -32,6 +32,7 @@ datacite_password              =
 eus_api_fqdn                   =
 eus_api_port                   =
 eus_api_secret                 =
+eus_api_tls_verify             =
 
 enable_deposit                 =
 enable_open_search             =

@@ -876,9 +876,10 @@ def provisionExternalUser(ctx, username, creatorUser, creatorZone):
 
     :returns: Response status code
     """
-    eus_api_fqdn   = config.eus_api_fqdn
-    eus_api_port   = config.eus_api_port
-    eus_api_secret = config.eus_api_secret
+    eus_api_fqdn       = config.eus_api_fqdn
+    eus_api_port       = config.eus_api_port
+    eus_api_secret     = config.eus_api_secret
+    eus_api_tls_verify = config.eus_api_tls_verify
 
     url = 'https://' + eus_api_fqdn + ':' + eus_api_port + '/api/user/add'
 
@@ -892,7 +893,7 @@ def provisionExternalUser(ctx, username, creatorUser, creatorZone):
                                  headers={'X-Yoda-External-User-Secret':
                                           eus_api_secret},
                                  timeout=10,
-                                 verify=False)
+                                 verify=eus_api_tls_verify)
     except requests.ConnectionError or requests.ConnectTimeout:
         return -1
 
@@ -945,9 +946,10 @@ def removeExternalUser(ctx, username, userzone):
 
     :returns: Response status code
     """
-    eus_api_fqdn   = config.eus_api_fqdn
-    eus_api_port   = config.eus_api_port
-    eus_api_secret = config.eus_api_secret
+    eus_api_fqdn       = config.eus_api_fqdn
+    eus_api_port       = config.eus_api_port
+    eus_api_secret     = config.eus_api_secret
+    eus_api_tls_verify = config.eus_api_tls_verify
 
     url = 'https://' + eus_api_fqdn + ':' + eus_api_port + '/api/user/delete'
 
@@ -959,7 +961,7 @@ def removeExternalUser(ctx, username, userzone):
                              headers={'X-Yoda-External-User-Secret':
                                       eus_api_secret},
                              timeout=10,
-                             verify=False)
+                             verify=eus_api_tls_verify)
 
     return str(response.status_code)
 
