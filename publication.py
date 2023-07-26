@@ -409,16 +409,17 @@ def post_draft_doi_to_datacite(ctx, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-def remove_metadata_from_datacite(ctx, publication_state):
+def remove_metadata_from_datacite(ctx, publication_state, type_flag):
     """Remove metadata XML from DataCite.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
+    :param type_flag:          Determine whether it is base DOI or version DOI
     """
     import json
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state["versionDOI"], payload)
+    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
 
     if httpCode == 200:
         publication_state["dataCiteMetadataPosted"] = "yes"
@@ -651,12 +652,7 @@ def process_publication(ctx, vault_package):
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
-    if "previous_version" in publication_state:
-        log.write(ctx, "there is a previous version")
-    if "next_version" not in publication_state:
-        log.write(ctx, "no next version - so the latest one")
-    if "previous_version" in publication_state and "next_version" not in publication_state:   # If it is the latest version and there exists at least two versions of the publication
-        log.write(ctx, "in if")
+    if "previous_version" in publication_state and "next_version" not in publication_state:
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
 
@@ -708,9 +704,8 @@ def process_publication(ctx, vault_package):
 
         save_publication_state(ctx, vault_package, publication_state)
 
-    elif "versionDOIAvailable" in publication_state or "DOIAvailable" in publication_state:   #
-        if publication_state["versionDOIAvailable"] == "no":    #
-
+    elif "versionDOIAvailable" in publication_state or "DOIAvailable" in publication_state:
+        if publication_state["versionDOIAvailable"] == "no":
             if verbose:
                 log.write(ctx, "Version DOI available: no")
                 log.write(ctx, "Generating preliminary DOI.")
@@ -853,7 +848,7 @@ def process_publication(ctx, vault_package):
             base_random_id = publication_state["baseRandomId"]
             if verbose:
                 log.write(ctx, "Updating base DOI landing page.")
-            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)    # base random id
+            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -873,7 +868,7 @@ def process_publication(ctx, vault_package):
             base_random_id = publication_state["baseRandomId"]
             if verbose:
                 log.write(ctx, "Updating base DOI at MOAI.")
-            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)   # base random id ###
+            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -992,12 +987,9 @@ def process_depublication(ctx, vault_package):
     # Hide metadata from DataCite
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'], hide=True)
-
+            remove_metadata_from_datacite(ctx, publication_state, 'version')
             if update_base_doi:
-                # Remove version from DOI.
-                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]   # Do not need anymore
-                upload_metadata_to_datacite(ctx, publication_state, yoda_doi, hide=True)
+                remove_metadata_from_datacite(ctx, publication_state, 'base')
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1025,9 +1017,8 @@ def process_depublication(ctx, vault_package):
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
-            # Remove version from DOI.
-            random_id = random_id.rsplit(".", 1)[0]
-            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+            base_random_id = publication_state["baseRandomId"]
+            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1040,9 +1031,8 @@ def process_depublication(ctx, vault_package):
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
-            # Remove version from DOI.
-            random_id = random_id.rsplit(".", 1)[0]
-            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+            base_random_id = publication_state["baseRandomId"]
+            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1140,12 +1130,10 @@ def process_republication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'])
+            post_metadata_to_datacite(ctx, publication_state, publication_state['versionDOI'], 'put')
 
             if update_base_doi:
-                # Remove version from DOI.
-                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]   # Do not need anymore
-                upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
+                post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put')
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1173,9 +1161,8 @@ def process_republication(ctx, vault_package):
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
-            # Remove version from DOI.
-            random_id = random_id.rsplit(".", 1)[0]
-            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+            base_random_id = publication_state["baseRandomId"]
+            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1188,9 +1175,8 @@ def process_republication(ctx, vault_package):
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
         if update_base_doi:
-            # Remove version from DOI.
-            random_id = random_id.rsplit(".", 1)[0]
-            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+            base_random_id = publication_state["baseRandomId"]
+            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
