@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import genquery
 
+from datetime import datetime
+
 import datacite
 import json_datacite
 import json_landing_page
@@ -13,7 +15,6 @@ import meta
 import provenance
 import schema
 import vault
-from datetime import datetime
 from util import *
 
 __all__ = ['rule_process_publication',
