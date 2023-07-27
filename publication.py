@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import genquery
-
 from datetime import datetime
+
+import genquery
 
 import datacite
 import json_datacite
