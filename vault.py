@@ -1061,7 +1061,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 # Persistent Identifier DOI.
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
                     genquery.AS_LIST, callback
                 )
 
@@ -1200,7 +1200,7 @@ def get_doi(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (path),
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
         genquery.AS_LIST, ctx
     )
 
@@ -1251,7 +1251,7 @@ def get_title(ctx, path):
 
 
 def meta_add_new_version(ctx, new_version, previous_version):
-    """Add new version related data package metadata to data package in a vault.
+    """Add new version as related resource metadata to data package in a vault.
 
     :param ctx:              Combined type of a callback and rei struct
     :param new_version:      Path to new version of data package in the vault
@@ -1279,6 +1279,24 @@ def meta_add_new_version(ctx, new_version, previous_version):
 
         meta_form.save(ctx, new_version, metadata)
 
+    # Only add related resource if it is in the schema.
+    elif "Related_Resource" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+            },
+            "Relation_Type": "IsNewVersionOf",
+            "Title": "{}".format(get_title(ctx, previous_version))
+        }
+
+        if "Related_Resource" in metadata:
+            metadata["Related_Resource"].append(data_package)
+        else:
+            metadata["Related_Resource"] = [data_package]
+
+        meta_form.save(ctx, new_version, metadata)
+
 
 @api.make()
 def api_vault_get_published_packages(ctx, path):
@@ -1290,36 +1308,51 @@ def api_vault_get_published_packages(ctx, path):
     :return: Dict of data packages with DOI
     """
     iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
+        "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, GROUP(COLL_NAME)",
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
         genquery.AS_LIST, ctx
     )
 
-    data_packages = {}
+    data_packages = []
+    org_publ_info = []
+
     for row in iter:
-        data_packages[row[0]] = row[1]
+        org_publ_info.append([row[0], row[1], row[2]])
 
-    for doi, path in data_packages.items():
-        # Check if data package DOI has a version.
-        m = re.search("([0-9A-Z-/.]+).v(\d*)", doi)
+    # Group by collection name
+    coll_names = set(map(lambda x: x[2], org_publ_info))
+    grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] for x in coll_names]
 
-        # If data package DOI has a version.
-        if m:
-            doi = m.group(1)
-            version = int(m.group(2))
+    # If base DOI does not exist, remove from the list and add it in the data package
+    number_of_items = list(map(len, grouped_coll_name))
+    indices = [i for i, x in enumerate(number_of_items) if x < 3]
 
-            # Remove older versions of data packages.
-            data_packages.pop(doi, None)
-            for v in range(version - 1, 0, -1):
-                data_packages.pop("{}.v{}".format(doi, v), None)
+    for item in indices:
+        data_packages.append(grouped_coll_name[item])
 
-    # Sort on path with timestamp.
-    data_packages = dict(sorted(data_packages.items(), key=lambda x: x[1]))
+    grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
 
-    # Retrieve title of data package.
+    # Group by base DOI
+    base_dois = set(map(lambda x: x[0], grouped_coll_name))
+    grouped_base_dois = [[y[1:3] for y in grouped_coll_name if y[0] == x] for x in base_dois]
+
+    # Sort by publication date
+    sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
+    latest_publ = map(lambda x: x[-1], sorted_publ)
+
+    # Append to data package
+    for items in latest_publ:
+        data_packages.append(items)
+
+    # Get the path for publications
+    data_packages = [[[i, j, x[2]] for i, j in data_packages if j == x[1]] for x in org_publ_info]
+    data_packages = [x for x in data_packages if x != []]
+    data_packages = [element for innerList in data_packages for element in innerList]
+
+    # Retrieve title of data packages.
     published_packages = {}
-    for doi, path in data_packages.items():
-        published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
+    for item in data_packages:
+        published_packages[item[1]] = {"path": item[2], "title": get_title(ctx, item[2])}
 
     return published_packages
 
