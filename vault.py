@@ -1266,7 +1266,7 @@ def meta_add_new_version(ctx, new_version, previous_version):
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
             },
             "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
             "Title": "{}".format(get_title(ctx, previous_version))
@@ -1284,7 +1284,7 @@ def meta_add_new_version(ctx, new_version, previous_version):
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": "{}".format(get_title(ctx, previous_version))

@@ -292,7 +292,7 @@ def get_last_modified_datetime(ctx, vault_package):
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
 
-        my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
+        my_date = datetime.fromtimestamp(int(log_item_list[0]))
 
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
