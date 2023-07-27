@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from datetime import datetime
+
 import genquery
 
 import datacite
@@ -224,7 +226,7 @@ def set_update_publication_state(ctx, vault_package):
     # Set publication status
     publication_state["status"] = "Unknown"
 
-    # Generate new XMLs
+    # Generate new JSONs
     publication_state["combiJsonPath"] = ""
     publication_state["dataCiteJsonPath"] = ""
 
@@ -256,8 +258,6 @@ def get_publication_date(ctx, vault_package):
 
     :return: Publication date in ISO8601 format
     """
-    from datetime import datetime
-
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
@@ -292,8 +292,7 @@ def get_last_modified_datetime(ctx, vault_package):
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
 
-        import datetime
-        my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
+        my_date = datetime.fromtimestamp(int(log_item_list[0]))
 
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
