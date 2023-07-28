@@ -70,7 +70,7 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "submitted for publication")
 
-        # Store actor of submitted for pub;lication.
+        # Store actor of submitted for publication.
         vault.set_submitter(ctx, path, actor)
 
         if folder.datamanager_exists(ctx, path):

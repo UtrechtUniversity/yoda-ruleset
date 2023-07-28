@@ -250,7 +250,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
                        "dataset_warning", "datasetid"]
 
     if not is_collection:
-        # first chksum the orginal file then use it to verify the vault copy
+        # first chksum the original file then use it to verify the vault copy
         try:
             ctx.msiDataObjChksum(object_path, "forceChksum=", 0)
             ctx.msiDataObjCopy(object_path, vault_path, 'verifyChksum=', 0)
@@ -332,7 +332,7 @@ def vault_walk_ingest_object(ctx, item_parent, item_name, is_collection, buffer)
 
 
 def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
-    """Walk a subtree and perfom 'rule_to_process' per item.
+    """Walk a subtree and perform 'rule_to_process' per item.
 
     :param ctx:             Combined type of a callback and rei struct
     :param path:            Path of collection to treewalk
@@ -388,7 +388,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
 
 def vault_dataset_exists(ctx, vault_root, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
-    # Beware! extra 'ver' before version from orginal code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
+    # Beware! extra 'ver' before version from original code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
     wepv = id_components["wave"] + "_" + id_components["experiment_type"] + "_" + id_components["pseudocode"] + "_ver" + id_components["version"]
     dataset_path = vault_root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv
 
@@ -405,7 +405,7 @@ def vault_dataset_exists(ctx, vault_root, dataset_id):
 
 def get_dataset_path(root, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
-    # Beware! extra 'ver' before version from orginal code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
+    # Beware! extra 'ver' before version from original code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
     wepv = id_components["wave"] + "_" + id_components["experiment_type"] + "_" + id_components["pseudocode"] + "_ver" + id_components["version"]
 
     return root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv

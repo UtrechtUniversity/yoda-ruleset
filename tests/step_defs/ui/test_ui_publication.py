@@ -65,7 +65,7 @@ def ui_check_provenance_research(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct research folder already
     # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
-    # eventhough the folder is used several times in a different test run
+    # even though the folder is used several times in a different test run
     browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
@@ -125,7 +125,7 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
     for child in download_dir.iterdir():
         if str(child)[-5:] == ".json":
 
-            # This is dependant on the metadata schema. Now hardcoded and tested only for geo-teclab
+            # This is dependent on the metadata schema. Now hardcoded and tested only for geo-teclab
             metadata_tags = ['Main_Setting', 'Process_Hazard', 'Geological_Structure', 'Material',
                              'Apparatus', 'Monitoring', 'Software', 'Measured_Property', 'Tag']
             with open(str(child)) as json_file:

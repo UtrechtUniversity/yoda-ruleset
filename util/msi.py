@@ -69,7 +69,7 @@ def _wrap(msi, exception):
     becomes: data_obj_create(callback, x, y, z)
 
     :param msi:       MSI function to wrap
-    :param exception: Exeption to throw on failure
+    :param exception: Exception to throw on failure
 
     :returns: MSI wrapper
     """

@@ -510,7 +510,7 @@ def parse_data(ctx, csv_header_and_data):
     header = csv_lines[0]
     import_lines = csv_lines[1:]
 
-    # list of dicts each containg label / value pairs
+    # List of dicts each containing label / value pairs.
     lines = []
     header_cols = header.split(',')
     for import_line in import_lines:
@@ -1288,7 +1288,7 @@ def sram_enabled(ctx, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group
 
-    :returns: enable_sram_flag as True and SRAM CO Identfier if the group is SRAM enabled else False and empty string
+    :returns: enable_sram_flag as True and SRAM CO Identifier if the group is SRAM enabled else False and empty string
     """
     enable_sram_flag = False
     co_identifier = ''

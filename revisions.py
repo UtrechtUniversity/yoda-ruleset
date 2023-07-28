@@ -269,7 +269,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
     For load balancing purposes each data object has been randomly assigned a number (balance_id) between 1-64.
     To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
-    The corresponding job will only process data objets with a balance id within the range.
+    The corresponding job will only process data objects with a balance id within the range.
 
     :param ctx:            Combined type of a callback and rei struct
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
@@ -313,7 +313,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
                 resc = info[0]
                 balance_id = int(info[1])
             else:
-                # Backwards compatability with revision metadata created in v1.8 or earlier.
+                # Backwards compatibility with revision metadata created in v1.8 or earlier.
                 resc = row[3]
                 # Determine a balance_id for this dataobject based on its path.
                 # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel

@@ -507,7 +507,7 @@ def rule_resource_store_storage_statistics(ctx):
     dt = datetime.today()
     md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
-    # Delete previous data for this perticular day if present at all
+    # Delete previous data for this particular day if present at all
     # Each group should only have one aggrageted totals attribute per day
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE, USER_GROUP_NAME",
