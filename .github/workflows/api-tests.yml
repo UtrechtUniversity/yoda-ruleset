@@ -4,8 +4,6 @@ on:
   push:
     branches:
     - development
-    - ci-api-tests
-    - yda-5225-api-tests-in-ci
 
 jobs:
   build:
