@@ -592,8 +592,9 @@ def revision_remove(ctx, revision_id, revision_path):
 
     Called by revision-cleanup.r cronjob.
 
-    :param ctx:         Combined type of a callback and rei struct
-    :param revision_id: DATA_ID of the revision to remove
+    :param ctx:           Combined type of a callback and rei struct
+    :param revision_id:   DATA_ID of the revision to remove
+    :param revision_path: Path of the revision to remove
 
     :returns: Boolean indicating if revision was removed
     """
