@@ -248,5 +248,7 @@ iiAdminVaultArchive(*coll, *action) {
 
 # \brief Enable indexing on vault target.
 iiEnableIndexing(*target) {
-    msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
+    remote("localhost", "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME>") {
+	msiModAVUMetadata("-C", *target, "add", "irods::indexing::index", "yoda::metadata", "elasticsearch");
+    }
 }
