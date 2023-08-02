@@ -574,7 +574,8 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
         # make list of [revision_id, modify_time] pairs
         revisions = []
         for revision_id in revlist:
-            revisions.append([revision_id, rev_dict[revision_id][0]])
+            if revision_id in rev_dict:
+                revisions.append([revision_id, rev_dict[revision_id][0]])
 
         # Process the original path conform the bucket settings
         candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
