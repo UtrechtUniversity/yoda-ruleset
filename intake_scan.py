@@ -652,7 +652,7 @@ def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
 
 
 def dataset_make_id(scope):
-    """Construct a dateset based on WEPV and directory.
+    """Construct a dataset based on WEPV and directory.
 
     :param scope: Create a dataset id
 

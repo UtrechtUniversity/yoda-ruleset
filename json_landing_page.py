@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
@@ -230,7 +230,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         related_datapackages = []
 
-    # Presence of rel_resources and rel_datapackage is mutually exlusive.
+    # Presence of rel_resources and rel_datapackage is mutually exclusive.
     all_related_resources = related_resources + related_datapackages
 
     try:

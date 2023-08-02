@@ -172,7 +172,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
                          "wave": '',
                          "version": ''}
 
-            # per data object get relevent metadata (experiment type, version, wave, pseudocode) if present
+            # per data object get relevant metadata (experiment type, version, wave, pseudocode) if present
             iter2 = genquery.row_iterator(
                 "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
                 "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "' AND META_DATA_ATTR_NAME in ('experiment_type', 'pseudocode', 'wave', 'version')",
@@ -191,7 +191,7 @@ def api_intake_list_datasets(ctx, coll):
     """Get list of datasets for given path.
 
     A dataset is distinguished by attribute name 'dataset_toplevel' which can either reside on a collection or a data object.
-    That is why 2 seperate queries have to be performed.
+    That is why 2 separate queries have to be performed.
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection from which to list all datasets

@@ -158,7 +158,7 @@ def vault_archive(ctx, actor, coll):
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, actor, datamanager, coll, message)
 
-        log.write(ctx, "Data package <{}> scheduled for archving by <{}>".format(coll, actor))
+        log.write(ctx, "Data package <{}> scheduled for archiving by <{}>".format(coll, actor))
 
         return "Success"
 

@@ -269,7 +269,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
     For load balancing purposes each data object has been randomly assigned a number (balance_id) between 1-64.
     To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
-    The corresponding job will only process data objets with a balance id within the range.
+    The corresponding job will only process data objects with a balance id within the range.
 
     :param ctx:            Combined type of a callback and rei struct
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
@@ -313,7 +313,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
                 resc = info[0]
                 balance_id = int(info[1])
             else:
-                # Backwards compatability with revision metadata created in v1.8 or earlier.
+                # Backwards compatibility with revision metadata created in v1.8 or earlier.
                 resc = row[3]
                 # Determine a balance_id for this dataobject based on its path.
                 # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
@@ -537,59 +537,74 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     # get definition of buckets
     buckets = revision_bucket_list(ctx, bucketcase)
 
-    # step through entire revision store and per item apply the bucket strategy
+    # first, get original_path and ids for every revision
     iter = genquery.row_iterator(
-        "META_DATA_ATTR_VALUE",
+        "order(META_DATA_ATTR_VALUE), order_desc(DATA_ID)",
         "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "'"
         " AND COLL_NAME like '" + revision_store + "%'",
         genquery.AS_LIST, ctx
     )
-
+    path_dict = {}
     for row in iter:
         original_path = row[0]
-        # Get all related revisions
-        revisions = get_revision_list(ctx, original_path)
+        revision_id = row[1]
+        if original_path in path_dict:
+            path_dict[original_path].append(revision_id)
+        else:
+            path_dict[original_path] = [revision_id]
+
+    # second, get id, path and modify time for every revision
+    iter = genquery.row_iterator(
+        "DATA_ID, COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
+        "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_modify_time' + "'"
+        " AND COLL_NAME like '" + revision_store + "%'",
+        genquery.AS_LIST, ctx
+    )
+    rev_dict = {}
+    for row in iter:
+        revision_id = row[0]
+        path = row[1] + "/" + row[2]
+        modify_time = row[3]
+        if revision_id in rev_dict:
+            rev_dict[revision_id].append([modify_time, path])
+        else:
+            rev_dict[revision_id] = [[modify_time, path]]
+
+    for revlist in path_dict.values():
+        # make list of [revision_id, modify_time] pairs
+        revisions = []
+        for revision_id in revlist:
+            if revision_id in rev_dict:
+                revisions.append([revision_id, rev_dict[revision_id][0]])
 
         # Process the original path conform the bucket settings
         candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
-            if not revision_remove(ctx, revision_id):
+            if not revision_remove(ctx, revision_id, rev_dict[revision_id][1]):
                 return 'Something went wrong cleaning up revision store'
 
     return 'Successfully cleaned up the revision store'
 
 
-def revision_remove(ctx, revision_id):
+def revision_remove(ctx, revision_id, revision_path):
     """Remove a revision from the revision store.
 
     Called by revision-cleanup.r cronjob.
 
-    :param ctx:         Combined type of a callback and rei struct
-    :param revision_id: DATA_ID of the revision to remove
+    :param ctx:           Combined type of a callback and rei struct
+    :param revision_id:   DATA_ID of the revision to remove
+    :param revision_path: Path of the revision to remove
 
     :returns: Boolean indicating if revision was removed
     """
-    zone = user.zone(ctx)
-    revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
-
-    # Check presence of specific revision in revision store
-    iter = genquery.row_iterator(
-        "COLL_NAME, DATA_NAME",
-        "DATA_ID = '" + revision_id + "' AND COLL_NAME like '" + revision_store + "%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        # revision is found
-        try:
-            revision_path = row[0] + '/' + row[1]
-            msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
-            return True
-        except msi.Error:
-            log.write(ctx, "ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
-            return False
+    try:
+        msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
+        return True
+    except msi.Error:
+        log.write(ctx, "ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
+        return False
 
     log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
     return False
@@ -648,44 +663,6 @@ def revision_bucket_list(ctx, case):
             [WEEKS * 8, 2, 0],
             [WEEKS * 16, 2, 0]
         ]
-
-
-def get_revision_list(ctx, path):
-    """Returns list of all revisions
-
-    Format: [dataId, timestamp of modification] in descending order where org_original_path=path
-
-    :param ctx:   Combined type of a callback and rei struct
-    :param path:  Path of original
-
-    :returns: List of all revisions
-    """
-    candidates = []
-    zone = user.zone(ctx)
-    revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
-
-    iter = genquery.row_iterator(
-        "DATA_ID, order_desc(DATA_ID)",
-        "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "original_path" + "'  "
-        " AND META_DATA_ATTR_VALUE = '" + path + "' "
-        " AND COLL_NAME like '" + revision_store + "%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        # Get modification time
-        modify_time = 0
-        iter2 = genquery.row_iterator(
-            "META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "original_modify_time" + "' "
-            "AND DATA_ID = '" + row[0] + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            modify_time = int(row2[0])
-        candidates.append([row[0], modify_time])
-
-    return candidates
 
 
 def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):

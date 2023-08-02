@@ -45,7 +45,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
 
     For load balancing purposes each data object has been randomly assigned a number (balance_id) between 1-64.
     To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
-    The corresponding job will only process data objets with a balance id within the range.
+    The corresponding job will only process data objects with a balance id within the range.
 
     :param ctx:            Combined type of a callback and rei struct
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
@@ -85,7 +85,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             from_path = info[0]
             to_path = info[1]
 
-            # Backwards compatability with replication metadata created in v1.8 or earlier.
+            # Backwards compatibility with replication metadata created in v1.8 or earlier.
             backwards_compatibility = False
 
             if len(info) == 3:

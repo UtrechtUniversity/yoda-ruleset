@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from datetime import datetime
+
 import genquery
 
 import datacite
@@ -292,8 +294,7 @@ def get_last_modified_datetime(ctx, vault_package):
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
 
-        import datetime
-        my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
+        my_date = datetime.fromtimestamp(int(log_item_list[0]))
 
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
@@ -584,7 +585,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
 
 def check_doi_availability(ctx, publication_state, type_flag):
-    """Request DOI to check on availibity. We want a 404 as return code.
+    """Request DOI to check on availability. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
@@ -781,7 +782,7 @@ def process_publication(ctx, vault_package):
                 log.write(ctx, "Error status after checking version DOI availability.")
             return publication_state["status"]
 
-    # Determine wether an update ('put') or create ('post') message has to be sent to datacite
+    # Determine whether an update ('put') or create ('post') message has to be sent to datacite
     datacite_action = 'post'
     try:
         if publication_state['versionDOIMinted'] == 'yes' or publication_state['DOIMinted'] == 'yes':
@@ -874,7 +875,7 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             if verbose:
-                log.write(ctx, "Error status after uplaoding to MOAI.")
+                log.write(ctx, "Error status after uploading to MOAI.")
             return publication_state["status"]
 
     # Set access restriction for vault package.
@@ -1247,7 +1248,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
-    # Publication must be finsished.
+    # Publication must be finished.
     if status != "OK":
         return status
 

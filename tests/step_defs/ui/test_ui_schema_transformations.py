@@ -111,7 +111,7 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
                                           "Natural Sciences - Physical sciences (1.3)"]
         assert metadata["Collected"] == {"Start_Date": "2000-01-01", "End_Date": "2010-01-01"}
         assert metadata["Tag"] == ["key1", "key2"]
-        # research group has to be converted to a contributer with type ResearchGroup
+        # research group has to be converted to a contributor with type ResearchGroup
         assert metadata["Contributor"][1] == {"Affiliation": ["Affiliation"],
                                               "Name": {
                                               "Family_Name": "",
