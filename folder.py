@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import subprocess
 import uuid
 
 import genquery
@@ -245,6 +246,10 @@ def folder_secure(ctx, coll, target):
 
     ctx.iiCopyFolderToVault(coll, target)
     """
+    # Enable indexing on vault target.
+    if collection_group_name(ctx, coll).startswith("deposit-"):
+        subprocess.call(["imeta", "add", "-C", target, "irods::indexing::index", "yoda::metadata", "elasticsearch"])
+
     # Starting point of last part of securing a folder into the vault
     msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]

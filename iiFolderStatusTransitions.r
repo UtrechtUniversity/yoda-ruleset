@@ -254,14 +254,6 @@ iiFolderSecure(*folder) {
 	# Copy to vault.
 	iiCopyFolderToVault(*folder, *target);
 
-    # Enable indexing on vault target.
-    iiCollectionGroupName(*folder, *groupName);
-    *groupElems = split(*groupName, "-");
-    *groupSpace = elem(*groupElems, 0);
-    if (*groupSpace == "deposit") {
-        iiEnableIndexing(*target);
-    }
-
     # Continue securing process in PREP.
     *return = "";
     rule_folder_secure(*folder, *target, *return);
