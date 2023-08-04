@@ -48,6 +48,9 @@ token_database                 =
 token_length                   =
 token_lifetime                 =
 
+async_replication_delay_time   =
+async_revision_delay_time      =
+
 enable_tape_archive            =
 
 temporary_files                =

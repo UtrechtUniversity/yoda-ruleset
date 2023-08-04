@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 import genquery
 import irods_types
 
@@ -52,12 +54,17 @@ def rule_replicate_batch(ctx, verbose):
     else:
         log.write(ctx, "[replication] Batch replication job started")
 
-        # Get list of data objects scheduled for replication.
-        iter = genquery.row_iterator(
-            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '{}'".format(attr),
-            genquery.AS_LIST, ctx
-        )
+        # Modification timestamps are recorded as varchar in iCAT, and GenQuery doesn't support casts, so
+        # we need to fill the minimum timestamp with leading zeroes in order to be able to compare against
+        # it in the following query.
+        minimum_timestamp = str(int(time.time()) - int(config.async_replication_delay_time)).zfill(11)
+
+        # Get list of up to 1000 data objects scheduled for replication, taking into account their modification time.
+        iter = list(genquery.Query(ctx,
+                    ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
+                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME <= '{}'".format(attr, minimum_timestamp),
+                    output=genquery.AS_LIST))
+
         for row in iter:
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
