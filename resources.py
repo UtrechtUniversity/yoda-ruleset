@@ -626,9 +626,9 @@ def rule_resource_store_storage_statistics(ctx):
                 if group.startswith(('intake', 'grp')):
                     avu.associate_to_group(ctx, group, md_storage_date, storage_val_other)
 
-                log.write(ctx, 'Storage data collected and stored for current month')
+                log.write(ctx, 'Storage data collected and stored for current month <{}>'.format(group))
             else:  # except Exception:
-                log.write(ctx, 'Skipping group as not prefixed with either research-, deposit-, intake- or grp-')
+                log.write(ctx, 'Skipping group as not prefixed with either research-, deposit-, intake- or grp- <{}>'.format(group))
 
     return 'ok'
 
