@@ -292,10 +292,20 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
     else:
         log.write(ctx, "Batch revision job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
 
-        # Get list up to 1000 data objects (in research space) scheduled for revision.
+        # Modification timestamps are recorded as varchar in iCAT, and GenQuery doesn't support casts, so
+        # we need to fill the minimum timestamp with leading zeroes in order to be able to compare against
+        # it in the following query.
+        minimum_timestamp = str(int(time.time()) - int(config.async_revision_delay_time)).zfill(11)
+
+        # Get list up to 1000 data objects (in research space) scheduled for revision, taking into account
+        # modification time.
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
-                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%'".format(attr, user.zone(ctx), constants.IIGROUPPREFIX),
+                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%' AND DATA_MODIFY_TIME <= '{}'".format(
+                        attr,
+                        user.zone(ctx),
+                        constants.IIGROUPPREFIX,
+                        minimum_timestamp),
                     offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked revision process.
