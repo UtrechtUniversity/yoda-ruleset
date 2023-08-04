@@ -41,37 +41,65 @@
                 </div>
         </header>
         <main>
-            <div class="creators">
-                <div class="row">
-                    <div class="col-sm-12">
-                        {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
+            <div>
+                <div class="row row-override">
+                    <div class="col-lg-8">
+                        <div class="creators">
+                            {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
+                        </div>
+                        <section class="content">
+                            <h2>{{ title }}</h2>
+                            <div class="meta">
+                                <label>Publication Date:</label>
+                                <span class="date">{{ publication_date }}</span>
+                                <label>Accessibility:</label>
+                                <span>{{ data_access_restriction }}</span>
+                            </div>
+                            <p class="description">{{ description }}</p>
+                            <div class="keywords">
+                                <label>Keywords</label>
+                                {% for tag in tags %}
+                                <span class="keyword">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </section>
                     </div>
-                </div>
-
-            </div>
-            <section class="content">
-                <h2>{{ title }}</h2>
-                <div class="meta">
-                    <label>Publication Date:</label>
-                    <span class="date">{{ publication_date }}</span>
-                    <label>Accessibility:</label>
-                    <span>{{ data_access_restriction }}</span>
-                </div>
-                <p class="description">{{ description }}</p>
-                <div class="keywords">
-                    <label>Keywords</label>
-                    {% for tag in tags %}
-                    <span class="keyword">{{ tag }}</span>
-                    {% endfor %}
+                    <div class="col-lg-4 pb-3 pt-3 version-div">
+                        <h4 class="version-title">Versions</h4>
+                        <div>
+                            {% if base_doi %}
+                                <table class="table table-sm">
+                                    <tbody class="version-tbody">
+                                        {% for version in all_versions %}
+                                            <tr>
+                                                <td>
+                                                    <a class="version-a" href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                </td>
+                                                <td>
+                                                    <small title="{{version[2]}}">{{version[0]}}</small>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <small>
+                                    <b>Base DOI:</b>
+                                    <a class="version-a" href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                    This DOI represents all versions of this publication and will resolve to the latest publication.
+                                </small>
+                            {% else %}
+                                <p>There are no previous versions of this publication. </p>
+                            {% endif%}
+                        </div>
+                    </div>
                 </div>
                 <hr />
                 {%if data_access_restriction.startswith('Open') %}
                 <a class="btn btn-primary access-btn" target="_blank" href="{{ open_access_link }}">
-                            View contents
-                        </a>
+                    View contents
+                </a>
                 {% endif %}
-
-            </section>
+            </div>
             <section class="metadata">
                 <h2>Metadata</h2>
                 <div class="list">
