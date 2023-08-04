@@ -49,6 +49,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
     :param json_schema:   Dict holding entire contents of metadata.json for the category involved
+    :param baseDOI:       Base DOI of the publication
     :param versions:      Dict containing all the versions of the publication
 
     :return: Output HTML landing page
