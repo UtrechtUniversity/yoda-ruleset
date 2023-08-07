@@ -1404,8 +1404,8 @@ def get_all_versions(ctx, path, doi):
     sorted_publ = [element for innerList in sorted_publ for element in innerList]
 
     # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
-    sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), 
-                    x[2], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
+    sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                    datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
 
     all_versions = []
 
