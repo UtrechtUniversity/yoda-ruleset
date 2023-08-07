@@ -234,7 +234,7 @@ def set_update_publication_state(ctx, vault_package):
     # Set publication status
     publication_state["status"] = "Unknown"
 
-    # Generate new XMLs
+    # Generate new JSONs
     publication_state["combiJsonPath"] = ""
     publication_state["dataCiteJsonPath"] = ""
 
@@ -266,8 +266,6 @@ def get_publication_date(ctx, vault_package):
 
     :return: Publication date in ISO8601 format
     """
-    from datetime import datetime
-
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
@@ -1405,13 +1403,15 @@ def get_all_versions(ctx, path, doi):
 
     sorted_publ = [element for innerList in sorted_publ for element in innerList]
 
-    sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2], x[3], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
+    # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+    sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), 
+                    x[2], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
 
     all_versions = []
 
     for item in sorted_publ:
         if item[0] == doi:
-            all_versions.append([item[1], item[2], item[4]])
+            all_versions.append([item[1], item[2], item[3]])
 
     return all_versions
 

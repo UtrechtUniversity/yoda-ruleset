@@ -42,7 +42,7 @@
         </header>
         <main>
             <div>
-                <div class="row row-override">
+                <div class="row ml-3 mr-5 pr-4">
                     <div class="col-lg-8">
                         <div class="creators">
                             {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
@@ -64,16 +64,16 @@
                             </div>
                         </section>
                     </div>
-                    <div class="col-lg-4 pb-3 pt-3 version-div">
-                        <h4 class="version-title">Versions</h4>
-                        <div>
-                            {% if base_doi %}
+                    {% if base_doi %}
+                        <div class="col-lg-4 pb-3 pt-3 mt-3 version">
+                            <h4 class="version">Versions</h4>
+                            <div>
                                 <table class="table table-sm">
-                                    <tbody class="version-tbody">
+                                    <tbody class="version">
                                         {% for version in all_versions %}
                                             <tr>
                                                 <td>
-                                                    <a class="version-a" href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                    <a class="version" href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
                                                 </td>
                                                 <td>
                                                     <small title="{{version[2]}}">{{version[0]}}</small>
@@ -84,14 +84,12 @@
                                 </table>
                                 <small>
                                     <b>Base DOI:</b>
-                                    <a class="version-a" href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                    <a class="version" href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
                                     This DOI represents all versions of this publication and will resolve to the latest publication.
                                 </small>
-                            {% else %}
-                                <p>There are no previous versions of this publication. </p>
-                            {% endif%}
+                            </div>
                         </div>
-                    </div>
+                    {% endif%}
                 </div>
                 <hr />
                 {%if data_access_restriction.startswith('Open') %}
