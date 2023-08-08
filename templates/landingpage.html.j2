@@ -42,12 +42,12 @@
         </header>
         <main>
             <div>
-                <div class="row ml-3 mr-5 pr-4">
+                <div class="row pr-4 content">
                     <div class="col-lg-8">
                         <div class="creators">
                             {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
                         </div>
-                        <section class="content">
+                        <section>
                             <h2>{{ title }}</h2>
                             <div class="meta">
                                 <label>Publication Date:</label>
@@ -65,28 +65,30 @@
                         </section>
                     </div>
                     {% if base_doi %}
-                        <div class="col-lg-4 pb-3 pt-3 mt-3 version">
-                            <h4>Versions</h4>
-                            <div>
-                                <table class="table table-sm">
-                                    <tbody>
-                                        {% for version in all_versions %}
-                                            <tr>
-                                                <td>
-                                                    <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
-                                                </td>
-                                                <td>
-                                                    <small title="{{version[2]}}">{{version[0]}}</small>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                <small>
-                                    <b>Base DOI:</b>
-                                    <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
-                                    This DOI represents all versions of this publication and will resolve to the latest publication.
-                                </small>
+                        <div class="col-lg-4 mt-4">
+                            <div class="p-3 version">
+                                <h4>Versions</h4>
+                                <div>
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            {% for version in all_versions %}
+                                                <tr>
+                                                    <td>
+                                                        <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                    </td>
+                                                    <td>
+                                                        <small title="{{version[2]}}">{{version[0]}}</small>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <small>
+                                        <b>Base DOI:</b>
+                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                        This DOI represents all versions of this publication and will resolve to the latest publication.
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     {% endif%}
