@@ -54,15 +54,11 @@ def rule_replicate_batch(ctx, verbose):
     else:
         log.write(ctx, "[replication] Batch replication job started")
 
-        # Modification timestamps are recorded as varchar in iCAT, and GenQuery doesn't support casts, so
-        # we need to fill the minimum timestamp with leading zeroes in order to be able to compare against
-        # it in the following query.
-        minimum_timestamp = str(int(time.time()) - int(config.async_replication_delay_time)).zfill(11)
+        minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
-        # Get list of up to 1000 data objects scheduled for replication, taking into account their modification time.
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
-                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME <= '{}'".format(attr, minimum_timestamp),
+                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME n<= '{}'".format(attr, minimum_timestamp),
                     output=genquery.AS_LIST))
 
         for row in iter:
