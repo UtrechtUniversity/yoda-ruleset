@@ -82,7 +82,10 @@ def generate_combi_json(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     combiJsonPath = temp_coll + "/" + randomId + "-combi.json"
 
-    versionDOI = publication_state["versionDOI"]
+    if "versionDOI" in publication_state:
+        versionDOI = publication_state["versionDOI"]
+    else:
+        versionDOI = publication_state['yodaDOI']
     lastModifiedDateTime = publication_state["lastModifiedDateTime"]
     publicationDate = publication_state["publicationDate"]
 
@@ -117,12 +120,17 @@ def generate_system_json(ctx, publication_state):
     randomId = publication_state["randomId"]
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
+    if "versionDOI" in publication_state:
+        doi = publication_state["versionDOI"]
+    else:
+        doi = publication_state["yodaDOI"]
+
     system_json_data = {
         "System": {
             "Last_Modified_Date": publication_state["lastModifiedDateTime"],
             "Persistent_Identifier_Datapackage": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": publication_state["versionDOI"],
+                "Identifier": doi,
             },
             "Publication_Date": publication_state["publicationDate"]
         }
@@ -493,12 +501,21 @@ def generate_landing_page(ctx, publication_state, publish):
     temp_coll, coll = pathutil.chop(combiJsonPath)
     landing_page_path = temp_coll + "/" + randomId + ".html"
 
+    # Get all DOI versions
+    if "baseDOI" in publication_state:
+        base_doi = publication_state["baseDOI"]
+        versions = get_all_versions(ctx, vaultPackage, publication_state["baseDOI"])
+        log.write(ctx, versions)
+    else:
+        base_doi = ''
+        versions = []
+
     if publish == "publish":
         template_name = 'landingpage.html.j2'
     else:
         template_name = 'emptylandingpage.html.j2'
 
-    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema)
+    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema, base_doi, versions)
 
     data_object.write(ctx, landing_page_path, landing_page_html)
 
@@ -1250,6 +1267,11 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     if status != "OK":
         return status
 
+    update_base_doi = False
+    if "baseDOI" in publication_state:
+        if "previous_version" in publication_state and "next_version" not in publication_state:
+            update_base_doi = True
+
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
@@ -1283,7 +1305,12 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Send DataCite JSON to metadata end point
         try:
-            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'])
+            if "versionDOI" in publication_state:
+                post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
+            else:
+                post_metadata_to_datacite(ctx, publication_state, publication_state["yodaDOI"], 'put')
+            if update_base_doi:
+                post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1308,6 +1335,9 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         # Use secure copy to push landing page to the public host
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+        if update_base_doi:
+            base_random_id = publication_state["baseRandomId"]
+            copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1318,6 +1348,9 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+        if update_base_doi:
+            base_random_id = publication_state["baseRandomId"]
+            copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1350,6 +1383,37 @@ def get_collection_metadata(ctx, coll, prefix):
         coll_metadata[row[0][len(prefix):]] = row[1]
 
     return coll_metadata
+
+
+def get_all_versions(ctx, path, doi):
+    """Get all the version DOI of published data package in a vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of the published data package
+    :param doi:  Version DOI of the selected publication
+
+    :return: Dict of related version DOIs
+    """
+    coll_parent_name = path.rsplit('/', 1)[0]
+
+    org_publ_info, data_packages, grouped_base_dois = vault.get_all_doi_versions(ctx, coll_parent_name)
+
+    # Sort by publication date
+    sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f"), reverse=True) for x in grouped_base_dois]
+
+    sorted_publ = [element for innerList in sorted_publ for element in innerList]
+
+    # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+    sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                    datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
+
+    all_versions = []
+
+    for item in sorted_publ:
+        if item[0] == doi:
+            all_versions.append([item[1], item[2], item[3]])
+
+    return all_versions
 
 
 """Rule interface for processing publication of a vault package."""

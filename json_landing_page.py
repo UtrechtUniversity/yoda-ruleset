@@ -41,7 +41,7 @@ def persistent_identifier_to_uri(identifier_scheme, identifier):
     return uri
 
 
-def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
+def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema, baseDOI, versions):
     """Get the landing page of published YoDa metadata as a string.
 
     :param callback:      Callback to rule Language
@@ -49,6 +49,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
     :param json_schema:   Dict holding entire contents of metadata.json for the category involved
+    :param baseDOI:       Base DOI of the publication
+    :param versions:      Dict containing all the versions of the publication
 
     :return: Output HTML landing page
     """
@@ -283,6 +285,16 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         collection_name = ''
 
+    try:
+        base_doi = baseDOI
+    except KeyError:
+        base_doi = ''
+
+    try:
+        all_versions = versions
+    except KeyError:
+        all_versions = []
+
     tm = Template(template)
     # tm.globals['custom_function'] = custom_function
     tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
@@ -311,6 +323,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         related_resources=all_related_resources,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
         geolocations=geolocations,
-        covered_geolocation_place=covered_geolocation_place)
+        covered_geolocation_place=covered_geolocation_place,
+        base_doi=base_doi,
+        all_versions=all_versions)
 
     return landing_page

@@ -1298,15 +1298,15 @@ def meta_add_new_version(ctx, new_version, previous_version):
         meta_form.save(ctx, new_version, metadata)
 
 
-@api.make()
-def api_vault_get_published_packages(ctx, path):
+def get_all_doi_versions(ctx, path):
     """Get the path and DOI of latest versions of published data package in a vault.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path of vault with data packages
+    :param ctx:     Combined type of a callback and rei struct
+    :param path:    Path of vault with data packages
 
     :return: Dict of data packages with DOI
     """
+
     iter = genquery.row_iterator(
         "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, GROUP(COLL_NAME)",
         "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
@@ -1321,38 +1321,49 @@ def api_vault_get_published_packages(ctx, path):
 
     # Group by collection name
     coll_names = set(map(lambda x: x[2], org_publ_info))
-    grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] for x in coll_names]
+    grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] + [x] for x in coll_names]
 
     # If base DOI does not exist, remove from the list and add it in the data package
     number_of_items = list(map(len, grouped_coll_name))
-    indices = [i for i, x in enumerate(number_of_items) if x < 3]
+    indices = [i for i, x in enumerate(number_of_items) if x < 4]
 
     for item in indices:
-        data_packages.append(grouped_coll_name[item])
+        data_packages.append([0] + grouped_coll_name[item])
 
     grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
 
     # Group by base DOI
     base_dois = set(map(lambda x: x[0], grouped_coll_name))
-    grouped_base_dois = [[y[1:3] for y in grouped_coll_name if y[0] == x] for x in base_dois]
+    grouped_base_dois = [[y for y in grouped_coll_name if y[0] == x] for x in base_dois]
+
+    return org_publ_info, data_packages, grouped_base_dois
+
+
+@api.make()
+def api_vault_get_published_packages(ctx, path):
+    """Get the path and DOI of latest versions of published data package in a vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of vault with data packages
+
+    :return: Dict of data packages with DOI
+    """
+
+    org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, path)
 
     # Sort by publication date
-    sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
+    sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
+
     latest_publ = map(lambda x: x[-1], sorted_publ)
 
     # Append to data package
     for items in latest_publ:
         data_packages.append(items)
 
-    # Get the path for publications
-    data_packages = [[[i, j, x[2]] for i, j in data_packages if j == x[1]] for x in org_publ_info]
-    data_packages = [x for x in data_packages if x != []]
-    data_packages = [element for innerList in data_packages for element in innerList]
-
     # Retrieve title of data packages.
     published_packages = {}
     for item in data_packages:
-        published_packages[item[1]] = {"path": item[2], "title": get_title(ctx, item[2])}
+        published_packages[item[2]] = {"path": item[3], "title": get_title(ctx, item[3])}
 
     return published_packages
 
