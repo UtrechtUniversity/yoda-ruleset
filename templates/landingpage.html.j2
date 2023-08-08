@@ -66,14 +66,14 @@
                     </div>
                     {% if base_doi %}
                         <div class="col-lg-4 pb-3 pt-3 mt-3 version">
-                            <h4 class="version">Versions</h4>
+                            <h4>Versions</h4>
                             <div>
                                 <table class="table table-sm">
-                                    <tbody class="version">
+                                    <tbody>
                                         {% for version in all_versions %}
                                             <tr>
                                                 <td>
-                                                    <a class="version" href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                    <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
                                                 </td>
                                                 <td>
                                                     <small title="{{version[2]}}">{{version[0]}}</small>
@@ -84,7 +84,7 @@
                                 </table>
                                 <small>
                                     <b>Base DOI:</b>
-                                    <a class="version" href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                    <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
                                     This DOI represents all versions of this publication and will resolve to the latest publication.
                                 </small>
                             </div>
