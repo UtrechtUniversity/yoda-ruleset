@@ -93,13 +93,9 @@
                 </div>
                 <hr />
                 {%if data_access_restriction.startswith('Open') %}
-                <div class="row ml-5">
-                    <div class="col-lg-12 pl-4">
-                        <a class="btn btn-primary access-btn" target="_blank" href="{{ open_access_link }}">
-                            View contents
-                        </a>
-                    </div>
-                </div>
+                <a class="btn btn-primary access-btn view-contents" target="_blank" href="{{ open_access_link }}">
+                    View contents
+                </a>
                 {% endif %}
             </div>
             <section class="metadata">
