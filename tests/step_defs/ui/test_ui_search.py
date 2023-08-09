@@ -89,15 +89,3 @@ def ui_search_result(browser, file):
     assert False
     # if rows are present, that is good enough
     assert len(link) == 0
-
-    
-    # link = []
-
-    # while len(link) == 0:
-    #    link = browser.find_by_css(".search-results").links.find_by_partial_text(result)
-    #    if len(link) > 0:
-    #        assert browser.is_text_present(result)
-    #   else:
-    #        browser.find_by_css('#search_next a.page-link').click()
-    #        # browser.find_by_id('search_next').click()
-    ###
