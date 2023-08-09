@@ -248,7 +248,8 @@ def folder_secure(ctx, coll, target):
     """
     # Enable indexing on vault target.
     if collection_group_name(ctx, coll).startswith("deposit-"):
-        subprocess.call(["imeta", "add", "-C", target, "irods::indexing::index", "yoda::metadata", "elasticsearch"])
+        msi.coll_create(ctx, coll + "/index", "", irods_types.BytesBuf())
+        subprocess.call(["imeta", "add", "-C", coll + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
 
     # Starting point of last part of securing a folder into the vault
     msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
