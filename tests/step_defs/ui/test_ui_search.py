@@ -24,7 +24,7 @@ def ui_search_file(browser, file):
 
 
 @when(parsers.parse("the user top-searches by filename with {file}"))
-def ui_search_file(browser, file):
+def ui_search_top_file(browser, file):
     browser.find_by_css('.container button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=filename]').click()
     browser.find_by_css('input#q').fill(file)
@@ -40,7 +40,7 @@ def ui_search_folder(browser, folder):
 
 
 @when(parsers.parse("the user top-searches by folder with {folder}"))
-def ui_search_folder(browser, folder):
+def ui_search_top_folder(browser, folder):
     browser.find_by_css('.container button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=folder]').click()
     browser.find_by_css('input#q').fill(folder)
@@ -56,7 +56,7 @@ def ui_search_metadata(browser, metadata):
 
 
 @when(parsers.parse("the user top-searches by metadata with {metadata}"))
-def ui_search_metadata(browser, metadata):
+def ui_search_top_metadata(browser, metadata):
     browser.find_by_css('.container button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=metadata]').click()
     browser.find_by_css('input#q').fill(metadata)
@@ -72,7 +72,7 @@ def ui_search_status(browser, status):
 
 
 @when(parsers.parse("the user top-searches by folder status with {status}"))
-def ui_search_status(browser, status):
+def ui_search_top_status(browser, status):
     browser.find_by_css('.container button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=status]').click()
     browser.find_by_css('.top-search-status').click()
