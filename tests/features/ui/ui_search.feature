@@ -9,7 +9,18 @@ Feature: Search UI
 
         Examples:
             | file               | result                                |
-            | yoda-metadata.json | /research-initial1/yoda-metadata.json |
+            | yoda-metadata.json | yoda-metadata.json |
+
+
+    Scenario Outline: Search file using top search functionality
+        Given user researcher is logged in
+        When the user top-searches by filename with <file>
+        Then result <result> is found
+
+        Examples:
+            | file               | result             |
+            | yoda-metadata.json | yoda-metadata.json |
+
 
     Scenario Outline: Search folder
         Given user researcher is logged in
@@ -21,6 +32,16 @@ Feature: Search UI
             | folder            | result             |
             | research-initial1 | /research-initial1 |
 
+    Scenario Outline: Search folder starting from top search
+        Given user researcher is logged in
+        When the user top-searches by folder with <folder>
+        Then result <result> is found
+
+        Examples:
+            | folder            | result             |
+            | research-initial1 | /research-initial1 |
+
+
     Scenario Outline: Search metadata
         Given user researcher is logged in
         And module "search" is shown
@@ -28,8 +49,19 @@ Feature: Search UI
         Then result <result> is found
 
         Examples:
-            | metadata | result             |
-            | yoda     | /research-initial1 |
+            | metadata | result     |
+            | yoda     | /research- |
+           
+
+    Scenario Outline: Search metadata starting from top search functionality
+        Given user researcher is logged in
+        When the user top-searches by metadata with <metadata>
+        Then result <result> is found
+
+        Examples:
+            | metadata | result     |
+            | yoda     | /research- |
+
 
     Scenario Outline: Search folder status
         Given user researcher is logged in
@@ -38,5 +70,15 @@ Feature: Search UI
         Then result <result> is found
 
         Examples:
-            | status           | result             |
-            | research:SECURED | /research-initial1 |
+            | status           | result     |
+            | research:SECURED | /research- |
+           
+
+    Scenario Outline: Search folder status starting from top-search functionality
+        Given user researcher is logged in
+        When the user top-searches by folder status with <status>
+        Then result <result> is found
+
+        Examples:
+            | status           | result     |
+            | research:SECURED | /research- |
