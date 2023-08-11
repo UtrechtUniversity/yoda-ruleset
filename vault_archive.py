@@ -142,7 +142,7 @@ def extract_archive(ctx, coll):
         log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
         raise Exception("Archive is not available")
 
-    bagit.extract(ctx, coll + "/archive.tar", coll + "/archive")
+    bagit.extract(ctx, coll + "/archive.tar", coll + "/archive", resource=config.resource_vault)
 
 
 def vault_archive(ctx, actor, coll):

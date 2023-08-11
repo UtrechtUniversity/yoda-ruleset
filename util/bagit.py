@@ -75,8 +75,8 @@ def create(ctx, archive, coll, resource):
     ctx.iiCopyACLsFromParent(archive, "default")
 
 
-def extract(ctx, archive, coll):
-    ret = msi.archive_extract(ctx, archive, coll, 0, 0, 0)
+def extract(ctx, archive, coll, resource=0):
+    ret = msi.archive_extract(ctx, archive, coll, 0, resource, 0)
     if ret < 0:
         log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))
         raise Exception("Archive extraction failed: {}".format(ret))
