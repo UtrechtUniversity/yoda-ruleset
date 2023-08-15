@@ -9,10 +9,10 @@ import re
 from collections import OrderedDict
 from datetime import datetime
 
-from deepdiff import DeepDiff
-
 import genquery
 import irods_types
+
+from deepdiff import DeepDiff
 
 import avu_json
 import provenance
