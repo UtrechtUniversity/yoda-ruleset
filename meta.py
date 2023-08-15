@@ -11,7 +11,6 @@ from datetime import datetime
 
 import genquery
 import irods_types
-
 from deepdiff import DeepDiff
 
 import avu_json
