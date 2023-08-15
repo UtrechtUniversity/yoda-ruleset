@@ -504,8 +504,7 @@ def generate_landing_page(ctx, publication_state, publish):
     # Get all DOI versions
     if "baseDOI" in publication_state:
         base_doi = publication_state["baseDOI"]
-        versions = get_all_versions(ctx, vaultPackage, publication_state["baseDOI"])
-        log.write(ctx, versions)
+        versions = get_all_versions(ctx, vaultPackage, publication_state["baseDOI"])[0]
     else:
         base_doi = ''
         versions = []
@@ -934,6 +933,11 @@ def process_publication(ctx, vault_package):
             if verbose:
                 log.write(ctx, "Updating previous version AVU.")
             avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
+            if verbose:
+                log.write(ctx, "Updating previous version landing page.")
+            previous_versions = get_all_versions(ctx, publication_state["previous_version"], publication_state["baseDOI"])[1]
+            for item in previous_versions[1:]:
+                update_publication(ctx, item[1], update_datacite=False, update_landingpage=True, update_moai=False)
     else:
         # The publication was a success
         if verbose:
@@ -1405,15 +1409,17 @@ def get_all_versions(ctx, path, doi):
 
     # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
     sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
-                    datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z')] for x in sorted_publ]
+                    datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in sorted_publ]
 
     all_versions = []
+    all_previous_versions = []
 
     for item in sorted_publ:
         if item[0] == doi:
             all_versions.append([item[1], item[2], item[3]])
+            all_previous_versions.append([item[2], item[4]])
 
-    return all_versions
+    return all_versions, all_previous_versions
 
 
 """Rule interface for processing publication of a vault package."""

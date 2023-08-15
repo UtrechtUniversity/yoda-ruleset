@@ -5,8 +5,10 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+import json
 from collections import OrderedDict
 from datetime import datetime
+from deepdiff import DeepDiff
 
 import genquery
 import irods_types
@@ -106,7 +108,6 @@ def get_json_metadata_errors(callback,
     # return map(transform_error, errors)
 
     # Can't serialize OrderedDict, so transform to dicts.
-    import json
     schema = json.loads(json.dumps(schema))
     metadata = json.loads(json.dumps(metadata))
 
@@ -556,6 +557,11 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Make sure rods has access to the json file.
     client_full_name = user.full_name(ctx)
 
+    # Get the metadata before the ingest
+    previous_metadata = get_latest_vault_metadata_path(ctx, vault_pkg_path)
+    prev_json = jsonutil.read(ctx, previous_metadata)
+    prev_json_data = json.loads(json.dumps(prev_json))
+
     try:
         ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
@@ -593,17 +599,38 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
                    .format(json_path, dest))
         return
 
+    # Get the metadata after the ingest
+    latest_metadata = get_latest_vault_metadata_path(ctx, vault_pkg_path)
+    current_json = jsonutil.read(ctx, latest_metadata)
+    current_json_data = json.loads(json.dumps(current_json))
+
     try:
         callback.iiCopyACLsFromParent(dest, 'default')
     except Exception:
         set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
         return
 
+    # Log the difference between the metadata before and after the ingest
+
+    meta_diff = DeepDiff(prev_json_data, current_json_data)
+
+    for i in meta_diff:
+        item_list = []
+        for item in meta_diff[i].keys():
+            m = re.match("root\['(.*?)'\]", item)
+            if m:
+                item_list.append(m.group(1))
+        log.write(ctx, item_list)
+
+        if len(item_list) < 5:
+            item_list = ', '.join(item_list)
+            provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata: {} {}'.format(i.split('_')[-1], item_list))
+        else:
+            item_list = ', '.join(item_list[:4])
+            provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata: {} {} and more'.format(i.split('_')[-1], item_list))
+
     # Write license file.
     vault.vault_write_license(ctx, vault_pkg_path)
-
-    # Log actions.
-    provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
 
     # Cleanup staging area.
     try:
