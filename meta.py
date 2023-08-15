@@ -4,10 +4,11 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import json
+import re
 from collections import OrderedDict
 from datetime import datetime
+
 from deepdiff import DeepDiff
 
 import genquery
