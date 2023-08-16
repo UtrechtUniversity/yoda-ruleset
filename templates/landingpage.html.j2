@@ -42,7 +42,7 @@
         </header>
         <main>
             <div>
-                <div class="row pr-4 content">
+                <div class="row content">
                     <div class="col-lg-8">
                         <div class="creators">
                             {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
