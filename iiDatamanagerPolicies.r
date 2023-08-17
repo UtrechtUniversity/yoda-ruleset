@@ -25,7 +25,16 @@ acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 # \param[in] policyKv
 #
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	*actor = *policyKv.actor;
+	# Initially current user will be set as actor.
+	# If policyKv holds another, then that actor will override.
+	*actor = uuClientFullName;
+	foreach(*key in *policyKv) {
+		if (*key == "actor") {
+			*actor = *policyKv.actor
+			break;
+		}
+	}
+
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
 	writeLine("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
 	if (*allowed) {
