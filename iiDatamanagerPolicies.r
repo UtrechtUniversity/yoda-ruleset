@@ -25,22 +25,15 @@ acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 # \param[in] policyKv
 #
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-        # It is incorrect to assume that attribute 'actor' exists. Or even *policyKv.
-        # If it is not, an error will occur: RE_TYPE_ERROR
-	# *actor = *policyKv.actor;
-
-        # Initially current user will be set as actor.
-        # If policyKv holds another, then that actor will overrule the initial setting.
-        # If no actor is set, this will lead to the error: UNMATCHED_KEY_OR_INDEX
-        *actor = uuClientFullName;
-        foreach(*key in *policyKv) {
-            if (*key == "actor") {
-                *actor = *policyKv.actor
-                writeLine("serverLog", "actor found");
-                writeLine("serverLog", *actor);
-                break;
-            }
-        }
+	# Initially current user will be set as actor.
+	# If policyKv holds another, then that actor will override.
+	*actor = uuClientFullName;
+	foreach(*key in *policyKv) {
+		if (*key == "actor") {
+			*actor = *policyKv.actor
+			break;
+		}
+	}
 
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
 	writeLine("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
