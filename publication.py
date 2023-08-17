@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 
 import genquery
+from requests.exceptions import ReadTimeout
 
 import datacite
 import json_datacite
@@ -369,20 +370,25 @@ def post_metadata_to_datacite(ctx, publication_state, doi, send_method):
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
-    if send_method == 'post':
-        httpCode = datacite.metadata_post(ctx, datacite_json)
-    else:
-        httpCode = datacite.metadata_put(ctx, doi, datacite_json)
+    try:
+        if send_method == 'post':
+            httpCode = datacite.metadata_post(ctx, datacite_json)
+        else:
+            httpCode = datacite.metadata_put(ctx, doi, datacite_json)
 
-    if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
-        publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
+            publication_state["dataCiteMetadataPosted"] = "yes"
+        elif httpCode in [401, 403, 500, 503, 504]:
+            # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+            log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            publication_state["status"] = "Retry"
+        else:
+            log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            publication_state["status"] = "Unrecoverable"
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "post_metadata_to_datacite: timeout received. Will be retried later")
         publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
 
 
 def post_draft_doi_to_datacite(ctx, publication_state):
@@ -395,25 +401,30 @@ def post_draft_doi_to_datacite(ctx, publication_state):
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
-    # post the DOI only
-    httpCode = datacite.metadata_post(ctx, {
-        'data': {
-            'type': 'dois',
-            'attributes': {
-                'doi': datacite_json['data']['attributes']['doi']
+    try:
+        # post the DOI only
+        httpCode = datacite.metadata_post(ctx, {
+            'data': {
+                'type': 'dois',
+                'attributes': {
+                    'doi': datacite_json['data']['attributes']['doi']
+                }
             }
-        }
-    })
+        })
 
-    if httpCode == 201:
-        publication_state["dataCiteMetadataPosted"] = "no"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        if httpCode == 201:
+            publication_state["dataCiteMetadataPosted"] = "no"
+        elif httpCode in [401, 403, 500, 503, 504]:
+            # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+            log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            publication_state["status"] = "Retry"
+        else:
+            log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            publication_state["status"] = "Unrecoverable"
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "post_draft_doi_to_datacite: timeout received. Will be retried later")
         publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
 
 
 def remove_metadata_from_datacite(ctx, publication_state, type_flag):
@@ -426,21 +437,26 @@ def remove_metadata_from_datacite(ctx, publication_state, type_flag):
     import json
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
+    try:
+        httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
 
-    if httpCode == 200:
-        publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in [401, 403, 412, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        if httpCode == 200:
+            publication_state["dataCiteMetadataPosted"] = "yes"
+        elif httpCode in [401, 403, 412, 500, 503, 504]:
+            # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+            log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            publication_state["status"] = "Retry"
+        elif httpCode == 404:
+            # Invalid DOI
+            log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
+            publication_state["status"] = "Unrecoverable"
+        else:
+            log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            publication_state["status"] = "Unrecoverable"
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "remove_metadata_from_datacite: timeout received. Will be retried later")
         publication_state["status"] = "Retry"
-    elif httpCode == 404:
-        # Invalid DOI
-        log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
-        publication_state["status"] = "Unrecoverable"
-    else:
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
 
 
 def mint_doi(ctx, publication_state, type_flag):
@@ -453,20 +469,25 @@ def mint_doi(ctx, publication_state, type_flag):
     import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
+    try:
+        httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
 
-    if httpCode == 200:  # 201:
-        publication_state[type_flag + "DOIMinted"] = "yes"
-    elif httpCode in [401, 403, 412, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
+        if httpCode == 200:  # 201:
+            publication_state[type_flag + "DOIMinted"] = "yes"
+        elif httpCode in [401, 403, 412, 500, 503, 504]:
+            # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+            log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
+            publication_state["status"] = "Retry"
+        elif httpCode == 400:
+            log.write(ctx, "mint_doi: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix")
+            publication_state["status"] = "Unrecoverable"
+        else:
+            log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            publication_state["status"] = "Unrecoverable"
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "mint_doi: timeout received. Will be retried later")
         publication_state["status"] = "Retry"
-    elif httpCode == 400:
-        log.write(ctx, "mint_doi: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix")
-        publication_state["status"] = "Unrecoverable"
-    else:
-        log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
 
 
 def generate_landing_page_url(ctx, publication_config, publication_state):
@@ -587,7 +608,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
     try:
         msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-    except msi.Error:
+    except Exception:
         publication_state["status"] = "Unrecoverable"
         return
 
@@ -607,16 +628,22 @@ def check_doi_availability(ctx, publication_state, type_flag):
     """
     DOI = publication_state[type_flag + "DOI"]
     log.write(ctx, publication_state[type_flag + "DOI"])
-    httpCode = datacite.metadata_get(ctx, DOI)
 
-    if httpCode == 404:
-        publication_state[type_flag + "DOIAvailable"] = "yes"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # request failed, worth a retry
-        publication_state["status"] = "Retry"
-    elif httpCode in [200, 204]:
-        # DOI already in use
-        publication_state[type_flag + "DOIAvailable"] = "no"
+    try:
+        httpCode = datacite.metadata_get(ctx, DOI)
+
+        if httpCode == 404:
+            publication_state[type_flag + "DOIAvailable"] = "yes"
+        elif httpCode in [401, 403, 500, 503, 504]:
+            # request failed, worth a retry
+            publication_state["status"] = "Retry"
+        elif httpCode in [200, 204]:
+            # DOI already in use
+            publication_state[type_flag + "DOIAvailable"] = "no"
+            publication_state["status"] = "Retry"
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "check_doi_availability: timeout received. Will be retried later")
         publication_state["status"] = "Retry"
 
 
@@ -692,7 +719,7 @@ def process_publication(ctx, vault_package):
                 # Set the link to previous publication state
                 previous_publication_state["baseDOI"] = publication_state["baseDOI"]
                 previous_publication_state["baseRandomId"] = publication_state["baseRandomId"]
-            except msi.Error:
+            except Exception:
                 if verbose:
                     log.write(ctx, "Error while checking version DOI availability.")
                 publication_state["status"] = "Retry"
@@ -742,7 +769,7 @@ def process_publication(ctx, vault_package):
 
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except msi.Error:
+        except Exception:
             if verbose:
                 log.write(ctx, "Exception while generating combi JSON.")
             publication_state["status"] = "Unrecoverable"
@@ -765,7 +792,7 @@ def process_publication(ctx, vault_package):
             log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
-        except msi.Error:
+        except Exception:
             if verbose:
                 log.write(ctx, "Error while generating Datacite JSON.")
             publication_state["status"] = "Unrecoverable"
@@ -784,7 +811,7 @@ def process_publication(ctx, vault_package):
 
         try:
             check_doi_availability(ctx, publication_state, 'version')
-        except msi.Error:
+        except Exception:
             if verbose:
                 log.write(ctx, "Error while checking version DOI availability.")
             publication_state["status"] = "Retry"
@@ -821,7 +848,7 @@ def process_publication(ctx, vault_package):
                     log.write(ctx, "Updating base DOI.")
                 base_doi = publication_state['baseDOI']
                 post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action)
-        except msi.Error:
+        except Exception:
             if verbose:
                 log.write(ctx, "Error while sending metadata to Datacite.")
             publication_state["status"] = "Retry"
@@ -840,7 +867,7 @@ def process_publication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except msi.Error:
+        except Exception:
             if verbose:
                 log.write(ctx, "Error while sending metadata to Datacite.")
             publication_state["status"] = "Unrecoverable"
@@ -996,7 +1023,7 @@ def process_depublication(ctx, vault_package):
     if "combiJsonPath" not in publication_state:
         try:
             generate_system_json(ctx, publication_state)
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1010,7 +1037,7 @@ def process_depublication(ctx, vault_package):
             remove_metadata_from_datacite(ctx, publication_state, 'version')
             if update_base_doi:
                 remove_metadata_from_datacite(ctx, publication_state, 'base')
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1023,7 +1050,7 @@ def process_depublication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "depublish")
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1127,7 +1154,7 @@ def process_republication(ctx, vault_package):
     if "combiJsonPath" not in publication_state:
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1139,7 +1166,7 @@ def process_republication(ctx, vault_package):
     if "dataCiteJsonPath" not in publication_state:
         try:
             generate_datacite_json(ctx, publication_state)
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1154,7 +1181,7 @@ def process_republication(ctx, vault_package):
 
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put')
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1167,7 +1194,7 @@ def process_republication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1286,7 +1313,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     # Generate Combi Json consisting of user and system metadata
     try:
         generate_combi_json(ctx, publication_config, publication_state)
-    except msi.Error:
+    except Exception:
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1299,7 +1326,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         log.write(ctx, 'Update datacite for package {}'.format(vault_package))
         try:
             generate_datacite_json(ctx, publication_state)
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1315,7 +1342,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
                 post_metadata_to_datacite(ctx, publication_state, publication_state["yodaDOI"], 'put')
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1328,7 +1355,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except msi.Error:
+        except Exception:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
