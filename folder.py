@@ -246,11 +246,6 @@ def folder_secure(ctx, coll, target):
 
     ctx.iiCopyFolderToVault(coll, target)
     """
-    # Enable indexing on vault target.
-    if collection_group_name(ctx, coll).startswith("deposit-"):
-        msi.coll_create(ctx, coll + "/index", "", irods_types.BytesBuf())
-        subprocess.call(["imeta", "add", "-C", coll + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
-
     # Starting point of last part of securing a folder into the vault
     msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
@@ -262,6 +257,10 @@ def folder_secure(ctx, coll, target):
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
     vault.vault_write_license(ctx, target)
+
+    # Enable indexing on vault target.
+    if config.enable_open_search and collection_group_name(ctx, coll).startswith("deposit-"):
+        subprocess.call(["imeta", "add", "-C", target + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
 
     # Copy provenance log from research folder to vault package.
     provenance.provenance_copy_log(ctx, coll, target)
