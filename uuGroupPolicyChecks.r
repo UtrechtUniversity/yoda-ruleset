@@ -540,6 +540,13 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
         } else {
             *reason = "Cannot modify settings of other user.";
         }
+    # User setting: Color mode
+    } else if (*attribute == "org_settings_color_mode") {
+        if (*actor == *userName || *actorUserType == "rodsadmin") {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
     # User notifications
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;

@@ -34,7 +34,24 @@ Feature: Settings UI
             | technicaladmin | LIST    |
             | technicaladmin | TREE    |
 
+
+    Scenario Outline: Save user settings for color mode
+        Given user <user> is logged in
+        And module "user/settings" is shown
+        When user sets color mode to <type>
+        And clicks the save button
+        Then color mode is set to <type>
+
+        Examples:
+            | user           | type    |
+            | researcher     | AUTO    |
+            | researcher     | LIGHT   |
+            | researcher     | DARK    |
+            | technicaladmin | AUTO    |
+            | technicaladmin | LIGHT   |
+            | technicaladmin | DARK    |
     
+
     Scenario Outline: Save user settings
         Given user <user> is logged in
         And module "user/settings" is shown
