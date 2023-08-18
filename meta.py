@@ -637,7 +637,6 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     except Exception:
         # Log provenance without the differences
         provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
-        return
 
     # Write license file.
     vault.vault_write_license(ctx, vault_pkg_path)
