@@ -82,7 +82,7 @@ def api_vault_approve(ctx, coll):
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
     if ret[0] == '':
-        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        log.write(ctx, 'api_vault_approve: iiAdminVaultActions')
         ctx.iiAdminVaultActions()
         return 'Success'
     else:
