@@ -380,67 +380,68 @@ def ingest_metadata_staging(ctx, path):
 
 def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
-    ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+    msi.coll_create(ctx, path, "", irods_types.BytesBuf())
+    ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
 
     for creator in metadata['Creator']:
         name = creator['Name']
         if 'Given_Name' in name and 'Family_Name' in name:
-            ctx.msi_add_avu('-d', path, 'Creator',
+            ctx.msi_add_avu('-C', path, 'Creator',
                             name['Given_Name'] + ' ' + name['Family_Name'],
                             constants.UUFLATINDEX)
         if 'Owner_Role' in creator:
-            ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
+            ctx.msi_add_avu('-C', path, 'Owner_Role', creator['Owner_Role'],
                             constants.UUFLATINDEX)
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
             name = contributor['Name']
             if 'Given_Name' in name and 'Family_Name' in name:
-                ctx.msi_add_avu('-d', path, 'Contributor',
+                ctx.msi_add_avu('-C', path, 'Contributor',
                                 name['Given_Name'] + ' ' + name['Family_Name'],
                                 constants.UUFLATINDEX)
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
-            ctx.msi_add_avu('-d', path, 'Tag', tag,
+            ctx.msi_add_avu('-C', path, 'Tag', tag,
                             constants.UUFLATINDEX)
 
-    ctx.msi_add_avu('-d', path, 'Title', metadata['Title'],
+    ctx.msi_add_avu('-C', path, 'Title', metadata['Title'],
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path,  'Description', metadata['Description'],
+    ctx.msi_add_avu('-C', path,  'Description', metadata['Description'],
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path, 'Data_Access_Restriction',
+    ctx.msi_add_avu('-C', path, 'Data_Access_Restriction',
                     metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
     if 'Research_Group' in metadata:
-        ctx.msi_add_avu('-d', path, 'Research_Group',
+        ctx.msi_add_avu('-C', path, 'Research_Group',
                         metadata['Research_Group'], constants.UUFLATINDEX)
     if 'Collection_Name' in metadata:
-        ctx.msi_add_avu('-d', path, 'Collection_Name',
+        ctx.msi_add_avu('-C', path, 'Collection_Name',
                         metadata['Collection_Name'], constants.UUFLATINDEX)
     if 'Collected' in metadata:
         if 'Start_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-d', path, 'Collected_Start_Year',
+            ctx.msi_add_avu('-C', path, 'Collected_Start_Year',
                             metadata['Collected']['Start_Date'][:4],
                             constants.UUFLATINDEX)
         if 'End_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-d', path, 'Collected_End_Year',
+            ctx.msi_add_avu('-C', path, 'Collected_End_Year',
                             metadata['Collected']['End_Date'][:4],
                             constants.UUFLATINDEX)
 
     if 'GeoLocation' in metadata:
         for geoLocation in metadata['GeoLocation']:
             if 'Description_Spatial' in geoLocation:
-                ctx.msi_add_avu('-d', path, 'Description_Spatial', geoLocation['Description_Spatial'],
+                ctx.msi_add_avu('-C', path, 'Description_Spatial', geoLocation['Description_Spatial'],
                                 constants.UUFLATINDEX)
 
-    ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
+    ctx.msi_add_avu('-C', path, 'Creation_Time', creation_time,
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path, 'Creation_Year',
+    ctx.msi_add_avu('-C', path, 'Creation_Year',
                     str(datetime.fromtimestamp(int(creation_time)).year),
                     constants.UUFLATINDEX)
 
     if config.enable_data_package_reference:
-        ctx.msi_add_avu('-d', path, 'Data_Package_Reference', data_package,
+        ctx.msi_add_avu('-C', path, 'Data_Package_Reference', data_package,
                         constants.UUFLATINDEX)
 
 
@@ -482,7 +483,7 @@ def ingest_metadata_vault(ctx, path):
 
     # Update flat index metadata for OpenSearch.
     if config.enable_open_search:
-        update_index_metadata(ctx, path, metadata, creation_time, data_package)
+        update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
