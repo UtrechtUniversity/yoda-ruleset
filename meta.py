@@ -635,7 +635,6 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
                 list_of_changes = ', '.join(item_list[item][:4])
                 provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {} and more'.format(item.replace('changed', 'modified'), list_of_changes))
     except Exception:
-        set_result('FailedToGetDetailedDiff', 'Failed to get the details of difference in metadata before and after the ingest')
         # Log provenance without the differences
         provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
         return
