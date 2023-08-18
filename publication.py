@@ -627,7 +627,6 @@ def check_doi_availability(ctx, publication_state, type_flag):
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
     DOI = publication_state[type_flag + "DOI"]
-    log.write(ctx, publication_state[type_flag + "DOI"])
 
     try:
         httpCode = datacite.metadata_get(ctx, DOI)
@@ -707,7 +706,6 @@ def process_publication(ctx, vault_package):
             # Set the link to previous publication state
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
             publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]
-            publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
 
         # Create base DOI if it does not exist in the previous publication state.
         elif "baseDOI" not in previous_publication_state:
@@ -935,7 +933,7 @@ def process_publication(ctx, vault_package):
     if "versionDOIMinted" not in publication_state and "DOIMinted" not in publication_state:
         if verbose:
             log.write(ctx, "Minting DOI.")
-        mint_doi(ctx, publication_state, 'version')   # see notes
+        mint_doi(ctx, publication_state, 'version')
 
         if update_base_doi:
             if verbose:

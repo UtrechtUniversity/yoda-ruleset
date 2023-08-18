@@ -611,23 +611,34 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Log the difference between the metadata before and after the ingest
+    try:
+        meta_diff = DeepDiff(prev_json_data, current_json_data)
+        item_list = {}
+        for i in meta_diff:
+            action = i.split('_')[-1]
+            item_list[action] = []
+            if i.startswith('dictionary'):
+                keys = meta_diff[i]
+            else:
+                keys = meta_diff[i].keys()
+            if keys:
+                for item in keys:
+                    m = re.match("root\['(.*?)'\]", item)
+                    if m:
+                        item_list[action].append(m.group(1).replace('_', ' '))
 
-    meta_diff = DeepDiff(prev_json_data, current_json_data)
-
-    for i in meta_diff:
-        item_list = []
-        for item in meta_diff[i].keys():
-            m = re.match("root\['(.*?)'\]", item)
-            if m:
-                item_list.append(m.group(1))
-        log.write(ctx, item_list)
-
-        if len(item_list) < 5:
-            item_list = ', '.join(item_list)
-            provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata: {} {}'.format(i.split('_')[-1], item_list))
-        else:
-            item_list = ', '.join(item_list[:4])
-            provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata: {} {} and more'.format(i.split('_')[-1], item_list))
+        for item in item_list:
+            if len(item_list[item]) < 5:
+                list_of_changes = ', '.join(item_list[item])
+                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {}'.format(item.replace('changed', 'modified'), list_of_changes))
+            else:
+                list_of_changes = ', '.join(item_list[item][:4])
+                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {} and more'.format(item.replace('changed', 'modified'), list_of_changes))
+    except Exception:
+        set_result('FailedToGetDetailedDiff', 'Failed to get the details of difference in metadata before and after the ingest')
+        # Log provenance without the differences
+        provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
+        return
 
     # Write license file.
     vault.vault_write_license(ctx, vault_pkg_path)
