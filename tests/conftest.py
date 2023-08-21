@@ -214,6 +214,25 @@ def api_request(user, request, data, timeout=10):
     return (response.status_code, body)
 
 
+def api_request_get(request, timeout=10):
+    # Simple API GET request 
+    # Disable unsecure connection warning.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    # Make API request.
+    url = api_url + "/" + request
+    if verbose_test:
+        print("Processing API GET request")
+    response = requests.get(url, verify=False, timeout=timeout)
+
+    # Remove debug info from response body.
+    body = response.json()
+    if "debug_info" in body:
+        del body["debug_info"]
+
+    return (response.status_code, body)
+
+
 def upload_data(user, file, folder, file_content="test"):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
