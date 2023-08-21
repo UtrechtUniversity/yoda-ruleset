@@ -215,7 +215,7 @@ def api_request(user, request, data, timeout=10):
 
 
 def api_request_get(request, timeout=10):
-    # Simple API GET request 
+    # Simple API GET request
     # Disable unsecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

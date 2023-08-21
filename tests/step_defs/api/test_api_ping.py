@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
     scenarios,
     then,
 )
@@ -26,9 +25,9 @@ def api_ping(user):
 
 
 @then("response has valid sessions")
-def api_ping_response_correct(api_response):
+def api_ping_response_valid(api_response):
     _, body = api_response
-    assert body ==   {'validity flask session': True, 'validity irods session': True}
+    assert body == {'validity flask session': True, 'validity irods session': True}
 
 
 @given('the Yoda ping API is queried without user', target_fixture="api_response")
@@ -39,6 +38,6 @@ def api_ping_without_user():
 
 
 @then("response has no valid sessions")
-def api_ping_response_correct(api_response):
+def api_ping_response_not_valid(api_response):
     _, body = api_response
-    assert body ==   {'validity flask session': False, 'validity irods session': False}
+    assert body == {'validity flask session': False, 'validity irods session': False}
