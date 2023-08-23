@@ -2,7 +2,7 @@
 #
 # Transform existing publications according to the new changes in the publication process.
 # This script handles converting all the prefixes from yoda to version. 
-# Additionally, this script will also add prefix version to DOIAvailable and DOI Minted variables.
+# Additionally, this script will add prefix version to DOIAvailable and DOI Minted variables.
 #
 # 
 import subprocess
