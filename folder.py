@@ -258,7 +258,8 @@ def folder_secure(ctx, coll, target):
     vault.vault_write_license(ctx, target)
 
     # Enable indexing on vault target.
-    vault.vault_enable_indexing(ctx, target)
+    if collection_group_name(ctx, coll).startswith("deposit-"):
+        vault.vault_enable_indexing(ctx, target)
 
     # Copy provenance log from research folder to vault package.
     provenance.provenance_copy_log(ctx, coll, target)
