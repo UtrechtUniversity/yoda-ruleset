@@ -258,8 +258,7 @@ def folder_secure(ctx, coll, target):
     vault.vault_write_license(ctx, target)
 
     # Enable indexing on vault target.
-    if config.enable_open_search and collection_group_name(ctx, coll).startswith("deposit-"):
-        subprocess.call(["imeta", "add", "-C", target + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
+    vault.vault_enable_indexing(ctx, target)
 
     # Copy provenance log from research folder to vault package.
     provenance.provenance_copy_log(ctx, coll, target)

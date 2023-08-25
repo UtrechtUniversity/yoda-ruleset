@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import itertools
 import os
 import re
+import subprocess
 import time
 from datetime import datetime
 
@@ -32,6 +33,8 @@ __all__ = ['api_vault_submit',
            'api_vault_unpreservable_files',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
+           'rule_vault_enable_indexing',
+           'rule_vault_disable_indexing',
            'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
@@ -451,6 +454,42 @@ def vault_write_license(ctx, vault_pkg_coll):
             avu.set_on_coll(ctx, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
             log.write(ctx, "rule_vault_write_license: License URI not available for <{}>".format(license))
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_enable_indexing(ctx, coll):
+    vault_enable_indexing(ctx, coll)
+    return "Success"
+
+
+def vault_enable_indexing(ctx, coll):
+    if config.enable_open_search and folder.collection_group_name(ctx, coll).startswith("deposit-"):
+        if not collection.exists(ctx, coll + "/index"):
+            # index collection does not exist yet
+            path = meta.get_latest_vault_metadata_path(ctx, coll)
+            ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+            meta.ingest_metadata_vault(ctx, path)
+
+        # add indexing attribute and update opensearch
+        subprocess.call(["imeta", "add", "-C", coll + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_disable_indexing(ctx, coll):
+    vault_disable_indexing(ctx, coll)
+    return "Success"
+
+
+def vault_disable_indexing(ctx, coll):
+    if config.enable_open_search and folder.collection_group_name(ctx, coll).startswith("deposit-"):
+        if collection.exists(ctx, coll + "/index"):
+            coll = coll + "/index"
+
+        # tricky: remove indexing attribute without updating opensearch
+        try:
+            msi.mod_avu_metadata(ctx, "-C", coll, "rm", "irods::indexing::index", "yoda::metadata", "elasticsearch")
+        except Exception:
+            pass
 
 
 @api.make()
