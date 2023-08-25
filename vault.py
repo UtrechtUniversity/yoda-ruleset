@@ -378,7 +378,7 @@ def rule_vault_enable_indexing(ctx, coll):
 
 
 def vault_enable_indexing(ctx, coll):
-    if config.enable_open_search and folder.collection_group_name(ctx, coll).startswith("deposit-"):
+    if config.enable_open_search:
         if not collection.exists(ctx, coll + "/index"):
             # index collection does not exist yet
             path = meta.get_latest_vault_metadata_path(ctx, coll)
@@ -396,7 +396,7 @@ def rule_vault_disable_indexing(ctx, coll):
 
 
 def vault_disable_indexing(ctx, coll):
-    if config.enable_open_search and folder.collection_group_name(ctx, coll).startswith("deposit-"):
+    if config.enable_open_search:
         if collection.exists(ctx, coll + "/index"):
             coll = coll + "/index"
 
