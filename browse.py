@@ -82,7 +82,7 @@ def api_browse_folder(ctx,
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%' AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(coll, zone, zone),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
@@ -182,7 +182,7 @@ def api_browse_collections(ctx,
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%' AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(coll, zone, zone),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
@@ -279,6 +279,9 @@ def api_search(ctx,
         where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
                 status_name, status_value, "/" + zone + "/home"
         )
+
+    # exclude index collections
+    where = where + " AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(zone)
 
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
