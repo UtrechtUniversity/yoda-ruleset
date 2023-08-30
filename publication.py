@@ -82,11 +82,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
     vaultPackage = publication_state["vaultPackage"]
     randomId = publication_state["randomId"]
     combiJsonPath = temp_coll + "/" + randomId + "-combi.json"
-
-    if "versionDOI" in publication_state:
-        versionDOI = publication_state["versionDOI"]
-    else:
-        versionDOI = publication_state['yodaDOI']
+    versionDOI = publication_state["versionDOI"]
     lastModifiedDateTime = publication_state["lastModifiedDateTime"]
     publicationDate = publication_state["publicationDate"]
 
@@ -121,10 +117,7 @@ def generate_system_json(ctx, publication_state):
     randomId = publication_state["randomId"]
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
-    if "versionDOI" in publication_state:
-        doi = publication_state["versionDOI"]
-    else:
-        doi = publication_state["yodaDOI"]
+    doi = publication_state["versionDOI"]
 
     system_json_data = {
         "System": {
@@ -737,14 +730,14 @@ def process_publication(ctx, vault_package):
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     # DOI handling
-    if "versionDOI" not in publication_state and "yodaDOI" not in publication_state:
+    if "versionDOI" not in publication_state:
         if verbose:
             log.write(ctx, "Generating preliminary DOI.")
         generate_preliminary_DOI(ctx, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
-    elif "versionDOIAvailable" in publication_state or "DOIAvailable" in publication_state:
+    elif "versionDOIAvailable" in publication_state:
         if publication_state["versionDOIAvailable"] == "no":
             if verbose:
                 log.write(ctx, "Version DOI available: no")
@@ -803,7 +796,7 @@ def process_publication(ctx, vault_package):
             return publication_state["status"]
 
     # Check if DOI is in use
-    if "versionDOIAvailable" not in publication_state and "DOIAvailable" not in publication_state:
+    if "versionDOIAvailable" not in publication_state:
         if verbose:
             log.write(ctx, "Checking whether version DOI is available.")
 
@@ -824,7 +817,7 @@ def process_publication(ctx, vault_package):
     # Determine whether an update ('put') or create ('post') message has to be sent to datacite
     datacite_action = 'post'
     try:
-        if publication_state['versionDOIMinted'] == 'yes' or publication_state['DOIMinted'] == 'yes':
+        if publication_state['versionDOIMinted'] == 'yes':
             datacite_action = 'put'
     except KeyError:
         pass
@@ -930,7 +923,7 @@ def process_publication(ctx, vault_package):
             return publication_state["status"]
 
     # Mint DOI with landing page URL.
-    if "versionDOIMinted" not in publication_state and "DOIMinted" not in publication_state:
+    if "versionDOIMinted" not in publication_state:
         if verbose:
             log.write(ctx, "Minting DOI.")
         mint_doi(ctx, publication_state, 'version')
@@ -1334,10 +1327,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Send DataCite JSON to metadata end point
         try:
-            if "versionDOI" in publication_state:
-                post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
-            else:
-                post_metadata_to_datacite(ctx, publication_state, publication_state["yodaDOI"], 'put')
+            post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
         except Exception:

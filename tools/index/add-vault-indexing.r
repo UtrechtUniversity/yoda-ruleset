@@ -9,7 +9,9 @@ addVaultIndexing {
 	*vaultHome = "/" ++ $rodsZoneClient ++ "/home/vault-pilot";
 	if (uuCollectionExists(*vaultHome)) {
 		foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *vaultHome) {
-			msiExecCmd("enable-indexing.sh", *row.COLL_NAME, "", "", 0, *out);
+			*coll = *row.COLL_NAME;
+			*out = "";
+			rule_vault_enable_indexing(*coll, *out);
 		}
 	}
 }
