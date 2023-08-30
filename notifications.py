@@ -19,8 +19,8 @@ from genquery import Query
 import data_access_token
 import folder
 import mail
-import settings
 import meta
+import settings
 from util import *
 
 __all__ = ['api_notifications_load',
