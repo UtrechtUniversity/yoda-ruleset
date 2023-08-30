@@ -337,6 +337,10 @@ def api_resource_monthly_category_stats(ctx):
     current_month = datetime.now().month
     current_year = datetime.now().year
 
+    # Initialize to prevent errors in log when no data has been registered yet.
+    min_year = -1
+    min_month = -1
+
     # find minimal registered date registered.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
                                "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
@@ -345,6 +349,10 @@ def api_resource_monthly_category_stats(ctx):
     for row in iter:
         min_year = int(row[0][-10:-6])
         min_month = int(row[0][-5:-3])
+
+    if min_month == -1:
+        # if min_month == -1 no minimal date was found. Consequently, stop further processing
+        return {'storage': [], 'dates': []}
 
     # Prepare storage data
     # Create dict with all groups that will contain list of storage values corresponding to complete range from minimal date till now.
