@@ -20,6 +20,7 @@ import data_access_token
 import folder
 import mail
 import settings
+import meta
 from util import *
 
 __all__ = ['api_notifications_load',
@@ -28,6 +29,7 @@ __all__ = ['api_notifications_load',
            'rule_mail_notification_report',
            'rule_process_ending_retention_packages',
            'rule_process_groups_expiration_date',
+           'rule_process_inactive_research_groups',
            'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
@@ -342,6 +344,86 @@ def rule_process_groups_expiration_date(ctx):
             log.write(ctx, 'group expiration date - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
 
     log.write(ctx, 'group expiration date - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
+
+
+@rule.make()
+def rule_process_inactive_research_groups(ctx):
+    """Rule interface for checking for research groups that have not been modified after a certain amount of months.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # Only send notifications if inactivity notifications are enabled.
+    if config.inactivity_notification == 0:
+        return
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "inactive research group - Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, 'inactive research group - Checking Research packages for last modification dates')
+
+    zone = user.zone(ctx)
+    notify_count = 0
+    inactivity_cutoff = datetime.now() - timedelta(weeks=4.35 * config.inactivity_cutoff_months)
+    inactivity_cutoff_epoch = int((inactivity_cutoff - datetime(1970, 1, 1)).total_seconds())
+
+    # First query: obtain a list of groups with group attributes
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        group_name = row[0]
+        coll = '/{}/home/{}'.format(zone, group_name)
+        coll_general = '/{}/home/{}%'.format(zone, group_name)
+
+        # Second query: check if there are any files in the group, including files in the sub-folders
+        # If there are no files we do not want to notify about lack of activity
+        iter_data = genquery.row_iterator(
+            "DATA_NAME, COLL_NAME",
+            "COLL_NAME like '{}' AND USER_GROUP_NAME = '{}'".format(coll_general, group_name),
+            genquery.AS_LIST, ctx
+        )
+
+        if iter_data.total_rows() > 0:
+            # Trigger this flag if there are any files that have been modified after the cut off
+            # If the flag is still false after going through all the files, then that is when we send the notification
+            recent_files_modified = False
+
+            for sub_row in iter_data:
+                sub_coll = sub_row[1]
+
+                # Third query: see a list of any files that have been modified after the inactivity cut off
+                iter_recent_data = genquery.row_iterator(
+                    "DATA_NAME",
+                    "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME n> '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
+                    genquery.AS_LIST, ctx
+                )
+
+                if iter_recent_data.total_rows() > 0:
+                    recent_files_modified = True
+                    break
+
+            if not recent_files_modified:
+                # find corresponding datamanager
+                category = group.get_category(ctx, group_name)
+                datamanager_group_name = "datamanager-" + category
+                if group.exists(ctx, datamanager_group_name):
+                    notify_count += 1
+                    # Send notifications to datamanager(s).
+                    datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                    message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
+
+                    for datamanager in datamanagers:
+                        datamanager = '{}#{}'.format(*datamanager)
+                        actor = 'system'
+                        set(ctx, actor, datamanager, coll, message)
+                    log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
+
+    log.write(ctx, 'inactive research group - Finished checking research groups for inactivity | notified: {}'.format(notify_count))
 
 
 @rule.make()
