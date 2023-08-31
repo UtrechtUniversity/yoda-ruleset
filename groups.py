@@ -390,7 +390,7 @@ def api_group_data(ctx):
         creation_date = ""
         iter = genquery.row_iterator(
             "COLL_CREATE_TIME",
-            "COLL_NAME = '/tempZone/home/{}'".format(group['name']),
+            "COLL_NAME = '/{}/home/{}'".format(user.zone(ctx), group['name']),
             genquery.AS_LIST, ctx
         )
         for row in iter:
