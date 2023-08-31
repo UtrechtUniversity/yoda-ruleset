@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import datetime
 import hashlib
+import json
 import os
 import random
 import time
@@ -21,6 +22,7 @@ __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
            'rule_revision_batch',
+           'rule_revisions_info',
            'rule_revisions_clean_up']
 
 
@@ -521,15 +523,10 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
     return revision_created
 
 
-@rule.make(inputs=range(2), outputs=range(2, 3))
-def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
-    """Step through entire revision store and apply the chosen bucket strategy.
-
-    :param ctx:              Combined type of a callback and rei struct
-    :param bucketcase:       Multiple ways of cleaning up revisions can be chosen.
-    :param endOfCalendarDay: If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
-
-    :returns: String with status of cleanup
+@rule.make(inputs=[], outputs=[0])
+def rule_revisions_info(ctx):
+    """Obtain information about all revisions.
+    :returns: Json string with info about revisions
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -537,13 +534,6 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     if user.user_type(ctx) == 'rodsadmin':
         msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
         msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
-
-    end_of_calendar_day = int(endOfCalendarDay)
-    if end_of_calendar_day == 0:
-        end_of_calendar_day = calculate_end_of_calendar_day(ctx)
-
-    # get definition of buckets
-    buckets = revision_bucket_list(ctx, bucketcase)
 
     # first, get original_path and ids for every revision
     iter = genquery.row_iterator(
@@ -573,18 +563,39 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
         revision_id = row[0]
         path = row[1] + "/" + row[2]
         modify_time = row[3]
-        if revision_id in rev_dict:
-            rev_dict[revision_id].append([modify_time, path])
-        else:
-            rev_dict[revision_id] = [[modify_time, path]]
+        rev_dict[revision_id] = [int(revision_id), int(modify_time), path]
 
-    for revlist in path_dict.values():
-        # make list of [revision_id, modify_time] pairs
-        revisions = []
-        for revision_id in revlist:
-            if revision_id in rev_dict:
-                revisions.append([revision_id, rev_dict[revision_id][0]])
+    # collate revision info
+    revisions_info = []
+    for revisions in path_dict.values():
+        revision_list = []
+        for revision_id in revisions:
+            revision_list.append(rev_dict[revision_id])
+        revisions_info.append(revision_list)
+    return json.dumps(revisions_info)
 
+
+@rule.make(inputs=[0, 1, 2], outputs=[3])
+def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay):
+    """Step through part of revision store and apply the chosen bucket strategy.
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param revisions_info:   Json-encoded revision info.
+    :param bucketcase:       Multiple ways of cleaning up revisions can be chosen.
+    :param endOfCalendarDay: If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+
+    :returns: String with status of cleanup
+    """
+    revisions_list = json.loads(revisions_info)
+
+    end_of_calendar_day = int(endOfCalendarDay)
+    if end_of_calendar_day == 0:
+        end_of_calendar_day = calculate_end_of_calendar_day(ctx)
+
+    # get definition of buckets
+    buckets = revision_bucket_list(ctx, bucketcase)
+
+    for revisions in revisions_list:
         # Process the original path conform the bucket settings
         candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
 
