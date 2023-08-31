@@ -82,13 +82,13 @@ def api_browse_folder(ctx,
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%' AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(coll, zone, zone),
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, list(qcoll))
+    colls = map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)])
 
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
@@ -182,13 +182,13 @@ def api_browse_collections(ctx,
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%' AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(coll, zone, zone),
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, list(qcoll))
+    colls = map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)])
 
     if len(colls) == 0:
         # No results at all?
@@ -280,16 +280,29 @@ def api_search(ctx,
                 status_name, status_value, "/" + zone + "/home"
         )
 
-    # exclude index collections
-    where = where + " AND COLL_NAME not like '/{}/home/%vault-%/%/index'".format(zone)
-
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
 
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
                   limit=int(limit), case_sensitive=query_is_case_sensitive, output=AS_DICT)
 
-    datas = map(transform, list(qdata))
+    datas = map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)])
 
     return OrderedDict([('total', qdata.total_rows()),
                         ('items', datas)])
+
+
+def _filter_vault_deposit_index(row):
+    """This internal function filters out index collections in deposit vault collections.
+       These collections are used internally by Yoda for indexing data package metadata, and
+       should not be displayed.
+
+       :param row: row of results data from GenQuery, containing collection name (COLL_NAME)
+
+       :returns: boolean value that indicated whether row should be displayed
+    """
+    # Remove ORDER_BY etc. wrappers from column names.
+    x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+    # Filter out deposit vault index collection
+    return not re.match("^/[^/]+/home/vault-[^/]+/deposit-[^/]+/index$",
+                        x['COLL_NAME'])
