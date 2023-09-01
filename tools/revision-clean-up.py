@@ -18,12 +18,12 @@ def clean_up(revisions):
     chunk = "\\\\".join(chunk.split("\\"))
     chunk = "\\'".join(chunk.split("'"))
     return subprocess.check_output([
-	'irule',
-	'-r',
-	'irods_rule_engine_plugin-irods_rule_language-instance',
-	"*out=''; rule_revisions_clean_up('{}', '{}', '{}', *out); writeString('stdout', *out);".format(chunk, bucketcase, endOfCalendarDay),
-	'null',
-	'ruleExecOut'
+        'irule',
+        '-r',
+        'irods_rule_engine_plugin-irods_rule_language-instance',
+        "*out=''; rule_revisions_clean_up('{}', '{}', '{}', *out); writeString('stdout', *out);".format(chunk, bucketcase, endOfCalendarDay),
+        'null',
+        'ruleExecOut'
     ])
 
 
