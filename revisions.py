@@ -512,7 +512,9 @@ def revision_create(ctx, resource, path, max_size, verbose):
 @rule.make(inputs=[], outputs=[0])
 def rule_revisions_info(ctx):
     """Obtain information about all revisions.
-    :returns: Json string with info about revisions
+
+    :param ctx: Combined type of a callback and rei struct
+    :returns:   Json string with info about revisions
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
