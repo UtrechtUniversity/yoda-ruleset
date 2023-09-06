@@ -197,6 +197,12 @@ def ui_data_package_choose(browser):
     browser.find_by_css('.action-confirm-data-package-select').click()
 
 
+@when('user chooses new version of existing publication')
+def ui_data_package_choose_version(browser):
+    browser.find_by_id('dataPackage1').click()
+    browser.find_by_css('.action-confirm-data-package-select').click()
+
+
 @when('user agrees with terms and conditions')
 def ui_data_package_agree(browser):
     browser.find_by_id('checkbox-confirm-conditions').check()
