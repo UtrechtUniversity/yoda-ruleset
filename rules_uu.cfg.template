@@ -49,6 +49,9 @@ token_database                 =
 token_length                   =
 token_lifetime                 =
 
+enable_inactivity_notification =
+inactivity_cutoff_months       =
+
 async_replication_delay_time   =
 async_revision_delay_time      =
 

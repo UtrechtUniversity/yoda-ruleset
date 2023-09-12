@@ -353,7 +353,7 @@ def rule_process_inactive_research_groups(ctx):
     :param ctx: Combined type of a callback and rei struct
     """
     # Only send notifications if inactivity notifications are enabled.
-    if config.inactivity_notification == 0:
+    if not config.enable_inactivity_notification:
         return
 
     # check permissions - rodsadmin only
@@ -378,50 +378,83 @@ def rule_process_inactive_research_groups(ctx):
     for row in iter:
         group_name = row[0]
         coll = '/{}/home/{}'.format(zone, group_name)
-        coll_general = '/{}/home/{}%'.format(zone, group_name)
+        # Trigger this flag if there are any files that have been modified after the cut off
+        # If the flag is still false after going through all the files, then that is when we send the notification
+        recent_files_modified = False
+        data_objects_count = 0
+        where_clause = {
+            'self': "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}'".format(coll, group_name),
+            'subfolders': "COLL_NAME LIKE '{}/%' AND USER_GROUP_NAME = '{}'".format(coll, group_name)
+        }
 
-        # Second query: check if there are any files in the group, including files in the sub-folders
-        # If there are no files we do not want to notify about lack of activity
-        iter_data = genquery.row_iterator(
-            "DATA_NAME, COLL_NAME",
-            "COLL_NAME like '{}' AND USER_GROUP_NAME = '{}'".format(coll_general, group_name),
-            genquery.AS_LIST, ctx
-        )
+        # Per group two statements are required to gather all data
+        # 1) data in folder itself
+        # 2) data in all subfolders of the folder
+        for folder_type in ['self', 'subfolders']:
+            iter_subcoll = genquery.row_iterator(
+                "COUNT(DATA_NAME)",
+                where_clause[folder_type],
+                genquery.AS_LIST, ctx
+            )
+            # This loop should only run once
+            for sub_row in iter_subcoll:
+                data_objects_count += int(sub_row[0])
 
-        if iter_data.total_rows() > 0:
-            # Trigger this flag if there are any files that have been modified after the cut off
-            # If the flag is still false after going through all the files, then that is when we send the notification
-            recent_files_modified = False
+        if data_objects_count > 0:
+            for folder_type in ['self', 'subfolders']:
+                if recent_files_modified:
+                    break
 
-            for sub_row in iter_data:
-                sub_coll = sub_row[1]
-
-                # Third query: see a list of any files that have been modified after the inactivity cut off
-                iter_recent_data = genquery.row_iterator(
-                    "DATA_NAME",
-                    "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME n> '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
+                iter_subcoll = genquery.row_iterator(
+                    "DATA_NAME, COLL_NAME",
+                    where_clause[folder_type],
                     genquery.AS_LIST, ctx
                 )
 
-                if iter_recent_data.total_rows() > 0:
+                for sub_row in iter_subcoll:
+                    if recent_files_modified:
+                        break
+
+                    sub_coll = sub_row[1]
+
+                    # Get count of any data objects that have been modified after the inactivity cut off
+                    iter_recent_data = genquery.row_iterator(
+                        "COUNT(DATA_NAME)",
+                        "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME n> '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
+                        genquery.AS_LIST, ctx
+                    )
+
+                    # This loop should only run once
+                    for count_row in iter_recent_data:
+                        if int(count_row[0]) > 0:
+                            recent_files_modified = True
+        else:
+            # Empty research group, so check the modified date of the collection, then send a notification
+            iter_data = genquery.row_iterator(
+                "COLL_MODIFY_TIME",
+                "COLL_NAME = '{}'".format(coll),
+                genquery.AS_LIST, ctx
+            )
+            # This loop should only run once
+            for sub_row in iter_data:
+                if int(sub_row[0]) > inactivity_cutoff_epoch:
                     recent_files_modified = True
-                    break
 
-            if not recent_files_modified:
-                # find corresponding datamanager
-                category = group.get_category(ctx, group_name)
-                datamanager_group_name = "datamanager-" + category
-                if group.exists(ctx, datamanager_group_name):
-                    notify_count += 1
-                    # Send notifications to datamanager(s).
-                    datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-                    message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
+        if not recent_files_modified:
+            # find corresponding datamanager
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
+            if group.exists(ctx, datamanager_group_name):
+                notify_count += 1
+                # Send notifications to datamanager(s).
+                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
 
-                    for datamanager in datamanagers:
-                        datamanager = '{}#{}'.format(*datamanager)
-                        actor = 'system'
-                        set(ctx, actor, datamanager, coll, message)
-                    log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    actor = 'system'
+                    set(ctx, actor, datamanager, coll, message)
+                log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
 
     log.write(ctx, 'inactive research group - Finished checking research groups for inactivity | notified: {}'.format(notify_count))
 
