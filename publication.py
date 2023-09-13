@@ -601,7 +601,8 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
     try:
         msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-    except Exception:
+    except Exception as e:
+        log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, str(e)))
         publication_state["status"] = "Unrecoverable"
         return
 
@@ -710,9 +711,8 @@ def process_publication(ctx, vault_package):
                 # Set the link to previous publication state
                 previous_publication_state["baseDOI"] = publication_state["baseDOI"]
                 previous_publication_state["baseRandomId"] = publication_state["baseRandomId"]
-            except Exception:
-                if verbose:
-                    log.write(ctx, "Error while checking version DOI availability.")
+            except Exception as e:
+                log.write(ctx, "Error while checking version DOI availability: " + str(e))
                 publication_state["status"] = "Retry"
 
             save_publication_state(ctx, previous_vault_package, previous_publication_state)
@@ -760,9 +760,8 @@ def process_publication(ctx, vault_package):
 
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except Exception:
-            if verbose:
-                log.write(ctx, "Exception while generating combi JSON.")
+        except Exception as e:
+            log.write(ctx, "Exception while generating combi JSON: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -783,16 +782,14 @@ def process_publication(ctx, vault_package):
             log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception:
-            if verbose:
-                log.write(ctx, "Error while generating Datacite JSON.")
+        except Exception as e:
+            log.write(ctx, "Exception while generating Datacite JSON: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
-            if verbose:
-                log.write(ctx, "Error status after generating Datacite JSON.")
+            log.write(ctx, "Error status after generating Datacite JSON: " + publication_state["status"])
             return publication_state["status"]
 
     # Check if DOI is in use
@@ -802,16 +799,14 @@ def process_publication(ctx, vault_package):
 
         try:
             check_doi_availability(ctx, publication_state, 'version')
-        except Exception:
-            if verbose:
-                log.write(ctx, "Error while checking version DOI availability.")
+        except Exception as e:
+            log.write(ctx, "Error while checking DOI availability: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
-            if verbose:
-                log.write(ctx, "Error status after checking version DOI availability.")
+            log.write(ctx, "Error status after checking version DOI availability: " + publication_state["status"])
             return publication_state["status"]
 
     # Determine whether an update ('put') or create ('post') message has to be sent to datacite
@@ -839,16 +834,14 @@ def process_publication(ctx, vault_package):
                     log.write(ctx, "Updating base DOI.")
                 base_doi = publication_state['baseDOI']
                 post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action)
-        except Exception:
-            if verbose:
-                log.write(ctx, "Error while sending metadata to Datacite.")
+        except Exception as e:
+            log.write(ctx, "Exception while sending metadata to Datacite: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
-            if verbose:
-                log.write(ctx, "Error status after sending metadata to Datacite.")
+            log.write(ctx, "Error status after sending metadata to Datacite: " + publication_state["status"])
             return publication_state["status"]
 
     # Create landing page
@@ -858,16 +851,14 @@ def process_publication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception:
-            if verbose:
-                log.write(ctx, "Error while sending metadata to Datacite.")
+        except Exception as e:
+            log.write(ctx, "Error while sending metadata to Datacite: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Unrecoverable":
-            if verbose:
-                log.write(ctx, "Error status after creating landing page.")
+            log.write(ctx, "Error status after creating landing page: " + publication_state["status"])
             return publication_state["status"]
 
     # Use secure copy to push landing page to the public host
@@ -886,8 +877,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
-            if verbose:
-                log.write(ctx, "Error status after uploading landing page.")
+            log.write(ctx, "Error status after uploading landing page:" + publication_state["status"])
             return publication_state["status"]
 
     # Use secure copy to push combi JSON to MOAI server
@@ -906,8 +896,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
-            if verbose:
-                log.write(ctx, "Error status after uploading to MOAI.")
+            log.write(ctx, "Error status after uploading to MOAI: " + publication_state["status"])
             return publication_state["status"]
 
     # Set access restriction for vault package.
@@ -918,8 +907,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
-            if verbose:
-                log.write(ctx, "Error status after setting vault access restrictions.")
+            log.write(ctx, "Error status after setting vault access restrictions." + publication_state["status"])
             return publication_state["status"]
 
     # Mint DOI with landing page URL.
@@ -990,6 +978,11 @@ def process_depublication(ctx, vault_package):
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
+    # Check if verbose mode is enabled
+    verbose = True if "verboseMode" in publication_config else False
+    if verbose:
+        log.write(ctx, "Running process_depublication in verbose mode.")
+
     if status == "OK":
         # reset on first call
         set_update_publication_state(ctx, vault_package)
@@ -1012,9 +1005,12 @@ def process_depublication(ctx, vault_package):
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Generating combi JSON.")
         try:
             generate_system_json(ctx, publication_state)
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while trying to generate system JSON during depublication: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1024,11 +1020,14 @@ def process_depublication(ctx, vault_package):
 
     # Hide metadata from DataCite
     if "dataCiteMetadataPosted" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading metadata to Datacite.")
         try:
             remove_metadata_from_datacite(ctx, publication_state, 'version')
             if update_base_doi:
                 remove_metadata_from_datacite(ctx, publication_state, 'base')
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while trying to remove metadata from Datacite during depublication: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1038,10 +1037,13 @@ def process_depublication(ctx, vault_package):
 
     # Create landing page
     if "landingPagePath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Creating landing page.")
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "depublish")
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while generating landing page during depublication: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1051,6 +1053,8 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading landing page.")
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
@@ -1065,6 +1069,8 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading to MOAI.")
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
@@ -1079,6 +1085,8 @@ def process_depublication(ctx, vault_package):
 
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
+        if verbose:
+            log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1117,6 +1125,11 @@ def process_republication(ctx, vault_package):
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
+    # Check if verbose mode is enabled
+    verbose = True if "verboseMode" in publication_config else False
+    if verbose:
+        log.write(ctx, "Running process_republication in verbose mode.")
+
     if status == "OK":
         # reset on first call
         set_update_publication_state(ctx, vault_package)
@@ -1132,6 +1145,8 @@ def process_republication(ctx, vault_package):
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
     if "previous_version" in publication_state and "next_version" not in publication_state:
+        if verbose:
+            log.write(ctx, "In branch for updating base DOI")
         update_base_doi = True
 
     # Publication date
@@ -1143,9 +1158,12 @@ def process_republication(ctx, vault_package):
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Generating combi JSON.")
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while generating combi JSON during republication: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1155,9 +1173,12 @@ def process_republication(ctx, vault_package):
 
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while generating DataCite JSON for republication: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1167,12 +1188,15 @@ def process_republication(ctx, vault_package):
 
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading metadata to Datacite.")
         try:
             post_metadata_to_datacite(ctx, publication_state, publication_state['versionDOI'], 'put')
 
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put')
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while posting metadata to Datacite during republication: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1182,10 +1206,13 @@ def process_republication(ctx, vault_package):
 
     # Create landing page
     if "landingPagePath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Creating landing page.")
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while creating landing page during republication: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1195,6 +1222,8 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading landing page.")
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
@@ -1209,6 +1238,8 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading to MOAI.")
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
@@ -1223,6 +1254,8 @@ def process_republication(ctx, vault_package):
 
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
+        if verbose:
+            log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1285,12 +1318,19 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
+    # Check if verbose mode is enabled
+    verbose = True if "verboseMode" in publication_config else False
+    if verbose:
+        log.write(ctx, "Running update_publication in verbose mode.")
+
     # Publication must be finished.
     if status != "OK":
         return status
 
     update_base_doi = False
     if "baseDOI" in publication_state:
+        if verbose:
+            log.write(ctx, "In branch for updating base DOI")
         if "previous_version" in publication_state and "next_version" not in publication_state:
             update_base_doi = True
 
@@ -1302,9 +1342,12 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
+    if verbose:
+        log.write(ctx, "Generating combi JSON.")
     try:
         generate_combi_json(ctx, publication_config, publication_state)
-    except Exception:
+    except Exception as e:
+        log.write(ctx, "Exception while generating combi JSON after metadata update: " + str(e))
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1317,7 +1360,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         log.write(ctx, 'Update datacite for package {}'.format(vault_package))
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while generating DataCite JSON after metadata update: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1326,11 +1370,14 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             return publication_state["status"]
 
         # Send DataCite JSON to metadata end point
+        if verbose:
+            log.write(ctx, "Uploading metadata to Datacite.")
         try:
             post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1343,7 +1390,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception:
+        except Exception as e:
+            log.write(ctx, "Exception while updating landing page after metadata update: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1353,6 +1401,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Use secure copy to push landing page to the public host
         random_id = publication_state["randomId"]
+        if verbose:
+            log.write(ctx, "Uploading landing page.")
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         if update_base_doi:
             base_random_id = publication_state["baseRandomId"]
