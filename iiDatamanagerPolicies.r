@@ -4,7 +4,7 @@
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
 # \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
-# \licens    GPLv3 see LICENSE.
+# \license   GPLv3 see LICENSE.
 
 
 # This policy override enables the datamanager to manage ACL's in the vault
