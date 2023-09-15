@@ -258,9 +258,6 @@ iiFolderSecure(*folder) {
     iiCollectionGroupName(*folder, *groupName);
     *groupElems = split(*groupName, "-");
     *groupSpace = elem(*groupElems, 0);
-    if (*groupSpace == "deposit") {
-        iiEnableIndexing(*target);
-    }
 
     # Continue securing process in PREP.
     *return = "";
