@@ -52,7 +52,7 @@ def get_category(ctx, grp):
     :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
-    :returns: Categroy of given group
+    :returns: Category of given group
     """
     ret = ctx.uuGroupGetCategory(grp, '', '')
     x = ret['arguments'][1]
