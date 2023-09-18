@@ -154,8 +154,8 @@ def rule_lift_embargos_on_data_access(ctx):
                         # will hold publication_state["landingPagePath"] as required for secure copy
                         log.write(ctx, publication_state["landingPagePath"])
                     except Exception:
-                       log.write(ctx, "Error while creating landing page with data access.")
-                       publication_state["status"] = "Unrecoverable"
+                        log.write(ctx, "Error while creating landing page with data access.")
+                        publication_state["status"] = "Unrecoverable"
 
                     if publication_state["status"] == "OK":
                         # Secure copy to public host
@@ -771,9 +771,9 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
     # Check whether lift_embargo_date is present already
     iter = genquery.row_iterator(
-       "COLL_NAME, META_COLL_ATTR_VALUE",
-       "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
-       genquery.AS_LIST, ctx
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
+        genquery.AS_LIST, ctx
     )
     for row in iter:
         # Just get rid of the previous lift_embargo_date.
