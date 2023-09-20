@@ -852,7 +852,7 @@ def process_publication(ctx, vault_package):
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except Exception as e:
-            log.write(ctx, "Error while sending metadata to Datacite: " + str(e))
+            log.write(ctx, "Error while creating landing page: " + str(e))
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
