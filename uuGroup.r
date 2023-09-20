@@ -441,10 +441,10 @@ uuGroupGetCategory(*groupName, *category, *subcategory) {
 
 }
 
-# \brief Get a group's desription.
+# \brief Get a group's description.
 #
 # \param[in]  groupName
-# \param[out] decsription
+# \param[out] description
 #
 uuGroupGetDescription(*groupName, *description) {
 	*description = "";
@@ -872,7 +872,7 @@ uuGroupRemove(*groupName, *status, *message) {
 #
 uuUserModify(*userName, *property, *value, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	*kv.'.' = ".";
 
@@ -909,7 +909,7 @@ uuUserModify(*userName, *property, *value, *status, *message) {
 #
 uuUserMetaRemove(*userName, *property, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
     *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "wildcards", *property, "", "", ""));
     if (*status == 0) {
