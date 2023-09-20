@@ -572,7 +572,8 @@ def rule_revisions_info(ctx):
     for revisions in path_dict.values():
         revision_list = []
         for revision_id in revisions:
-            revision_list.append(rev_dict[revision_id])
+            if revision_id in rev_dict:
+                revision_list.append(rev_dict[revision_id])
         revisions_info.append(revision_list)
     return json.dumps(revisions_info)
 
