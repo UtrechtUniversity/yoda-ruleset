@@ -38,7 +38,7 @@ revisions_info = json.loads(subprocess.check_output([
     'ruleExecOut'
 ]))
 
-while len(revisions_info) > 100:
-    clean_up(revisions_info[:100])
-    revisions_info = revisions_info[100:]
+while len(revisions_info) > 30:
+    clean_up(revisions_info[:30])
+    revisions_info = revisions_info[30:]
 print(clean_up(revisions_info))
