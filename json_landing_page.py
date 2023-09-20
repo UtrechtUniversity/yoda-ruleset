@@ -122,9 +122,11 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     try:
         language = ''
         language_id = dictJsonData['Language']
-        schema_lang_ids = json_schema['definitions']['optionsISO639-1']['enum']
-        schema_lang_names = json_schema['definitions']['optionsISO639-1']['enumNames']
+        # Convert just the language schemas to unicode to handle when a language has non-ascii characters (like Volapük)
+        schema_lang_ids = map(lambda x: x.decode("utf-8"), json_schema['definitions']['optionsISO639-1']['enum'])
+        schema_lang_names = map(lambda x: x.decode("utf-8"), json_schema['definitions']['optionsISO639-1']['enumNames'])
         index = schema_lang_ids.index(language_id)
+        # Language variable must be kept in unicode, otherwise landing page fails to build with a language with non-ascii characters
         language = schema_lang_names[index]
     except KeyError:
         language = ''
