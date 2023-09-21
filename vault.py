@@ -1307,7 +1307,7 @@ def meta_add_new_version(ctx, new_version, previous_version):
                 "Identifier_Scheme": "DOI",
                 "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
             },
-            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Relation_Type": "IsNewVersionOf",
             "Title": "{}".format(get_title(ctx, previous_version))
         }
 
