@@ -40,7 +40,7 @@ Feature: Publication UI
         When user browses to data package in <vault>
         And user submits the data package for publication
         And user chooses new publication
-        And user agrees with terms and conditions        
+        And user agrees with terms and conditions
         Then the data package status is "Submitted for publication"
 
         Examples:
@@ -98,13 +98,14 @@ Feature: Publication UI
             | vault          |
             | vault-teclab-0 |
 
-    Scenario Outline: Publication of teclab datapackages and test landing page output
+
+    Scenario Outline: Publication of teclab datapackages and test landing page output (version publication)
         Given user datamanager is logged in
         When all notifications are reset
         Given user is not logged in
 
 
-    Scenario Outline: Researcher submits folder
+    Scenario Outline: Researcher submits folder (version publication)
         Given user researcher is logged in
         And all notifications are reset
         And module "research" is shown
@@ -117,7 +118,7 @@ Feature: Publication UI
             | research-teclab-0 |
 
 
-    Scenario Outline: Datamanager accepts folder
+    Scenario Outline: Datamanager accepts folder (version publication)
         Given user datamanager is logged in
         When user checks and clears notifications for status "Submitted"
         And module "research" is shown
@@ -130,14 +131,14 @@ Feature: Publication UI
             | research-teclab-0 |
 
 
-    Scenario Outline: Researcher submits data package for publication
+    Scenario Outline: Researcher submits data package for publication (version publication)
         Given user researcher is logged in
         When user checks and clears notifications for status "Accepted"
         And module "vault" is shown
         When user browses to data package in <vault>
         And user submits the data package for publication
         And user chooses new version of existing publication
-        And user agrees with terms and conditions        
+        And user agrees with terms and conditions
         Then the data package status is "Submitted for publication"
 
         Examples:
@@ -145,7 +146,7 @@ Feature: Publication UI
             | vault-teclab-0 |
 
 
-    Scenario Outline: Datamanager approves data package for publication
+    Scenario Outline: Datamanager approves data package for publication (version publication)
         Given user datamanager is logged in
         When user checks and clears notifications for status "Submitted for publication"
         And module "vault" is shown
@@ -159,7 +160,7 @@ Feature: Publication UI
             | vault-teclab-0 |
 
 
-    Scenario Outline: Researcher checks research provenance
+    Scenario Outline: Researcher checks research provenance (version publication)
         Given user researcher is logged in
         When user checks and clears notifications for status "Approved for publication"
         And module "research" is shown
@@ -172,7 +173,7 @@ Feature: Publication UI
             | research-teclab-0 |
 
 
-    Scenario Outline: Researcher checks vault provenance
+    Scenario Outline: Researcher checks vault provenance (version publication)
         Given user researcher is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
@@ -183,7 +184,7 @@ Feature: Publication UI
             | vault-teclab-0 |
 
 
-    Scenario Outline: Researcher checks published landingpage
+    Scenario Outline: Researcher checks published landingpage (version publication)
         Given user researcher is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
