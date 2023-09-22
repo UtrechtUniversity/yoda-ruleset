@@ -4,8 +4,6 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-# from datetime import datetime
-
 from datetime import datetime
 
 import genquery
@@ -24,159 +22,8 @@ __all__ = ['rule_process_publication',
            'rule_process_depublication',
            'rule_process_republication',
            'rule_update_publication',
-           'rule_lift_embargos_on_data_access',
-           'rule_add_lift_embargo_indications']
-
-
-@rule.make()
-def rule_add_lift_embargo_indications(ctx):
-    """
-    # PURPOSE: give all published datapackages that are under embargo a lift_embargo_date indication (for further cronjob processing)
-
-    Each indication will hold the actual embargo date.
-    This will be picked up by a cronjob that will lift the embargo if applicable.
-    Then the indication will be removed so the datapackage will no longer be picked up
-
-    """
-    # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "User is no rodsadmin")
-        return 'Insufficient permissions - should only be called by rodsadmin'
-
-    # select all vault packages with with embargo date - no matter when
-    zone = user.zone(ctx)
-
-    # Find all packages that have embargo date
-    iter = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "' AND META_COLL_ATTR_NAME = 'Embargo_End_Date'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        vault_package = row[0]
-        embargo_date = row[1]
-
-        # Only look at the PUBLISHED packages so check first
-        iter2 = genquery.row_iterator(
-            "COLL_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status'",
-            genquery.AS_LIST, ctx
-        )
-
-        for row2 in iter2:
-            # Check whether lift_embargo_date is present already
-            iter3 = genquery.row_iterator(
-                "COLL_NAME, META_COLL_ATTR_VALUE",
-                "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
-                genquery.AS_LIST, ctx
-            )
-            if not len(list(iter3)) > 0:
-                # Add lift_embargo indication
-                avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', embargo_date)
-
-    return 'OK'
-
-
-@rule.make()
-def rule_lift_embargos_on_data_access(ctx):
-    """
-    PURPOSE: Find vault packages that have a data access embargo that can be lifted as the embargo expires.
-
-    If lift_embargo_date < now:
-      - new landing page (add access link)
-      - secure copy new landing page to server
-      - set acls
-
-    If all went well => remove lift_embargo_date indication
-    If something went wrong leave lift_embargo_date so it will be dealt with again the next time around
-
-    :param ctx:  Combined type of a callback and rei struct
-
-    :returns:
-    """
-    publication_state = {}
-
-    # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "User is no rodsadmin")
-        return 'Insufficient permissions - should only be called by rodsadmin'
-
-    # get publication configuration
-    publication_config = get_publication_config(ctx)
-
-    zone = user.zone(ctx)
-
-    # Find all packages that have embargo date for data access that must be lifted
-    iter = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
-        " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
-        " AND META_COLL_ATTR_VALUE > '{}'".format(datetime.now().strftime('%Y-%m-%d')),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        vault_package = row[0]
-
-        log.write(ctx, "Lift embargo for package: " + vault_package)
-
-        # Per package (re)initialize publication state
-        publication_state = {}
-        publication_state["status"] = 'OK'
-
-        # For this vault package, that has an embargo date that needs to be lifted, find whether data access resrictions apply
-        iter2 = genquery.row_iterator(
-            "COLL_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'".format(vault_package),
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            # Check data access restriction - must be open
-            if row2[1].startswith('open'):
-                # Setup publication_state in such a way that landing page can be newly created and sent to the public host
-
-                # First find DOI as all is hung up on that - org_publication_randomId
-                random_id = ''
-                iter3 = genquery.row_iterator(
-                    "COLL_NAME, META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_randomId'".format(vault_package),
-                    genquery.AS_LIST, ctx
-                )
-                for row3 in iter3:
-                    random_id = row3[1]
-
-                    publication_state["combiJsonPath"] = '/{}/yoda/publication/{}-combi.json'.format(zone, random_id)
-                    publication_state["randomId"] = random_id
-                    publication_state["vaultPackage"] = vault_package
-
-                    # Adjust landing page add data access link
-                    try:
-                        generate_landing_page(ctx, publication_state, "publish")
-                        # will hold publication_state["landingPagePath"] as required for secure copy
-                        log.write(ctx, publication_state["landingPagePath"])
-                    except Exception:
-                        log.write(ctx, "Error while creating landing page with data access.")
-                        publication_state["status"] = "Unrecoverable"
-
-                    if publication_state["status"] == "OK":
-                        # Secure copy to public host
-                        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
-
-                        if publication_state.get("landingPageUploaded", None) != "yes":
-                            log.write(ctx, 'Could not securely upload adjusted landing page to public host')
-                            publication_state["status"] = "Unrecoverable"
-                        else:
-                            # Adjust ACLs so data can actually be reached
-                            try:
-                                msi.set_acl(ctx, "recursive", "read", "anonymous", vault_package)
-                            except Exception:
-                                log.write(ctx, "Could not set acls to read for: " + vault_package)
-                                publication_state["status"] = "Unrecoverable"
-
-        # if all went well remove the lift embargo attribute so it will not be selected again the next time around
-        if publication_state["status"] == 'OK':
-            # Only remove when embargo was lifted successfully.
-            # Not removing will ensure the entire process is repeated again next time around
-            avu.rmw_from_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', '%')
+           'rule_add_lift_embargo_indications',
+           'rule_lift_embargos_on_data_access']
 
 
 def get_publication_config(ctx):
@@ -1692,3 +1539,157 @@ rule_process_depublication = rule.make(inputs=range(1), outputs=range(1, 3))(pro
 
 """Rule interface for processing republication of a vault package."""
 rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(process_republication)
+
+
+@rule.make()
+def rule_add_lift_embargo_indications(ctx):
+    """
+    # PURPOSE: give all published datapackages that are under embargo a lift_embargo_date indication (for further cronjob processing)
+
+    Each indication will hold the actual embargo date.
+    This will be picked up by a cronjob that will lift the embargo if applicable.
+    Then the indication will be removed so the datapackage will no longer be picked up
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: Status of adding the lift embargo indications
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
+
+    # select all vault packages with with embargo date - no matter when
+    zone = user.zone(ctx)
+
+    # Find all packages that have embargo date
+    iter = genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "' AND META_COLL_ATTR_NAME = 'Embargo_End_Date'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_package = row[0]
+        embargo_date = row[1]
+
+        # Only look at the PUBLISHED packages so check first
+        iter2 = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status'",
+            genquery.AS_LIST, ctx
+        )
+
+        for row2 in iter2:
+            # Check whether lift_embargo_date is present already
+            iter3 = genquery.row_iterator(
+                "COLL_NAME, META_COLL_ATTR_VALUE",
+                "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
+                genquery.AS_LIST, ctx
+            )
+            if not len(list(iter3)) > 0:
+                # Add lift_embargo indication
+                avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', embargo_date)
+
+    return 'OK'
+
+
+@rule.make()
+def rule_lift_embargos_on_data_access(ctx):
+    """
+    PURPOSE: Find vault packages that have a data access embargo that can be lifted as the embargo expires.
+
+    If lift_embargo_date < now:
+      - new landing page (add access link)
+      - secure copy new landing page to server
+      - set acls
+
+    If all went well => remove lift_embargo_date indication
+    If something went wrong leave lift_embargo_date so it will be dealt with again the next time around
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: Status of lifting the embargo indications
+    """
+    publication_state = {}
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
+
+    # get publication configuration
+    publication_config = get_publication_config(ctx)
+
+    zone = user.zone(ctx)
+
+    # Find all packages that have embargo date for data access that must be lifted
+    iter = genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
+        " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
+        " AND META_COLL_ATTR_VALUE > '{}'".format(datetime.now().strftime('%Y-%m-%d')),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_package = row[0]
+
+        log.write(ctx, "Lift embargo for package: " + vault_package)
+
+        # Per package (re)initialize publication state
+        publication_state = {}
+        publication_state["status"] = 'OK'
+
+        # For this vault package, that has an embargo date that needs to be lifted, find whether data access resrictions apply
+        iter2 = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'".format(vault_package),
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            # Check data access restriction - must be open
+            if row2[1].startswith('open'):
+                # Setup publication_state in such a way that landing page can be newly created and sent to the public host
+
+                # First find DOI as all is hung up on that - org_publication_randomId
+                random_id = ''
+                iter3 = genquery.row_iterator(
+                    "COLL_NAME, META_COLL_ATTR_VALUE",
+                    "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_randomId'".format(vault_package),
+                    genquery.AS_LIST, ctx
+                )
+                for row3 in iter3:
+                    random_id = row3[1]
+
+                    publication_state["combiJsonPath"] = '/{}/yoda/publication/{}-combi.json'.format(zone, random_id)
+                    publication_state["randomId"] = random_id
+                    publication_state["vaultPackage"] = vault_package
+
+                    # Adjust landing page add data access link
+                    try:
+                        generate_landing_page(ctx, publication_state, "publish")
+                        # will hold publication_state["landingPagePath"] as required for secure copy
+                        log.write(ctx, publication_state["landingPagePath"])
+                    except Exception:
+                        log.write(ctx, "Error while creating landing page with data access.")
+                        publication_state["status"] = "Unrecoverable"
+
+                    if publication_state["status"] == "OK":
+                        # Secure copy to public host
+                        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+                        if publication_state.get("landingPageUploaded", None) != "yes":
+                            log.write(ctx, 'Could not securely upload adjusted landing page to public host')
+                            publication_state["status"] = "Unrecoverable"
+                        else:
+                            # Adjust ACLs so data can actually be reached
+                            try:
+                                msi.set_acl(ctx, "recursive", "read", "anonymous", vault_package)
+                            except Exception:
+                                log.write(ctx, "Could not set acls to read for: " + vault_package)
+                                publication_state["status"] = "Unrecoverable"
+
+        # if all went well remove the lift embargo attribute so it will not be selected again the next time around
+        if publication_state["status"] == 'OK':
+            # Only remove when embargo was lifted successfully.
+            # Not removing will ensure the entire process is repeated again next time around
+            avu.rmw_from_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', '%')
