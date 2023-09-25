@@ -578,17 +578,22 @@ def rule_revisions_info(ctx):
     return json.dumps(revisions_info)
 
 
-@rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay):
+@rule.make(inputs=[0, 1, 2, 3], outputs=[4])
+def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay, verbose_flag):
     """Step through part of revision store and apply the chosen bucket strategy.
 
     :param ctx:              Combined type of a callback and rei struct
     :param revisions_info:   Json-encoded revision info.
-    :param bucketcase:       Multiple ways of cleaning up revisions can be chosen.
+    :param bucketcase:       Select a bucketlist based on a string ('A', 'B', 'Simple'). If the value is an unknown case, the default
+                             value 'B' will be used. See https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisi
+                             for an explanation.
     :param endOfCalendarDay: If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+    :param verbose_flag:     "1" if rule needs to print additional information for troubleshooting, else "0"
 
     :returns: String with status of cleanup
     """
+    log.write(ctx, '[revisions] Revision cleanup job starting.')
+    verbose = verbose_flag == "1"
     revisions_list = json.loads(revisions_info)
 
     end_of_calendar_day = int(endOfCalendarDay)
@@ -598,16 +603,37 @@ def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay):
     # get definition of buckets
     buckets = revision_bucket_list(ctx, bucketcase)
 
+    # Statistics
+    num_candidates = 0
+    num_errors = 0
+
     for revisions in revisions_list:
+        if verbose:
+            log.write(ctx, '[revisions] Processing revisions {} ...'.format(str(revisions)))
         # Process the original path conform the bucket settings
-        candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
+        candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day, verbose)
+        num_candidates += len(candidates)
+
+        # Create lookup table for revision paths if needed
+        if len(candidates) > 0:
+            rev_paths = {r[0]: r[2] for r in revisions}
+
+        if verbose:
+            log.write(ctx, '[revisions] Candidates to be removed: {} ...'.format(str(candidates)))
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
-            if not revision_remove(ctx, revision_id, rev_dict[revision_id][1]):
-                return 'Something went wrong cleaning up revision store'
+            rev_path = rev_paths[revision_id]
+            if verbose:
+                log.write(ctx, '[revisions] Removing candidate: {} ...'.format(str(revision_id)))
+            if not revision_remove(ctx, revision_id, rev_path):
+                num_errors += 1
 
-    return 'Successfully cleaned up the revision store'
+    log.write(ctx, '[revisions] Revision cleanup job completed - {} candidates ({} successful / {} errors).'.format(
+        str(num_candidates),
+        str(num_candidates - num_errors),
+        str(num_errors)))
+    return 'Revision store cleanup completed'
 
 
 def revision_remove(ctx, revision_id, revision_path):
@@ -621,11 +647,20 @@ def revision_remove(ctx, revision_id, revision_path):
 
     :returns: Boolean indicating if revision was removed
     """
+    if not revision_path.startswith(constants.UUREVISIONCOLLECTION + "/"):
+        log.write(ctx, "ERROR - sanity check fail when removing revision <{}>: <{}>".format(
+            revision_id,
+            revision_path))
+        return False
+
     try:
         msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
         return True
-    except msi.Error:
-        log.write(ctx, "ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
+    except msi.Error as e:
+        log.write(ctx, "ERROR - could not remove revision <{}>: <{}> ({}).".format(
+            revision_id,
+            revision_path,
+            str(e)))
         return False
 
     log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
@@ -641,7 +676,9 @@ def revision_bucket_list(ctx, case):
     revision after the current original (which should always be kept) , 1 the revision after that, etc.
 
     :param ctx:   Combined type of a callback and rei struct
-    :param case:  Select a bucketlist based on a string
+    :param case:  Select a bucketlist based on a string ('A', 'B', 'Simple'). If the case is unknown, the default
+                  value 'B' will be used. See https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
+                  for an explanation.
 
     :returns: List representing revision strategy
     """
@@ -687,13 +724,14 @@ def revision_bucket_list(ctx, case):
         ]
 
 
-def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
+def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound, verbose):
     """Get the candidates for deletion based on the active strategy case
 
     :param ctx:                      Combined type of a callback and rei struct
     :param buckets:                  List of buckets
     :param revisions:                List of revisions
     :param initial_upper_time_bound: Initial upper time bound for first bucket
+    :param verbose:                  Whether to print additional information for troubleshooting (boolean)
 
     :returns: List of candidates for deletion based on the active strategy case
     """
@@ -726,6 +764,8 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
         max_bucket_size = bucket[1]
         bucket_start_index = bucket[2]
 
+        if verbose:
+            log.write(ctx, '[revisions] Comparing revisions in bucket {} to max size ({} vs {})'.format(str(bucket), str(len(rev_list)), str(max_bucket_size)))
         if len(rev_list) > max_bucket_size:
             nr_to_be_removed = len(rev_list) - max_bucket_size
 
