@@ -324,6 +324,16 @@
                                 <span>{{ last_modified_date }}</span>
                             </div>
                         </div>
+                        {% if embargo_end_date | length > 0 %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Embargo End Date</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ embargo_end_date }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
 
                     {% for pack in related_resources %}
