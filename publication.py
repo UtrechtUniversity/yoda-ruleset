@@ -1542,16 +1542,9 @@ rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(pro
 
 @rule.make()
 def rule_lift_embargos_on_data_access(ctx):
-    """
-    PURPOSE: Find vault packages that have a data access embargo that can be lifted as the embargo expires.
+    """Find vault packages that have a data access embargo that can be lifted as the embargo expires.
 
-    If lift_embargo_date < now:
-      - new landing page (add access link)
-      - secure copy new landing page to server
-      - set acls
-
-    If all went well => remove lift_embargo_date indication
-    If something went wrong leave lift_embargo_date so it will be dealt with again the next time around
+    If lift_embargo_date <= now, update publication.
 
     :param ctx:  Combined type of a callback and rei struct
 
@@ -1569,18 +1562,14 @@ def rule_lift_embargos_on_data_access(ctx):
         "COLL_NAME, META_COLL_ATTR_VALUE",
         "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
         " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
-        " AND META_COLL_ATTR_VALUE > '{}'".format(datetime.now().strftime('%Y-%m-%d')),
+        " AND META_COLL_ATTR_VALUE <= '{}'".format(datetime.now().strftime('%Y-%m-%d')),
         genquery.AS_LIST, ctx
     )
     for row in iter:
         vault_package = row[0]
 
-        log.write(ctx, "Lift embargo for package: " + vault_package)
+        log.write(ctx, "Lift embargo for vault package: " + vault_package)
         set_update_publication_state(ctx, vault_package)
-        publication_status = process_publication(ctx, vault_package)
+        process_publication(ctx, vault_package)
 
-        # If all went well remove the lift embargo attribute so it will not be selected again the next time around.
-        if publication_status == 'OK':
-            # Only remove when embargo was lifted successfully.
-            # Not removing will ensure the entire process is repeated again next time around
-            avu.rmw_from_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', '%')
+    return 'OK'
