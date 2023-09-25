@@ -19,3 +19,4 @@ certifi==2021.10.8
 pysqlcipher3==1.0.4
 execnet==1.9.0
 deepdiff==3.3.0
+persist-queue==0.8.1
