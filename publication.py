@@ -332,7 +332,7 @@ def generate_base_DOI(ctx, publication_config, publication_state):
 
 
 def generate_datacite_json(ctx, publication_state):
-    """Generate a DataCite compliant JSON based up yoda-metadata.json.
+    """Generate a DataCite compliant JSON based on yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
