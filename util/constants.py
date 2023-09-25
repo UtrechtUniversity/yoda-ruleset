@@ -20,6 +20,15 @@ UUSYSTEMCOLLECTION = '/yoda'
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
 """iRODS path where all revisions will be stored."""
 
+PROC_REVISION_CLEANUP = "revision-cleanup"
+"""Process name of the revision cleanup job. Used by the spooling system"""
+
+SPOOL_PROCESSES = {PROC_REVISION_CLEANUP}
+"""Set of process names recognized by the spooling system"""
+
+SPOOL_MAIN_DIRECTORY = "/var/lib/irods/yoda-spool"
+"""Directory that is used for storing Yoda batch process spool data on the provider"""
+
 UUBLOCKLIST = ["._*", ".DS_Store"]
 """ List of file extensions not to be copied to revision"""
 

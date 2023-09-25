@@ -17,3 +17,4 @@ python2-secrets==1.0.5
 python-dateutil==2.7.0
 certifi==2021.10.8
 pysqlcipher3==1.0.4
+persist-queue==0.8.1

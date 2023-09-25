@@ -3,7 +3,7 @@
 
 import argparse
 import atexit
-import json
+from datetime import datetime
 import os
 import subprocess
 import sys
@@ -16,7 +16,8 @@ def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("endofcalendarday", help="End of calendar day (epoch time)")
     parser.add_argument("bucketcase", choices=["A", "B", "Simple"], help="Bucket case configuration name")
-    parser.add_argument("--batch-size", type=int, default=1, help="Number of revisions to process at a time (default: 1).", required=False)
+    parser.add_argument("--batch-size", type=int, default=1000,
+                        help="Number of revisions to process at a time (default: 1000).", required=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False,
                         help="Make the revision cleanup rules print additional information for troubleshooting purposes.")
     return parser.parse_args()
@@ -41,50 +42,45 @@ def lock_or_die():
     atexit.register(lambda: os.unlink(LOCKFILE_PATH))
 
 
-def clean_up(revisions, bucketcase, endofcalendarday, verbose_flag):
-    chunk = json.dumps(revisions)
-    chunk = "\\\\".join(chunk.split("\\"))
-    chunk = "\\'".join(chunk.split("'"))
+def process_revision_cleanup_data(bucketcase, endofcalendarday, verbose_flag):
     return subprocess.check_output([
         'irule',
         '-r',
         'irods_rule_engine_plugin-irods_rule_language-instance',
-        "*out=''; rule_revisions_clean_up('{}', '{}', '{}', '{}', *out); writeString('stdout', *out);".format(chunk, bucketcase, endofcalendarday, verbose_flag),
+        "*out=''; rule_revisions_cleanup_process('{}', '{}', '{}', *out); writeString('stdout', *out);".format(bucketcase, endofcalendarday, verbose_flag),
         'null',
         'ruleExecOut'
     ])
 
 
-def get_revisions_info():
-    return json.loads(subprocess.check_output([
+def collect_revision_cleanup_data(batch_size):
+    return subprocess.check_output([
         'irule',
         '-r',
         'irods_rule_engine_plugin-irods_rule_language-instance',
-        '*out=""; rule_revisions_info(*out); writeString("stdout", *out);',
+        "*out=''; rule_revisions_cleanup_collect('{}', *out); writeString('stdout', *out);".format(str(batch_size)),
         'null',
         'ruleExecOut'
-    ]))
+    ])
 
 
 def main():
     args = get_args()
     lock_or_die()
-    revisions_info = get_revisions_info()
 
     if args.verbose:
-        print('START cleaning up revision store')
+        print('START cleaning up revision store at ' + str(datetime.now()))
 
-    while len(revisions_info) > args.batch_size:
-        if args.verbose:
-            print("Clean up for " + str(revisions_info[:args.batch_size]))
-        clean_up(revisions_info[:args.batch_size],
-                 args.bucketcase,
-                 args.endofcalendarday,
-                 "1" if args.verbose else "0")
-        revisions_info = revisions_info[args.batch_size:]
+    collect_revision_cleanup_data(args.batch_size)
+
+    status = "INITIAL"
+    while status != "No more revision cleanup data":
+        status = process_revision_cleanup_data(args.bucketcase,
+                                               args.endofcalendarday,
+                                               "1" if args.verbose else "0")
 
     if args.verbose:
-        print('END cleaning up revision store')
+        print('END cleaning up revision store at ' + str(datetime.now()))
 
 
 if __name__ == "__main__":
