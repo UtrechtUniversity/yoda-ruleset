@@ -590,7 +590,8 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
     This function is called when (re)publishing a vault package.
     The embargo date of a package is essential determining access.
-    ALS EMBARGO => zet embargo end date in lift_embargo_date zodat later wordt opgepakt door cronjob
+    If current date < embargo end date, then set end date in `ord_lift_embargo_date`
+    to be picked up by lift embargo cronjob.
 
     :param ctx:                Combined type of a callback and rei struct
     :param vault_package:      Path to the package in the vault
