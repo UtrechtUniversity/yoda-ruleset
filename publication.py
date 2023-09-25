@@ -21,7 +21,8 @@ from util import *
 __all__ = ['rule_process_publication',
            'rule_process_depublication',
            'rule_process_republication',
-           'rule_update_publication']
+           'rule_update_publication',
+           'rule_lift_embargos_on_data_access']
 
 
 def get_publication_config(ctx):
@@ -587,16 +588,57 @@ def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 def set_access_restrictions(ctx, vault_package, publication_state):
     """Set access restriction for vault package.
 
+    This function is called when (re)publishing a vault package.
+    The embargo date of a package is essential determining access.
+    If current date < embargo end date, then set end date in `ord_lift_embargo_date`
+    to be picked up by lift embargo cronjob.
+
     :param ctx:                Combined type of a callback and rei struct
     :param vault_package:      Path to the package in the vault
     :param publication_state:  Dict with state of the publication process
 
     :returns: None
     """
-    access_restriction = publication_state["accessRestriction"]
-    access_level = "null"
+    # Embargo handling
+    combiJsonPath = publication_state["combiJsonPath"]
+    dictJsonData = jsonutil.read(ctx, combiJsonPath, want_bytes=False)
 
+    # Remove empty lists, empty dicts, or None elements
+    # to prevent empty fields on landingpage.
+    dictJsonData = jsonutil.remove_empty(dictJsonData)
+
+    active_embargo = False
+
+    # Check whether lift_embargo_date is present already
+    iter = genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # Just get rid of the previous lift_embargo_date.
+        # Will be introduced again if required in below code but will keep the code more focused whether lift_date must be introduced or not.
+        avu.rm_from_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', row[1])
+
+    # Datapackage under embargo?
+    embargo_end_date = dictJsonData.get('Embargo_End_Date', None)
+    if embargo_end_date is not None and len(embargo_end_date):
+        # String comparison is possible as both are in same string format YYYY-MM-DD
+        active_embargo = (datetime.now().strftime('%Y-%m-%d') < embargo_end_date)
+
+    access_restriction = publication_state["accessRestriction"]
+
+    # Lift embargo handling is only interesting when package has open access.
     if access_restriction.startswith('Open'):
+        if active_embargo:
+            # datapackage data is under embargo.
+            # Add indication to metadata on vault_package so cronjob can pick it up and sets acls when embargo date is passed in the FUTURE
+            avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'lift_embargo_date', embargo_end_date)
+
+    # Now handle the data access taking possible embargo into account
+    access_level = "null"
+    # Only without an active embargo date AND open access is it allowed to read data!
+    if access_restriction.startswith('Open') and not active_embargo:
         access_level = "read"
 
     try:
@@ -1497,3 +1539,38 @@ rule_process_depublication = rule.make(inputs=range(1), outputs=range(1, 3))(pro
 
 """Rule interface for processing republication of a vault package."""
 rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(process_republication)
+
+
+@rule.make()
+def rule_lift_embargos_on_data_access(ctx):
+    """Find vault packages that have a data access embargo that can be lifted as the embargo expires.
+
+    If lift_embargo_date <= now, update publication.
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: Status of lifting the embargo indications
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
+
+    zone = user.zone(ctx)
+
+    # Find all packages that have embargo date for data access that must be lifted
+    iter = genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
+        " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
+        " AND META_COLL_ATTR_VALUE <= '{}'".format(datetime.now().strftime('%Y-%m-%d')),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_package = row[0]
+
+        log.write(ctx, "Lift embargo for vault package: " + vault_package)
+        set_update_publication_state(ctx, vault_package)
+        process_publication(ctx, vault_package)
+
+    return 'OK'

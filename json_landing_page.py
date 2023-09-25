@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from datetime import datetime
+
 import jinja2
 from dateutil import parser
 
@@ -82,6 +84,15 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         return landing_page
 
     # Gather all metadata.
+
+    # Is this datapackage under embargo?
+    no_active_embargo = True
+
+    # Datapackage under embargo?
+    embargo_end_date = dictJsonData.get('Embargo_End_Date', None)
+    if embargo_end_date is not None and len(embargo_end_date):
+        no_active_embargo = (datetime.now().strftime('%Y-%m-%d') >= embargo_end_date)
+
     title = dictJsonData['Title']
     description = dictJsonData['Description']
 
@@ -301,6 +312,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     # tm.globals['custom_function'] = custom_function
     tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
     landing_page = tm.render(
+        no_active_embargo=no_active_embargo,
         title=title,
         description=description,
         datatype=datatype,
