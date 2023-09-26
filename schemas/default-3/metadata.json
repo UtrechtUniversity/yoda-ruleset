@@ -1041,7 +1041,8 @@
                     "properties": {
                       "Name_Identifier": {
                         "type": "string",
-                        "title": "Identifier"
+                        "title": "Identifier",
+                        "pattern": "[0-9]{11}"
                       }
                     }
                   }
