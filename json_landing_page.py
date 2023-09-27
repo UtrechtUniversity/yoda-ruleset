@@ -312,7 +312,6 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     # tm.globals['custom_function'] = custom_function
     tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
     landing_page = tm.render(
-        no_active_embargo=no_active_embargo,
         title=title,
         description=description,
         datatype=datatype,
@@ -326,6 +325,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         contributors=contributors,
         contacts=contacts,
         publication_date=publication_date,
+        embargo_end_date=embargo_end_date,
+        no_active_embargo=no_active_embargo,
         data_access_restriction=data_access_restriction,
         license=license,
         license_uri=license_uri,
