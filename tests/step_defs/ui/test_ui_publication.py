@@ -82,8 +82,23 @@ def ui_check_provenance_vault(browser):
     browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
+
     # Chronological (backward) status changes
     prov_statuses = ['Published', 'Approved for publication', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
+    for index in range(0, len(prov_statuses)):
+        assert action_log_rows[index].value.find(prov_statuses[index]) != -1
+
+
+@when('user checks version provenance info vault')
+def ui_check_version_provenance_vault(browser):
+    # Check presence and chronological order of provenance
+    # precondition is that in the correct vault folder (highest level datapackage) already
+    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon').click()
+    action_log_rows = browser.find_by_css('.list-group-item-action')
+
+    # Chronological (backward) status changes
+    prov_statuses = ['Published', 'Approved for publication', 'Added metadata: related datapackage', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
     for index in range(0, len(prov_statuses)):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
 
@@ -141,6 +156,16 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
             return
 
     raise AssertionError()
+
+
+@then('view contents button is present')
+def ui_view_contents_present(browser):
+    browser.is_element_visible_by_css('.view-contents', wait_time=5)
+
+
+@then('view contents button is not present')
+def ui_view_contents_not_present(browser):
+    not browser.is_element_visible_by_css('.view-contents', wait_time=5)
 
 
 @when(parsers.parse("user browses to data package in {vault}"))
