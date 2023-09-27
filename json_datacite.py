@@ -262,14 +262,14 @@ def get_contributors(combi):
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if isinstance(aff, dict):
+            if isinstance(aff, dict) and len(aff):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
                                          "affiliationIdentifierScheme": "ROR"})
                 else:
                     affiliations.append({'name': aff['Affiliation_Name']})
-            else:
+            elif len(aff):
                 affiliations.append({'name': aff})
 
         name_ids = []
@@ -293,14 +293,14 @@ def get_contributors(combi):
     for person in combi.get('ContactPerson', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if isinstance(aff, dict):
+            if isinstance(aff, dict) and len(aff):
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
                                          "affiliationIdentifierScheme": "ROR"})
                 else:
                     affiliations.append({'name': aff['Affiliation_Name']})
-            else:
+            elif len(aff):
                 affiliations.append({'name': aff})
 
         name_ids = []
@@ -445,7 +445,7 @@ def get_geo_locations(combi):
 
        There are two versions of this:
        1) Default schema - only textual representation of
-       2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
+       2) Geo schema including map (=bounding box or marker/point information) Including temporal and spatial descriptions
        Both are mutually exclusive.
        I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
 

@@ -445,7 +445,6 @@
                                 <span>{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
-                        {% endif %}
 
                         <div class="row">
                             <div class="col-sm-2">
@@ -481,6 +480,7 @@
                                 </span>
                             </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
 
                         {% for contact in contacts %}
@@ -493,7 +493,6 @@
                                 <span>{{ contact.Name.Family_Name }}, {{ contact.Name.Given_Name }}</span>
                             </div>
                         </div>
-                        {% endif %}
 
                         {% if contact.Position %}
                         <div class="row">
@@ -553,6 +552,7 @@
                                 </span>
                             </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
 
                         <div class="row">
