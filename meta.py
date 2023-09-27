@@ -395,11 +395,12 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
-            name = contributor['Name']
-            if 'Given_Name' in name and 'Family_Name' in name:
-                ctx.msi_add_avu('-C', path, 'Contributor',
-                                name['Given_Name'] + ' ' + name['Family_Name'],
-                                constants.UUFLATINDEX)
+            if 'Name' in contributor:
+                name = contributor['Name']
+                if 'Given_Name' in name and 'Family_Name' in name:
+                    ctx.msi_add_avu('-C', path, 'Contributor',
+                                    name['Given_Name'] + ' ' + name['Family_Name'],
+                                    constants.UUFLATINDEX)
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
