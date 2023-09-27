@@ -221,7 +221,7 @@ Feature: Vault UI
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user clicks action menu go to research
+        And user clicks go to research
 	    Then the research space of <vault> is shown
 
         Examples:

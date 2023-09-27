@@ -229,10 +229,9 @@ def ui_data_package_compliance_is_presented(browser):
     assert browser.find_by_css('p.help')
 
 
-@when('user clicks action menu go to research')
+@when('user clicks go to research')
 def ui_data_package_go_to_research(browser):
-    browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-go-to-research').click()
+    browser.find_by_css('.btn-go-to-research').click()
 
 
 @then(parsers.parse("the research space of {vault} is shown"))
