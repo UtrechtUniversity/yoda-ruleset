@@ -1027,6 +1027,10 @@ def rule_group_expiration_date_validate(ctx, expiration_date):
     try:
         if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
             raise ValueError
+
+        # Expiration date should be in the future
+        if expiration_date <= datetime.now().strftime('%Y-%m-%d'):
+            raise ValueError
         return 'true'
     except ValueError:
         return 'false'
