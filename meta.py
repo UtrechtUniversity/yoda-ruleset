@@ -14,7 +14,6 @@ import irods_types
 from deepdiff import DeepDiff
 
 import avu_json
-import folder
 import provenance
 import publication
 import schema as schema_
@@ -484,7 +483,7 @@ def ingest_metadata_vault(ctx, path):
             data_package = row[0]
 
     # Update flat index metadata for OpenSearch.
-    if config.enable_open_search and folder.collection_group_name(ctx, coll).startswith("deposit-"):
+    if config.enable_open_search and group.exists(ctx, coll.split("/")[3].replace("vault-", "deposit-", 1)):
         update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
