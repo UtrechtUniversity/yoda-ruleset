@@ -553,6 +553,10 @@ def validate_data(ctx, data, allow_update):
     :returns: Errors if found any
     """
     errors = []
+
+    can_add_category = user.is_member_of(ctx, 'priv-category-add')
+    is_admin = user.is_admin(ctx)
+
     for (category, subcategory, groupname, managers, members, viewers) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
@@ -561,11 +565,11 @@ def validate_data(ctx, data, allow_update):
         # Find out whether category or subcategory exists. If not, and not rodsadmin, the group cannot be created or adjusted => error
         categories = getCategories(ctx)
         if category not in categories:
-            if not user.is_admin(ctx):
+            if not (is_admin or can_add_category):
                 # Insufficient permissions to add new category.
                 errors.append('Category {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
         elif subcategory not in getSubcategories(ctx, category):
-            if not user.is_admin(ctx):
+            if not (is_admin or can_add_category):
                 # Insufficient permissions to add new subcategory.
                 errors.append('Subcategory {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
 
