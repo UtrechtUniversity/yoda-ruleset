@@ -1014,6 +1014,10 @@ def rule_group_expiration_date_validate(ctx, expiration_date):
     try:
         if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
             raise ValueError
+
+        # Expiration date should be in the future
+        if expiration_date <= datetime.now().strftime('%Y-%m-%d'):
+            raise ValueError
         return 'true'
     except ValueError:
         return 'false'
@@ -1081,10 +1085,6 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
                 return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
-
-        # Check expiration_date here if present at all
-        if len(expiration_date) == 10 and expiration_date <= datetime.now().strftime('%Y-%m-%d'):
-            return api.Error('policy_error', 'The expiration date must be later than today.')
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
