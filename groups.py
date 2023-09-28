@@ -1109,10 +1109,6 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :returns: Dict with API status result
     """
     try:
-        # Protecting expiration_date - business logic held within irods
-        if property_name == 'expiration_date' and len(property_value) == 10 and property_value <= datetime.now().strftime('%Y-%m-%d'):
-            return api.Error('policy_error', 'The expiration date must be later than today.')
-
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
         status = response[3]
         message = response[4]
