@@ -59,6 +59,8 @@ acPreSudoGroupRemove(*groupName, *policyKv) {
 	writeLine("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
+        # So we're an admin. Now check whether the vault has no datapackages left for this research group
+        uuGroupPreSudoGroupRemoveForAdmin(*groupName, *policyKv);
 }
 
 acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {

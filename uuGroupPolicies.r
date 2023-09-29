@@ -130,6 +130,31 @@ uuGroupPreSudoGroupRemove(*groupName, *policyKv) {
 	fail;
 }
 
+# Specific handling for rodsadmin when removing a group
+uuGroupPreSudoGroupRemoveForAdmin(*groupName, *policyKv) {
+
+        *prefix = "";
+        *base = "";
+
+        uuChop(*groupName, *prefix, *base, "-", true);
+        *vaultName = "vault-*base";
+        *zoneName = $rodsZoneClient;
+        *vaultIsEmpty = true;
+
+        # Check whether vault still holds data
+        msiMakeGenQuery("COLL_NAME",
+            "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
+        msiExecGenQuery(*genQIn, *genQOut);
+        foreach(*genQOut){
+            *vaultIsEmpty = false; break;
+        }
+        if (*vaultIsEmpty) {
+            succeed;
+        }
+
+        fail;
+}
+
 uuGroupPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
 
 	*groupToCheck = *groupName
