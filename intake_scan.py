@@ -81,8 +81,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                 # For reporting purposes collect the subscopes
                 found_datasets.append(subscope)
             else:
-                # subscope["dataset_directory"] = row[1]
-                # apply_dataset_metadata(ctx, path, subscope, False, True)
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
