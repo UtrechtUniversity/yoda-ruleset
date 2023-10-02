@@ -27,3 +27,8 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 --statistics
+
+      - name: Run unit tests
+        run: |
+          cd unit-tests
+          python2 -m unittest unit_tests
