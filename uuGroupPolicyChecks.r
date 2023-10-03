@@ -203,7 +203,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 							} else {
 							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
 							}
-							
+
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
@@ -376,28 +376,28 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 			}
 
 			if (*homeCollectionIsEmpty) {
-                                if (*groupName like regex "(research)-.*") {
-                                    # Research groups an only be removed when nu vault packages exist
-                                    uuChop(*groupName, *prefix, *base, "-", true);
-                                    *vaultName = "vault-*base";
-                                    *zoneName = $rodsZoneClient;
-                                    *vaultIsEmpty = true;
+          if (*groupName like regex "(research)-.*") {
+              # Research groups can only be removed when no vault packages exist
+              uuChop(*groupName, *prefix, *base, "-", true);
+              *vaultName = "vault-*base";
+              *zoneName = $rodsZoneClient;
+              *vaultIsEmpty = true;
 
-                                    # Check whether vault still holds data 
-                                    msiMakeGenQuery("COLL_NAME",
-                                        "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
-                                    msiExecGenQuery(*genQIn, *genQOut);
-                                    foreach(*genQOut){
-                                        *vaultIsEmpty = false; break;
-                                    }
-                                    if (*vaultIsEmpty) { 
-                                        *allowed = 1;
-                                    } else {
-                                        *reason = "There are still datapackages in the vault for group: *groupName. Please remove these first before removing this group.";
-                                    }
-                                } else {
-				    *allowed = 1;
-                                }
+              # Check whether vault still holds data
+              msiMakeGenQuery("COLL_NAME", "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
+              msiExecGenQuery(*genQIn, *genQOut);
+              foreach(*genQOut){
+                  *vaultIsEmpty = false;
+									break;
+              }
+              if (*vaultIsEmpty) {
+                  *allowed = 1;
+              } else {
+                  *reason = "There are still datapackages in the vault for group: *groupName. Please remove these first before removing this group.";
+              }
+          } else {
+              *allowed = 1;
+          }
 			} else {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
