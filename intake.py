@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import fnmatch
 import time
+import traceback
 
 import genquery
 
@@ -407,6 +408,7 @@ def api_intake_scan_for_datasets(ctx, coll):
         try:
             _intake_scan_for_datasets(ctx, coll)
         except Exception:
+            log.write(ctx, "Intake scan failed with the following exception: " + traceback.format_exc())
             return {"proc_status": "NOK", "error_msg": "Error during scanning process"}
     else:
         return {"proc_status": "NOK", "error_msg": "No permissions to scan collection"}
