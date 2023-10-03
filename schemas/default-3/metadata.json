@@ -238,7 +238,7 @@
         "IsSupplementTo: Current datapackage is supplement to",
         "IsSupplementedBy: Current datapackage is supplemented by",
         "IsContinuedBy: Current datadatapackage is continued by",
-        "Continues: Continues this current dataset",
+        "Continues: Continues this current datapackage",
         "IsDescribedBy: Current datapackage is described by",
         "Describes: Current datapackage is describing",
         "HasMetadata: Current datapackage has additional metadata",
