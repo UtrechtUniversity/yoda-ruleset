@@ -1,6 +1,12 @@
-name: "Python 2 lint"
+name: "Run unit tests"
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+    - 'tests/**'
+  pull_request:
+    paths-ignore:
+    - 'tests/**'
 
 jobs:
   flake8:
@@ -9,7 +15,7 @@ jobs:
       matrix:
         python-version: [2.7]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         # setup-python stopped supporting Python 2.7, use https://github.com/MatteoH2O1999/setup-python
@@ -19,11 +25,7 @@ jobs:
           allow-build: info
           cache-build: true
 
-      - name: Install dependencies
+      - name: Run unit tests
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install flake8 flake8-import-order codespell
-
-      - name: Lint with flake8
-        run: |
-          flake8 --statistics
+          cd unit-tests
+          python2 -m unittest unit_tests
