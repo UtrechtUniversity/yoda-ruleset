@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import datetime
 import hashlib
-import json
 import os
 import random
 import time
@@ -17,13 +16,14 @@ import irods_types
 import folder
 import groups
 from util import *
+from util.spool import get_spool_data, has_spool_data, put_spool_data
 
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
            'rule_revision_batch',
-           'rule_revisions_info',
-           'rule_revisions_clean_up']
+           'rule_revisions_cleanup_collect',
+           'rule_revisions_cleanup_process']
 
 
 @api.make()
@@ -523,12 +523,14 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
     return revision_created
 
 
-@rule.make(inputs=[], outputs=[0])
-def rule_revisions_info(ctx):
+def revisions_info(ctx):
     """Obtain information about all revisions.
 
     :param ctx: Combined type of a callback and rei struct
-    :returns:   Json string with info about revisions
+    :returns:   Nested list, where the outer list represents revisioned data objects,
+                and the inner list represents revisions for that data object.
+                Each revision is represented by a list of length three (revision ID,
+                modification epoch time, revision path)
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -575,21 +577,67 @@ def rule_revisions_info(ctx):
             if revision_id in rev_dict:
                 revision_list.append(rev_dict[revision_id])
         revisions_info.append(revision_list)
-    return json.dumps(revisions_info)
+    return revisions_info
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_revisions_cleanup_collect(ctx, batch_size):
+    """Collect revision data and put it in the spool system for processing by the revision cleanup
+       processing jobs
+
+       :param ctx:              Combined type of a callback and rei struct
+       :param batch_size:       Number of revisions to include in one spool object
+
+       :returns:                Status
+
+       :raises Exception:       If rule is executed by non-rodsadmin user
+    """
+    if user.user_type(ctx) != 'rodsadmin':
+        raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
+
+    if has_spool_data(constants.PROC_REVISION_CLEANUP):
+        return "Existing spool data present. Not adding new revision cleanup data."
+
+    data = revisions_info(ctx)
+    batch_size = int(batch_size)
+    number_revisions = len(data)
+
+    while len(data) > 0:
+        current_batch = data[:batch_size]
+        put_spool_data(constants.PROC_REVISION_CLEANUP, [current_batch])
+        data = data[batch_size:]
+
+    log.write(ctx, "Collected {} revisions for revision cleanup.".format(number_revisions))
+    return "Revision data has been spooled for cleanup"
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay):
-    """Step through part of revision store and apply the chosen bucket strategy.
+def rule_revisions_cleanup_process(ctx, bucketcase, endOfCalendarDay, verbose_flag):
+    """Apply the selected revision strategy to a batch of spooled revision data
 
     :param ctx:              Combined type of a callback and rei struct
-    :param revisions_info:   Json-encoded revision info.
-    :param bucketcase:       Multiple ways of cleaning up revisions can be chosen.
+    :param bucketcase:       Select a bucketlist based on a string ('A', 'B', 'Simple'). If the value is an unknown case, the default
+                             value 'B' will be used. See
+                             https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
+                             for an explanation.
     :param endOfCalendarDay: If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+    :param verbose_flag:     "1" if rule needs to print additional information for troubleshooting, else "0"
 
     :returns: String with status of cleanup
+
+    :raises Exception:       If rule is executed by non-rodsadmin user
     """
-    revisions_list = json.loads(revisions_info)
+
+    if user.user_type(ctx) != 'rodsadmin':
+        raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
+
+    log.write(ctx, '[revisions] Revision cleanup job starting.')
+    verbose = verbose_flag == "1"
+    revisions_list = get_spool_data(constants.PROC_REVISION_CLEANUP)
+
+    if revisions_list is None:
+        log.write(ctx, '[revisions] Revision cleanup job stopping - no more spooled revision data.')
+        return "No more revision cleanup data"
 
     end_of_calendar_day = int(endOfCalendarDay)
     if end_of_calendar_day == 0:
@@ -598,16 +646,38 @@ def rule_revisions_clean_up(ctx, revisions_info, bucketcase, endOfCalendarDay):
     # get definition of buckets
     buckets = revision_bucket_list(ctx, bucketcase)
 
+    # Statistics
+    num_candidates = 0
+    num_errors = 0
+
     for revisions in revisions_list:
+        if verbose:
+            log.write(ctx, '[revisions] Processing revisions {} ...'.format(str(revisions)))
         # Process the original path conform the bucket settings
-        candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
+        candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day, verbose)
+        num_candidates += len(candidates)
+
+        # Create lookup table for revision paths if needed
+        if len(candidates) > 0:
+            rev_paths = {r[0]: r[2] for r in revisions}
+
+        if verbose:
+            log.write(ctx, '[revisions] Candidates to be removed: {} ...'.format(str(candidates)))
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
-            if not revision_remove(ctx, revision_id, rev_dict[revision_id][1]):
-                return 'Something went wrong cleaning up revision store'
+            rev_path = rev_paths[revision_id]
+            if verbose:
+                log.write(ctx, '[revisions] Removing candidate: {} ...'.format(str(revision_id)))
+            if not revision_remove(ctx, revision_id, rev_path):
+                num_errors += 1
 
-    return 'Successfully cleaned up the revision store'
+    log.write(ctx, '[revisions] Revision cleanup job completed - {} candidates for {} versioned data objects ({} successful / {} errors).'.format(
+        str(num_candidates),
+        str(len(revisions_list)),
+        str(num_candidates - num_errors),
+        str(num_errors)))
+    return 'Revision store cleanup job completed'
 
 
 def revision_remove(ctx, revision_id, revision_path):
@@ -621,11 +691,21 @@ def revision_remove(ctx, revision_id, revision_path):
 
     :returns: Boolean indicating if revision was removed
     """
+    revision_prefix = os.path.join("/" + user.zone(ctx), constants.UUREVISIONCOLLECTION.lstrip(os.path.sep), '')
+    if not revision_path.startswith(revision_prefix):
+        log.write(ctx, "ERROR - sanity check fail when removing revision <{}>: <{}>".format(
+            revision_id,
+            revision_path))
+        return False
+
     try:
         msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
         return True
-    except msi.Error:
-        log.write(ctx, "ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
+    except msi.Error as e:
+        log.write(ctx, "ERROR - could not remove revision <{}>: <{}> ({}).".format(
+            revision_id,
+            revision_path,
+            str(e)))
         return False
 
     log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
@@ -641,7 +721,9 @@ def revision_bucket_list(ctx, case):
     revision after the current original (which should always be kept) , 1 the revision after that, etc.
 
     :param ctx:   Combined type of a callback and rei struct
-    :param case:  Select a bucketlist based on a string
+    :param case:  Select a bucketlist based on a string ('A', 'B', 'Simple'). If the case is unknown, the default
+                  value 'B' will be used. See https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
+                  for an explanation.
 
     :returns: List representing revision strategy
     """
@@ -687,13 +769,14 @@ def revision_bucket_list(ctx, case):
         ]
 
 
-def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
+def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound, verbose):
     """Get the candidates for deletion based on the active strategy case
 
     :param ctx:                      Combined type of a callback and rei struct
     :param buckets:                  List of buckets
     :param revisions:                List of revisions
     :param initial_upper_time_bound: Initial upper time bound for first bucket
+    :param verbose:                  Whether to print additional information for troubleshooting (boolean)
 
     :returns: List of candidates for deletion based on the active strategy case
     """
@@ -733,11 +816,19 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
             if bucket_start_index >= 0:
                 while count < nr_to_be_removed:
                     # Add revision to list of removal
-                    deletion_candidates.append(rev_list[bucket_start_index + count])
+                    index = bucket_start_index + count
+                    if verbose:
+                        log.write(ctx, '[revisions] Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
+                                                                                                                 str(bucket)))
+                    deletion_candidates.append(rev_list[index])
                     count += 1
             else:
                 while count < nr_to_be_removed:
-                    deletion_candidates.append(rev_list[len(rev_list) + (bucket_start_index) - count])
+                    index = len(rev_list) + (bucket_start_index) - count
+                    if verbose:
+                        log.write(ctx, '[revisions] Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
+                                                                                                                 str(bucket)))
+                    deletion_candidates.append(rev_list[index])
                     count += 1
 
         bucket_counter += 1  # To keep conciding with strategy list

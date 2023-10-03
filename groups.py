@@ -553,10 +553,23 @@ def validate_data(ctx, data, allow_update):
     :returns: Errors if found any
     """
     errors = []
+
+    can_add_category = user.is_member_of(ctx, 'priv-category-add')
+    is_admin = user.is_admin(ctx)
+
     for (category, subcategory, groupname, managers, members, viewers) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
+
+        # Is user admin or has catergory add privileges?
+        if not (is_admin or can_add_category):
+            if category not in getCategories(ctx):
+                # Insufficient permissions to add new category.
+                errors.append('Category {} does not exist and cannot be created due to insufficient permissions.'.format(category))
+            elif subcategory not in getSubcategories(ctx, category):
+                # Insufficient permissions to add new subcategory.
+                errors.append('Subcategory {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
 
         for the_user in managers + members + viewers:
             if not is_internal_user(the_user):
@@ -1013,6 +1026,10 @@ def rule_group_expiration_date_validate(ctx, expiration_date):
 
     try:
         if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+
+        # Expiration date should be in the future
+        if expiration_date <= datetime.now().strftime('%Y-%m-%d'):
             raise ValueError
         return 'true'
     except ValueError:

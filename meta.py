@@ -395,11 +395,12 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
-            name = contributor['Name']
-            if 'Given_Name' in name and 'Family_Name' in name:
-                ctx.msi_add_avu('-C', path, 'Contributor',
-                                name['Given_Name'] + ' ' + name['Family_Name'],
-                                constants.UUFLATINDEX)
+            if 'Name' in contributor:
+                name = contributor['Name']
+                if 'Given_Name' in name and 'Family_Name' in name:
+                    ctx.msi_add_avu('-C', path, 'Contributor',
+                                    name['Given_Name'] + ' ' + name['Family_Name'],
+                                    constants.UUFLATINDEX)
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
@@ -482,7 +483,7 @@ def ingest_metadata_vault(ctx, path):
             data_package = row[0]
 
     # Update flat index metadata for OpenSearch.
-    if config.enable_open_search:
+    if config.enable_open_search and group.exists(ctx, coll.split("/")[3].replace("vault-", "deposit-", 1)):
         update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.

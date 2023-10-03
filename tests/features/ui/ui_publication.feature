@@ -93,6 +93,7 @@ Feature: Publication UI
         And user downloads file yoda-metadata.json
         And user opens landingpage through system metadata
         Then landingpage content matches yoda-metadata.json
+        And view contents button is not present
 
         Examples:
             | vault          |
@@ -167,7 +168,6 @@ Feature: Publication UI
         When user browses to folder <folder>
         And user checks provenance info research
 
-
         Examples:
             | folder            |
             | research-teclab-0 |
@@ -177,7 +177,7 @@ Feature: Publication UI
         Given user researcher is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user checks provenance info vault
+        And user checks version provenance info vault
 
         Examples:
             | vault          |
@@ -191,6 +191,7 @@ Feature: Publication UI
         And user downloads file yoda-metadata.json
         And user opens landingpage through system metadata
         Then landingpage content matches yoda-metadata.json
+        And view contents button is not present
 
         Examples:
             | vault          |

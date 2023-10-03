@@ -361,10 +361,11 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager || *actorUserType == "rodsadmin") {
-		#                           v  These groups are user-removable  v
-		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*") {
-			# NB: Only rodsadmin can remove datamanager groups.
-			#     Even datamanager group managers cannot remove their own group.
+                # Only a rodsadmin can remove a datamanager-group
+                # Even datamanager group managers cannot remove their own group.
+                #                          v These groups are user-removable v
+		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*" 
+                    || (*groupName like regex "(datamanager)-.*") && *actorUserType == "rodsadmin") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
