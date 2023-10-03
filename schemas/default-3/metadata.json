@@ -237,7 +237,7 @@
         "Cites: Current datapackage includes resource in a citation",
         "IsSupplementTo: Current datapackage is supplement to",
         "IsSupplementedBy: Current datapackage is supplemented by",
-        "IsContinuedBy: Current datadatapackage is continued by",
+        "IsContinuedBy: Current datapackage is continued by",
         "Continues: Continues this current datapackage",
         "IsDescribedBy: Current datapackage is described by",
         "Describes: Current datapackage is describing",
