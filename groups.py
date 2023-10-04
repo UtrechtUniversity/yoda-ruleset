@@ -1071,7 +1071,7 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, sram_group):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -1082,15 +1082,14 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
-    :param sram_group:          Generates SRAM CO Identifier of the group
 
     :returns: Dict with API status result
     """
     try:
         co_identifier = ''
 
-        # Post SRAM collaboration if group is a SRAM group.
-        if config.enable_sram and sram_group == 'true':
+        # Post SRAM collaboration if SRAM is enabled.
+        if config.enable_sram:
             response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
 
             if "error" in response_sram:
