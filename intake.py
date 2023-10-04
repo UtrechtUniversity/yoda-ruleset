@@ -240,7 +240,6 @@ def get_dataset_details(ctx, dataset_id, path):
     # Parse dataset_id to get WEPV-items individually
     dataset_parts = dataset_id.split('\t')
     dataset['wave'] = dataset_parts[0]
-    dataset['expType'] = dataset_parts[1]
     dataset['experiment_type'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
