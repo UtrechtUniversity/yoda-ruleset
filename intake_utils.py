@@ -196,8 +196,7 @@ def dataset_parse_id(dataset_id):
     dataset_parts = dataset_id.split('\t')
     dataset = {}
     dataset['wave'] = dataset_parts[0]
-    dataset['experiment_type'] = dataset_parts[1]  # Is DIT NOG ERGENS GOED VOOR
-    dataset['expType'] = dataset_parts[1]
+    dataset['experiment_type'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
     dataset['directory'] = dataset_parts[4]
