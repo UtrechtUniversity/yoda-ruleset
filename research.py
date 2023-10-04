@@ -647,19 +647,11 @@ def api_research_collection_details(ctx, path):
     # Retrieve lock count.
     lock_count = meta_form.get_coll_lock_count(ctx, path)
 
-    # Check if vault is accessible.
-    vault_path = ""
-    vault_name = group.replace("research-", "vault-", 1)
-    vault_coll = '/'.join(path.split('/')[0:3])
-    if collection.exists(ctx, vault_coll + "/" + vault_name):
-        vault_path = vault_name
-
     return {"basename": basename,
             "status": status.value,
             "member_type": member_type,
             "is_datamanager": is_datamanager,
-            "lock_count": lock_count,
-            "vault_path": vault_path}
+            "lock_count": lock_count}
 
 
 @api.make()

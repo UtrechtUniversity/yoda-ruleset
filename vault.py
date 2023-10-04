@@ -556,7 +556,6 @@ def api_vault_collection_details(ctx, path):
     if space != pathutil.Space.VAULT:
         return {}
 
-    dirname = pathutil.dirname(path)
     basename = pathutil.basename(path)
 
     # Check if collection is vault package.
@@ -616,12 +615,6 @@ def api_vault_collection_details(ctx, path):
             if user_name.startswith(("research-", "deposit-")):
                 research_group_access = True
 
-    # Check if research space is accessible.
-    research_path = ""
-    research_name = group.replace("vault-", "research-", 1)
-    if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
-        research_path = research_name
-
     result = {
         "basename": basename,
         "status": status,
@@ -629,8 +622,7 @@ def api_vault_collection_details(ctx, path):
         "has_datamanager": has_datamanager,
         "is_datamanager": is_datamanager,
         "vault_action_pending": vault_action_pending,
-        "research_group_access": research_group_access,
-        "research_path": research_path
+        "research_group_access": research_group_access
     }
     if config.enable_data_package_archive:
         import vault_archive
