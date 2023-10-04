@@ -138,6 +138,10 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
     if not collection.exists(ctx, folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
+    # Collection exists in destination?
+    if collection.exists(ctx, new_folder_path):
+        return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
+
     # All requirements OK
     try:
         collection.copy(ctx, folder_path, new_folder_path)
@@ -194,6 +198,10 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
     # Does original folder exist?
     if not collection.exists(ctx, folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
+
+    # Collection exists in destination?
+    if collection.exists(ctx, new_folder_path):
+        return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
 
     # All requirements OK
     try:
