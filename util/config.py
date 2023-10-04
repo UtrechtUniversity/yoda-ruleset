@@ -129,6 +129,7 @@ config = Config(environment=None,
                 enable_sram=True,
                 sram_rest_api_url=None,
                 sram_api_key=None,
+                sram_flow=None,
                 sram_verbose_logging=False,
                 sram_tls_verify=True)
 

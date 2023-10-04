@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request, roles
 
-scenarios('../../features/api/api_group.feature', '../../features/api/api_group_sram.feature')
+scenarios('../../features/api/api_group.feature')
 
 
 @given('the Yoda group data API is queried', target_fixture="api_response")
@@ -76,24 +76,7 @@ def api_group_create(user, group_name):
          "schema_id": "default-2",
          "expiration_date": "",
          "description": "",
-         "data_classification": "public",
-         "sram_group": ""}
-    )
-
-
-@given(parsers.parse('the user creates a new SRAM group "{group_name}"'), target_fixture="api_response")
-def api_group_create_sram(user, group_name):
-    return api_request(
-        user,
-        "group_create",
-        {"group_name": group_name,
-         "category": "api-test-sram",
-         "subcategory": "api-test-sram",
-         "schema_id": "default-3",
-         "expiration_date": "",
-         "description": "",
-         "data_classification": "public",
-         "sram_group": "true"}
+         "data_classification": "public"}
     )
 
 
