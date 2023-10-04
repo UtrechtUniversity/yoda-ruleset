@@ -1218,8 +1218,10 @@ def api_group_user_add(ctx, username, group_name):
         message = response[3]
         if status == '0':
             # Send invitation mail for SRAM CO.
-            if config.enable_sram:
-                if sram_group:
+            if config.enable_sram and sram_group:
+                if config.sram_flow == 'join_request':
+                    sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
+                elif config.sram_flow == 'invitation':
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
             return api.Result.ok()
         else:
