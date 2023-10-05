@@ -326,7 +326,8 @@ def intake_check_datasets(ctx, root):
 def intake_check_dataset(ctx, root, dataset_id):
     """Run checks on the dataset specified by the given dataset id.
 
-    This function adds warnings and errors to objects within the dataset.
+    This function adds object counts and error counts to top-level objects within the dataset.
+    For historical reasons, it also adds a warning count, which is always 0.
 
     :param ctx:        Combined type of a callback and rei struct
     :param root:       Collection name
