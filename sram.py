@@ -137,6 +137,51 @@ def sram_delete_collaboration_membership(ctx, co_identifier, uuid):
     return response.status_code == 204
 
 
+def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
+    """Create SRAM Collaborative Organisation Identifier.
+
+    :param ctx:           Combined type of a ctx and rei struct
+    :param group_name:    Name of the group the user is to invited to join
+    :param username:      Name of the user to be invited
+    :param co_identifier: SRAM identifier of the group the user is to invited to join
+
+    :returns: Boolean indicating if put of new collaboration invitation succeeded
+    """
+    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    # Now plus a year.
+    expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
+
+    # Get epoch expiry date.
+    date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    epoch_date = int((date - epoch).total_seconds())
+
+    # Build SRAM payload.
+    payload = {
+        "short_name": group_name,
+        "collaboration_identifier": co_identifier,
+        "message": "Invitation to join Yoda group {}".format(group_name),
+        "intended_role": "member",
+        "invitation_expiry_date": epoch_date,
+        "invites": [
+            username
+        ],
+        "groups": []
+    }
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "post {}: {}".format(url, payload))
+
+    response = requests.post(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(response.status_code))
+
+    return response.status_code == 201
+
+
 def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
     """Send invitation email to newly added user to the group.
 
