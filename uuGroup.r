@@ -460,6 +460,25 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
+# \brief Get a list of both manager and non-manager members of a group.
+#
+# This function ignores zone names, this is usually a bad idea.
+#
+# \deprecated Use uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) instead
+#
+# \param[in]  groupName
+# \param[out] members a list of user names
+#
+uuGroupGetMembers(*groupName, *members) {
+	uuGroupGetMembers(*groupName, false, false, *m);
+	*members = list();
+	foreach (*member in *m) {
+		# Throw away the zone name for backward compat.
+		uuChop(*member, *name, *_, "#", true);
+		*members = cons(*name, *members);
+	}
+}
+
 
 # \brief Get a list of a group's members.
 #
@@ -922,16 +941,27 @@ uuUserMetaRemove(*userName, *property, *status, *message) {
 	}
 }
 
-# \brief Add a user to a group.
+# \brief Add a user to a group on behalf of another user.
 #
 # \param[in]  groupName
-# \param[in]  user      the user to add to the group
-# \param[out] status    zero on success, non-zero on failure
-# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+# \param[in]  user          the user to add to the group
+# \param[in]  creatorUser   the user who will add the new user
+# \param[in]  creatorZone   the zone of the user who will add the new user
+# \param[out] status        zero on success, non-zero on failure
+# \param[out] message       a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupUserAdd(*groupName, *user, *status, *message) {
+uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message) {
 	*status  = '1';
 	*message = "An internal error occurred.";
+
+	# Check that the creator user exists
+	*fullName = "*creatorUser#*creatorZone";
+
+	uuUserExists(*fullName, *exists);
+	# If creator does not exist, exit
+	if (!*exists) {
+    	succeed; # Return here (fail would ruin the status and error message).
+	}
 
 	uuGetUserAndZone(*user, *userName, *userZone);
 	*fullName = "*userName#*userZone";
@@ -956,13 +986,13 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
                 if (*externalUser == "1") {
                         *http_code = ""
                         *message = ""
-                        rule_group_provision_external_user(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);
+                        rule_group_provision_external_user(*userName, *creatorUser, *creatorZone, *http_code, *message);
                         if (*message != "") {
                                 writeLine("serverLog", "[EXTERNAL USER] *message");
                                 *status = *http_code;
                                 succeed; # Return here (fail would ruin the status and error message).
                         }
-                        writeLine("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient.");
+                        writeLine("serverLog", "[EXTERNAL USER] User *userName added on the behalf of *creatorUser on *creatorZone.");
                 }
 	}
 
@@ -977,6 +1007,21 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 		}
 	}
 }
+
+# \brief Add a user to a group.
+#
+# \param[in]  groupName
+# \param[in]  user      the user to add to the group
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuGroupUserAdd(*groupName, *user, *status, *message) {
+	*status  = '1';
+	*message = "An internal error occurred.";
+	
+	uuGroupUserAdd(*groupName, *user, $userNameClient, $rodsZoneClient, *status, *message)
+}
+
 
 # \brief Remove a user from a group.
 #
