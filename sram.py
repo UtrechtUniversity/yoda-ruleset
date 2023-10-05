@@ -207,3 +207,37 @@ The following link will take you directly to SRAM: {}/registration?collaboration
 With kind regards,
 Yoda
 """.format(username.split('@')[0], session_vars.get_map(ctx.rei)["client_user"]["user_name"], config.sram_rest_api_url, co_identifier))
+
+
+def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
+    """Update SRAM Collaborative Organisation membership.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param co_identifier: SRAM CO identifier
+    :param uuid:          Unique id of the user
+    :param new_role:      New role of the user
+
+    :returns: Boolean indicating that updation of collaboration membership succeeded
+    """
+    url = "{}/api/collaborations/v1/{}/members".format(config.sram_rest_api_url, co_identifier)
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    if new_role == 'manager':
+        role = 'admin'
+    else:
+        role = 'member'
+
+    payload = {
+        "role": role,
+        "uid": uuid
+    }
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "put {}".format(url))
+
+    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(response.status_code))
+
+    return response.status_code == 204
