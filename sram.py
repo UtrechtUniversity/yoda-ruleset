@@ -224,7 +224,7 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
 
     if new_role == 'manager':
         role = 'admin'
-    else: 
+    else:
         role = 'member'
 
     payload = {

@@ -1250,7 +1250,7 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
                 else:
                     if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
                         return api.Error('sram_error', 'Something went wrong updating role for {} user.'.format(username))
-                        
+
         response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
         status = response[3]
         message = response[4]
