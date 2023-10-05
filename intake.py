@@ -389,10 +389,11 @@ def get_dataset_toplevel_objects(ctx, root, dataset_id):
     If not a collection- all objects are returned with full object path.
 
     :param ctx:        Combined type of a callback and rei struct
-    :param root:       Path to a dataset
+    :param root:       Path within which to search for datasets (e.g. an intake group collection)
     :param dataset_id: Identifier of the dataset
 
-    :returns: Dict holding objects for the dataset
+    :returns:          Dict holding top-level object paths for the dataset (in the 'objects' key) and a boolean value which
+                       says whether it is a collection-based dataset (in the 'is_collection' key)
     """
     c_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME",

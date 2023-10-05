@@ -76,13 +76,15 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
     """Get the of datasets (with relevant metadata) in a study.
 
     Retrieved metadata:
+    - 'dataset_id'
     - 'dataset_date_created'
     - 'wave'
     - 'version'
     - 'experiment_type'
+    - 'pseudocode'
 
     :param ctx:      Combined type of a callback and rei struct
-    :param study_id: Unique identifier op study
+    :param study_id: Unique identifier of study
 
     :returns: Dict with datasets and relevant metadata.
     """
@@ -107,10 +109,8 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
         if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode']:
             if attribute_name in ['version', 'experiment_type']:
                 val = attribute_value.lower()
-                # datasets[dataset][attribute_name] = attribute_value.lower()
             else:
                 val = attribute_value
-                # datasets[dataset][attribute_name] = attribute_value
             try:
                 datasets[dataset][attribute_name] = val
             except KeyError:
