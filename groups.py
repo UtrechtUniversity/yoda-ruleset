@@ -1222,7 +1222,7 @@ def api_group_user_add(ctx, username, group_name):
                 if config.sram_flow == 'join_request':
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
                 elif config.sram_flow == 'invitation':
-                    sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
+                    sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
