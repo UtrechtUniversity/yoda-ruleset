@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
 import time
 
 import genquery
@@ -293,22 +294,18 @@ def dataset_get_ids(ctx, coll):
     data_ids = set()
 
     # Get distinct data_ids
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'dataset_id' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        if row[0]:
-            data_ids.add(row[0])
 
-    # Get distinct data_ids
-    iter = genquery.row_iterator(
+    subcollection_iterator = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        "COLL_NAME LIKE '" + coll + "%' AND META_DATA_ATTR_NAME = 'dataset_id' ",
+        "COLL_NAME LIKE '" + coll + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         if row[0]:
             data_ids.add(row[0])
 
@@ -359,7 +356,7 @@ def intake_check_dataset(ctx, root, dataset_id):
         else:
             avu.set_on_data(ctx, tl, "object_count", str(count))
 
-        count = get_aggregated_object_error_count(ctx, dataset_id, tl)
+        count = get_aggregated_object_error_count(ctx, tl)
         if is_collection:
             avu.set_on_coll(ctx, tl, "object_errors", str(count))
         else:
@@ -396,24 +393,19 @@ def get_rel_paths_objects(ctx, root, dataset_id):
     except Exception:
         parent_coll = '/'
 
-    """
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
         "COLL_NAME = '" + parent_coll + "' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        # add objects residing in parent_coll directly to list
-        log.write(ctx, "DIRECT " + row[0])
-        rel_path_objects.append(row[0])
-    """
 
-    iter = genquery.row_iterator(
+    subcollection_iterator = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME LIKE '" + parent_coll + "%' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        "COLL_NAME LIKE '" + parent_coll + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         # Add objects including relative paths
         rel_path_objects.append(row[1][len(parent_coll):] + '/' + row[0])
 
@@ -429,25 +421,41 @@ def get_aggregated_object_count(ctx, dataset_id, tl_collection):
 
     :returns: Aggregated object count
     """
-    return len(list(genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_ID",
-        "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'dataset_id' "
+        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'dataset_id' "
         "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
-    )))
+    )
+
+    subcollection_iterator = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME like '" + tl_collection + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' "
+        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        genquery.AS_LIST, ctx
+    )
+
+    return len(list(main_collection_iterator) + list(subcollection_iterator))
 
 
-def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
+def get_aggregated_object_error_count(ctx, tl_collection):
     """Return total amount of object errors.
 
     :param ctx:           Combined type of a callback and rei struct
-    :param dataset_id:    Dataset id
     :param tl_collection: Collection name of top level
 
     :returns: Total amount of object errors
     """
-    return len(list(genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_ID",
-        "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'error' ",
+        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'error' ",
         genquery.AS_LIST, ctx
-    )))
+    )
+
+    subcollection_iterator = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME like '" + tl_collection + "/%' AND META_DATA_ATTR_NAME = 'error' ",
+        genquery.AS_LIST, ctx
+    )
+
+    return len(list(main_collection_iterator) + list(subcollection_iterator))

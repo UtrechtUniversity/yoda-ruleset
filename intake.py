@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import fnmatch
+import itertools
 import time
 import traceback
 
@@ -113,15 +114,20 @@ def api_intake_count_total_files(ctx, coll):
 
     :returns: Total file count
     """
-    # Include coll name as equal names do occur and genquery delivers distinct results.
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, DATA_NAME",
-        "COLL_NAME like '" + coll + "%'",
+        "COLL_NAME = '" + coll + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    subcollection_iterator = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME",
+        "COLL_NAME like '" + coll + "/%'",
         genquery.AS_LIST, ctx
     )
 
     count = 0
-    for row in iter:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in INTAKE_FILE_EXCLUSION_PATTERNS)
         if not exclusion_matched:
             count += 1
@@ -151,14 +157,20 @@ def api_intake_list_unrecognized_files(ctx, coll):
         return {}
 
     # Include coll name as equal names do occur and genquery delivers distinct results.
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, COLL_CREATE_TIME, DATA_OWNER_NAME",
-        "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME = 'unrecognized'",
+        "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'unrecognized'",
+        genquery.AS_LIST, ctx
+    )
+
+    subcollection_iterator = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, COLL_CREATE_TIME, DATA_OWNER_NAME",
+        "COLL_NAME like '" + coll + "/%' AND META_DATA_ATTR_NAME = 'unrecognized'",
         genquery.AS_LIST, ctx
     )
 
     files = []
-    for row in iter:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         # Check whether object type is within exclusion pattern
         exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in INTAKE_FILE_EXCLUSION_PATTERNS)
         if not exclusion_matched:
@@ -202,22 +214,36 @@ def api_intake_list_datasets(ctx, coll):
     datasets = []
 
     # 1) Query for datasets distinguished by collections
-    iter = genquery.row_iterator(
+    c_main_collection_iterator = genquery.row_iterator(
         "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+
+    c_subcollection_iterator = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE, COLL_NAME",
+        "COLL_NAME LIKE '" + coll + "/%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in itertools.chain(c_main_collection_iterator, c_subcollection_iterator):
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
     # 2) Query for datasets distinguished dataobjects
-    iter = genquery.row_iterator(
+    d_main_collection_iterator = genquery.row_iterator(
         "META_DATA_ATTR_VALUE, COLL_NAME",
-        "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
+        "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+
+    d_subcollection_iterator = genquery.row_iterator(
+        "META_DATA_ATTR_VALUE, COLL_NAME",
+        "COLL_NAME LIKE '" + coll + "/%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in itertools.chain(d_main_collection_iterator, d_subcollection_iterator):
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -368,25 +394,41 @@ def get_dataset_toplevel_objects(ctx, root, dataset_id):
 
     :returns: Dict holding objects for the dataset
     """
-    iter = genquery.row_iterator(
+    c_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_NAME LIKE '" + root + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' "
+        "COLL_NAME = '" + root + "' AND META_COLL_ATTR_NAME = 'dataset_toplevel' "
         "AND META_COLL_ATTR_VALUE = '" + dataset_id + "'",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+
+    c_subcollection_iterator = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_NAME LIKE '" + root + "/%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' "
+        "AND META_COLL_ATTR_VALUE = '" + dataset_id + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in itertools.chain(c_main_collection_iterator, c_subcollection_iterator):
         return {'is_collection': True,
                 'objects': [row[0]]}
 
     # For dataobject situation gather all object path strings as a list
-    iter = genquery.row_iterator(
+    d_main_collection_iterator = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '" + root + "%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
+        "COLL_NAME = '" + root + "' AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
         "AND META_DATA_ATTR_VALUE = '" + dataset_id + "'",
         genquery.AS_LIST, ctx
     )
+
+    d_subcollection_iterator = genquery.row_iterator(
+        "DATA_NAME, COLL_NAME",
+        "COLL_NAME LIKE '" + root + "/%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
+        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "'",
+        genquery.AS_LIST, ctx
+    )
+
     objects = []
-    for row in iter:
+    for row in itertools.chain(d_main_collection_iterator, d_subcollection_iterator):
         objects.append(row[1] + '/' + row[0])
     return {'is_collection': False,
             'objects': objects}
