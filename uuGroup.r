@@ -460,6 +460,25 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
+# \brief Get a list of both manager and non-manager members of a group.
+#
+# This function ignores zone names, this is usually a bad idea.
+#
+# \deprecated Use uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) instead
+# Still in use in Yoda-clienttools
+#
+# \param[in]  groupName
+# \param[out] members a list of user names
+#
+uuGroupGetMembers(*groupName, *members) {
+	uuGroupGetMembers(*groupName, false, false, *m);
+	*members = list();
+	foreach (*member in *m) {
+		# Throw away the zone name for backward compat.
+		uuChop(*member, *name, *_, "#", true);
+		*members = cons(*name, *members);
+	}
+}
 
 # \brief Get a list of a group's members.
 #
