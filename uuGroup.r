@@ -954,10 +954,11 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
 	*status  = '1';
 	*message = "An internal error occurred.";
 
+	*fullNameActor = "$userNameClient#$rodsZoneClient";
 	# Check that the creator user exists
-	*fullName = "*creatorUser#*creatorZone";
+	*fullNameCreator = "*creatorUser#*creatorZone";
 
-	uuUserExists(*fullName, *exists);
+	uuUserExists(*fullNameCreator, *exists);
 	# If creator does not exist, exit
 	if (!*exists) {
     	succeed; # Return here (fail would ruin the status and error message).
@@ -984,6 +985,9 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
                 *externalUser = "";
                 rule_group_check_external_user(*userName, *externalUser)
                 if (*externalUser == "1") {
+					# Confirm that the actor is allowed to perform this action
+					uuGetUserType(*fullNameActor, *actorUserType);
+					if (*actorUserType == "rodsadmin") {
                         *http_code = ""
                         *message = ""
                         rule_group_provision_external_user(*userName, *creatorUser, *creatorZone, *http_code, *message);
@@ -992,7 +996,13 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
                                 *status = *http_code;
                                 succeed; # Return here (fail would ruin the status and error message).
                         }
-                        writeLine("serverLog", "[EXTERNAL USER] User *userName added on the behalf of *creatorUser on *creatorZone.");
+                        writeLine("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient on the behalf of *creatorUser on *creatorZone.");
+					}
+					else {
+						# Actor user is not allowed to do this action
+						writeLine("serverLog", "[EXTERNAL USER] Actor $userNameClient on $rodsZoneClient does not have sufficient permissions to create external user");
+						succeed; # Return here (fail would ruin the status and error message).
+					}
                 }
 	}
 
