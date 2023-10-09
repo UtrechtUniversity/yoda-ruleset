@@ -1153,8 +1153,8 @@ def api_group_delete(ctx, group_name):
             return api.Error('policy_error', message)
 
         if sram_group:
-                if not sram.sram_delete_collaboration(ctx, co_identifier):
-                    return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
+            if not sram.sram_delete_collaboration(ctx, co_identifier):
+                return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
     except Exception:
         return api.Error('error_internal', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
 
