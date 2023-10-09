@@ -80,6 +80,11 @@ jobs:
         cat ../copytovault.log
         cat ../publication.log
 
+    - name: Output rodsLogs
+      if: failure()
+      run: |
+        docker exec provider.yoda sh -c 'set -x ; cat /var/lib/irods/log/rodsLog*'
+
 # Uncomment section below when needed for debugging.
 #
 #    - name: Setup tmate session for debugging
