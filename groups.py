@@ -1152,9 +1152,11 @@ def api_group_delete(ctx, group_name):
         if status != '0':
             return api.Error('policy_error', message)
 
-        if sram_group:
+        if config.enable_sram and sram_group:
             if not sram.sram_delete_collaboration(ctx, co_identifier):
                 return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
+
+        return api.Result.ok()
     except Exception:
         return api.Error('error_internal', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
 
@@ -1221,6 +1223,7 @@ def api_group_user_add(ctx, username, group_name):
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
+
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
@@ -1295,13 +1298,15 @@ def api_group_remove_user_from_group(ctx, username, group_name):
         if status != '0':
             return api.Error('policy_error', message)
 
-        if sram_group:
+        if config.enable_sram and sram_group:
             uid = sram.sram_get_uid(ctx, co_identifier, username)
             if uid == '':
                 return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
             else:
                 if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
                     return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(username, group_name))
+
+        return api.Result.ok()
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
 
