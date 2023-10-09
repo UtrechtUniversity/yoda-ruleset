@@ -160,11 +160,10 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     # Get epoch expiry date.
     date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
     epoch = datetime.datetime.utcfromtimestamp(0)
-    epoch_date = int((date - epoch).total_seconds())
+    epoch_date = int((date - epoch).total_seconds()) * 1000
 
     # Build SRAM payload.
     payload = {
-        "short_name": group_name,
         "collaboration_identifier": co_identifier,
         "message": "Invitation to join Yoda group {}".format(group_name),
         "intended_role": "member",
@@ -176,9 +175,9 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     }
 
     if config.sram_verbose_logging:
-        log.write(ctx, "post {}: {}".format(url, payload))
+        log.write(ctx, "put {}: {}".format(url, payload))
 
-    response = requests.post(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
         log.write(ctx, "response: {}".format(response.status_code))
@@ -244,4 +243,4 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
     if config.sram_verbose_logging:
         log.write(ctx, "response: {}".format(response.status_code))
 
-    return response.status_code == 204
+    return response.status_code == 201

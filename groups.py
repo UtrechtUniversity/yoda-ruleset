@@ -1145,17 +1145,16 @@ def api_group_delete(ctx, group_name):
         # Delete SRAM collaboration if group is a SRAM group.
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
-            if sram_group:
-                if sram.sram_delete_collaboration(ctx, co_identifier):
-                    return api.Error('sram_error', 'Something went wrong deleting group "{}"'.format(group_name))
 
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
         status = response[1]
         message = response[2]
-        if status == '0':
-            return api.Result.ok()
-        else:
+        if status != '0':
             return api.Error('policy_error', message)
+
+        if sram_group:
+                if not sram.sram_delete_collaboration(ctx, co_identifier):
+                    return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
     except Exception:
         return api.Error('error_internal', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
 
@@ -1248,7 +1247,7 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
                 if uid == '':
                     return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
                 else:
-                    if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
+                    if not sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
                         return api.Error('sram_error', 'Something went wrong updating role for {} user.'.format(username))
 
         response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
@@ -1289,21 +1288,20 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     try:
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
-            if sram_group:
-                uid = sram.sram_get_uid(ctx, co_identifier, username)
-                if uid == '':
-                    return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
-                else:
-                    if sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
-                        return api.Error('sram_error', 'Something went wrong removing {} from group "{}"'.format(username, group_name))
 
         response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
-        if status == '0':
-            return api.Result.ok()
-        else:
+        if status != '0':
             return api.Error('policy_error', message)
+
+        if sram_group:
+            uid = sram.sram_get_uid(ctx, co_identifier, username)
+            if uid == '':
+                return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+            else:
+                if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
+                    return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(username, group_name))
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
 
