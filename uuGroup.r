@@ -985,9 +985,9 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
                 *externalUser = "";
                 rule_group_check_external_user(*userName, *externalUser)
                 if (*externalUser == "1") {
-					# Confirm that the actor is allowed to perform this action
+					# Confirm that the actor is allowed to perform this action (either admin or the actor is the same as the creator user)
 					uuGetUserType(*fullNameActor, *actorUserType);
-					if (*actorUserType == "rodsadmin") {
+					if (*actorUserType == "rodsadmin" || *fullNameCreator == *fullNameActor) {
                         *http_code = ""
                         *message = ""
                         rule_group_provision_external_user(*userName, *creatorUser, *creatorZone, *http_code, *message);
@@ -1000,7 +1000,7 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
 					}
 					else {
 						# Actor user is not allowed to do this action
-						writeLine("serverLog", "[EXTERNAL USER] Actor $userNameClient on $rodsZoneClient does not have sufficient permissions to create external user");
+						writeLine("serverLog", "[EXTERNAL USER] Actor $userNameClient on $rodsZoneClient does not have sufficient permissions to create external user *userName");
 						succeed; # Return here (fail would ruin the status and error message).
 					}
                 }
