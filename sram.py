@@ -36,6 +36,9 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
     epoch = datetime.datetime.utcfromtimestamp(0)
     epoch_date = int((date - epoch).total_seconds())
 
+    # Create unique short name of group
+    short_name = group.unique_short_name(ctx, group_name)
+
     disable_join_requests = True
     if config.sram_flow == 'join_request':
         disable_join_requests = False
@@ -43,7 +46,7 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
     # Build SRAM payload.
     payload = {
         "name": 'yoda-' + group_name,
-        "short_name": group_name,
+        "short_name": short_name,
         "description": description,
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
