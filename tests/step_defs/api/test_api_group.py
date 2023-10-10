@@ -263,7 +263,7 @@ def then_user_update_persisted(user, new_user, group_name):
 
 @given('the Yoda API for processing csv group data API is queried', target_fixture="api_response")
 def api_group_import_csv_data(user):
-    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test"
+    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1,member:member3\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com"
     return api_request(
         user,
         "group_process_csv",

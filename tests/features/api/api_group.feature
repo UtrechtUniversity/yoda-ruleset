@@ -131,6 +131,7 @@ Feature: Group API
         And user "datamanager@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "researcher@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "viewer@yoda.test" is now a member of the group "research-csvtestgroup"
+        And user "researcher1@example.com" is now a member of the group "research-csvtestgroup"
 
 
     Scenario Outline: Group delete
