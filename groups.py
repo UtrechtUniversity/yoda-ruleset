@@ -562,7 +562,7 @@ def validate_data(ctx, data, allow_update):
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
 
-        # Is user admin or has catergory add privileges?
+        # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
             if category not in getCategories(ctx):
                 # Insufficient permissions to add new category.
@@ -571,12 +571,6 @@ def validate_data(ctx, data, allow_update):
                 # Insufficient permissions to add new subcategory.
                 errors.append('Subcategory {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
 
-        for the_user in managers + members + viewers:
-            if not is_internal_user(the_user):
-                # ensure that external users already have an iRODS account
-                # we do not want to be the actor that creates them
-                if not user.exists(ctx, the_user):
-                    errors.append('Group {} has nonexisting external user {}'.format(groupname, the_user))
     return errors
 
 
