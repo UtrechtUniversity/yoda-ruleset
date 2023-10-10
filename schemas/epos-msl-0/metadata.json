@@ -1,5 +1,5 @@
 {
-  "$id": "https://yoda.uu.nl/schemas/epos-0/metadata.json",
+  "$id": "https://yoda.uu.nl/schemas/epos-msl-0/metadata.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "definitions": {
     "stringNormal": {
@@ -823,7 +823,7 @@
             "required": [ "rel", "href" ],
             "properties": {
                 "rel":  { "const": "describedby" },
-                "href": { "const": "https://yoda.uu.nl/schemas/epos-0/metadata.json" }
+                "href": { "const": "https://yoda.uu.nl/schemas/epos-msl-0/metadata.json" }
             }
         }
     },
