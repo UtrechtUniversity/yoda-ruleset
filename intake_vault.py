@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
 import time
 
 import genquery
@@ -39,15 +40,15 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
     datasets_moved = 0
 
     # TYPE A:
-    iter = genquery.row_iterator(
+    c_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '" + intake_root + "%'",
+        "META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME = '" + intake_root + "'",
         genquery.AS_LIST, ctx)
 
-    for row in iter:
+    for row in itertools.chain(c_main_collection_iterator):
         toplevel_collection = row[0]
         dataset_id = row[1]
-        # Find locked/fronzen status
+        # Get status ( locked / frozen )
         locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, True)
         if locked_state['locked']:
             # Freeze the dataset
@@ -59,12 +60,12 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
                 datasets_moved += 1
 
     # TYPE B:
-    iter = genquery.row_iterator(
+    d_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '" + intake_root + "%'",
+        "META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME = '" + intake_root + "'",
         genquery.AS_LIST, ctx)
 
-    for row in iter:
+    for row in itertools.chain(d_main_collection_iterator):
         toplevel_collection = row[0]
         dataset_id = row[1]
         # check if to_vault_lock exists on all the dataobjects of this dataset

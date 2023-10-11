@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
+
 import genquery
 
 from util import *
@@ -27,12 +29,16 @@ def intake_report_export_study_data(ctx, study_id):
     """
     zone = user.zone(ctx)
 
-    result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                   "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
-                                   genquery.AS_LIST, ctx)
+    main_collection_iterator = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                                     " = '/{}/home/grp-vault-{}' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
+                                                     genquery.AS_LIST, ctx)
+
+    subcollection_iterator = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                                   "COLL_NAME like '/{}/home/grp-vault-{}/%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
+                                                   genquery.AS_LIST, ctx)
 
     datasets = {}
-    for row in result:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         path = row[0]
         try:
             datasets[path][row[2]] = row[3]
@@ -48,10 +54,15 @@ def intake_report_export_study_data(ctx, study_id):
             real_datasets[set_path]['totalFiles'] = 0
 
             # get the filesize and file count
-            result = genquery.row_iterator("count(DATA_ID), sum(DATA_SIZE)",
-                                           "COLL_NAME like '{}%'".format(set_path),
-                                           genquery.AS_LIST, ctx)
-            for row in result:
+            stat_main_collection_iterator = genquery.row_iterator("count(DATA_ID), sum(DATA_SIZE)",
+                                                                  "COLL_NAME = '{}'".format(set_path),
+                                                                  genquery.AS_LIST, ctx)
+
+            stat_subcollection_iterator = genquery.row_iterator("count(DATA_ID), sum(DATA_SIZE)",
+                                                                "COLL_NAME like '{}/%'".format(set_path),
+                                                                genquery.AS_LIST, ctx)
+
+            for row in itertools.chain(stat_main_collection_iterator, stat_subcollection_iterator):
                 real_datasets[set_path]['totalFiles'] = int(row[0]) / 2
                 totalFileSize = 0
                 if row[1]:
@@ -65,26 +76,32 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
     """Get the of datasets (with relevant metadata) in a study.
 
     Retrieved metadata:
+    - 'dataset_id'
     - 'dataset_date_created'
     - 'wave'
     - 'version'
     - 'experiment_type'
+    - 'pseudocode'
 
     :param ctx:      Combined type of a callback and rei struct
-    :param study_id: Unique identifier op study
+    :param study_id: Unique identifier of study
 
     :returns: Dict with datasets and relevant metadata.
     """
     zone = user.zone(ctx)
 
-    result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                   "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
-                                   genquery.AS_LIST, ctx)
+    main_collection_iterator = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                                     "COLL_NAME = '/{}/home/grp-vault-{}' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
+                                                     genquery.AS_LIST, ctx)
+
+    subcollection_iterator = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                                   "COLL_NAME LIKE '/{}/home/grp-vault-{}/*' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
+                                                   genquery.AS_LIST, ctx)
 
     datasets = {}
 
     # Construct all datasets.
-    for row in result:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         dataset = row[0]
         attribute_name = row[2]
         attribute_value = row[3]
@@ -92,10 +109,8 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
         if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode']:
             if attribute_name in ['version', 'experiment_type']:
                 val = attribute_value.lower()
-                # datasets[dataset][attribute_name] = attribute_value.lower()
             else:
                 val = attribute_value
-                # datasets[dataset][attribute_name] = attribute_value
             try:
                 datasets[dataset][attribute_name] = val
             except KeyError:
@@ -206,11 +221,15 @@ def vault_aggregated_info(ctx, study_id):
                 continue
 
     zone = user.zone(ctx)
-    result = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
-                                   "COLL_NAME like '/{}/home/grp-vault-{}%'".format(zone, study_id),
-                                   genquery.AS_LIST, ctx)
+    main_collection_iterator = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
+                                                     "COLL_NAME = '/{}/home/grp-vault-{}'".format(zone, study_id),
+                                                     genquery.AS_LIST, ctx)
 
-    for row in result:
+    subcollection_iterator = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
+                                                   "COLL_NAME like '/{}/home/grp-vault-{}/%'".format(zone, study_id),
+                                                   genquery.AS_LIST, ctx)
+
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         coll_name = row[1]
         data_size = int(row[2])
         coll_create_time = int(row[3])
