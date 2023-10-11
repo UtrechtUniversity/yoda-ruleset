@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import hashlib
 import random
-import time
 import re
+import time
 
 import genquery
 import irods_types
