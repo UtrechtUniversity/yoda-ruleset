@@ -249,18 +249,28 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     in the workspace of a Research team. This should be done asynchronously.
     Triggered from instance specific rulesets.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param resource:       The resource where the original is written to
-    :param zone:           Zone where the original can be found
-    :param path:           path of the original
+    :param ctx:      Combined type of a callback and rei struct
+    :param resource: The resource where the original is written to
+    :param zone:     Zone where the original can be found
+    :param path:     Path of the original
     """
     # Only create revisions for research space
     if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
         if not pathutil.basename(path) in constants.UUBLOCKLIST:
-            # now create revision asynchronously by adding indication org_revision_scheduled
+            # Give rods 'own' access so that they can remove the AVU.
             msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-            # Add random id to metadata for load balancing of revision batches
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource + ',' + str(random.randint(1, 64)))
+
+            # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
+            try:
+                # Add random id for revision balancing purposes
+                msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource + ',' + str(random.randint(1, 64)), "")
+            except msi.Error as e:
+                # iRods error for CAT_UNKNOWN_FILE can be ignored
+                if str(e).find("-817000") == -1:
+                    error_status = re.search("status \[(.*?)\]", str(e))
+                    log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
+                else:
+                    pass
 
 
 @rule.make()
