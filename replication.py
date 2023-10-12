@@ -27,15 +27,15 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
     """
     zone = user.zone(ctx)
 
-    # Give rods 'own' access so that they can remove the AVU.
-    msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
-        # Add random id for replication balancing purposes
+        # Give rods 'own' access so that they can remove the AVU.
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
+        # Add random identifier for replication balancing purposes.
         msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{},{}".format(source_resource, target_resource, random.randint(1, 64)), "")
     except msi.Error as e:
-        # iRods error for CAT_UNKNOWN_FILE can be ignored
+        # iRODS error for CAT_UNKNOWN_FILE can be ignored.
         if str(e).find("-817000") == -1:
             error_status = re.search("status \[(.*?)\]", str(e))
             log.write(ctx, "Schedule replication of data object {} failed with error {}".format(path, error_status.group(1)))
