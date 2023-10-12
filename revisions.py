@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import datetime
 import os
+import re
 import time
 
 import genquery
@@ -255,14 +256,14 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     # Only create revisions for research space
     if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
         if not pathutil.basename(path) in constants.UUBLOCKLIST:
-            # Give rods 'own' access so that they can remove the AVU.
-            msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-
             # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
             try:
+                # Give rods 'own' access so that they can remove the AVU.
+                msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
                 msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource, "")
             except msi.Error as e:
-                # iRods error for CAT_UNKNOWN_FILE can be ignored
+                # iRODS error for CAT_UNKNOWN_FILE can be ignored.
                 if str(e).find("-817000") == -1:
                     error_status = re.search("status \[(.*?)\]", str(e))
                     log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
