@@ -131,7 +131,11 @@ config = Config(environment=None,
                 sram_api_key=None,
                 sram_flow=None,
                 sram_verbose_logging=False,
-                sram_tls_verify=True)
+                sram_tls_verify=True,
+                arb_enabled=False,
+                arb_exempt_resources=[],
+                arb_min_gb_free=0,
+                arb_min_percent_free=5)
 
 # }}}
 
