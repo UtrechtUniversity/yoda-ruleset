@@ -809,7 +809,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *d
 # \brief Modify a group.
 #
 # This is mostly a shortcut for setting single-value attributes on a group
-# object. Allowed properties are: 'category', 'subcategory', 'description', and
+# object. Allowed properties are: 'category', 'subcategory', 'description', 'expiration_date', and
 # 'data_classification'.
 #
 # \param[in]  groupName
