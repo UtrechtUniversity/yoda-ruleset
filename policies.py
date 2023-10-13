@@ -561,5 +561,20 @@ def py_acPostProcForObjRename(ctx, src, dst):
         if len(info.subpath) and info.group != pathutil.info(src).group:
             ctx.uuEnforceGroupAcl(dst)
 
+
+@rule.make(inputs=[0, 1, 2, 3, 4, 5, 6], outputs=[2])
+def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host, parser, vote):
+    if not config.arb_enabled or operation != "CREATE":
+        return
+
+    arb_data = arb_data_manager.ARBDataManager()
+    arb_status = arb_data.get(ctx, resource)
+
+    if arb_status == constants.arb_status.FULL:
+        return "read=1.0;write=0.0"
+    else:
+        return "read=1.0;write=1.0"
+
+
 # }}}
 # }}}

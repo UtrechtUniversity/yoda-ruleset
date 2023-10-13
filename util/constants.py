@@ -176,3 +176,11 @@ class replica_status(Enum):
     INTERMEDIATE_REPLICA = 2  # Replica is actively being written to
     READ_LOCKED          = 3  # Replica or a sibling replica is opened for read by an agent
     WRITE_LOCKED         = 4  # One of this replica's sibling replicas is actively being written to but is itself at rest
+
+
+# List of valid automatic resource balancing (ARB) states
+class arb_status(Enum):
+    EXEMPT               = "EXEMPT"     # User has configured ruleset to not perform ARB for this resource
+    IGNORE               = "IGNORE"     # ARB ignores this resource by design
+    AVAILABLE            = "AVAILABLE"  # ARB applies to this resource. The resource has enough space available.
+    FULL                 = "FULL"       # ARB applies to this resource. The resource does not have enough space available

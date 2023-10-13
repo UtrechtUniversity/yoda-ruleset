@@ -28,6 +28,9 @@ import group
 import avu
 import misc
 import config
+import resource
+import arb_data_manager
+import cached_data_manager
 
 # Config items can be accessed directly as 'config.foo' by any module
 # that imports * from util.
