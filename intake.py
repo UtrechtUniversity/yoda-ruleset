@@ -527,7 +527,7 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
                                                    + "> E<" + subscope['experiment_type']
                                                    + "> P<" + subscope['pseudocode']
                                                    + "> V<" + version
-                                                   + "> D<" + subscope['dataset_directory']
+                                                   + "> D<" + subscope['directory']
                                                    + ">"))
 
     intake_scan.intake_check_datasets(ctx, coll)
