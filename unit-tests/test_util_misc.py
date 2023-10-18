@@ -14,7 +14,7 @@ from misc import human_readable_size
 
 class UtilMiscTest(TestCase):
 
-    def test_dataset_parse_id(self):
+    def test_human_readable_size(self):
         output = human_readable_size(0)
         self.assertEquals(output, "0 B")
         output = human_readable_size(1024)
