@@ -416,25 +416,13 @@ def api_vault_system_metadata(ctx, coll):
 
     :returns: Dict system metadata of a vault collection
     """
-    import math
-
-    def convert_size(size_bytes):
-        if size_bytes == 0:
-            return "0 B"
-
-        size_name = ('B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB')
-        i = int(math.floor(math.log(size_bytes, 1024)))
-        p = math.pow(1024, i)
-        s = round(size_bytes / p, 2)
-        return '{} {}'.format(s, size_name[i])
-
     system_metadata = {}
 
     # Package size.
     data_count = collection.data_count(ctx, coll)
     collection_count = collection.collection_count(ctx, coll)
     size = collection.size(ctx, coll)
-    size_readable = convert_size(size)
+    size_readable = misc.human_readable_size(size)
     system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     # Modified date.
