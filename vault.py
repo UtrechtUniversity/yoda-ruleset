@@ -751,7 +751,7 @@ def api_grant_read_access_research_group(ctx, coll):
     if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
-            acl_kv = misc.kvpair(ctx, "actor", actor)
+            acl_kv = msi.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
             policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
@@ -798,7 +798,7 @@ def api_revoke_read_access_research_group(ctx, coll):
     if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
-            acl_kv = misc.kvpair(ctx, "actor", actor)
+            acl_kv = msi.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
             policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
