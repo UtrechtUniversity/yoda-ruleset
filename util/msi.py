@@ -6,8 +6,10 @@ With this module, we aim to unify microservice error handling by converting
 all errors to unambiguous Python exceptions.
 """
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import irods_types
 
 import error
 
@@ -134,3 +136,8 @@ add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
 rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
+
+
+def kvpair(ctx, k, v):
+    """Create a keyvalpair object, needed by certain msis."""
+    return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]
