@@ -3,15 +3,11 @@
 
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from enum import Enum
-
-import genquery
-
-import msi
 
 
 class Space(Enum):
@@ -126,27 +122,3 @@ def info(path):
             or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',              Space.OTHER)
             or test('^/([^/]+)()(?:/(.+))?$',                         Space.OTHER)
             or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
-
-
-def object_type(ctx, path):
-    try:
-        t = msi.get_obj_type(ctx, path, '')['arguments'][1]
-    except Exception:
-        return
-    if t == '-d':
-        return ObjectType.DATA
-    if t == '-c':
-        return ObjectType.COLL
-
-
-def fs_object_from_id(ctx, obj_id):
-    """Return (path, ObjectType) for the given object id, or (None, None) if the ID does not exist."""
-    x = genquery.Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), genquery.AS_DICT).first() \
-        or genquery.Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), genquery.AS_DICT).first()
-
-    if x is None:  # obj does not exist.
-        return None, None
-    elif 'DATA_NAME' in x:
-        return '{}/{}'.format(*x.values()), ObjectType.DATA
-    else:
-        return x['COLL_NAME'], ObjectType.COLL
