@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 from datetime import datetime
 
 import genquery
@@ -267,34 +266,11 @@ def api_resource_category_stats(ctx):
 
     cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
 
-    def is_internal_user(username):
-        if '@' not in username:
-            return (username != 'anonymous')
-        for domain in config.external_users_domain_filter:
-            parts = domain.split('.')
-            if parts[0] == '*':
-                # Wildcard - search including subdomains
-                domain_pattern = "\@([0-9a-z]*\.){0,2}" + parts[-2] + "\." + parts[-1]
-            else:
-                # No wildcard - search for exact match
-                domain_pattern = "@{}$".format(domain)
-            if re.search(domain_pattern, username) is not None:
-                return True
-        return False
-
     def count_externals(members):
-        count = 0
-        for mb in members:
-            if not is_internal_user(mb):
-                count += 1
-        return count
+        return len([member for member in members if not yoda_names.is_internal_user(member)])
 
     def count_internals(members):
-        count = 0
-        for mb in members:
-            if is_internal_user(mb):
-                count += 1
-        return count
+        return len([member for member in members if yoda_names.is_internal_user(member)])
 
     for category in categories:
         storage_humanized = {}

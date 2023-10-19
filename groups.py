@@ -742,18 +742,6 @@ def _get_duplicate_columns(fields_list):
 
 def _process_csv_line(ctx, line):
     """Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers."""
-    def is_email(username):
-        """Is this email a valid email?"""
-        return re.search(r'@.*[^\.]+\.[^\.]+$', username) is not None
-
-    def is_valid_category(name):
-        """Is this name a valid (sub)category name?"""
-        return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
-
-    def is_valid_groupname(name):
-        """Is this name a valid group name (prefix such as "research-" can be omitted"""
-        return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
-
     category = line['category'].strip().lower().replace('.', '')
     subcategory = line['subcategory'].strip()
     groupname = "research-" + line['groupname'].strip().lower()
@@ -776,7 +764,7 @@ def _process_csv_line(ctx, line):
 
         if username == '':    # empty value
             continue
-        elif not is_email(username):
+        elif not yoda_names.is_email_username(username):
             return None, 'Username "{}" is not a valid email address.'.format(
                 username)
         # elif not is_valid_domain(username.split('@')[1]):
@@ -794,13 +782,13 @@ def _process_csv_line(ctx, line):
     if len(managers) == 0:
         return None, "Group must have a group manager"
 
-    if not is_valid_category(category):
+    if not yoda_names.is_valid_category(category):
         return None, '"{}" is not a valid category name.'.format(category)
 
-    if not is_valid_category(subcategory):
+    if not yoda_names.is_valid_subcategory(subcategory):
         return None, '"{}" is not a valid subcategory name.'.format(subcategory)
 
-    if not is_valid_groupname(groupname):
+    if not yoda_names.is_valid_groupname(groupname):
         return None, '"{}" is not a valid group name.'.format(groupname)
 
     row_data = (category, subcategory, groupname, managers, members, viewers)
@@ -978,20 +966,6 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
 
 
-def is_internal_user(username):
-    for domain in config.external_users_domain_filter:
-        parts = domain.split('.')
-        if parts[0] == '*':
-            # Wildcard - search including subdomains
-            domain_pattern = "\@([0-9a-z]*\.){0,2}" + parts[-2] + "\." + parts[-1]
-        else:
-            # No wildcard - search for exact match
-            domain_pattern = "@{}$".format(domain)
-        if re.search(domain_pattern, username) is not None:
-            return True
-    return False
-
-
 @rule.make(inputs=[0], outputs=[1])
 def rule_group_check_external_user(ctx, username):
     """Check that a user is external.
@@ -1001,7 +975,7 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
-    if is_internal_user(username):
+    if yoda_names.is_internal_user(username):
         return '0'
     return '1'
 
