@@ -1,4 +1,4 @@
-name: Run API tests
+name: Run integration and API tests
 
 on:
   push:
@@ -60,6 +60,7 @@ jobs:
         cd yoda/docker/compose
         docker exec provider.yoda sh -c 'set -x ; cd /etc/irods/yoda-ruleset && sudo chown irods:irods -R /etc/irods/yoda-ruleset && sudo -u irods git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*" && sudo -u irods git pull && sudo -u irods git status'
         docker exec provider.yoda sh -c "set -x ; cd /etc/irods/yoda-ruleset && sudo -u irods git checkout ${{ steps.extract_branch.outputs.branch }} && sudo -u irods python -m pip --no-cache-dir install --user -r /etc/irods/yoda-ruleset/requirements.txt && sudo -u irods make && sudo -u irods make install"
+        docker exec provider.yoda sh -c "set -x ; sudo -u irods /var/lib/irods/irodsctl restart"
 
     - name: Pull and install latest version of portal
       shell: bash
@@ -69,6 +70,26 @@ jobs:
         docker exec portal.yoda sh -c 'set -x ; cd /var/www/yoda && git checkout ${{ steps.extract_branch.outputs.branch }} || git checkout development'
         docker exec portal.yoda sh -c 'set -x ; cd /var/www/yoda && git status'
         docker exec portal.yoda sh -c 'set -x ; touch /var/www/yoda/*.wsgi'
+
+    - name: Run integration tests
+      shell: bash
+      run: |
+        cd yoda/docker/compose
+        docker exec provider.yoda sh -c 'set -x ; cd /etc/irods/yoda-ruleset && sudo -u irods /usr/bin/irule -r irods_rule_engine_plugin-python-instance -F tools/run-integration-tests.r' > test-results.txt
+        echo "Integration test results: "
+        echo
+        cat test-results.txt
+        echo
+        echo "Statistics:"
+        echo
+        echo "$(grep -c VERDICT_OK test-results.txt) test(s) OK"
+        echo "$(grep -c VERDICT_FAILED test-results.txt) test(s) failed with unexpected return value"
+        echo "$(grep -c VERDICT_EXCEPTION test-results.txt) test(s) failed with exception"
+        echo "$(grep -c VERDICT_ test-results.txt) test(s) in total"
+        echo
+        echo "Overall result: "
+        if grep -E "VERDICT_EXCEPTION|VERDICT_FAILED" test-results.txt> /dev/null ; then printf "Test failures detected"; exit 1; fi
+        if grep -E "VERDICT_" test-results.txt > /dev/null ; then printf "Tests succeeded"; else printf "Failure to run tests"; exit 1; fi
 
     - name: Run API tests
       shell: bash
