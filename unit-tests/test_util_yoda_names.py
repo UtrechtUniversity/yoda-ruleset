@@ -34,6 +34,8 @@ class UtilYodaNamesTest(TestCase):
         self.assertEquals(is_valid_groupname("foo123"), True)
         self.assertEquals(is_valid_groupname("foo-bar"), True)
         self.assertEquals(is_valid_groupname("foo_bar"), False)
+        self.assertEquals(is_valid_groupname("a" * 63), True)
+        self.assertEquals(is_valid_groupname("a" * 64), False)
 
     def test_is_email_username(self):
         self.assertEquals(is_email_username("peter"), False)

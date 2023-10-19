@@ -788,7 +788,7 @@ def _process_csv_line(ctx, line):
     if not yoda_names.is_valid_subcategory(subcategory):
         return None, '"{}" is not a valid subcategory name.'.format(subcategory)
 
-    if not yoda_names.is_valid_groupname(groupname):
+    if not yoda_names.is_valid_groupname("research-" + groupname):
         return None, '"{}" is not a valid group name.'.format(groupname)
 
     row_data = (category, subcategory, groupname, managers, members, viewers)

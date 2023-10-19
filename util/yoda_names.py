@@ -32,13 +32,13 @@ def is_valid_subcategory(name):
 
 
 def is_valid_groupname(name):
-    """Is this name a valid group name (prefix such as "research-" can be omitted
+    """Is this name a valid group name
 
     :param name: name of the group
 
     :returns: boolean value that indicates whether this name is a valid group name
     """
-    return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
+    return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None and len(name) < 64
 
 
 def is_email_username(name):
