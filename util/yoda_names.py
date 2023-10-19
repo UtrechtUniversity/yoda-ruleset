@@ -67,13 +67,11 @@ def _is_internal_user(username, external_domain_filter):
         return True
 
     for domain in external_domain_filter:
-        parts = domain.split('.')
-        if parts[0] == '*':
-            # Wildcard - search including subdomains
-            domain_pattern = "\@([0-9a-z]*\.){0,2}" + parts[-2] + "\." + parts[-1]
+        if domain.startswith("*."):
+            if username.endswith(domain[1:]) or username.endswith("@" + domain[2:]):
+                return True
         else:
-            # No wildcard - search for exact match
-            domain_pattern = "@{}$".format(domain)
-        if re.search(domain_pattern, username) is not None:
-            return True
+            if username.endswith("@" + domain):
+                return True
+
     return False

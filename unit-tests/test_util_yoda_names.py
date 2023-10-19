@@ -50,3 +50,4 @@ class UtilYodaNamesTest(TestCase):
         self.assertEquals(_is_internal_user("peter@buu.nl", ["*.uu.nl"]), False)
         self.assertEquals(_is_internal_user("peter@cs.uu.nl", ["*.uu.nl"]), True)
         self.assertEquals(_is_internal_user("peter@ai.cs.uu.nl", ["*.cs.uu.nl"]), True)
+        self.assertEquals(_is_internal_user("peter@ai.hum.uu.nl", ["*.cs.uu.nl"]), False)
