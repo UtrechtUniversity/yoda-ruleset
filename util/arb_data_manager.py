@@ -62,12 +62,12 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
 
         if len(arb_data) == 0:
             # If we don't have an ARB value, ARB should ignore this resource
-            return constants.arb_status.IGNORE
+            return constants.arb_status.IGNORE.value
         elif len(arb_data) == 1:
             return arb_data[0][0]
         else:
             log.write(ctx, "WARNING: multiple ARB AVUs present for resource '{}'. ARB will ignore it.".format(keyname))
-            return constants.arb_status.IGNORE
+            return constants.arb_status.IGNORE.value
 
     def _put_original_data(self, ctx, keyname, data):
         """This function is called when data needs to be updated in the original
