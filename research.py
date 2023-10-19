@@ -660,18 +660,18 @@ def api_research_manifest(ctx, coll):
     :returns: List of json objects with name and checksum
     """
     iter = genquery.row_iterator(
-        "ORDER(DATA_NAME), DATA_CHECKSUM",
+        "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         "COLL_NAME = '{}'".format(coll),
         genquery.AS_LIST, ctx
     )
-    checksums = [{"name": row[0], "checksum": data_object.decode_checksum(row[1])} for row in iter]
+    checksums = [{"name": row[0], "size": misc.human_readable_size(int(row[1])), "checksum": data_object.decode_checksum(row[2])} for row in iter]
 
     iter_sub = genquery.row_iterator(
-        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
+        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         "COLL_PARENT_NAME like '{}%'".format(coll),
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
-    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "checksum": data_object.decode_checksum(row[2])} for row in iter_sub]
+    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub
