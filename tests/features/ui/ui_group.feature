@@ -215,4 +215,47 @@ Feature: Group UI
             | datamanager | yoda   | 5           |
             | researcher  | core   | 3           |
             | datamanager | core   | 3           |
+    
 
+    Scenario: Collapsing group properties persists between logins
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user clicks group properties header
+        And user logs out
+        And user functionaladminpriv logs in
+        And module "group_manager" is shown
+        Then group properties is collapsed
+        
+
+    Scenario: Collapsing group properties persists between groups
+        Given user groupmanager is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group research-initial in subcategory initial and category test-automation
+        And user clicks group properties header
+        When user selects group research-revisions in subcategory initial and category test-automation
+        Then group properties is collapsed
+
+
+    Scenario: Collapsing group properties of add new group persists between groups
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And user clicks new group properties header
+        When user selects group research-initial in subcategory initial and category test-automation
+        Then group properties is collapsed
+        
+
+    Scenario: Clicking add new group makes new group properties uncollapsed
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        Then new group properties is not collapsed
+
+    
+    Scenario: Clicking add new group persists uncollapsed state to group properties
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        When user selects group research-initial in subcategory initial and category test-automation
+        Then group properties is not collapsed

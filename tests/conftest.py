@@ -154,6 +154,20 @@ def pytest_bdd_after_scenario(request, feature, scenario):
             # Prevent spamming log after keyboard interrupt.
             pass
 
+    if feature.name == "Group UI":
+        # Reset the session storage every time. These storage items may not always be set.
+        try:
+            browser.execute_script("window.sessionStorage.removeItem('yoda.selected-group');")
+        except pytest.FixtureLookupError:
+            # No UI logout for API tests.
+            pass
+
+        try:
+            browser.execute_script("window.sessionStorage.removeItem('yoda.is-collapsed');")
+        except pytest.FixtureLookupError:
+            # No UI logout for API tests.
+            pass
+
 
 def login(user, password):
     """Login portal and retrieve CSRF and session cookies."""
@@ -295,6 +309,7 @@ def ui_login(browser, user):
 
 
 @given('user is not logged in')
+@when('user logs out')
 def ui_logout(browser):
     url = "{}/user/logout".format(portal_url)
     browser.visit(url)
