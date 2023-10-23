@@ -352,6 +352,27 @@ def ui_group_click_first_item_in_group(browser):
     assert group_clicked == group_properties_type + group_properties_name
 
 
+@when("user clicks group properties header")
+def ui_group_click_group_properties_header(browser):
+    browser.find_by_css('#properties-update-link').first.click()
+
+
+@then("group properties is collapsed")
+def ui_group_group_properties_collapsed(browser):
+    group_properties = browser.find_by_css('#group-properties')
+
+    # Make sure that card is collapsed
+    assert not group_properties.first.visible
+
+
+@then("group properties is not collapsed")
+def ui_group_group_properties_not_collapsed(browser):
+    group_properties = browser.find_by_css('#group-properties')
+
+    # Make sure that card is not collapsed
+    assert group_properties.first.visible
+
+
 @when("user opens add group dialog")
 def ui_group_schema_create_group(browser):
     browser.find_by_css('.create-button-new').click()
