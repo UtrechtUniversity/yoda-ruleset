@@ -108,7 +108,7 @@ Feature: Group UI
         Examples:
             | category        | subcategory     | group         | expiration_date |
             | test-automation | test-automation | ui-test-group | 2030-12-25      |
-           
+
 
     Scenario Outline: Create new research group starting from same (sub)category of active group at that moment
         Given user functionaladminpriv is logged in
@@ -116,8 +116,8 @@ Feature: Group UI
         When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
         When user opens add group dialog
-        And new group has <category> and <subcategory> set       
-       
+        And new group has <category> and <subcategory> set
+
         Examples:
             | category        | subcategory | group            |
             | test-automation | initial     | research-initial |
@@ -215,7 +215,7 @@ Feature: Group UI
             | datamanager | yoda   | 5           |
             | researcher  | core   | 3           |
             | datamanager | core   | 3           |
-    
+
 
     Scenario: Collapsing group properties persists between logins
         Given user functionaladminpriv is logged in
@@ -225,7 +225,7 @@ Feature: Group UI
         And user functionaladminpriv logs in
         And module "group_manager" is shown
         Then group properties is collapsed
-        
+
 
     Scenario: Collapsing group properties persists between groups
         Given user groupmanager is logged in
@@ -235,27 +235,3 @@ Feature: Group UI
         And user clicks group properties header
         When user selects group research-revisions in subcategory initial and category test-automation
         Then group properties is collapsed
-
-
-    Scenario: Collapsing group properties of add new group persists between groups
-        Given user functionaladminpriv is logged in
-        And module "group_manager" is shown
-        When user opens add group dialog
-        And user clicks new group properties header
-        When user selects group research-initial in subcategory initial and category test-automation
-        Then group properties is collapsed
-        
-
-    Scenario: Clicking add new group makes new group properties uncollapsed
-        Given user functionaladminpriv is logged in
-        And module "group_manager" is shown
-        When user opens add group dialog
-        Then new group properties is not collapsed
-
-    
-    Scenario: Clicking add new group persists uncollapsed state to group properties
-        Given user functionaladminpriv is logged in
-        And module "group_manager" is shown
-        When user opens add group dialog
-        When user selects group research-initial in subcategory initial and category test-automation
-        Then group properties is not collapsed

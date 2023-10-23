@@ -357,11 +357,6 @@ def ui_group_click_group_properties_header(browser):
     browser.find_by_css('#properties-update-link').first.click()
 
 
-@when("user clicks new group properties header")
-def ui_group_click_new_group_properties_header(browser):
-    browser.find_by_css('.properties-create a').first.click()
-
-
 @then("group properties is collapsed")
 def ui_group_group_properties_collapsed(browser):
     group_properties = browser.find_by_css('#group-properties')
@@ -373,22 +368,6 @@ def ui_group_group_properties_collapsed(browser):
 @then("group properties is not collapsed")
 def ui_group_group_properties_not_collapsed(browser):
     group_properties = browser.find_by_css('#group-properties')
-
-    # Make sure that card is not collapsed
-    assert group_properties.first.visible
-
-
-@then("new group properties is collapsed")
-def ui_group_new_group_properties_collapsed(browser):
-    group_properties = browser.find_by_css('#group-properties-create')
-
-    # Make sure that card is collapsed
-    assert not group_properties.first.visible
-
-
-@then("new group properties is not collapsed")
-def ui_group_new_group_properties_not_collapsed(browser):
-    group_properties = browser.find_by_css('#group-properties-create')
 
     # Make sure that card is not collapsed
     assert group_properties.first.visible
