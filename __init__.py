@@ -8,14 +8,17 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    =  ('Felix Croes'
               + ', Roy van Elk'
               + ', Paul Frederiks'
+              + ', Rick van de Hoef'
               + ', Sirjan Kaur'
-              + ', Claire Saliers'
               + ', Jan de Mooij'
               + ', Harm de Raaff'
+              + ', Joris de Ruiter'
+              + ', Claire Saliers'
               + ', Chris Smeele'
               + ', Ton Smeele'
               + ', Sietse Snel'
-              + ', Lazlo Westerhof')
+              + ', Lazlo Westerhof'
+              + ', Jelmer Zondergeld')
 # (in alphabetical order)
 
 # Import all modules containing rules into the package namespace,
