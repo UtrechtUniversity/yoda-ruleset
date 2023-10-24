@@ -20,10 +20,11 @@ UUSYSTEMCOLLECTION = '/yoda'
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
 """iRODS path where all revisions will be stored."""
 
-PROC_REVISION_CLEANUP = "revision-cleanup"
-"""Process name of the revision cleanup job. Used by the spooling system"""
+PROC_REVISION_CLEANUP      = "revision-cleanup"
+PROC_REVISION_CLEANUP_SCAN = "revision-cleanup-scan"
+"""Process names of the revision cleanup jobs. Used by the spooling system"""
 
-SPOOL_PROCESSES = {PROC_REVISION_CLEANUP}
+SPOOL_PROCESSES = {PROC_REVISION_CLEANUP, PROC_REVISION_CLEANUP_SCAN}
 """Set of process names recognized by the spooling system"""
 
 SPOOL_MAIN_DIRECTORY = "/var/lib/irods/yoda-spool"
