@@ -4,11 +4,13 @@
 For example usage, see make().
 """
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import inspect
 import traceback
+import zlib
 from collections import OrderedDict
 
 import jsonutil
@@ -120,14 +122,22 @@ def _api(f):
         def bad_request(debug_info=None):
             return Error('badrequest', 'An internal error occurred', debug_info=debug_info)
 
+        # Input is base64 encoded and compressed to reduce size (max rule length in iRODS is 20KB)
         # Validate input string: is it a valid JSON object?
         try:
-            data = jsonutil.parse(inp)
+            base64_decoded = base64.b64decode(inp)
+            decompressed_data = zlib.decompress(base64_decoded)
+            data = jsonutil.parse(decompressed_data.decode('utf-8'))
             if type(data) is not OrderedDict:
                 raise jsonutil.ParseError('Argument is not a JSON object')
+        except base64.binascii.Error:
+            log._write(ctx, 'Error: API rule <{}> input base64 decode error'.format(f.__name__))
+            return bad_request('API input base64 decode error').as_dict()
+        except zlib.error:
+            log._write(ctx, 'Error: API rule <{}> input zlib decompression error'.format(f.__name__))
+            return bad_request('API input zlib decompression error').as_dict()
         except jsonutil.ParseError as e:
-            log._write(ctx, 'Error: API rule <{}> called with invalid JSON argument'
-                            .format(f.__name__))
+            log._write(ctx, 'Error: API rule <{}> called with invalid JSON argument'.format(f.__name__))
             return bad_request('JSON parse error: {}'.format(e)).as_dict()
 
         # Check that required arguments are present.
