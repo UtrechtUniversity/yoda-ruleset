@@ -8,8 +8,9 @@ import os
 import subprocess
 import sys
 
-NAME          = os.path.basename(sys.argv[0])
-LOCKFILE_PATH = '/tmp/irods-{}.lock'.format(NAME)
+NAME                = os.path.basename(sys.argv[0])
+LOCKFILE_PATH       = '/tmp/irods-{}.lock'.format(NAME)
+NO_MORE_WORK_STATUS = "No more revision cleanup data"
 
 
 def get_args():
@@ -43,22 +44,26 @@ def lock_or_die():
 
 
 def process_revision_cleanup_data(bucketcase, endofcalendarday, verbose_flag):
-    return subprocess.check_output([
-        'irule',
-        '-r',
-        'irods_rule_engine_plugin-irods_rule_language-instance',
-        "*out=''; rule_revisions_cleanup_process('{}', '{}', '{}', *out); writeString('stdout', *out);".format(bucketcase, endofcalendarday, verbose_flag),
-        'null',
-        'ruleExecOut'
-    ])
+    rule = "rule_revisions_cleanup_process('{}', '{}', '{}', *out);".format(bucketcase, endofcalendarday, verbose_flag)
+    return subprocess.check_output(_rule_command_for_rule(rule))
+
+
+def scan_revision_cleanup_data(verbose_flag):
+    rule = "rule_revisions_cleanup_scan('{}', *out);".format(verbose_flag)
+    return subprocess.check_output(_rule_command_for_rule(rule))
 
 
 def collect_revision_cleanup_data(batch_size):
-    return subprocess.check_output([
+    rule = "rule_revisions_cleanup_collect('{}', *out);".format(str(batch_size))
+    return subprocess.check_output(_rule_command_for_rule(rule))
+
+
+def _rule_command_for_rule(rule_text):
+    return ([
         'irule',
         '-r',
         'irods_rule_engine_plugin-irods_rule_language-instance',
-        "*out=''; rule_revisions_cleanup_collect('{}', *out); writeString('stdout', *out);".format(str(batch_size)),
+        "*out=''; " + rule_text + "  writeString('stdout', *out);",
         'null',
         'ruleExecOut'
     ])
@@ -73,11 +78,13 @@ def main():
 
     collect_revision_cleanup_data(args.batch_size)
 
-    status = "INITIAL"
-    while status != "No more revision cleanup data":
-        status = process_revision_cleanup_data(args.bucketcase,
-                                               args.endofcalendarday,
-                                               "1" if args.verbose else "0")
+    (scan_status, process_status) = ("INITIAL", "INITIAL")
+    while scan_status != NO_MORE_WORK_STATUS and process_status != NO_MORE_WORK_STATUS:
+        scan_status = scan_revision_cleanup_data("1" if args.verbose else "0")
+        process_status = process_revision_cleanup_data(
+            args.bucketcase,
+            args.endofcalendarday,
+            "1" if args.verbose else "0")
 
     if args.verbose:
         print('END cleaning up revision store at ' + str(datetime.now()))
