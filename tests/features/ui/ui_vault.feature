@@ -227,3 +227,15 @@ Feature: Vault UI
         Examples:
             | vault          |
             | vault-initial1 |
+
+
+    Scenario Outline: Go to group manager from vault
+        Given user datamanager is logged in
+        And module "vault" is shown
+        When user browses to data package in <vault>
+        And user clicks go to group manager
+        And correct row in tree is active for <group>
+
+        Examples:
+            | vault          | group             |
+            | vault-initial1 | research-initial1 |

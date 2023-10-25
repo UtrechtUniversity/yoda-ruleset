@@ -32,11 +32,6 @@ def ui_group_check_properties_panel(browser, group):
     assert browser.find_by_id('f-group-update-creation-date', wait_time=1).visible
 
 
-@when(parsers.parse("correct row in tree is active for {group}"))
-def ui_group_tree_correct_row_active(browser, group):
-    assert browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1)
-
-
 @when(parsers.parse("correct row in list view is active for {group}"))
 def ui_group_list_view_correct_row_active(browser, group):
     assert len(browser.find_by_css('#tbl-list-groups tr.active[user-search-result-group="{}"]'.format(group))) == 1
