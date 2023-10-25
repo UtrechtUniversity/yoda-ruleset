@@ -417,3 +417,14 @@ def ui_browse_folder(browser, folder):
             link.click()
         else:
             browser.find_by_id('file-browser_next').click()
+
+
+@when('user clicks go to group manager')
+def ui_go_to_group_manager(browser):
+    browser.find_by_css('.btn-go-to-group-manager').click()
+
+
+@when(parsers.parse("correct row in tree is active for {group}"))
+@then(parsers.parse("correct row in tree is active for {group}"))
+def ui_group_tree_correct_row_active(browser, group):
+    assert browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1)

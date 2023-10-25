@@ -184,3 +184,15 @@ Feature: Research UI
             | folder           | format |
             | research-initial | csv    |
             | research-initial | txt    |
+
+
+    Scenario Outline: Go to group manager from research
+        Given user datamanager is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user clicks go to group manager
+        And correct row in tree is active for <group>
+
+        Examples:
+            | folder            | group             |
+            | research-initial1 | research-initial1 |
