@@ -5,10 +5,16 @@ __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import inspect
+import sys
 
 import rule
-import user
 from config import config
+
+if 'unittest' not in sys.modules.keys():
+    # We don't import the user functions when running unit tests, because then we'll have
+    # to deal with their dependencies. When running unit tests we should use a "None" ctx
+    # or some mocked object.
+    import user
 
 
 def write(ctx, message):
