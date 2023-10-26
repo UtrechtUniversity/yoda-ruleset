@@ -365,6 +365,16 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
 
         return policies_folder_status.pre_status_transition(ctx, obj_name, x[0], x[1])
 
+    elif (space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]
+          and attr in [constants.UUORGMETADATAPREFIX + "revision_scheduled",
+                       constants.UUORGMETADATAPREFIX + "replication_scheduled"]):
+        # Research or deposit orginizational metadata.
+        if user.is_admin(ctx, actor):
+            return policy.succeed()
+
+        if option not in ['add']:
+            return policy.fail('Only "add" operations allowed on attribute')
+
     elif space is pathutil.Space.VAULT and attr == constants.IIVAULTSTATUSATTRNAME:
         if not user.is_admin(ctx, actor):
             return policy.fail('No permission to change vault status')
