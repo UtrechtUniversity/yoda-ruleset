@@ -269,7 +269,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
                 # iRODS error for CAT_UNKNOWN_FILE can be ignored.
                 if str(e).find("-817000") == -1:
                     error_status = re.search("status \[(.*?)\]", str(e))
-                    log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
+                    log.write(ctx, "[revisions] Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
                 else:
                     pass
 
@@ -643,7 +643,7 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
     if has_spool_data(constants.PROC_REVISION_CLEANUP_SCAN):
         return "Existing revision cleanup scan spool data present. Not adding new revision cleanup data."
 
-    log.write(ctx, "Starting revision cleanup collect process.")
+    log.write(ctx, "[revisions] Starting revision cleanup collect process.")
 
     target_batch_size = int(target_batch_size)
     ingest_state = {
@@ -681,7 +681,6 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
             ingest_state["current_coll"] = coll_id
 
             if len(ingest_state["batch"]) >= target_batch_size:
-                log.write(ctx, "Flush batch 2 " + str(ingest_state["batch"]))
                 put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
                 ingest_state["batch"] = []
 
@@ -698,7 +697,7 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
     if len(ingest_state["batch"]) > 0:
         put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
 
-    log.write(ctx, "Collected {} revisions for revision cleanup scanning.".format(number_revisions))
+    log.write(ctx, "[revisions] Collected {} revisions for revision cleanup scanning.".format(number_revisions))
     return "Revision data has been spooled for scanning"
 
 
@@ -720,30 +719,30 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
     if user.user_type(ctx) != 'rodsadmin':
         raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
 
-    log.write(ctx, 'Revision cleanup scan job starting.')
+    log.write(ctx, '[revisions] Revision cleanup scan job starting.')
     verbose = verbose_flag == "1"
     revisions_list = get_spool_data(constants.PROC_REVISION_CLEANUP_SCAN)
 
     if revisions_list is None:
-        log.write(ctx, 'Revision cleanup scan job stopping - no more spooled revision scan data.')
+        log.write(ctx, '[revisions] Revision cleanup scan job stopping - no more spooled revision scan data.')
         return "No more revision cleanup data"
 
     if verbose:
-        log.write(ctx, "Number of revisions to scan: " + str(len(revisions_list)))
-        log.write(ctx, "Scanning revisions: " + str(revisions_list))
+        log.write(ctx, "[revisions] Number of revisions to scan: " + str(len(revisions_list)))
+        log.write(ctx, "[revisions] Scanning revisions: " + str(revisions_list))
 
     revision_data = revision_cleanup_scan_revision_objects(ctx, revisions_list, verbose)
     prefiltered_revision_data = revision_cleanup_prefilter(ctx, revision_data, revision_strategy_name, verbose)
     output_data_size = len(prefiltered_revision_data)
     if output_data_size > 0:
         if verbose:
-            log.write(ctx, "Revision cleanup job scan spooling {} objects for processing.".format(str(output_data_size)))
+            log.write(ctx, "[revisions] Revision cleanup job scan spooling {} objects for processing.".format(str(output_data_size)))
         put_spool_data(constants.PROC_REVISION_CLEANUP, [prefiltered_revision_data])
     else:
         if verbose:
-            log.write(ctx, "Revision cleanup job scan - all data has been processed in prefilter stage. Processing not needed.")
+            log.write(ctx, "[revisions] Revision cleanup job scan - all data has been processed in prefilter stage. Processing not needed.")
 
-    log.write(ctx, 'Revision cleanup scan job finished.')
+    log.write(ctx, '[revisions] Revision cleanup scan job finished.')
     return 'Revision store cleanup scan job completed'
 
 
@@ -766,13 +765,13 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
     if user.user_type(ctx) != 'rodsadmin':
         raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
 
-    log.write(ctx, 'Revision cleanup job processing starting.')
+    log.write(ctx, '[revisions] Revision cleanup job processing starting.')
     verbose = verbose_flag == "1"
     _update_revision_store_acls(ctx)
     revisions_list = get_spool_data(constants.PROC_REVISION_CLEANUP)
 
     if revisions_list is None:
-        log.write(ctx, 'Revision cleanup processing job stopping - no more spooled revision data.')
+        log.write(ctx, '[revisions] Revision cleanup processing job stopping - no more spooled revision data.')
         return "No more revision cleanup data"
 
     end_of_calendar_day = int(endOfCalendarDay)
@@ -787,7 +786,7 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
 
     for revisions in revisions_list:
         if verbose:
-            log.write(ctx, 'Processing revisions {} ...'.format(str(revisions)))
+            log.write(ctx, '[revisions] Processing revisions {} ...'.format(str(revisions)))
         # Process the original path conform the bucket settings
         candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, verbose)
         num_candidates += len(candidates)
@@ -797,13 +796,13 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
             rev_paths = {r[0]: r[2] for r in revisions}
 
         if verbose:
-            log.write(ctx, 'Candidates to be removed: {} ...'.format(str(candidates)))
+            log.write(ctx, '[revisions] Candidates to be removed: {} ...'.format(str(candidates)))
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
             rev_path = rev_paths[revision_id]
             if verbose:
-                log.write(ctx, 'Removing candidate: {} ...'.format(str(revision_id)))
+                log.write(ctx, '[revisions] Removing candidate: {} ...'.format(str(revision_id)))
             if not revision_remove(ctx, revision_id, rev_path):
                 num_errors += 1
 
@@ -828,7 +827,7 @@ def revision_remove(ctx, revision_id, revision_path):
     """
     revision_prefix = get_revision_store_path(ctx, user.zone(ctx), trailing_slash=True)
     if not revision_path.startswith(revision_prefix):
-        log.write(ctx, "ERROR - sanity check fail when removing revision <{}>: <{}>".format(
+        log.write(ctx, "[revisions] ERROR - sanity check fail when removing revision <{}>: <{}>".format(
             revision_id,
             revision_path))
         return False
@@ -837,7 +836,7 @@ def revision_remove(ctx, revision_id, revision_path):
         msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
         return True
     except msi.Error as e:
-        log.write(ctx, "ERROR - could not remove revision <{}>: <{}> ({}).".format(
+        log.write(ctx, "[revisions] ERROR - could not remove revision <{}>: <{}> ({}).".format(
             revision_id,
             revision_path,
             str(e)))

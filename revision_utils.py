@@ -93,16 +93,16 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
                     # Add revision to list of removal
                     index = bucket_start_index + count
                     if verbose:
-                        log.write(ctx, 'Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
-                                                                                                     str(bucket)))
+                        log.write(ctx, '[revisions] Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
+                                                                                                                 str(bucket)))
                     deletion_candidates.append(rev_list[index])
                     count += 1
             else:
                 while count < nr_to_be_removed:
                     index = len(rev_list) + (bucket_start_index) - count
                     if verbose:
-                        log.write(ctx, 'Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
-                                                                                                     str(bucket)))
+                        log.write(ctx, '[revisions] Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
+                                                                                                                 str(bucket)))
                     deletion_candidates.append(rev_list[index])
                     count += 1
 
@@ -137,6 +137,6 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
        """
     minimum_bucket_size = get_revision_strategy(revision_strategy_name).get_minimum_bucket_size()
     if verbose:
-        log.write(ctx, "Removing following revisioned data objects in prefiltering for cleanup: "
+        log.write(ctx, "[revisions] Removing following revisioned data objects in prefiltering for cleanup: "
                   + str([object for object in revisions_list if len(object) <= minimum_bucket_size]))
     return [object for object in revisions_list if len(object) > minimum_bucket_size]
