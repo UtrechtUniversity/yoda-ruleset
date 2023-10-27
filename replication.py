@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import re
 import time
 
 import genquery
@@ -24,11 +25,19 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
     """
     zone = user.zone(ctx)
 
-    # Give rods 'own' access so that they can remove the AVU.
-    msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
-    avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource))
+    try:
+        # Give rods 'own' access so that they can remove the AVU.
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
+        msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource), "")
+    except msi.Error as e:
+        # iRODS error for CAT_UNKNOWN_FILE can be ignored.
+        if str(e).find("-817000") == -1:
+            error_status = re.search("status \[(.*?)\]", str(e))
+            log.write(ctx, "Scheduled replication of data object {} failed with error {}".format(path, error_status.group(1)))
+        else:
+            pass
 
 
 @rule.make()
@@ -82,7 +91,7 @@ def rule_replicate_batch(ctx, verbose):
             to_path = xs[1]
 
             if print_verbose:
-                log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, "[replication] Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
 
             # Actual replication
             try:

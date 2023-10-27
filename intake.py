@@ -450,7 +450,7 @@ def api_intake_scan_for_datasets(ctx, coll):
         try:
             _intake_scan_for_datasets(ctx, coll)
         except Exception:
-            log.write(ctx, "Intake scan failed with the following exception: " + traceback.format_exc())
+            log.write(ctx, "Intake scan (API) failed with the following exception: " + traceback.format_exc())
             return {"proc_status": "NOK", "error_msg": "Error during scanning process"}
     else:
         return {"proc_status": "NOK", "error_msg": "No permissions to scan collection"}
@@ -474,6 +474,7 @@ def rule_intake_scan_for_datasets(ctx, coll):
         try:
             _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
         except Exception:
+            log.write(ctx, "Intake scan (rule) failed with the following exception: " + traceback.format_exc())
             return "Error scanning for datasets for collection: " + coll
     else:
         return "Insufficient permissions for collection: " + coll
@@ -526,7 +527,7 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
                                                    + "> E<" + subscope['experiment_type']
                                                    + "> P<" + subscope['pseudocode']
                                                    + "> V<" + version
-                                                   + "> D<" + subscope['dataset_directory']
+                                                   + "> D<" + subscope['directory']
                                                    + ">"))
 
     intake_scan.intake_check_datasets(ctx, coll)
