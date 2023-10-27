@@ -91,7 +91,7 @@ def rule_replicate_batch(ctx, verbose):
             to_path = xs[1]
 
             if print_verbose:
-                log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, "[replication] Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
 
             # Actual replication
             try:
