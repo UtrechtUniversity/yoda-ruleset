@@ -64,6 +64,11 @@ def basename(path):
     return chop(path)[1]  # chops everything *but* the last component
 
 
+def chopext(path):
+    """Return the extension of a path."""
+    return path.rsplit('.', 1)
+
+
 def info(path):
     """Parse a path into a (Space, zone, group, subpath) tuple.
 

@@ -9,7 +9,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from pathutil import basename, chop, dirname, info, Space
+from pathutil import basename, chop, chopext, dirname, info, Space
 
 
 class UtilPathutilTest(TestCase):
@@ -73,6 +73,26 @@ class UtilPathutilTest(TestCase):
         self.assertEquals(output, 'test')
         output = basename("/tempZone/home/research-test/test/file.txt")
         self.assertEquals(output, 'file.txt')
+
+    def test_chopext(self):
+        output = chopext("")
+        self.assertEquals(output, [''])
+        output = chopext("/")
+        self.assertEquals(output, ['/'])
+        output = chopext("/tempZone")
+        self.assertEquals(output, ['/tempZone'])
+        output = chopext("/tempZone/yoda")
+        self.assertEquals(output, ['/tempZone/yoda'])
+        output = chopext("/tempZone/home")
+        self.assertEquals(output, ['/tempZone/home'])
+        output = chopext("/tempZone/home/rods")
+        self.assertEquals(output, ['/tempZone/home/rods'])
+        output = chopext("/tempZone/home/research-test")
+        self.assertEquals(output, ['/tempZone/home/research-test'])
+        output = chopext("/tempZone/home/research-test/test")
+        self.assertEquals(output, ['/tempZone/home/research-test/test'])
+        output = chopext("/tempZone/home/research-test/test/file.txt")
+        self.assertEquals(output, ['/tempZone/home/research-test/test/file', 'txt'])
 
     def test_info(self):
         output = info("")
