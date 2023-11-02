@@ -37,7 +37,7 @@
     }
   },
   "GeoLocation": {
-    "ui:description": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
+    "ui:description": "Sample location: the location of the outcrop/quarry/borehole/other from which the sample(s) used in your study were taken originally. Please do not add a location of a shop, repository or other facility that temporarily stores samples. Model location: include only if a model you publish refers to a specific location on Earth.",
     "items": {
       "geoLocationBox": {
         "ui:field": "geo"
