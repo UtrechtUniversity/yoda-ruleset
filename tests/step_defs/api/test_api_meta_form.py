@@ -197,15 +197,6 @@ def api_meta_form_save_long(user, collection):
     )
 
 
-@given(parsers.parse("the Yoda meta form load API is queried with {collection}"), target_fixture="api_response")
-def api_meta_form_load(user, collection):
-    return api_request(
-        user,
-        "meta_form_load",
-        {"coll": collection}
-    )
-
-
 @given(parsers.parse("data package exists in {vault}"), target_fixture="data_package")
 def api_vault_data_package(user, vault):
     http_status, body = api_request(
@@ -237,10 +228,3 @@ def file_exists(user, file, collection):
             found = True
 
     assert found
-
-
-@then(parsers.parse("metadata is returned for {collection}"))
-def metadata_returned(api_response, collection):
-    http_status, body = api_response
-
-    assert http_status == 200

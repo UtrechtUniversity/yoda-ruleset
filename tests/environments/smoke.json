@@ -1,0 +1,11 @@
+{
+    "url": "https://portal.yoda.test",
+    "zone_name": "nluu99a",
+    "roles": {
+        "smoke_account": {
+            "username": "j.a.smith@acc.uu.nl",
+            "csrf": "IjY2ZTRlZGUwZWEyZDNhZWExM2Q4NzNmZmI1YjfzYWVkZGYzMTZlMTQi.ZUNqCw.a_R2jHpy36kp5vsnS9Ye4DRwDZ4",
+            "session": "f2d24c2e-47a1-4ef4-a702-fed7f40bc83b.8ZtZ-AQ9ld2zNeG0yTFCfl8IeJs"
+        }
+    }
+}
