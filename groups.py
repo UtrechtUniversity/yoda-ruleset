@@ -1056,7 +1056,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     try:
         co_identifier = ''
 
-        # Post SRAM collaboration if SRAM is enabled.
+        # Post SRAM collaboration and connect to service if SRAM is enabled.
         if config.enable_sram:
             response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
 
@@ -1065,6 +1065,9 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
                 return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
+
+            if not sram.sram_connect_service_collaboration(ctx, group_name):
+                return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]

@@ -188,6 +188,37 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     return response.status_code == 201
 
 
+def sram_connect_service_collaboration(ctx, group_name):
+    """Connect a service to an existing SRAM collaboration.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group
+
+    :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
+    """
+    url = "{}/api/collaborations_services/v1/connect_collaboration_service".format(config.sram_rest_api_url)
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    # Create unique short name of group
+    short_name = group.unique_short_name(ctx, group_name)
+
+    # Build SRAM payload.
+    payload = {
+        "short_name": short_name,
+        "service_entity_id": config.sram_service_entity_id
+    }
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "put {}: {}".format(url, payload))
+
+    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(response.status_code))
+
+    return response.status_code == 201
+
+
 def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
     """Send invitation email to newly added user to the group.
 
