@@ -44,6 +44,10 @@
       }
     }
   },
+  "Keywords": {
+    "ui:description": "Adding (searchable) key words to your data package.",
+    "ui:field": "keyword_selector"
+  },
   "Keyword": {
     "ui:description": "Free text field for adding (searchable) keywords to your data package"
   },
