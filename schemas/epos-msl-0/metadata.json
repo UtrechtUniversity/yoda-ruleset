@@ -997,6 +997,26 @@
         }
       }
     },
+    "Keywords": {
+      "type": "array",
+      "additionalProperties": false,
+      "title": "Keywords",
+      "yoda:structure": "EposKeywords",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Keyword": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Keyword name"
+          },
+          "Uri": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Keyword uri"
+          }
+        }
+      }
+    },
     "Keyword": {
       "title": "Keywords",
       "type": "array",
