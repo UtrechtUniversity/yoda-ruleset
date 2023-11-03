@@ -31,7 +31,10 @@ class RevisionTest(TestCase):
         self.assertEquals(single_output, [])  # Does not exceed min. bucket size for strategy B
         two_input = [[(1, 123, "/foo/bar/baz"), (2, 234, "/foo/bar/baz")]]
         two_output = revision_cleanup_prefilter(None, two_input, "B", False)
-        self.assertEquals(two_output, [])    # Does not exceed min. bucket size for strategy B
+        # Does not exceed min. bucket size for strategy B
+        # But more than 1 revision (so cannot prefilter, because
+        # revisions could be outside defined buckets)
+        self.assertEquals(two_output, two_input)
         three_input = [[(1, 123, "/foo/bar/baz"), (2, 234, "/foo/bar/baz"), (3, 345, "/foo/bar/baz")]]
         three_output = revision_cleanup_prefilter(None, three_input, "B", False)
         self.assertEquals(three_output, three_input)  # Exceeds min. bucket size for strategy B
@@ -104,6 +107,23 @@ class RevisionTest(TestCase):
         output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, False)
         self.assertEquals(output, [])
 
+    def test_revision_deletion_1_bucket_1_before(self):
+        dummy_time = 1000000000
+        revision_strategy = get_revision_strategy("B")
+        revisions = [(1, dummy_time - 60, "/foo/bar/baz"),
+                     (2, dummy_time - 365 * 24 * 3600, "/foo/bar/baz")]
+        output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, False)
+        self.assertEquals(output, [2])
+
+    def test_revision_deletion_1_bucket_2_before(self):
+        dummy_time = 1000000000
+        revision_strategy = get_revision_strategy("B")
+        revisions = [(1, dummy_time - 60, "/foo/bar/baz"),
+                     (2, dummy_time - 365 * 24 * 3600 - 60, "/foo/bar/baz"),
+                     (3, dummy_time - 365 * 24 * 3600 - 90, "/foo/bar/baz")]
+        output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, False)
+        self.assertEquals(output, [2, 3])
+
     def test_revision_deletion_3_before_buckets(self):
         dummy_time = 1000000000
         revision_strategy = get_revision_strategy("B")
@@ -111,4 +131,4 @@ class RevisionTest(TestCase):
                      (2, dummy_time - 365 * 24 * 3600 - 120, "/foo/bar/baz"),
                      (3, dummy_time - 365 * 24 * 3600 - 180, "/foo/bar/baz")]
         output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, False)
-        self.assertEquals(output, [])
+        self.assertEquals(output, [2, 3])

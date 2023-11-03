@@ -63,7 +63,10 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
     # List of bucket index with per bucket a list of its revisions within that bucket
     # [[data_ids0],[data_ids1]]
     bucket_revisions = []
+    non_bucket_revisions = []
+    revision_found_in_bucket = False
 
+    # Sort revisions by bucket
     for bucket in buckets:
         t1 = t2
         t2 = t1 - bucket[0]
@@ -72,9 +75,15 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
         for revision in revisions:
             if revision[1] <= t1 and revision[1] > t2:
                 # Link the bucket and the revision together so its clear which revisions belong into which bucket
+                revision_found_in_bucket = True
                 revision_list.append(revision[0])  # append data-id
         # Link the collected data_ids (revision_ids) to the corresponding bucket
         bucket_revisions.append(revision_list)
+
+    # Get revisions that predate all buckets
+    for revision in revisions:
+        if revision[1] < t2:
+            non_bucket_revisions.append(revision[0])
 
     # Per bucket find the revision candidates for deletion
     bucket_counter = 0
@@ -108,12 +117,24 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
 
         bucket_counter += 1  # To keep conciding with strategy list
 
+    # If there are revisions in any bucket, remove all revisions before defined buckets. If there are
+    # no revisions in buckets, remove all revisions before defined buckets except the last one.
+    if len(non_bucket_revisions) > 1 or (len(non_bucket_revisions) == 1 and revision_found_in_bucket):
+        nr_to_be_removed = len(non_bucket_revisions) - (0 if revision_found_in_bucket else 1)
+        count = 0
+        while count < nr_to_be_removed:
+            index = count + (0 if revision_found_in_bucket else 1)
+            if verbose:
+                log.write(ctx, 'Scheduling revision <{}> (older than buckets) for removal.'.format(str(index)))
+            deletion_candidates.append(non_bucket_revisions[index])
+            count += 1
+
     return deletion_candidates
 
 
 def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verbose):
     """Filters out revisioned data objects from a list if we can easily determine that they don't meet criteria for being removed,
-       for example if the number of revisions is less than the minimum bucket size.
+       for example if the number of revisions is at most one, and the minimum bucket size is at least one.
 
        This prefilter is performed in the scan phase. A full check of the remaining versioned data objects will be performed in the
        processing phase.
@@ -139,4 +160,4 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
     if verbose:
         log.write(ctx, "Removing following revisioned data objects in prefiltering for cleanup: "
                   + str([object for object in revisions_list if len(object) <= minimum_bucket_size]))
-    return [object for object in revisions_list if len(object) > minimum_bucket_size]
+    return [object for object in revisions_list if len(object) > min(minimum_bucket_size, 1)]
