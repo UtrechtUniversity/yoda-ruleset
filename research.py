@@ -678,6 +678,7 @@ def api_research_manifest(ctx, coll):
 
     return checksums + checksums_sub
 
+
 @api.make()
 def api_research_overwrite_file(ctx, filepath, new_filepath, action):
     """Overwrite an existing file in a research folder.
@@ -690,7 +691,7 @@ def api_research_overwrite_file(ctx, filepath, new_filepath, action):
     :returns: Dict with API status result
     """
     if 'file' in action:
-        action = action.split('-', 1)[1] 
+        action = action.split('-', 1)[1]
 
     if len(new_filepath) == 0:
         return api.Error('missing_filepath', 'Missing file path. Please add a file path')
@@ -708,7 +709,7 @@ def api_research_overwrite_file(ctx, filepath, new_filepath, action):
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to '+ action +' files to this location')
+        return api.Error('invalid_destination', 'It is not possible to ' + action + ' files to this location')
 
     # Name should not contain '\\' or '/'
     if '/' in data_name or '\\' in data_name:
@@ -744,6 +745,7 @@ def api_research_overwrite_file(ctx, filepath, new_filepath, action):
 
     return api.Result.ok()
 
+
 @api.make()
 def api_research_overwrite_folder(ctx, folder_path, new_folder_path, action):
     """Copy a folder in a research folder.
@@ -757,7 +759,7 @@ def api_research_overwrite_folder(ctx, folder_path, new_folder_path, action):
     """
 
     if 'folder' in action:
-        action = action.split('-', 1)[1] 
+        action = action.split('-', 1)[1]
 
     if len(new_folder_path) == 0:
         return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
