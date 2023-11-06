@@ -24,7 +24,9 @@ __all__ = ['api_research_folder_add',
            'api_research_system_metadata',
            'api_research_collection_details',
            'api_research_list_temporary_files',
-           'api_research_manifest']
+           'api_research_manifest',
+           'api_research_overwrite_file',
+           'api_research_overwrite_folder']
 
 
 @api.make()
@@ -675,3 +677,134 @@ def api_research_manifest(ctx, coll):
     checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub
+
+@api.make()
+def api_research_overwrite_file(ctx, filepath, new_filepath, action):
+    """Overwrite an existing file in a research folder.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param filepath:     Path to the file to move
+    :param new_filepath: Path to the new location of the file
+    :param action:       Action can be move or copy
+
+    :returns: Dict with API status result
+    """
+    if 'file' in action:
+        action = action.split('-', 1)[1] 
+
+    if len(new_filepath) == 0:
+        return api.Error('missing_filepath', 'Missing file path. Please add a file path')
+
+    # Same filepath makes no sense.
+    if filepath == new_filepath:
+        return api.Error('invalid_filepath', 'Origin and ' + action + ' file paths are equal. Please choose another destination')
+
+    coll = pathutil.chop(new_filepath)[0]
+    data_name = pathutil.chop(new_filepath)[1]
+    try:
+        validate_filename(data_name.decode('utf-8'))
+    except Exception:
+        return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(coll.split('/')) > 2:
+        return api.Error('invalid_destination', 'It is not possible to '+ action +' files to this location')
+
+    # Name should not contain '\\' or '/'
+    if '/' in data_name or '\\' in data_name:
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
+
+    # in vault?
+    target_group_name = new_filepath.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('invalid_destination', 'It is not possible to ' + action + ' files in the vault')
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You do not have sufficient permissions to ' + action + ' the selected file')
+
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be copied or moved')
+
+    # Does org file exist?
+    if not data_object.exists(ctx, filepath):
+        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
+
+    # All requirements OK
+    try:
+        if action == 'file-copy' or action == 'copy':
+            data_object.copy(ctx, filepath, new_filepath)
+        else:
+            data_object.rename(ctx, filepath, new_filepath)
+    except msi.Error as e:
+        log.write(ctx, e)
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
+
+@api.make()
+def api_research_overwrite_folder(ctx, folder_path, new_folder_path, action):
+    """Copy a folder in a research folder.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param folder_path:     Path to the folder to copy
+    :param new_folder_path: Path to the new copy of the folder
+    :param action:          Action can be either move or copy
+
+    :returns: Dict with API status result
+    """
+
+    if 'folder' in action:
+        action = action.split('-', 1)[1] 
+
+    if len(new_folder_path) == 0:
+        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
+
+    try:
+        validate_filepath(new_folder_path.decode('utf-8'))
+    except ValidationError:
+        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
+
+    # Same folder path makes no sense.
+    if folder_path == new_folder_path:
+        return api.Error('invalid_folder_path', 'Origin and copy folder paths are equal. Please choose another destination')
+
+    # Inside the same path makes no sense.
+    if "{}/".format(folder_path) in new_folder_path:
+        return api.Error('invalid_folder_path', 'Cannot ' + action + ' folder inside itself. Please choose another destination')
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(new_folder_path.split('/')) > 2:
+        return api.Error('invalid_destination', 'It is not possible to ' + action + ' folder at this location')
+
+    # in vault?
+    target_group_name = new_folder_path.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('invalid_destination', 'It is not possible to ' + action + ' folder to the vault')
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You do not have sufficient permissions to ' + action + ' the selected folder')
+
+    # Folder not locked?
+    if folder.is_locked(ctx, new_folder_path):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be copied or moved')
+
+    # Does original folder exist?
+    if not collection.exists(ctx, folder_path):
+        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
+
+    # All requirements OK
+    try:
+        if action == 'folder-copy' or action == 'copy':
+            collection.copy(ctx, folder_path, new_folder_path)
+        else:
+            collection.move(ctx, folder_path, new_folder_path)
+    except msi.Error as e:
+        log.write(ctx, e)
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
