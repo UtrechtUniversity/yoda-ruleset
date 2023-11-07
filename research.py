@@ -25,7 +25,6 @@ __all__ = ['api_research_folder_add',
            'api_research_collection_details',
            'api_research_list_temporary_files',
            'api_research_manifest',
-           'api_research_overwrite_file',
            'api_research_overwrite_folder']
 
 
@@ -362,12 +361,13 @@ def api_research_list_temporary_files(ctx, coll):
 
 
 @api.make()
-def api_research_file_copy(ctx, filepath, new_filepath):
+def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     """Copy a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to copy
     :param new_filepath: Path to the new copy of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -412,12 +412,12 @@ def api_research_file_copy(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.copy(ctx, filepath, new_filepath)
+        data_object.copy(ctx, filepath, new_filepath, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -495,12 +495,13 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 
 @api.make()
-def api_research_file_move(ctx, filepath, new_filepath):
+def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     """Move a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to move
     :param new_filepath: Path to the new location of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -545,12 +546,16 @@ def api_research_file_move(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.rename(ctx, filepath, new_filepath)
+        if overwrite:
+            data_object.copy(ctx, filepath, new_filepath, force=overwrite)
+            data_object.remove(ctx, filepath)
+        else:
+            data_object.rename(ctx, filepath, new_filepath)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -677,73 +682,6 @@ def api_research_manifest(ctx, coll):
     checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub
-
-
-@api.make()
-def api_research_overwrite_file(ctx, filepath, new_filepath, action):
-    """Overwrite an existing file in a research folder.
-
-    :param ctx:          Combined type of a callback and rei struct
-    :param filepath:     Path to the file to move
-    :param new_filepath: Path to the new location of the file
-    :param action:       Action can be move or copy
-
-    :returns: Dict with API status result
-    """
-    if 'file' in action:
-        action = action.split('-', 1)[1]
-
-    if len(new_filepath) == 0:
-        return api.Error('missing_filepath', 'Missing file path. Please add a file path')
-
-    # Same filepath makes no sense.
-    if filepath == new_filepath:
-        return api.Error('invalid_filepath', 'Origin and ' + action + ' file paths are equal. Please choose another destination')
-
-    coll = pathutil.chop(new_filepath)[0]
-    data_name = pathutil.chop(new_filepath)[1]
-    try:
-        validate_filename(data_name.decode('utf-8'))
-    except Exception:
-        return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
-
-    # not in home - a groupname must be present ie at least 2!?
-    if not len(coll.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to ' + action + ' files to this location')
-
-    # Name should not contain '\\' or '/'
-    if '/' in data_name or '\\' in data_name:
-        return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
-
-    # in vault?
-    target_group_name = new_filepath.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('invalid_destination', 'It is not possible to ' + action + ' files in the vault')
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to ' + action + ' the selected file')
-
-    # Folder not locked?
-    if folder.is_locked(ctx, coll):
-        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be copied or moved')
-
-    # Does org file exist?
-    if not data_object.exists(ctx, filepath):
-        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
-
-    # All requirements OK
-    try:
-        if action == 'file-copy' or action == 'copy':
-            data_object.copy(ctx, filepath, new_filepath)
-        else:
-            data_object.rename(ctx, filepath, new_filepath)
-    except msi.Error as e:
-        log.write(ctx, e)
-        return api.Error('internal', 'Something went wrong. Please try again')
-
-    return api.Result.ok()
 
 
 @api.make()
