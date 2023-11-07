@@ -144,9 +144,9 @@ Feature: Group UI
         Given user technicaladmin is logged in
         And module "group_manager" is shown
         When user opens add group dialog
+        And group type is set to datamanager
         And category is set to <category>
         And subcategory is set to <subcategory>
-        And group type is set to datamanager
         When user submits new group data
         And datamanager group <group> is successfully created
         And check whether datamanager group properties <group> and <category> are correct
