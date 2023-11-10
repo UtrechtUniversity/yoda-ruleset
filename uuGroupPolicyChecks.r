@@ -452,7 +452,7 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
     # User notifications
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
-	} else {
+    } else {
 		*reason = "Invalid user attribute name.";
-	}
+    }
 }
