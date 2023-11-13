@@ -171,10 +171,15 @@ def ui_group_user_is_added(browser, member_add):
 def ui_group_user_add(browser, member_add):
     time.sleep(3)
     browser.find_by_css('#f-user-create-name').find_by_xpath('..').find_by_css('span .select2-selection').click()
-    time.sleep(4)
+    # Scroll to bottom.
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(1)
     browser.find_by_css('.select2-search__field').fill(member_add)
-    time.sleep(4)
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(1)
     browser.find_by_css('.select2-results__option--highlighted').click()
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(1)
     browser.find_by_css('#f-user-create-submit').click()
 
 
@@ -239,8 +244,12 @@ def ui_group_member_search(browser, member):
 @then(parsers.parse("only member {member} is shown"))
 def ui_group_member_filtered(browser, member):
     assert browser.is_text_present(member, wait_time=1)
-    assert browser.is_text_not_present("groupmanager", wait_time=1)
-    assert browser.is_text_not_present("functionaladminpriv", wait_time=1)
+    user_list = browser.find_by_css("#user-list a")
+    for user in user_list:
+        if 'datamanager' in user['data-name']:
+            assert not user.visible
+        if 'functionaladminpriv' in user['data-name']:
+            assert not user.visible
 
 
 @when(parsers.parse("searches for group {group}"))
@@ -253,8 +262,14 @@ def ui_group_search(browser, group):
 @then(parsers.parse("only group {group} is shown"))
 def ui_group_filtered(browser, group):
     assert browser.is_text_present(group, wait_time=1)
-    assert browser.is_text_not_present("core", wait_time=1)
-    assert browser.is_text_not_present("default", wait_time=1)
+
+    core_groups = browser.find_by_css("a[data-name*=\"{}\"]".format("core"))
+    for grp in core_groups:
+        assert not grp.visible
+
+    default_groups = browser.find_by_css("a[data-name*=\"{}\"]".format("default"))
+    for grp in default_groups:
+        assert not grp.visible
 
 
 @then("user opens group import dialog")
@@ -425,7 +440,6 @@ def ui_group_schema_category_is_updated(browser, category):
     browser.find_by_css('.select2-search__field').fill(category)
     time.sleep(1)
     browser.find_by_css('.select2-results__option--highlighted').click()
-
 
 
 @when(parsers.parse("subcategory is set to {subcategory}"))
