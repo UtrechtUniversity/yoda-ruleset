@@ -9,6 +9,7 @@ import time
 
 import genquery
 import irods_types
+import psutil
 
 from util import *
 
@@ -41,7 +42,7 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose):
+def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
@@ -49,10 +50,13 @@ def rule_replicate_batch(ctx, verbose):
 
     :param ctx:     Combined type of a callback and rei struct
     :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    :max_rss:       When not '0' maximum amount of rss memory in bytes before stopping, after first data object
+    :param dry_run: When '1' do not actually replicate, only log what would have replicated
     """
     count         = 0
     count_ok      = 0
     print_verbose = (verbose == '1')
+    no_action     = (dry_run == '1')
 
     attr = constants.UUORGMETADATAPREFIX + "replication_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "replication_failed"
@@ -65,6 +69,12 @@ def rule_replicate_batch(ctx, verbose):
 
         minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
+        log.write(ctx, "[replication] verbose = {}".format(verbose))
+        log.write(ctx, "[replication] async_replication_delay_time = {} seconds".format(config.async_replication_delay_time))
+        log.write(ctx, "[replication] rss_limit = {} bytes".format(rss_limit))
+        log.write(ctx, "[replication] dry_run = {}".format(dry_run))
+        show_memory_usage(ctx)
+
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
                     "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME n<= '{}'".format(attr, minimum_timestamp),
@@ -74,6 +84,12 @@ def rule_replicate_batch(ctx, verbose):
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
                 log.write(ctx, "[replication] Batch replication job is stopped")
+                break
+
+            # Check current memory usage and stop if it is above the limit.
+            if memory_limit_exceeded(rss_limit):
+                show_memory_usage(ctx)
+                log.write(ctx, "[replication] Memory used is now above specified limit of {} bytes, stopping further processing".format(rss_limit))
                 break
 
             count += 1
@@ -89,6 +105,12 @@ def rule_replicate_batch(ctx, verbose):
 
             from_path = xs[0]
             to_path = xs[1]
+
+            # "No action" is meant for easier memory usage debugging.
+            if no_action:
+                show_memory_usage(ctx)
+                log.write(ctx, "[replication] Skipping batch replication (dry_run): would have replicated \"{}\" from {} to {}".format(path, from_path, to_path))
+                continue
 
             if print_verbose:
                 log.write(ctx, "[replication] Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
@@ -127,6 +149,9 @@ def rule_replicate_batch(ctx, verbose):
                     # error => report it but still continue
                     log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
+        if print_verbose:
+            show_memory_usage(ctx)
+
         # Total replication process completed
         log.write(ctx, "[replication] Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
 
@@ -138,10 +163,28 @@ def is_replication_blocked_by_admin(ctx):
 
     :returns: Boolean indicating if admin put replication on hold.
     """
-    zone = user.zone(ctx)
-    iter = genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
-        genquery.AS_LIST, ctx
-    )
-    return len(list(iter)) > 0
+    return data_object.exists(ctx, "/{}{}".format(user.zone(ctx), "/yoda/flags/stop_replication"))
+
+
+def memory_rss_usage():
+    """
+    The RSS (resident) memory size in bytes for the current process.
+    """
+    p = psutil.Process()
+    return p.memory_info().rss
+
+
+def show_memory_usage(ctx):
+    """
+    For debug purposes show the current RSS usage.
+    """
+    log.write(ctx, "[replication] current RSS usage: {} bytes".format(memory_rss_usage()))
+
+
+def memory_limit_exceeded(rss_limit):
+    """
+    True when a limit other than 0 was specified and memory usage is currently
+    above this limit. Otherwise False.
+    """
+    rss_limit = int(rss_limit)
+    return rss_limit and memory_rss_usage() > rss_limit
