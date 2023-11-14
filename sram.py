@@ -90,7 +90,9 @@ def sram_get_uid(ctx, co_identifier, user_name):
 
     uid = ''
     for key in data['collaboration_memberships']:
-        if key['user']['email'] == user_name.split('#')[0]:
+        yoda_name = user_name.split('#')[0]
+        sram_name = key['user']['email']
+        if yoda_name.lower() == sram_name.lower():
             uid = key['user']['uid']
 
     if config.sram_verbose_logging:
