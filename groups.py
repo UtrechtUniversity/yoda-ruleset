@@ -975,6 +975,10 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
+    if config.enable_sram:
+        # All users are internal when SRAM is enabled.
+        return '0'
+
     if yoda_names.is_internal_user(username):
         return '0'
     return '1'
