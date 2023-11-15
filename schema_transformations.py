@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -130,9 +130,10 @@ def _default2_default3(ctx, m):
         # For this contributor step through all its affiliations
         for contrib in m['Contributor']:
             new_affiliations = []
-            for affiliation in contrib['Affiliation']:
-                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            contrib['Affiliation'] = new_affiliations
+            if contrib.get('Affiliation', False):
+                for affiliation in contrib['Affiliation']:
+                    new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+                contrib['Affiliation'] = new_affiliations
 
     # Rename Tags to Keywords
     if m.get('Tag', False):
