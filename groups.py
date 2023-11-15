@@ -1309,3 +1309,54 @@ def sram_enabled(ctx, group_name):
             co_identifier = row[0]
 
     return enable_sram_flag, co_identifier
+
+
+@rule.make()
+def rule_group_sram_sync(ctx):
+    """Synchronize groups with SRAM.
+
+    :param ctx: Combined type of a ctx and rei struct
+    """
+    if not user.is_admin(ctx):
+        return
+
+    if not config.enable_sram:
+        log.write(ctx, "SRAM needs to be enabled to sync groups")
+        return
+
+    log.write(ctx, "Start syncing groups with SRAM")
+    groups = getGroupsData(ctx)
+
+    for group in groups:
+        group_name = group["name"]
+        members = group['members']
+        description = group['description'] if 'description' in group else ''
+        expiration_date = group['expiration_date'] if 'expiration_date' in group else ''
+
+        log.write(ctx, "Sync group {} with SRAM".format(group_name))
+
+        sram_group, co_identifier = sram_enabled(ctx, group_name)
+        # Post collaboration group is not yet already SRAM enabled.
+        if not sram_group:
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+
+            if "error" in response_sram:
+                message = response_sram['message']
+                log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
+                break
+            else:
+                co_identifier = response_sram['identifier']
+                avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
+
+            if not sram.sram_connect_service_collaboration(ctx, group_name):
+                log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
+                break
+
+        log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
+        for member in members:
+            if config.sram_flow == 'join_request':
+                sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
+            elif config.sram_flow == 'invitation':
+                sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+
+    log.write(ctx, "Finished syncing groups with SRAM")
