@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -1181,12 +1180,9 @@ def api_group_user_add(ctx, username, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                # Email regex.
-                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-
                 # Validate email
-                if not re.match(regex, username):
-                    return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
+                if not yoda_names.is_email_username(username):
+                    return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(username, group_name))
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1354,6 +1350,10 @@ def rule_group_sram_sync(ctx):
 
         log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
         for member in members:
+            # Validate email
+            if not yoda_names.is_email_username(member):
+                log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+
             if config.sram_flow == 'join_request':
                 sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
             elif config.sram_flow == 'invitation':
