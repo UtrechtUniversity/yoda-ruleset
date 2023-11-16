@@ -148,7 +148,8 @@ def _default2_default3(ctx, m):
         resources = []
         for resource in m['Related_Datapackage']:
             # Only use the identifier regarding relation type
-            resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
+            if resource.get('Relation_Type', False):
+                resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
             resources.append(resource)
         m['Related_Resource'] = resources
         m.pop('Related_Datapackage')
