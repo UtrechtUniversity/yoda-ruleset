@@ -60,19 +60,19 @@ def get_category(ctx, grp):
     return None if x == '' else x
 
 
-def unique_short_name(ctx, grp):
+def unique_short_name(ctx, group_name):
     """Create unique short name for group in SRAM.
 
-    :param ctx: Combined type of a callback and rei struct
-    :param grp: Group name
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Group name
 
-    :returns: blake2b conversion of zone and group name
+    :returns: Blake2b hash of zone and group name prefixed with y
     """
     zone = user.zone(ctx)
-    concat_string = zone + grp
+    concat_string = zone + group_name
 
     # Create hash of 16 characters
-    short_name = blake2b(digest_size=8)
+    short_name = blake2b(digest_size=7)
     short_name.update(concat_string.encode())
 
-    return short_name.hexdigest()
+    return "y-{}".format(short_name.hexdigest())
