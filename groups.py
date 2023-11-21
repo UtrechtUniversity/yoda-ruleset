@@ -35,7 +35,8 @@ __all__ = ['api_group_data',
            'api_group_user_add',
            'api_group_user_update_role',
            'api_group_get_user_role',
-           'api_group_remove_user_from_group']
+           'api_group_remove_user_from_group',
+           'rule_group_sram_sync']
 
 
 def getGroupsData(ctx):
