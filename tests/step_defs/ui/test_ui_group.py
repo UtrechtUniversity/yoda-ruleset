@@ -444,38 +444,28 @@ def ui_group_schema_category_is_updated(browser, category):
 
 @when(parsers.parse("subcategory is set to {subcategory}"))
 def ui_group_schema_subcategory_is_set(browser, subcategory):
-    # Subcategory already exists.
     browser.find_by_css('#f-group-create-subcategory').find_by_xpath('..').find_by_css('span .select2-selection').click()
-    time.sleep(1)
-    options = browser.find_by_css('#select2-f-group-create-subcategory-results')
-    for option in options:
-        if option.text == subcategory:
-            option.click()
-            return True
-
-    # Subcategory does not exist.
     time.sleep(1)
     browser.find_by_css('.select2-search__field').fill(subcategory)
     time.sleep(1)
-    browser.find_by_css('.select2-results__option--highlighted').click()
+    options = browser.find_by_css('#select2-f-group-create-subcategory-results')
+    for option in options:
+        if subcategory in option.text:
+            option.click()
+            return True
 
 
 @when(parsers.parse("subcategory is updated to {subcategory}"))
 def ui_group_schema_subcategory_is_updated(browser, subcategory):
-    # Subcategory already exists.
     browser.find_by_css('#f-group-update-subcategory').find_by_xpath('..').find_by_css('span .select2-selection').click()
-    time.sleep(1)
-    options = browser.find_by_css('#select2-f-group-create-subcategory-results')
-    for option in options:
-        if option.text == subcategory:
-            option.click()
-            return True
-
-    # Subcategory does not exist.
     time.sleep(1)
     browser.find_by_css('.select2-search__field').fill(subcategory)
     time.sleep(1)
-    browser.find_by_css('.select2-results__option--highlighted').click()
+    options = browser.find_by_css('#select2-f-group-update-subcategory-results')
+    for option in options:
+        if subcategory in option.text:
+            option.click()
+            return True
 
 
 @when(parsers.parse("schema id is set to {schema_id}"))

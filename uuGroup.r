@@ -770,7 +770,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *d
 	*kv."category"            = *category;
 	*kv."subcategory"         = *subcategory;
 	*kv."schema_id"           = *schema_id;
-	*kv."expiration_date"    = *expiration_date;
+	*kv."expiration_date"     = *expiration_date;
 	*kv."description"         = *description;
 	*kv."data_classification" = *dataClassification;
 	*kv."co_identifier"		  = *co_identifier;

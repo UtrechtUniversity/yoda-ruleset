@@ -94,7 +94,7 @@ Feature: Group UI
 
 
     Scenario Outline: Group research create with default schema id
-        Given user functionaladminpriv is logged in
+        Given user <user> is logged in
         And module "group_manager" is shown
         When user opens add group dialog
         And groupname is set to <group>
@@ -106,8 +106,10 @@ Feature: Group UI
         And check whether research group properties <group>, <category>, <subcategory> and <expiration_date> for user functionaladminpriv
 
         Examples:
-            | category        | subcategory     | group         | expiration_date |
-            | test-automation | test-automation | ui-test-group | 2030-12-25      |
+            | user                | category          | subcategory       | group             | expiration_date |
+            | functionaladminpriv | test-automation   | test-automation   | ui-test-group     | 2030-12-25      |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | test-datamanager  | 2030-12-25      |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | test-datamanager1 | 2030-12-25      |
 
 
     Scenario Outline: Create new research group starting from same (sub)category of active group at that moment
@@ -141,7 +143,7 @@ Feature: Group UI
 
 
     Scenario Outline: Group datamanager create
-        Given user technicaladmin is logged in
+        Given user <user> is logged in
         And module "group_manager" is shown
         When user opens add group dialog
         And category is set to <category>
@@ -152,8 +154,9 @@ Feature: Group UI
         And check whether datamanager group properties <group> and <category> are correct
 
         Examples:
-            | category         | subcategory      | group            |
-            | test-datamanager | test-datamanager | test-datamanager |
+            | user                | category          | subcategory       | group              |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | test-datamanager   |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | test-datamanager1  |
 
 
     Scenario Outline: Group remove
@@ -164,13 +167,16 @@ Feature: Group UI
         And user confirms group removal
 
         Examples:
-            | user                | category         | subcategory      | group                        |
-            | functionaladminpriv | test-automation  | test-automation  | research-ui-test-group       |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group4     |
-            | technicaladmin      | test-datamanager | test-datamanager | datamanager-test-datamanager |
+            | user                | category          | subcategory       | group                         |
+            | functionaladminpriv | test-automation   | test-automation   | research-ui-test-group        |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group1      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group2      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group3      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group4      |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | datamanager-test-datamanager  |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | research-test-datamanager     |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | datamanager-test-datamanager1 |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | research-test-datamanager1    |
 
 
     Scenario Outline: Select group in tree view and check group properties are set and active in tree view
