@@ -1327,6 +1327,7 @@ def rule_group_sram_sync(ctx):
     for group in groups:
         group_name = group["name"]
         members = group['members']
+        managers = group['managers']
         description = group['description'] if 'description' in group else ''
         expiration_date = group['expiration_date'] if 'expiration_date' in group else ''
 
@@ -1354,9 +1355,22 @@ def rule_group_sram_sync(ctx):
             # Validate email
             if not yoda_names.is_email_username(member):
                 log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+                continue
             elif config.sram_flow == 'join_request':
                 sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
+                log.write(ctx, "User {} added to group {}".format(member, group_name))
             elif config.sram_flow == 'invitation':
                 sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                log.write(ctx, "User {} added to group {}".format(member, group_name))
+
+            if member in managers:
+                uid = sram.sram_get_uid(ctx, co_identifier, member)
+                if uid == '':
+                    log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                else:
+                    if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
+                    else:
+                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
 
     log.write(ctx, "Finished syncing groups with SRAM")
