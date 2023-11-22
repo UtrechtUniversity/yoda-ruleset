@@ -64,6 +64,7 @@ Feature: Group API
             | user                | group_name               |
             | functionaladminpriv | research-api-test-group  |
             | functionaladminpriv | research-api-test1-group |
+            | technicaladmin      | not-a-yoda-group         |
 
 
     Scenario Outline: Datamanager group creation
@@ -94,6 +95,7 @@ Feature: Group API
             | functionaladminpriv | research-api-test-group |
             | functionaladminpriv | datamanager-api-test    |
             | technicaladmin      | datamanager-api-test1   |
+            | technicaladmin      | not-a-yoda-group        |
 
 
     Scenario Outline: Adding user to group
@@ -108,6 +110,7 @@ Feature: Group API
             | functionaladminpriv | research-api-test-group |
             | functionaladminpriv | datamanager-api-test    |
             | technicaladmin      | datamanager-api-test1   |
+            | technicaladmin      | not-a-yoda-group        |
 
 
     Scenario Outline: Group user update role
@@ -122,6 +125,7 @@ Feature: Group API
             | functionaladminpriv | research-api-test-group |
             | functionaladminpriv | datamanager-api-test    |
             | technicaladmin      | datamanager-api-test1   |
+            | technicaladmin      | not-a-yoda-group        |
 
 
     Scenario Outline: Remove user from group
@@ -136,6 +140,7 @@ Feature: Group API
             | functionaladminpriv | research-api-test-group |
             | functionaladminpriv | datamanager-api-test    |
             | technicaladmin      | datamanager-api-test1   |
+            | technicaladmin      | not-a-yoda-group        |
 
 
     Scenario Outline: Group import CSV
@@ -163,3 +168,4 @@ Feature: Group API
             | functionaladminpriv | research-api-test1-group |
             | technicaladmin      | datamanager-api-test1    |
             | technicaladmin      | research-csvtestgroup    |
+            | technicaladmin      | not-a-yoda-group         |
