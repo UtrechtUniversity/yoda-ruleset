@@ -11,6 +11,7 @@ import time
 
 import genquery
 import irods_types
+import psutil
 
 from util import *
 
@@ -44,7 +45,7 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
+def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit, dry_run):
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
@@ -54,16 +55,18 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
     To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
     The corresponding job will only process data objects with a balance id within the range.
 
-    :param ctx:            Combined type of a callback and rei struct
-    :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
-    :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
-    :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param ctx:              Combined type of a callback and rei struct
+    :param verbose:          Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    :param balance_id_min:   Minimum balance id for batch jobs (value 1-64)
+    :param balance_id_max:   Maximum balance id for batch jobs (value 1-64)
     :param batch_size_limit: Maximum number of items to be processed within one batch
+    :param dry_run:          When '1' do not actually replicate, only log what would have replicated
 
     """
     count         = 0
     count_ok      = 0
     print_verbose = (verbose == '1')
+    no_action     = (dry_run == '1')
 
     attr = constants.UUORGMETADATAPREFIX + "replication_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "replication_failed"
@@ -76,7 +79,14 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
 
         minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
-        # Get list of up to 1000 data objects scheduled for replication, taking into account their modification time.
+        log.write(ctx, "verbose = {}".format(verbose))
+        if verbose:
+            log.write(ctx, "async_replication_delay_time = {} seconds".format(config.async_replication_delay_time))
+            log.write(ctx, "max_rss = {} bytes".format(config.async_replication_max_rss))
+            log.write(ctx, "dry_run = {}".format(dry_run))
+            show_memory_usage(ctx)
+
+        # Get list of up to batch size limit of data objects scheduled for replication, taking into account their modification time.
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE', 'DATA_RESC_NAME'],
                     "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME n<= '{}'".format(attr, minimum_timestamp),
@@ -87,6 +97,13 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 log.write(ctx, "Batch replication job is stopped")
                 break
 
+            # Check current memory usage and stop if it is above the limit.
+            if memory_limit_exceeded(config.async_replication_max_rss):
+                show_memory_usage(ctx)
+                log.write(ctx, "Memory used is now above specified limit of {} bytes, stopping further processing".format(config.async_replication_max_rss))
+                break
+
+            count += 1
             path = row[1] + "/" + row[2]
 
             # Metadata value contains from_path, to_path and balace id for load balancing purposes.
@@ -123,6 +140,12 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             # For totalization only count the dataobjects that are within the specified balancing range
             count += 1
             data_resc_name = row[4]
+
+            # "No action" is meant for easier memory usage debugging.
+            if no_action:
+                show_memory_usage(ctx)
+                log.write(ctx, "Skipping batch replication (dry_run): would have replicated \"{}\" from {} to {}".format(path, from_path, to_path))
+                continue
 
             if print_verbose:
                 log.write(ctx, "Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
@@ -184,6 +207,9 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                     # error => report it but still continue
                     log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
+        if print_verbose:
+            show_memory_usage(ctx)
+
         # Total replication process completed
         log.write(ctx, "Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
 
@@ -195,6 +221,32 @@ def is_replication_blocked_by_admin(ctx):
 
     :returns: Boolean indicating if admin put replication on hold.
     """
-    zone = user.zone(ctx)
-    path = "/{}/yoda/flags/stop_replication".format(zone)
-    return collection.exists(ctx, path)
+    return data_object.exists(ctx, "/{}{}".format(user.zone(ctx), "/yoda/flags/stop_replication"))
+
+
+def memory_rss_usage():
+    """
+    The RSS (resident) memory size in bytes for the current process.
+    """
+    p = psutil.Process()
+    return p.memory_info().rss
+
+
+def show_memory_usage(ctx):
+    """
+    For debug purposes show the current RSS usage.
+    """
+    log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
+
+
+def memory_limit_exceeded(rss_limit):
+    """
+    True when a limit other than 0 was specified and memory usage is currently
+    above this limit. Otherwise False.
+
+    :param rss_limit: Max memory usage in bytes
+
+    :returns: Boolean indicating if memory limited exceeded
+    """
+    rss_limit = int(rss_limit)
+    return rss_limit and memory_rss_usage() > rss_limit

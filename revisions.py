@@ -13,6 +13,7 @@ import time
 
 import genquery
 import irods_types
+import psutil
 
 import folder
 import groups
@@ -278,7 +279,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
 
 
 @rule.make()
-def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit):
+def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit, dry_run='0'):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects (in research space) marked with 'org_revision_scheduled' metadata.
@@ -287,17 +288,18 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
     To enable efficient parallel batch processing, each batch job gets assigned a range of numbers. For instance 1-32.
     The corresponding job will only process data objects with a balance id within the range.
 
-    :param ctx:            Combined type of a callback and rei struct
-    :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
-    :param balance_id_min: Minimum balance id for batch jobs (value 1-64)
-    :param balance_id_max: Maximum balance id for batch jobs (value 1-64)
+    :param ctx:              Combined type of a callback and rei struct
+    :param verbose:          Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
+    :param balance_id_min:   Minimum balance id for batch jobs (value 1-64)
+    :param balance_id_max:   Maximum balance id for batch jobs (value 1-64)
     :param batch_size_limit: Maximum number of items to be processed within one batch
-
+    :param dry_run:          When '1' do not actually create revisions, only log what would have been created
     """
     count         = 0
     count_ok      = 0
     count_ignored = 0
     print_verbose = (verbose == '1')
+    no_action     = (dry_run == '1')
 
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
@@ -310,8 +312,15 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
         minimum_timestamp = int(time.time() - config.async_revision_delay_time)
 
-        # Get list up to 1000 data objects (in research space) scheduled for revision, taking into account
+        # Get list of up to batch size limit of data objects (in research space) scheduled for revision, taking into account
         # modification time.
+        log.write(ctx, "verbose = {}".format(verbose))
+        if verbose:
+            log.write(ctx, "async_revision_delay_time = {} seconds".format(config.async_revision_delay_time))
+            log.write(ctx, "max_rss = {} bytes".format(config.async_revision_max_rss))
+            log.write(ctx, "dry_run = {}".format(dry_run))
+            show_memory_usage(ctx)
+
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
                     "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%' AND DATA_MODIFY_TIME n<= '{}'".format(
@@ -324,6 +333,12 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
             # Stop further execution if admin has blocked revision process.
             if is_revision_blocked_by_admin(ctx):
                 log.write(ctx, "Batch revision job is stopped")
+                break
+
+            # Check current memory usage and stop if it is above the limit.
+            if memory_limit_exceeded(config.async_revision_max_rss):
+                show_memory_usage(ctx)
+                log.write(ctx, "Memory used is now above specified limit of {} bytes, stopping further processing".format(config.async_revision_max_rss))
                 break
 
             # Perform scheduled revision creation for one data object.
@@ -349,6 +364,12 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
             # For getting the total count only the data objects within the wanted range
             count += 1
+
+            # "No action" is meant for easier memory usage debugging.
+            if no_action:
+                show_memory_usage(ctx)
+                log.write(ctx, "Skipping creating revision (dry_run): would have created revision for {} on resc {}".format(path, resc))
+                continue
 
             if print_verbose:
                 log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
@@ -400,6 +421,9 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
                 log.write(ctx, "ERROR - Scheduled revision creation of <{}> failed".format(path))
                 avu.set_on_data(ctx, path, errorattr, "true")
 
+        if print_verbose:
+            show_memory_usage(ctx)
+
         # Total revision process completed
         log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. ".format(count_ok, count))
         log.write(ctx, "Batch revision job ignored {} data objects in research area, excluding data objects postponed because of delay time.".format(count_ignored))
@@ -410,11 +434,9 @@ def is_revision_blocked_by_admin(ctx):
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: Boolean indicating if admin put replication on hold.
+    :returns: Boolean indicating if admin put revisions on hold.
     """
-    zone = user.zone(ctx)
-    path = "/{}/yoda/flags/stop_revisions".format(zone)
-    return collection.exists(ctx, path)
+    return data_object.exists(ctx, "/{}{}".format(user.zone(ctx), "/yoda/flags/stop_revisions"))
 
 
 def revision_create(ctx, resource, data_id, max_size, verbose):
@@ -860,3 +882,31 @@ def revision_remove(ctx, revision_id, revision_path):
 
     log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
     return False
+
+
+def memory_rss_usage():
+    """
+    The RSS (resident) memory size in bytes for the current process.
+    """
+    p = psutil.Process()
+    return p.memory_info().rss
+
+
+def show_memory_usage(ctx):
+    """
+    For debug purposes show the current RSS usage.
+    """
+    log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
+
+
+def memory_limit_exceeded(rss_limit):
+    """
+    True when a limit other than 0 was specified and memory usage is currently
+    above this limit. Otherwise False.
+
+    :param rss_limit: Max memory usage in bytes
+
+    :returns: Boolean indicating if memory limited exceeded
+    """
+    rss_limit = int(rss_limit)
+    return rss_limit and memory_rss_usage() > rss_limit
