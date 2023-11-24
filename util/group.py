@@ -75,4 +75,4 @@ def unique_short_name(ctx, group_name):
     short_name = blake2b(digest_size=7)
     short_name.update(concat_string.encode())
 
-    return "y-{}".format(short_name.hexdigest())
+    return "y_{}".format(short_name.hexdigest())
