@@ -106,7 +106,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             count += 1
             path = row[1] + "/" + row[2]
 
-            # Metadata value contains from_path, to_path and balace id for load balancing purposes.
+            # Metadata value contains from_path, to_path and balance id for load balancing purposes.
             info = row[3].split(',')
             from_path = info[0]
             to_path = info[1]
@@ -221,7 +221,9 @@ def is_replication_blocked_by_admin(ctx):
 
     :returns: Boolean indicating if admin put replication on hold.
     """
-    return data_object.exists(ctx, "/{}{}".format(user.zone(ctx), "/yoda/flags/stop_replication"))
+    zone = user.zone(ctx)
+    path = "/{}/yoda/flags/stop_replication".format(zone)
+    return collection.exists(ctx, path)
 
 
 def memory_rss_usage():

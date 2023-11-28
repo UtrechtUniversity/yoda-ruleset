@@ -436,7 +436,9 @@ def is_revision_blocked_by_admin(ctx):
 
     :returns: Boolean indicating if admin put revisions on hold.
     """
-    return data_object.exists(ctx, "/{}{}".format(user.zone(ctx), "/yoda/flags/stop_revisions"))
+    zone = user.zone(ctx)
+    path = "/{}/yoda/flags/stop_revisions".format(zone)
+    return collection.exists(ctx, path)
 
 
 def revision_create(ctx, resource, data_id, max_size, verbose):
