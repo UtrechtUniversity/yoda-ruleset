@@ -79,10 +79,11 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 # Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
 # The metadata value indicates the source and destination resource.
 #
-# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+# \param[in] verbose           Whether to log verbose messages for troubleshooting (1: yes, 0: no)
 # \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
 # \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
 # \param[in] batch_size_limit  Maximum number of items to be processed within one batch
-uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit) {
-    rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit);
+# \param[in] dry_run           Whether to do a trial run (1: yes, 0: no)
+uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run) {
+    rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run);
 }

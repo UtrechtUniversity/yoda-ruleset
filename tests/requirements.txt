@@ -1,7 +1,7 @@
-urllib3==1.26.18
+urllib3==2.0.7
 requests==2.31.0
-selenium==4.10.0
+selenium==4.14.0
 pytest-splinter==3.3.2
-pytest_bdd==6.1.1
-pytest==7.4.0
-deepdiff==5.8.1
+pytest_bdd==7.0.0
+pytest==7.4.3
+deepdiff==6.6.1

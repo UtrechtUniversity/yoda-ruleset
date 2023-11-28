@@ -171,6 +171,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault revoke read access research group API is queried on datapackage in <vault>
         Then the response status code is "200"
+
         Examples:
             | vault                          |
             | /tempZone/home/vault-core-0    |

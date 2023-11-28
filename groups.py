@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -36,7 +35,8 @@ __all__ = ['api_group_data',
            'api_group_user_add',
            'api_group_user_update_role',
            'api_group_get_user_role',
-           'api_group_remove_user_from_group']
+           'api_group_remove_user_from_group',
+           'rule_group_sram_sync']
 
 
 def getGroupsData(ctx):
@@ -975,6 +975,10 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
+    if config.enable_sram:
+        # All users are internal when SRAM is enabled.
+        return '0'
+
     if yoda_names.is_internal_user(username):
         return '0'
     return '1'
@@ -1056,7 +1060,7 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
     try:
         co_identifier = ''
 
-        # Post SRAM collaboration if SRAM is enabled.
+        # Post SRAM collaboration and connect to service if SRAM is enabled.
         if config.enable_sram:
             response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
 
@@ -1065,6 +1069,9 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
                 return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
+
+            if not sram.sram_connect_service_collaboration(ctx, group_name):
+                return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
@@ -1174,12 +1181,9 @@ def api_group_user_add(ctx, username, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                # Email regex.
-                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-
                 # Validate email
-                if not re.match(regex, username):
-                    return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
+                if not yoda_names.is_email_username(username):
+                    return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(username, group_name))
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1302,3 +1306,71 @@ def sram_enabled(ctx, group_name):
             co_identifier = row[0]
 
     return enable_sram_flag, co_identifier
+
+
+@rule.make()
+def rule_group_sram_sync(ctx):
+    """Synchronize groups with SRAM.
+
+    :param ctx: Combined type of a ctx and rei struct
+    """
+    if not user.is_admin(ctx):
+        return
+
+    if not config.enable_sram:
+        log.write(ctx, "SRAM needs to be enabled to sync groups")
+        return
+
+    log.write(ctx, "Start syncing groups with SRAM")
+    groups = getGroupsData(ctx)
+
+    for group in groups:
+        group_name = group["name"]
+        members = group['members']
+        managers = group['managers']
+        description = group['description'] if 'description' in group else ''
+        expiration_date = group['expiration_date'] if 'expiration_date' in group else ''
+
+        log.write(ctx, "Sync group {} with SRAM".format(group_name))
+
+        sram_group, co_identifier = sram_enabled(ctx, group_name)
+        # Post collaboration group is not yet already SRAM enabled.
+        if not sram_group:
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+
+            if "error" in response_sram:
+                message = response_sram['message']
+                log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
+                break
+            else:
+                co_identifier = response_sram['identifier']
+                avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
+
+            if not sram.sram_connect_service_collaboration(ctx, group_name):
+                log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
+                break
+
+        log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
+        for member in members:
+            # Validate email
+            if not yoda_names.is_email_username(member):
+                log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+                continue
+            elif config.sram_flow == 'join_request':
+                sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
+                log.write(ctx, "User {} added to group {}".format(member, group_name))
+            elif config.sram_flow == 'invitation':
+                sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                log.write(ctx, "User {} added to group {}".format(member, group_name))
+
+            if member in managers:
+                uid = sram.sram_get_uid(ctx, co_identifier, member)
+                if uid == '':
+                    log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                else:
+                    if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
+                    else:
+                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+
+    log.write(ctx, "Finished syncing groups with SRAM")

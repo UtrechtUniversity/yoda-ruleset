@@ -1,5 +1,6 @@
 {
     "url": "https://portal.yoda:8443",
+    "zone_name": "tempZone",
     "roles": {
         "researcher":              {"username": "researcher",              "password": "test"},
         "viewer":                  {"username": "viewer",                  "password": "test"},

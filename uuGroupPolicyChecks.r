@@ -44,14 +44,15 @@ uuUserNameIsValid(*name)
 #
 # NB: Update the category name check below if you change the second half of this pattern.
 #
-# NB: Datamanager is missing in this list. It can only be created by rodsadmin,
-#     and rodsadmin currently bypasses all checks anyway.
-#     This check is applicable only to rodsusers with priv-group-add.
+# NB: Datamanager is missing in this list. uuGroupNameIsDatamanager is for the specific datamanager case.
 #
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
 	= *name like regex ``(intake|research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+
+uuGroupNameIsDatamanager(*name)
+	= *name like regex ``(datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a category name is valid.
 #
@@ -140,6 +141,28 @@ uuGroupExpirationDateIsValid(*expiration_date, *valid) {
     *valid = bool(*result);
 }
 
+# \brief Check if actor is a group manager in a group in the category
+#
+# \param[in]  actor
+# \param[in]  category
+# \param[out] isGroupManager
+#
+uuGroupIsGroupManagerInCategory(*actor, *category, *isGroupManager) {
+	*isGroupManager = false;
+
+	uuUserGetGroups(*actor, false, *groups);
+
+	foreach (*actorGroup in *groups) {
+		uuGroupGetCategory(*actorGroup, *agCategory, *agSubcategory);
+		if (*agCategory == *category) {
+			uuGroupUserIsManager(*actorGroup, *actor, *isGroupManager);
+			if (*isGroupManager) {
+				break;
+			}
+		}
+	}
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -162,8 +185,9 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 	*allowed = 0;
 	*reason  = "";
 
-	uuGroupUserExists("priv-group-add", *actor, false, *hasPriv);
-	if (*hasPriv || *actorUserType == "rodsadmin") {
+	uuGroupUserExists("priv-group-add", *actor, false, *hasPrivGroupAdd);
+	uuGroupUserExists("priv-category-add", *actor, false, *hasPrivCatAdd);
+	if (*hasPrivGroupAdd || *actorUserType == "rodsadmin") {
 		if (uuGroupNameIsValid(*groupName)) {
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
@@ -220,8 +244,37 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 				}
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
+		} else if (uuGroupNameIsDatamanager(*groupName)) {
+			if ((*hasPrivGroupAdd && *hasPrivCatAdd) || *actorUserType == "rodsadmin") {
+				# Special case for a datamanager group.
+				uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
+				if (*nameAvailable) {
+					# The category for which the datamanager group is paired with must already exist
+					# And actor must be a group manager in at least one group
+					# in the category for them to be allowed to create a datamanager group
+					*isManagerInCategory = false;
+
+					uuGroupIsGroupManagerInCategory(*actor, *category, *isManagerInCategory)
+					if (*isManagerInCategory) {
+						*allowed = 1
+					}
+					else {
+						*reason = "You must be a manager of a group in category '*category' to create a datamanager- group"
+					}
+				} else {
+					if (*existingType == "rodsuser") {
+						*existingType = "user";
+					} else if (*existingType == "rodsgroup") {
+						*existingType = "group";
+					}
+					*reason = "The name '*groupName' is already in use by another *existingType.";
+				}
+
+			} else {
+				*reason = "You must have priv-group-add and priv-cat-add to add a datamanger group"
+			}
 		} else {
-			*reason = "Group names must start with one of 'intake-' or 'research-' or 'deposit-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-', 'research-', 'deposit-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -360,12 +413,11 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
-	if (*isManager || *actorUserType == "rodsadmin") {
-                # Only a rodsadmin can remove a datamanager-group
-                # Even datamanager group managers cannot remove their own group.
-                #                          v These groups are user-removable v
-		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*" 
-                    || (*groupName like regex "(datamanager)-.*") && *actorUserType == "rodsadmin") {
+	# Only a rodsadmin or a privileged group manager in
+	# that category can remove a datamanager-group.
+	#                          v These groups are user-removable v
+	if (*groupName like regex "(grp|intake|research|deposit|vault)-.*" ) {
+		if (*isManager || *actorUserType == "rodsadmin") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -377,36 +429,54 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 			}
 
 			if (*homeCollectionIsEmpty) {
-          if (*groupName like regex "(research)-.*") {
-              # Research groups can only be removed when no vault packages exist
-              uuChop(*groupName, *prefix, *base, "-", true);
-              *vaultName = "vault-*base";
-              *zoneName = $rodsZoneClient;
-              *vaultIsEmpty = true;
+				if (*groupName like regex "(research)-.*") {
+					# Research groups can only be removed when no vault packages exist
+					uuChop(*groupName, *prefix, *base, "-", true);
+					*vaultName = "vault-*base";
+					*zoneName = $rodsZoneClient;
+					*vaultIsEmpty = true;
 
-              # Check whether vault still holds data
-              msiMakeGenQuery("COLL_NAME", "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
-              msiExecGenQuery(*genQIn, *genQOut);
-              foreach(*genQOut){
-                  *vaultIsEmpty = false;
-									break;
-              }
-              if (*vaultIsEmpty) {
-                  *allowed = 1;
-              } else {
-                  *reason = "There are still datapackages in the vault for group: *groupName. Please remove these first before removing this group.";
-              }
-          } else {
-              *allowed = 1;
-          }
+					# Check whether vault still holds data
+					msiMakeGenQuery("COLL_NAME", "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
+					msiExecGenQuery(*genQIn, *genQOut);
+					foreach(*genQOut){
+						*vaultIsEmpty = false;
+											break;
+					}
+					if (*vaultIsEmpty) {
+						*allowed = 1;
+					} else {
+						*reason = "There are still datapackages in the vault for group: *groupName. Please remove these first before removing this group.";
+					}
+				} else {
+					*allowed = 1;
+				}
 			} else {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
+			*reason = "You are not a manager of group *groupName.";
+		}
+	} else if (*groupName like regex "(datamanager)-.*") {
+		# Confirm actor is a manager of at least one group in the category
+		# and has the privileges
+		uuGroupGetCategory(*groupName, *category, *agSubcategory);
+		uuGroupIsGroupManagerInCategory(*actor, *category, *isManagerInCategory)
+		if (*isManagerInCategory) {
+			uuGroupUserExists("priv-group-add", *actor, false, *hasPrivGroupAdd);
+			uuGroupUserExists("priv-category-add", *actor, false, *hasPrivCatAdd);
+			if (*hasPrivGroupAdd && *hasPrivCatAdd) {
+				*allowed = 1
+			}
+			else {
+				*reason = "You must have group and category add privileges to delete this datamanager- group";
+			}
+		}
+		else {
+			*reason = "You must be a manager of a group in category '*category' to delete this datamanager- group"
 		}
 	} else {
-		*reason = "You are not a manager of group *groupName.";
+		*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
 	}
 }
 
@@ -573,6 +643,6 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
     } else {
-	*reason = "Invalid user attribute name.";
+		*reason = "Invalid user attribute name.";
     }
 }
