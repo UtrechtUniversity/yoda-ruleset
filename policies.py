@@ -372,7 +372,9 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
         if user.is_admin(ctx, actor):
             return policy.succeed()
 
-        if option not in ['add']:
+        if option in ['add']:
+            return policy.succeed()
+        else:
             return policy.fail('Only "add" operations allowed on attribute')
 
     elif space is pathutil.Space.VAULT and attr == constants.IIVAULTSTATUSATTRNAME:
