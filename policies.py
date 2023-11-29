@@ -368,7 +368,7 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
     elif (space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]
           and attr in [constants.UUORGMETADATAPREFIX + "revision_scheduled",
                        constants.UUORGMETADATAPREFIX + "replication_scheduled"]):
-        # Research or deposit orginizational metadata.
+        # Research or deposit organizational metadata.
         if user.is_admin(ctx, actor):
             return policy.succeed()
 
