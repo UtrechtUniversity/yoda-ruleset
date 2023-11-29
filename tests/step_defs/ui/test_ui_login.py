@@ -40,6 +40,11 @@ def ui_user_incorrect(browser):
     assert browser.is_text_present("Username/password was incorrect", wait_time=10)
 
 
+@then("user not in Yoda message is shown")
+def ui_user_not_in_system(browser):
+    assert browser.is_text_present("Your user is not part of the Yoda system", wait_time=10)
+
+
 @then(parsers.parse("the user is redirected to page {page}"))
 def ui_user_redirected(browser, page):
     target = "{}{}".format(portal_url, page)
