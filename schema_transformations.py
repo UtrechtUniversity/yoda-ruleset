@@ -202,6 +202,11 @@ def _default2_default3(ctx, m):
         m['Related_Resource'] = resources
         m.pop('Related_Datapackage')
 
+    # Restricted or closed data packages can't have open license.
+    data_access_restriction = m.get('Data_Access_Restriction', "")
+    if data_access_restriction == "Restricted - available upon request" or data_access_restriction == "Closed":
+        m['License'] = "Custom"
+
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-3/metadata.json')
 
     return m
