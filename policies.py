@@ -316,7 +316,7 @@ def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):
 def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate_inp):
     log.debug(ctx, 'pep_api_data_obj_truncate_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
-                          str(data_obj_inp.objPath))
+                          str(data_obj_truncate_inp.objPath))
 
 # Disabled: caught by acDataDeletePolicy
 # @policy.require()
@@ -453,11 +453,30 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
     # Send emails after datarequest status transition if appropriate
     elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
         policies_datarequest_status.post_status_transition(ctx, obj_name, value)
+# }}}
 
+
+# Authorize access control operations {{{
+
+# ichmod
+@policy.require()
+def pep_api_mod_access_control_pre(ctx, instance_name, rs_comm, mod_access_control_inp):
+    log.debug(ctx, 'pep_api_mod_access_control_pre')
+    actor = user.user_and_zone(ctx)
+    if user.is_admin(ctx, actor):
+        return policy.succeed()
+
+    path = str(mod_access_control_inp.path)
+    if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
+        # Prevent ichmod in research and deposit space by normal users.
+        return policy.fail('Mod access control not allowed')
+
+    return policy.succeed()
 
 # }}}
-# ExecCmd {{{
 
+
+# ExecCmd {{{
 @policy.require()
 def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     actor = user.user_and_zone(ctx)
