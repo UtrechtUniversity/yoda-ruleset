@@ -41,8 +41,8 @@ def ui_user_incorrect(browser):
 
 
 @then("user not in Yoda message is shown")
-def ui_user_not_in_system(browser):
-    assert browser.is_text_present("Your user is not part of the Yoda system", wait_time=10)
+def ui_user_not_in_instance(browser):
+    assert browser.is_element_present_by_id("alert-user-not-in-instance", wait_time=10)
 
 
 @then(parsers.parse("the user is redirected to page {page}"))
