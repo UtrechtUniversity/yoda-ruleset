@@ -173,7 +173,7 @@ def ui_group_user_add(browser, member_add):
     browser.find_by_css('#f-user-create-name').find_by_xpath('..').find_by_css('span .select2-selection').click()
     # Scroll to bottom.
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(1)
+    time.sleep(3)
     browser.find_by_css('.select2-search__field').fill(member_add)
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(1)
