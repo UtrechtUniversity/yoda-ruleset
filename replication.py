@@ -129,31 +129,36 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                 log.write(ctx, '[replication] ERROR - The file could not be replicated: {}'.format(str(e)))
                 avu.set_on_data(ctx, path, errorattr, "true")
 
-            # Remove replication_scheduled flag no matter if replication succeeded or not.
-            # rods should have been given own access via policy to allow AVU changes
-            avu_deleted = False
-            try:
-                avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-                avu_deleted = True
-            except Exception:
-                avu_deleted = False
+            remove_replication_scheduled_flag(ctx=ctx, path=path, attr=attr)
 
-            # Try removing attr/resc meta data again with other ACL's
-            if not avu_deleted:
-                try:
-                    # The object's ACLs may have changed.
-                    # Force the ACL and try one more time.
-                    msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-                except Exception:
-                    # error => report it but still continue
-                    log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
         if print_verbose:
             show_memory_usage(ctx)
 
         # Total replication process completed
         log.write(ctx, "[replication] Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
+
+
+def remove_replication_scheduled_flag(ctx, path, attr):
+    # Remove replication_scheduled flag no matter if replication succeeded or not.
+    # rods should have been given own access via policy to allow AVU changes
+    avu_deleted = False
+    try:
+        avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+        avu_deleted = True
+    except Exception:
+        avu_deleted = False
+
+    # Try removing attr/resc meta data again with other ACL's
+    if not avu_deleted:
+        try:
+            # The object's ACLs may have changed.
+            # Force the ACL and try one more time.
+            msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
+            avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+        except Exception:
+            # error => report it but still continue
+            log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
 
 def is_replication_blocked_by_admin(ctx):
