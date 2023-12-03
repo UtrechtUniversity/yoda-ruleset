@@ -100,6 +100,7 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                 # not replicable
                 avu.set_on_data(ctx, path, errorattr, "true")
                 log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
+                remove_replication_scheduled_flag(ctx=ctx, path=path, attr=attr)
                 # Go to next record and skip further processing
                 continue
 
