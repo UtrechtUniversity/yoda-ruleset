@@ -42,7 +42,7 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
+def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', num_copies=2, dry_run='0'):
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
@@ -51,6 +51,7 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
     :param ctx:     Combined type of a callback and rei struct
     :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     :max_rss:       When not '0' maximum amount of rss memory in bytes before stopping, after first data object
+    :num_copies:    How many good current copies are enough
     :param dry_run: When '1' do not actually replicate, only log what would have replicated
     """
     count         = 0
@@ -100,7 +101,9 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                 log.write(ctx, "[replication] Memory used is now above specified limit of {} bytes, stopping further processing".format(rss_limit))
                 break
 
-            path = row[1] + "/" + row[2]
+            coll_name = row[1]
+            data_name = row[2]
+            path = coll_name + "/" + data_name
             rescs = row[3]
 
             # Have we seen this data object before in this run. In current Yoda this is a bug.
@@ -125,6 +128,12 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
 
             from_path = xs[0]
             to_path = xs[1]
+
+            if already_has_enough_good_replicas(ctx, coll_name, data_name, num_copies):
+                log.write(ctx, "[replication] Skipping batch replication: already at least {} good replicas of {}".format(num_copies, path, to_path))
+                if not no_action:
+                    remove_replication_scheduled_flag(ctx=ctx, path=path, attr=attr)
+                continue
 
             # "No action" is meant for easier memory usage debugging.
             if no_action:
@@ -209,6 +218,28 @@ def remove_replication_scheduled_flag(ctx, path, attr):
         except Exception:
             # error => report it but still continue
             log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
+
+
+def already_has_enough_good_replicas(ctx, coll_name, data_name, num_copies):
+    """Are there at least num_copies good (status 1) replica's?
+
+    This version just checks if there are at least num_copies with status '1', without
+    taking in consideration on which resources, e.g. if they are in different data centers.
+
+    The main motive for now is being able to prevent extra unnecessary actions while doing
+    large-scale maintenance, e.g. moving all data objects from one resource to another with
+    an "irepl" followed (possibly much later) by an "itrim".
+    """
+    count = 0
+    rows = list(genquery.Query(ctx,
+                ['COUNT(DATA_REPL_NUM)', 'COLL_NAME', 'DATA_NAME', 'DATA_REPL_NUM', 'RESC_NAME'],
+                "COLL_NAME = '{}' AND DATA_NAME = '{}' AND DATA_REPL_STATUS = '1'".format(coll_name, data_name),
+                output=genquery.AS_LIST))
+    for row in rows:
+        count += 1
+        log.debug(ctx, "[replication] row = {}".format(row))
+
+    return count >= num_copies
 
 
 def is_replication_blocked_by_admin(ctx):
