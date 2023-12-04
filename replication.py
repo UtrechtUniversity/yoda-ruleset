@@ -121,8 +121,8 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
 
             # Actual replication
             try:
-                # Ensure first replica has checksum before replication.
-                msi.data_obj_chksum(ctx, path, "replNum=0", irods_types.BytesBuf())
+                # Ensure replica has checksum before replication.
+                msi.data_obj_chksum(ctx, path, "irodsAdmin=", irods_types.BytesBuf())
 
                 # Workaround the PREP deadlock issue: Restrict threads to 1.
                 ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
