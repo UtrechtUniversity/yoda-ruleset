@@ -98,8 +98,11 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
             xs = rescs.split(',')
             if len(xs) != 2:
                 # not replicable
-                avu.set_on_data(ctx, path, errorattr, "true")
-                log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
+                log.write(ctx, "[replication] ERROR - Invalid replication data for <{}>: <{}>".format(path, rescs))
+                if no_action:
+                    log.write(ctx, "[replication] Skipping removing and setting AVU's (dry_run)")
+                    continue
+                set_flag_on_data(ctx=ctx, path=path, attr=errorattr, value="true")
                 remove_replication_scheduled_flag(ctx=ctx, path=path, attr=attr)
                 # Go to next record and skip further processing
                 continue
@@ -128,7 +131,7 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                 count_ok += 1
             except msi.Error as e:
                 log.write(ctx, '[replication] ERROR - The file could not be replicated: {}'.format(str(e)))
-                avu.set_on_data(ctx, path, errorattr, "true")
+                set_flag_on_data(ctx=ctx, path=path, attr=errorattr, value="true")
 
             remove_replication_scheduled_flag(ctx=ctx, path=path, attr=attr)
 
@@ -138,6 +141,36 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
 
         # Total replication process completed
         log.write(ctx, "[replication] Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
+
+
+def set_flag_on_data(ctx, path, attr, value):
+    """Set attribute on data-object, if necessary as rodsAdmin.
+
+    When setting fails, fallback to first giving user "own" access as workaround.
+    """
+    avu_set = False
+    attempt = 0
+    try:
+        attempt += 1
+        avu.set_on_data(ctx, path, attr, value)
+        avu_set = True
+    except msi.Error as e:
+        log.debug(ctx, "[replication] Cannot set <{}> in attempt {}: <{}>".format(attr, attempt, str(e)))
+
+    # Try removing attr/resc meta data again with other ACL's
+    if not avu_set:
+        try:
+            # The object's ACLs may have changed.
+            # Force the ACL and try one more time.
+            attempt += 1
+            msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
+            avu.set_on_data(ctx, path, attr, value)
+            avu_set = True
+        except Exception as e:
+            log.debug(ctx, "[replication] Cannot set <{}> in attempt {}: <{}>".format(attr, attempt, str(e)))
+
+    if not avu_set:
+        log.write(ctx, "[replication] ERROR - Cannot set <{}> in attempt {}: <{}>".format(attr, attempt, str(e.name())))
 
 
 def remove_replication_scheduled_flag(ctx, path, attr):
