@@ -80,6 +80,14 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                     "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME n<= '{}'".format(attr, minimum_timestamp),
                     output=genquery.AS_LIST))
 
+        # Workaround for multiple "org_replication_scheduled" AVU's having been
+        # created for the same data object.
+        # They are sorted on the V by the way.
+        # The first one is processed, and then all org_replication_scheduled
+        # AVU's are removed from within the following loop.
+        # Ignore, but report extra occurrences.
+        data_objects_seen = set()
+
         for row in iter:
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
@@ -92,9 +100,17 @@ def rule_replicate_batch(ctx, verbose, rss_limit='1000000000', dry_run='0'):
                 log.write(ctx, "[replication] Memory used is now above specified limit of {} bytes, stopping further processing".format(rss_limit))
                 break
 
-            count += 1
             path = row[1] + "/" + row[2]
             rescs = row[3]
+
+            # Have we seen this data object before in this run. In current Yoda this is a bug.
+            if path in data_objects_seen:
+                log.write(ctx, "[replication] WARNING - ignoring extra AVU <{}: {}> for <{}>".format(attr, rescs, path))
+                continue
+
+            data_objects_seen.add(path)
+            count += 1
+
             xs = rescs.split(',')
             if len(xs) != 2:
                 # not replicable
