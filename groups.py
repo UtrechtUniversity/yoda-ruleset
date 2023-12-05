@@ -585,39 +585,37 @@ def apply_data(ctx, data, allow_update, delete_users):
     :returns: Errors if found any
     """
 
-    for (category, subcategory, groupname, managers, members, viewers) in data:
+    for (category, subcategory, group_name, managers, members, viewers) in data:
         new_group = False
 
-        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
+        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, config.default_yoda_schema, '', '', 'unspecified', '', '', '')['arguments']
-        status = response[8]
-        message = response[9]
+        response = group_create(ctx, group_name, category, subcategory, config.default_yoda_schema, '', '', 'unspecified')
 
-        if ((status == '-1089000') | (status == '-809000')) and allow_update:
-            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
-        elif status != '0':
-            return "Error while attempting to create group {}. Status/message: {} / {}".format(groupname, status, message)
-        else:
+        if response:
             new_group = True
+        elif response.status == "error_group_exists" and allow_update:
+            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
+        else:
+            return "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
         for username in list(set(allusers)):   # duplicates removed
-            currentrole = user_role(ctx, groupname, username)
+            currentrole = user_role(ctx, group_name, username)
             if currentrole == "none":
-                response = ctx.uuGroupUserAdd(groupname, username, '', '')['arguments']
+                response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
                 status = response[2]
                 message = response[3]
                 if status == '0':
                     currentrole = "member"
-                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, groupname))
+                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
                 else:
-                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
+                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
             else:
-                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, groupname))
+                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, group_name))
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -629,29 +627,29 @@ def apply_data(ctx, data, allow_update, delete_users):
                 role = 'manager'
 
             if _are_roles_equivalent(role, currentrole):
-                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, groupname))
+                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, group_name))
             else:
-                response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
+                response = ctx.uuGroupUserChangeRole(group_name, username, role, '', '')['arguments']
                 status = response[3]
                 message = response[4]
 
                 if status == '0':
-                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, group_name, role))
                 else:
-                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, group_name, role))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
-        if (new_group and "rods" not in allusers and user_role(ctx, groupname, "rods") != "none"):
-            response = ctx.uuGroupUserRemove(groupname, "rods", '', '')['arguments']
+        if (new_group and "rods" not in allusers and user_role(ctx, group_name, "rods") != "none"):
+            response = ctx.uuGroupUserRemove(group_name, "rods", '', '')['arguments']
             status = response[2]
             message = response[3]
             if status == "0":
-                log.write(ctx, "CSV import - Notice: removed rods user from group " + groupname)
+                log.write(ctx, "CSV import - Notice: removed rods user from group " + group_name)
             else:
                 if status != 0:
-                    log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(groupname))
+                    log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
@@ -661,12 +659,12 @@ def apply_data(ctx, data, allow_update, delete_users):
             for prefix in ['read-', 'initial-', 'research-']:
                 iter = genquery.row_iterator(
                     "USER_GROUP_NAME, USER_NAME, USER_ZONE",
-                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(groupname.split('-')[1:])),
+                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(group_name.split('-')[1:])),
                     genquery.AS_LIST, ctx
                 )
 
                 for row in iter:
-                    # append [user,groupname]
+                    # append [user,group_name]
                     currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
@@ -1042,8 +1040,7 @@ def api_group_exists(ctx, group_name):
     return group.exists(ctx, group_name)
 
 
-@api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+def group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -1078,10 +1075,30 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
         message = response[9]
         if status == '0':
             return api.Result.ok()
+        elif status == '-1089000' or status == '-809000':
+            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
         else:
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
+
+
+@api.make()
+def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+    """Create a new group.
+
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param group_name:          Name of the group to create
+    :param category:            Category of the group to create
+    :param subcategory:         Subcategory of the group to create
+    :param schema_id:           Schema-id for the group to be created
+    :param expiration_date:     Retention period for the group
+    :param description:         Description of the group to create
+    :param data_classification: Data classification of the group to create
+
+    :returns: Dict with API status result
+    """
+    return group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification)
 
 
 @api.make()
