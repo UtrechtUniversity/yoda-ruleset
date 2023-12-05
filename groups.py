@@ -605,10 +605,8 @@ def apply_data(ctx, data, allow_update, delete_users):
         for username in list(set(allusers)):   # duplicates removed
             currentrole = user_role(ctx, group_name, username)
             if currentrole == "none":
-                response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
-                status = response[2]
-                message = response[3]
-                if status == '0':
+                response = group_user_add(username, group_name)
+                if response:
                     currentrole = "member"
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
                 else:
@@ -1181,8 +1179,7 @@ def api_group_user_is_member(ctx, username, group_name):
     return group_user_exists(ctx, group_name, username, True)
 
 
-@api.make()
-def api_group_user_add(ctx, username, group_name):
+def group_user_add(ctx, username, group_name):
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1218,6 +1215,19 @@ def api_group_user_add(ctx, username, group_name):
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+@api.make()
+def api_group_user_add(ctx, username, group_name):
+    """Add a user to a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: Dict with API status result
+    """
+    return group_user_add(ctx, username, group_name)
 
 
 @api.make()
