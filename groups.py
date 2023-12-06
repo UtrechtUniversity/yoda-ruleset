@@ -605,7 +605,7 @@ def apply_data(ctx, data, allow_update, delete_users):
         for username in list(set(allusers)):   # duplicates removed
             currentrole = user_role(ctx, group_name, username)
             if currentrole == "none":
-                response = group_user_add(username, group_name)
+                response = group_user_add(ctx, username, group_name)
                 if response:
                     currentrole = "member"
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
@@ -638,15 +638,12 @@ def apply_data(ctx, data, allow_update, delete_users):
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
         if (new_group and "rods" not in allusers and user_role(ctx, group_name, "rods") != "none"):
-            response = ctx.uuGroupUserRemove(group_name, "rods", '', '')['arguments']
-            status = response[2]
-            message = response[3]
-            if status == "0":
+            response = group_remove_user_from_group(ctx, 'rods', group_name)
+            if response:
                 log.write(ctx, "CSV import - Notice: removed rods user from group " + group_name)
             else:
-                if status != 0:
-                    log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
+                log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
         if delete_users:
@@ -673,12 +670,11 @@ def apply_data(ctx, data, allow_update, delete_users):
                             continue
                         else:
                             managers.remove(username)
-                    log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
 
-                    response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
-                    status = response[2]
-                    message = response[3]
-                    if status != "0":
+                    response = group_remove_user_from_group(ctx, username, usergroupname)
+                    if response:
+                        log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
+                    else:
                         log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
                         log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
 
@@ -1287,8 +1283,7 @@ def api_group_get_user_role(ctx, username, group_name):
     return user_role(ctx, group_name, username)
 
 
-@api.make()
-def api_group_remove_user_from_group(ctx, username, group_name):
+def group_remove_user_from_group(ctx, username, group_name):
     """Remove a user from a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1297,7 +1292,6 @@ def api_group_remove_user_from_group(ctx, username, group_name):
 
     :returns: Dict with API status result
     """
-    # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
@@ -1319,6 +1313,19 @@ def api_group_remove_user_from_group(ctx, username, group_name):
         return api.Result.ok()
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+@api.make()
+def api_group_remove_user_from_group(ctx, username, group_name):
+    """Remove a user from a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: Dict with API status result
+    """
+    return group_remove_user_from_group(ctx, username, group_name)
 
 
 def sram_enabled(ctx, group_name):
