@@ -627,15 +627,13 @@ def apply_data(ctx, data, allow_update, delete_users):
             if _are_roles_equivalent(role, currentrole):
                 log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, group_name))
             else:
-                response = ctx.uuGroupUserChangeRole(group_name, username, role, '', '')['arguments']
-                status = response[3]
-                message = response[4]
+                response = group_user_update_role(ctx, username, group_name, role)
 
-                if status == '0':
+                if response:
                     log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, group_name, role))
                 else:
                     log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, group_name, role))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
@@ -1230,8 +1228,7 @@ def api_group_user_add(ctx, username, group_name):
     return group_user_add(ctx, username, group_name)
 
 
-@api.make()
-def api_group_user_update_role(ctx, username, group_name, new_role):
+def group_user_update_role(ctx, username, group_name, new_role):
     """Update role of a user in a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1261,6 +1258,20 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+@api.make()
+def api_group_user_update_role(ctx, username, group_name, new_role):
+    """Update role of a user in a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+    :param new_role:   New role of the user
+
+    :returns: Dict with API status result
+    """
+    return group_user_update_role(ctx, username, group_name, new_role)
 
 
 @api.make()
