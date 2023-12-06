@@ -643,7 +643,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                 log.write(ctx, "CSV import - Notice: removed rods user from group " + group_name)
             else:
                 log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
-                log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
         # Remove users not in sheet
         if delete_users:
@@ -676,7 +676,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                         log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
                     else:
                         log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
-                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
     return ''
 
