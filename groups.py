@@ -1075,22 +1075,8 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
         return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
 
 
-@api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
-    """Create a new group.
-
-    :param ctx:                 Combined type of a ctx and rei struct
-    :param group_name:          Name of the group to create
-    :param category:            Category of the group to create
-    :param subcategory:         Subcategory of the group to create
-    :param schema_id:           Schema-id for the group to be created
-    :param expiration_date:     Retention period for the group
-    :param description:         Description of the group to create
-    :param data_classification: Data classification of the group to create
-
-    :returns: Dict with API status result
-    """
-    return group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification)
+"""API to create a new group."""
+api_group_create = api.make()(group_create)
 
 
 @api.make()
@@ -1211,17 +1197,8 @@ def group_user_add(ctx, username, group_name):
         return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-@api.make()
-def api_group_user_add(ctx, username, group_name):
-    """Add a user to a group.
-
-    :param ctx:        Combined type of a ctx and rei struct
-    :param username:   Name of the user
-    :param group_name: Name of the group
-
-    :returns: Dict with API status result
-    """
-    return group_user_add(ctx, username, group_name)
+"""API to add a user to a group."""
+api_group_user_add = api.make()(group_user_add)
 
 
 def group_user_update_role(ctx, username, group_name, new_role):
@@ -1256,18 +1233,8 @@ def group_user_update_role(ctx, username, group_name, new_role):
         return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-@api.make()
-def api_group_user_update_role(ctx, username, group_name, new_role):
-    """Update role of a user in a group.
-
-    :param ctx:        Combined type of a ctx and rei struct
-    :param username:   Name of the user
-    :param group_name: Name of the group
-    :param new_role:   New role of the user
-
-    :returns: Dict with API status result
-    """
-    return group_user_update_role(ctx, username, group_name, new_role)
+"""API to update role of a user in a group."""
+api_group_user_update_role = api.make()(group_user_update_role)
 
 
 @api.make()
@@ -1315,17 +1282,8 @@ def group_remove_user_from_group(ctx, username, group_name):
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-@api.make()
-def api_group_remove_user_from_group(ctx, username, group_name):
-    """Remove a user from a group.
-
-    :param ctx:        Combined type of a ctx and rei struct
-    :param username:   Name of the user
-    :param group_name: Name of the group
-
-    :returns: Dict with API status result
-    """
-    return group_remove_user_from_group(ctx, username, group_name)
+"""API to remove a user from a group."""
+api_group_remove_user_from_group = api.make()(group_remove_user_from_group)
 
 
 def sram_enabled(ctx, group_name):
