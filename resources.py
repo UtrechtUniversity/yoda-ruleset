@@ -168,7 +168,7 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
     """
     # Check permissions for this function
     # Member of this group?
-    member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
+    member_type = groups.user_role(ctx, user.full_name(ctx), group_name)
     if member_type not in ['reader', 'normal', 'manager']:
         category = groups.group_category(ctx, group_name)
         if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):

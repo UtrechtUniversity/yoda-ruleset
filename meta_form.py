@@ -136,7 +136,7 @@ def load(ctx, coll):
     category = groups.group_category(ctx, group)
 
     # - What rights does the client have?
-    is_member = groups.user_role(ctx, group, user_full_name) in ['normal', 'manager']
+    is_member = groups.user_role(ctx, user_full_name, group) in ['normal', 'manager']
 
     # - What is the active schema for this category?
     schema, uischema = schema_.get_active_schema_uischema(ctx, coll)

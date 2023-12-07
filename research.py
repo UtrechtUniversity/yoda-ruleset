@@ -66,7 +66,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders')
 
     # Collection exists?
@@ -127,7 +127,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected folder')
 
     # Folder not locked?
@@ -188,7 +188,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected folder')
 
     # Folder not locked?
@@ -256,7 +256,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected folder')
 
     # Collection exists?
@@ -307,7 +307,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected folder')
 
     # Folder not locked?
@@ -398,7 +398,7 @@ def api_research_file_copy(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected file')
 
     # Folder not locked?
@@ -462,7 +462,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected file')
 
     # Folder not locked?
@@ -531,7 +531,7 @@ def api_research_file_move(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected file')
 
     # Folder not locked?
@@ -578,7 +578,7 @@ def api_research_file_delete(ctx, coll, file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected file')
 
     # Folder not locked?
@@ -631,7 +631,7 @@ def api_research_collection_details(ctx, path):
     basename = pathutil.chop(path)[1]
 
     # Retrieve user type.
-    member_type = groups.user_role(ctx, group, user.full_name(ctx))
+    member_type = groups.user_role(ctx, user.full_name(ctx), group)
 
     # Retrieve research folder status.
     status = folder.get_status(ctx, path)

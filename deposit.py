@@ -69,7 +69,7 @@ def api_deposit_copy_data_package(ctx, reference):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
+    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
