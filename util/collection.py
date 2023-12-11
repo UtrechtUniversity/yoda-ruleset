@@ -171,6 +171,7 @@ def copy(ctx, path_org, path_copy, force=True):
     :param ctx:       Combined type of a callback and rei struct
     :param path_org:  Collection original path
     :param path_copy: Collection copy path
+    :param force:     Applies "forceFlag"
 
     This may raise a error.UUError if the collection does not exist, or when
     the user does not have write permission.
@@ -207,6 +208,7 @@ def move(ctx, path_org, path_move, force=True):
     :param ctx:       Combined type of a callback and rei struct
     :param path_org:  Collection original path
     :param path_move: Collection move path
+    :param force:     Applies "forceFlag"
 
     This may raise a error.UUError if the collection does not exist, or when
     the user does not have write permission.
