@@ -97,7 +97,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False)
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to copy
     :param new_folder_path: Path to the new copy of the folder
-    :param overwrite:       Overwrite file if it already exists
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
@@ -159,6 +159,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False)
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to move
     :param new_folder_path: Path to the new folder
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
