@@ -24,8 +24,7 @@ __all__ = ['api_research_folder_add',
            'api_research_system_metadata',
            'api_research_collection_details',
            'api_research_list_temporary_files',
-           'api_research_manifest',
-           'api_research_overwrite_folder']
+           'api_research_manifest']
 
 
 @api.make()
@@ -92,12 +91,13 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
 
 @api.make()
-def api_research_folder_copy(ctx, folder_path, new_folder_path):
+def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False):
     """Copy a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to copy
     :param new_folder_path: Path to the new copy of the folder
+    :param overwrite:       Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -140,12 +140,12 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
     # Collection exists in destination?
-    if collection.exists(ctx, new_folder_path):
+    if not overwrite and collection.exists(ctx, new_folder_path):
         return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
 
     # All requirements OK
     try:
-        collection.copy(ctx, folder_path, new_folder_path)
+        collection.copy(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -153,7 +153,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
 
 @api.make()
-def api_research_folder_move(ctx, folder_path, new_folder_path):
+def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False):
     """Move a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -201,12 +201,12 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
     # Collection exists in destination?
-    if collection.exists(ctx, new_folder_path):
+    if not overwrite and collection.exists(ctx, new_folder_path):
         return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
 
     # All requirements OK
     try:
-        collection.move(ctx, folder_path, new_folder_path)
+        collection.move(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -682,69 +682,3 @@ def api_research_manifest(ctx, coll):
     checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub
-
-
-@api.make()
-def api_research_overwrite_folder(ctx, folder_path, new_folder_path, action):
-    """Copy a folder in a research folder.
-
-    :param ctx:             Combined type of a callback and rei struct
-    :param folder_path:     Path to the folder to copy
-    :param new_folder_path: Path to the new copy of the folder
-    :param action:          Action can be either move or copy
-
-    :returns: Dict with API status result
-    """
-
-    if 'folder' in action:
-        action = action.split('-', 1)[1]
-
-    if len(new_folder_path) == 0:
-        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
-
-    try:
-        validate_filepath(new_folder_path.decode('utf-8'))
-    except ValidationError:
-        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
-
-    # Same folder path makes no sense.
-    if folder_path == new_folder_path:
-        return api.Error('invalid_folder_path', 'Origin and copy folder paths are equal. Please choose another destination')
-
-    # Inside the same path makes no sense.
-    if "{}/".format(folder_path) in new_folder_path:
-        return api.Error('invalid_folder_path', 'Cannot ' + action + ' folder inside itself. Please choose another destination')
-
-    # not in home - a groupname must be present ie at least 2!?
-    if not len(new_folder_path.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to ' + action + ' folder at this location')
-
-    # in vault?
-    target_group_name = new_folder_path.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('invalid_destination', 'It is not possible to ' + action + ' folder to the vault')
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to ' + action + ' the selected folder')
-
-    # Folder not locked?
-    if folder.is_locked(ctx, new_folder_path):
-        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be copied or moved')
-
-    # Does original folder exist?
-    if not collection.exists(ctx, folder_path):
-        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
-
-    # All requirements OK
-    try:
-        if action == 'folder-copy' or action == 'copy':
-            collection.copy(ctx, folder_path, new_folder_path)
-        else:
-            collection.move(ctx, folder_path, new_folder_path)
-    except msi.Error as e:
-        log.write(ctx, e)
-        return api.Error('internal', 'Something went wrong. Please try again')
-
-    return api.Result.ok()
