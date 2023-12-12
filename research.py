@@ -91,12 +91,13 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
 
 @api.make()
-def api_research_folder_copy(ctx, folder_path, new_folder_path):
+def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False):
     """Copy a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to copy
     :param new_folder_path: Path to the new copy of the folder
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
@@ -139,12 +140,12 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
     # Collection exists in destination?
-    if collection.exists(ctx, new_folder_path):
+    if not overwrite and collection.exists(ctx, new_folder_path):
         return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
 
     # All requirements OK
     try:
-        collection.copy(ctx, folder_path, new_folder_path)
+        collection.copy(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -152,12 +153,13 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
 
 @api.make()
-def api_research_folder_move(ctx, folder_path, new_folder_path):
+def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False):
     """Move a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to move
     :param new_folder_path: Path to the new folder
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
@@ -200,12 +202,12 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
     # Collection exists in destination?
-    if collection.exists(ctx, new_folder_path):
+    if not overwrite and collection.exists(ctx, new_folder_path):
         return api.Error('invalid_destination', 'Folder with this name already exists in destination. Please choose another destination')
 
     # All requirements OK
     try:
-        collection.move(ctx, folder_path, new_folder_path)
+        collection.move(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -360,12 +362,13 @@ def api_research_list_temporary_files(ctx, coll):
 
 
 @api.make()
-def api_research_file_copy(ctx, filepath, new_filepath):
+def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     """Copy a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to copy
     :param new_filepath: Path to the new copy of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -410,12 +413,12 @@ def api_research_file_copy(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.copy(ctx, filepath, new_filepath)
+        data_object.copy(ctx, filepath, new_filepath, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -493,12 +496,13 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 
 @api.make()
-def api_research_file_move(ctx, filepath, new_filepath):
+def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     """Move a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to move
     :param new_filepath: Path to the new location of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -543,12 +547,16 @@ def api_research_file_move(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.rename(ctx, filepath, new_filepath)
+        if overwrite:
+            data_object.copy(ctx, filepath, new_filepath, force=overwrite)
+            data_object.remove(ctx, filepath)
+        else:
+            data_object.rename(ctx, filepath, new_filepath)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
