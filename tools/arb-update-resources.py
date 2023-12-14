@@ -18,6 +18,7 @@ from io import StringIO
 
 import psutil
 from irods.column import In
+from irods.exception import NetworkException
 from irods.models import Resource
 from irods.password_obfuscation import decode as password_decode
 from irods.rule import Rule
@@ -191,20 +192,23 @@ def main():
     args = parse_args()
     env = get_irods_environment()
 
-    session = setup_session(env)
-    override_free_dict = parse_cs_values(args.override_free)
-    override_total_dict = parse_cs_values(args.override_total)
-    local_ufs_resources = get_local_ufs_resources(session)
-    process_ufs_resources(session,
-                          local_ufs_resources,
-                          override_free_dict,
-                          override_total_dict,
-                          args.verbose)
+    try:
+        session = setup_session(env)
+        override_free_dict = parse_cs_values(args.override_free)
+        override_total_dict = parse_cs_values(args.override_total)
+        local_ufs_resources = get_local_ufs_resources(session)
+        process_ufs_resources(session,
+                              local_ufs_resources,
+                              override_free_dict,
+                              override_total_dict,
+                              args.verbose)
 
-    if is_on_provider():
-        if args.verbose:
-            print("Updating misc resources ...")
-        call_rule_update_misc(session)
+        if is_on_provider():
+            if args.verbose:
+                print("Updating misc resources ...")
+            call_rule_update_misc(session)
+    except NetworkException:
+        print("Could not connect to iRODS sever ...")
 
 
 if __name__ == '__main__':
