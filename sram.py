@@ -36,9 +36,6 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
     epoch = datetime.datetime.utcfromtimestamp(0)
     epoch_date = int((date - epoch).total_seconds())
 
-    # Create unique short name of group
-    short_name = group.unique_short_name(ctx, group_name)
-
     disable_join_requests = True
     if config.sram_flow == 'join_request':
         disable_join_requests = False
@@ -46,7 +43,6 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
     # Build SRAM payload.
     payload = {
         "name": 'yoda-' + group_name,
-        "short_name": short_name,
         "description": description,
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
@@ -190,19 +186,16 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     return response.status_code == 201
 
 
-def sram_connect_service_collaboration(ctx, group_name):
+def sram_connect_service_collaboration(ctx, short_name):
     """Connect a service to an existing SRAM collaboration.
 
     :param ctx:        Combined type of a ctx and rei struct
-    :param group_name: Name of the group
+    :param short_name: Short name of the group collaboration
 
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
     url = "{}/api/collaborations_services/v1/connect_collaboration_service".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
-
-    # Create unique short name of group
-    short_name = group.unique_short_name(ctx, group_name)
 
     # Build SRAM payload.
     payload = {

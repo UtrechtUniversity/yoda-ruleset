@@ -20,6 +20,5 @@ pysqlcipher3==1.0.4
 execnet==1.9.0
 deepdiff==3.3.0
 persist-queue==0.8.1
-pyblake2==1.1.2
 redis==3.5.3
 psutil==5.9.6
