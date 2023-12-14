@@ -1060,8 +1060,9 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
                 return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
+                short_name = response_sram['short_name']
 
-            if not sram.sram_connect_service_collaboration(ctx, group_name):
+            if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
@@ -1337,9 +1338,10 @@ def rule_group_sram_sync(ctx):
                 break
             else:
                 co_identifier = response_sram['identifier']
+                short_name = response_sram['short_name']
                 avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
 
-            if not sram.sram_connect_service_collaboration(ctx, group_name):
+            if not sram.sram_connect_service_collaboration(ctx, short_name):
                 log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
                 break
 
