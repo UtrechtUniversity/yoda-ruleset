@@ -21,6 +21,21 @@ Feature: Research UI
             | research-initial | testdata  | lorem.txt |
 
 
+    Scenario Outline: Copy and overwrite a file
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <subfolder>
+        And user copies file <file> to <folder>
+        And user copies overwrites file <file> to <folder>
+        And user browses to folder <folder>
+        Then file <file> exists in folder
+
+        Examples:
+            | folder           | subfolder | file      |
+            | research-initial | testdata  | lorem.txt |
+
+
     Scenario Outline: Renaming a file
         Given user researcher is logged in
         And module "research" is shown
@@ -38,6 +53,21 @@ Feature: Research UI
         And module "research" is shown
         When user browses to folder <folder>
         And user moves file <file> to <subfolder>
+        Then file <file> does not exist in folder
+        And user browses to subfolder <subfolder>
+        And file <file> exists in folder
+
+        Examples:
+            | folder           | subfolder | file              |
+            | research-initial | testdata  | lorem_renamed.txt |
+
+    
+    Scenario Outline: Move and overwrite a file
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user moves file <file> to <subfolder>
+        And user moves overwrites file <file> to <subfolder>
         Then file <file> does not exist in folder
         And user browses to subfolder <subfolder>
         And file <file> exists in folder
@@ -102,11 +132,39 @@ Feature: Research UI
             | research-initial | ui_test_copy | ui_test_move |
 
 
+    Scenario Outline: Copying and overwriting a folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user copies folder <folder_old> to <folder_new>
+        And user copies overwrites folder <folder_old> to <folder_new>
+        Then user browses to subfolder <folder_new>
+        And folder <folder_new> exists in <folder_old>
+
+        Examples:
+            | folder           | folder_old   | folder_new   |
+            | research-initial | ui_test_copy | ui_test_move |
+
+
     Scenario Outline: Moving a folder
         Given user researcher is logged in
         And module "research" is shown
         When user browses to folder <folder>
         And user moves folder <folder_old> to <folder_new>
+        Then user browses to subfolder <folder_new>
+        And folder <folder_new> exists in <folder_old>
+
+        Examples:
+            | folder           | folder_old   | folder_new   |
+            | research-initial | ui_test_move | ui_test_copy |
+
+    
+    Scenario Outline: Moving and overwriting a folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user moves folder <folder_old> to <folder_new>
+        And user moves overwrites folder <folder_old> to <folder_new>
         Then user browses to subfolder <folder_new>
         And folder <folder_new> exists in <folder_old>
 
@@ -143,12 +201,41 @@ Feature: Research UI
             | research-initial | clone        |
 
 
+    Scenario Outline: Multi-select moving and overwriting files / folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user multi-select moves overwrites files / folders to <folder_new>
+        Then user browses to subfolder <folder_new>
+        And files / folders exist in <folder_new>
+        And files / folders do not exist in <folder_new>
+
+        Examples:
+            | folder           | folder_new   |
+            | research-initial | clone        |
+
     Scenario Outline: Multi-select copying files / folder
         Given user researcher is logged in
         And module "research" is shown
         When user browses to folder <folder>
         And user browses to subfolder <folder_new>
         And user multi-select copies files / folders to <folder>
+        Then files / folders exist in <folder_new>
+        And module "research" is shown
+        And user browses to folder <folder>
+        And files / folders exist in <folder>
+
+        Examples:
+            | folder           | folder_new   |
+            | research-initial | clone        |
+
+    
+    Scenario Outline: Multi-select copying files / folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <folder_new>
+        And user multi-select copies overwrites files / folders to <folder>
         Then files / folders exist in <folder_new>
         And module "research" is shown
         And user browses to folder <folder>
