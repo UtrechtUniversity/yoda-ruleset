@@ -100,11 +100,12 @@ Feature: Research UI
         Then folder <folder_new> exists in <folder>
 
         Examples:
-            | folder           | folder_new      |
-            | research-initial | ui_test_folder1 |
-            | research-initial | ui_test_folder2 |
-            | research-initial | ui_test_copy    |
-            | research-initial | ui_test_move    |
+            | folder           | folder_new        |
+            | research-initial | ui_test_folder1   |
+            | research-initial | ui_test_folder2   |
+            | research-initial | ui_test_copy      |
+            | research-initial | ui_test_move      |
+            | research-initial | ui_test_overwrite |
 
 
     Scenario Outline: Renaming a folder
@@ -129,8 +130,9 @@ Feature: Research UI
         And folder <folder_new> exists in <folder_old>
 
         Examples:
-            | folder           | folder_old   | folder_new   |
-            | research-initial | ui_test_copy | ui_test_move |
+            | folder           | folder_old        | folder_new   |
+            | research-initial | ui_test_copy      | ui_test_move |
+            | research-initial | ui_test_overwrite | ui_test_copy |
 
 
     Scenario Outline: Copying and overwriting a folder
@@ -138,7 +140,7 @@ Feature: Research UI
         And module "research" is shown
         When user browses to folder <folder>
         And user copies folder <folder_old> to <folder_new>
-        And user copies overwrites folder <folder_old> to <folder_new>
+        And user accepts overwriting folder
         Then user browses to subfolder <folder_new>
         And folder <folder_new> exists in <folder_old>
 
@@ -165,13 +167,13 @@ Feature: Research UI
         And module "research" is shown
         When user browses to folder <folder>
         And user moves folder <folder_old> to <folder_new>
-        And user moves overwrites folder <folder_old> to <folder_new>
+        And user accepts overwriting folder
         Then user browses to subfolder <folder_new>
         And folder <folder_new> exists in <folder_old>
 
         Examples:
-            | folder           | folder_old   | folder_new   |
-            | research-initial | ui_test_move | ui_test_copy |
+            | folder           | folder_old        | folder_new   |
+            | research-initial | ui_test_overwrite | ui_test_copy |
 
 
     Scenario Outline: Deleting a folder
