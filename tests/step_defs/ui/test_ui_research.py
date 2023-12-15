@@ -41,12 +41,6 @@ def ui_research_file_copy(browser, file, folder):
     browser.find_by_css('.dlg-action-button').click()
 
 
-@when(parsers.parse("user copies overwrites file {file} to {folder}"))
-def ui_research_file_copy_overwrite(browser, file, folder):
-    time.sleep(1)
-    browser.find_by_css('.dlg-action-button').click()
-
-
 @when(parsers.parse("user moves file {file} to {subfolder}"))
 def ui_research_file_move(browser, file, subfolder):
     browser.find_by_css('button[data-name="{}"]'.format(file)).click()
@@ -56,8 +50,8 @@ def ui_research_file_move(browser, file, subfolder):
     browser.find_by_css('.dlg-action-button').click()
 
 
-@when(parsers.parse("user moves overwrites file {file} to {subfolder}"))
-def ui_research_file_move_overwrite(browser, file, subfolder):
+@when(parsers.parse("user accepts overwriting file"))
+def ui_research_file_overwrite(browser):
     browser.find_by_css('.dlg-action-button').click()
 
 

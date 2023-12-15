@@ -17,8 +17,9 @@ Feature: Research UI
         Then file <file> exists in folder
 
         Examples:
-            | folder           | subfolder | file      |
-            | research-initial | testdata  | lorem.txt |
+            | folder           | subfolder | file                         |
+            | research-initial | testdata  | lorem.txt                    |
+            | research-initial | testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
 
 
     Scenario Outline: Copy and overwrite a file
@@ -27,7 +28,7 @@ Feature: Research UI
         When user browses to folder <folder>
         And user browses to subfolder <subfolder>
         And user copies file <file> to <folder>
-        And user copies overwrites file <file> to <folder>
+        And user accepts overwriting file
         And user browses to folder <folder>
         Then file <file> exists in folder
 
@@ -44,8 +45,8 @@ Feature: Research UI
         Then file <file> exists in folder
 
         Examples:
-            | folder           | file         | file_renamed      |
-            | research-initial | lorem.txt    | lorem_renamed.txt |
+            | folder           | file      | file_renamed      |
+            | research-initial | lorem.txt | lorem_renamed.txt |
 
 
     Scenario Outline: Moving a file
@@ -61,20 +62,20 @@ Feature: Research UI
             | folder           | subfolder | file              |
             | research-initial | testdata  | lorem_renamed.txt |
 
-    
+
     Scenario Outline: Move and overwrite a file
         Given user researcher is logged in
         And module "research" is shown
         When user browses to folder <folder>
         And user moves file <file> to <subfolder>
-        And user moves overwrites file <file> to <subfolder>
+        And user accepts overwriting file
         Then file <file> does not exist in folder
         And user browses to subfolder <subfolder>
         And file <file> exists in folder
 
         Examples:
-            | folder           | subfolder | file              |
-            | research-initial | testdata  | lorem_renamed.txt |
+            | folder           | subfolder | file                         |
+            | research-initial | testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
 
 
     Scenario Outline: Deleting a file
@@ -158,7 +159,7 @@ Feature: Research UI
             | folder           | folder_old   | folder_new   |
             | research-initial | ui_test_move | ui_test_copy |
 
-    
+
     Scenario Outline: Moving and overwriting a folder
         Given user researcher is logged in
         And module "research" is shown
@@ -229,7 +230,7 @@ Feature: Research UI
             | folder           | folder_new   |
             | research-initial | clone        |
 
-    
+
     Scenario Outline: Multi-select copying files / folder
         Given user researcher is logged in
         And module "research" is shown
