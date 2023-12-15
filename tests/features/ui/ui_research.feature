@@ -17,6 +17,22 @@ Feature: Research UI
         Then file <file> exists in folder
 
         Examples:
+            | folder           | subfolder | file                         |
+            | research-initial | testdata  | lorem.txt                    |
+            | research-initial | testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
+
+
+    Scenario Outline: Copy and overwrite a file
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <subfolder>
+        And user copies file <file> to <folder>
+        And user accepts overwriting file
+        And user browses to folder <folder>
+        Then file <file> exists in folder
+
+        Examples:
             | folder           | subfolder | file      |
             | research-initial | testdata  | lorem.txt |
 
@@ -29,8 +45,8 @@ Feature: Research UI
         Then file <file> exists in folder
 
         Examples:
-            | folder           | file         | file_renamed      |
-            | research-initial | lorem.txt    | lorem_renamed.txt |
+            | folder           | file      | file_renamed      |
+            | research-initial | lorem.txt | lorem_renamed.txt |
 
 
     Scenario Outline: Moving a file
@@ -45,6 +61,21 @@ Feature: Research UI
         Examples:
             | folder           | subfolder | file              |
             | research-initial | testdata  | lorem_renamed.txt |
+
+
+    Scenario Outline: Move and overwrite a file
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user moves file <file> to <subfolder>
+        And user accepts overwriting file
+        Then file <file> does not exist in folder
+        And user browses to subfolder <subfolder>
+        And file <file> exists in folder
+
+        Examples:
+            | folder           | subfolder | file                         |
+            | research-initial | testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
 
 
     Scenario Outline: Deleting a file
@@ -69,11 +100,12 @@ Feature: Research UI
         Then folder <folder_new> exists in <folder>
 
         Examples:
-            | folder           | folder_new      |
-            | research-initial | ui_test_folder1 |
-            | research-initial | ui_test_folder2 |
-            | research-initial | ui_test_copy    |
-            | research-initial | ui_test_move    |
+            | folder           | folder_new        |
+            | research-initial | ui_test_folder1   |
+            | research-initial | ui_test_folder2   |
+            | research-initial | ui_test_copy      |
+            | research-initial | ui_test_move      |
+            | research-initial | ui_test_overwrite |
 
 
     Scenario Outline: Renaming a folder
@@ -98,6 +130,21 @@ Feature: Research UI
         And folder <folder_new> exists in <folder_old>
 
         Examples:
+            | folder           | folder_old        | folder_new   |
+            | research-initial | ui_test_copy      | ui_test_move |
+            | research-initial | ui_test_overwrite | ui_test_copy |
+
+
+    Scenario Outline: Copying and overwriting a folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user copies folder <folder_old> to <folder_new>
+        And user accepts overwriting folder
+        Then user browses to subfolder <folder_new>
+        And folder <folder_new> exists in <folder_old>
+
+        Examples:
             | folder           | folder_old   | folder_new   |
             | research-initial | ui_test_copy | ui_test_move |
 
@@ -113,6 +160,20 @@ Feature: Research UI
         Examples:
             | folder           | folder_old   | folder_new   |
             | research-initial | ui_test_move | ui_test_copy |
+
+
+    Scenario Outline: Moving and overwriting a folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user moves folder <folder_old> to <folder_new>
+        And user accepts overwriting folder
+        Then user browses to subfolder <folder_new>
+        And folder <folder_new> exists in <folder_old>
+
+        Examples:
+            | folder           | folder_old        | folder_new   |
+            | research-initial | ui_test_overwrite | ui_test_copy |
 
 
     Scenario Outline: Deleting a folder
@@ -139,8 +200,8 @@ Feature: Research UI
         And files / folders do not exist in <folder_new>
 
         Examples:
-            | folder           | folder_new   |
-            | research-initial | clone        |
+            | folder           | folder_new |
+            | research-initial | clone      |
 
 
     Scenario Outline: Multi-select copying files / folder
@@ -155,8 +216,54 @@ Feature: Research UI
         And files / folders exist in <folder>
 
         Examples:
-            | folder           | folder_new   |
-            | research-initial | clone        |
+            | folder           | folder_new |
+            | research-initial | clone      |
+
+
+    Scenario Outline: Multi-select copying and overwriting files / folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <folder_new>
+        And user multi-select copies overwrites files / folders to <folder>
+        Then files / folders exist in <folder_new>
+        And module "research" is shown
+        And user browses to folder <folder>
+        And files / folders exist in <folder>
+
+        Examples:
+            | folder           | folder_new |
+            | research-initial | clone      |
+
+
+    Scenario Outline: Multi-select moving and overwriting files / folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user multi-select moves overwrites files / folders to <folder_new>
+        Then user browses to subfolder <folder_new>
+        And files / folders exist in <folder_new>
+        And files / folders do not exist in <folder_new>
+
+        Examples:
+            | folder           | folder_new |
+            | research-initial | clone      |
+
+
+    Scenario Outline: Multi-select copying files / folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <folder_new>
+        And user multi-select copies files / folders to <folder>
+        Then files / folders exist in <folder_new>
+        And module "research" is shown
+        And user browses to folder <folder>
+        And files / folders exist in <folder>
+
+        Examples:
+            | folder           | folder_new |
+            | research-initial | clone      |
 
 
     Scenario Outline: Multi-select deleting files / folder

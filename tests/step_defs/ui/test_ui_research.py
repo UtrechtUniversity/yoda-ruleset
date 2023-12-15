@@ -98,6 +98,12 @@ def ui_research_folder_move(browser, folder_old, folder_new):
     browser.find_by_css('.dlg-action-button').click()
 
 
+@when(parsers.parse("user accepts overwriting file"))
+@when(parsers.parse("user accepts overwriting folder"))
+def ui_research_overwrite(browser):
+    browser.find_by_css('.dlg-action-button').click()
+
+
 @when(parsers.parse("user deletes folder {folder_delete}"))
 def ui_research_folder_delete(browser, folder_delete):
     browser.find_by_css('button[data-name={}]'.format(folder_delete)).click()
@@ -118,6 +124,23 @@ def ui_research_multi_move(browser, folder_new):
     browser.find_by_id('finishMultiSelect').click()
 
 
+@when(parsers.parse("user multi-select moves overwrites files / folders to {folder_new}"))
+def ui_research_multi_move_overwrite(browser, folder_new):
+    browser.find_by_css('input[data-name="testdata"]').click()
+    browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
+    browser.find_by_id('multiSelect').click()
+    browser.find_by_css('a.multiple-move').click()
+    time.sleep(1)
+    browser.links.find_by_partial_text(folder_new).click()
+    browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_css('.multi-overwrite-button').click()
+    time.sleep(1)
+    browser.find_by_css('.multi-overwrite-button').click()
+    time.sleep(1)
+    browser.find_by_id('finishMultiSelect').click()
+
+
 @when(parsers.parse("user multi-select copies files / folders to {folder}"))
 def ui_research_multi_copy(browser, folder):
     browser.find_by_css('input[data-name="testdata"]').click()
@@ -127,6 +150,23 @@ def ui_research_multi_copy(browser, folder):
     time.sleep(1)
     browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
     browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_id('finishMultiSelect').click()
+
+
+@when(parsers.parse("user multi-select copies overwrites files / folders to {folder}"))
+def ui_research_multi_copy_overwrite(browser, folder):
+    browser.find_by_css('input[data-name="testdata"]').click()
+    browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
+    browser.find_by_id('multiSelect').click()
+    browser.find_by_css('a.multiple-copy').click()
+    time.sleep(1)
+    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_css('.multi-overwrite-button').click()
+    time.sleep(1)
+    browser.find_by_css('.multi-overwrite-button').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
