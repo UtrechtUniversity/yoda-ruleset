@@ -169,6 +169,9 @@ def rename(ctx, path_org, path_target):
                         '0',
                         irods_types.BytesBuf())
 
+    json_inp = {"logical_path": path_target, "options": {"reference": path_org}}
+    msi.touch(ctx, json.dumps(json_inp))
+
 
 def name_from_id(ctx, data_id):
     """Get data object name from data object id.
