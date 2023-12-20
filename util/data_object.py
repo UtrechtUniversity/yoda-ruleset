@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import binascii
+import json
 
 import genquery
 import irods_types
@@ -132,6 +133,9 @@ def copy(ctx, path_org, path_copy, force=True):
                       path_copy,
                       'numThreads=1++++verifyChksum={}'.format('++++forceFlag=' if force else ''),
                       irods_types.BytesBuf())
+
+    json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
+    msi.touch(ctx, json.dumps(json_inp))
 
 
 def remove(ctx, path, force=False):
