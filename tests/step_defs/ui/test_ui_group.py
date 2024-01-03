@@ -400,8 +400,15 @@ def ui_group_schema_set_groupname(browser, group):
     browser.find_by_id('f-group-create-name').fill(group)
 
 
+@when(parsers.parse("group type is set to deposit"))
+def ui_group_set_group_type_deposit(browser):
+    browser.find_by_id('f-group-create-prefix-button').click()
+    time.sleep(2)
+    browser.find_by_css('#f-group-create-prefix-deposit a').click()
+
+
 @when(parsers.parse("group type is set to datamanager"))
-def ui_group_set_group_type(browser):
+def ui_group_set_group_type_datamanager(browser):
     browser.find_by_id('f-group-create-prefix-button').click()
     browser.find_by_id('f-group-create-prefix-datamanager').click()
 
@@ -515,6 +522,11 @@ def ui_group_schema_assert_datamanager_group_created(browser, group):
     assert browser.find_by_css('.alert-success').text == 'Created group datamanager-' + group + '.'
 
 
+@when(parsers.parse("deposit group {group} is successfully created"))
+def ui_group_schema_assert_deposit_group_created(browser, group):
+    assert browser.find_by_css('.alert-success').text == 'Created group deposit-' + group + '.'
+
+
 @when(parsers.parse("check whether research group properties {group}, {category}, {subcategory}, {schema_id} and {expiration_date} are correct"))
 def ui_group_schema_properties_schema_correct(browser, group, category, subcategory, schema_id, expiration_date):
     assert browser.find_by_id('f-group-update-name').value == group
@@ -539,6 +551,24 @@ def ui_group_schema_properties_default_schema_correct(browser, group, category, 
     assert browser.find_by_id('f-group-update-name').value == group
     assert browser.find_by_id('f-group-update-schema-id').value == default_schema_id
     assert browser.find_by_id('f-group-update-expiration-date').value == expiration_date
+    div = browser.find_by_css('#f-group-update-category').find_by_xpath('..').find_by_css('span .select2-selection')
+    assert div.find_by_css('.select2-selection__rendered').text == category
+    div = browser.find_by_css('#f-group-update-subcategory').find_by_xpath('..').find_by_css('span .select2-selection')
+    assert div.find_by_css('.select2-selection__rendered').text == subcategory
+
+
+@when(parsers.parse("check whether deposit group properties {group}, {category} and {subcategory} for user {user}"), target_fixture="api_response")
+def ui_group_schema_properties_deposit_default_schema_correct(browser, group, category, subcategory, user):
+    # Get the default_schema_id from the yoda configuration
+    result = api_request(
+        user,
+        "schema_get_schemas",
+        {}
+    )
+    default_schema_id = list(result)[1]['data']['schema_default']
+
+    assert browser.find_by_id('f-group-update-name').value == group
+    assert browser.find_by_id('f-group-update-schema-id').value == default_schema_id
     div = browser.find_by_css('#f-group-update-category').find_by_xpath('..').find_by_css('span .select2-selection')
     assert div.find_by_css('.select2-selection__rendered').text == category
     div = browser.find_by_css('#f-group-update-subcategory').find_by_xpath('..').find_by_css('span .select2-selection')

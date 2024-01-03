@@ -81,6 +81,22 @@ def api_group_create(user, group_name):
     )
 
 
+@given(parsers.parse('the user creates a new deposit group "{group_name}"'), target_fixture="api_response")
+def api_group_create_deposit(user, group_name):
+    cat_and_subcat = group_name.split("-", 1)[1]
+    return api_request(
+        user,
+        "group_create",
+        {"group_name": group_name,
+         "category": cat_and_subcat,
+         "subcategory": cat_and_subcat,
+         "schema_id": "default-3",
+         "expiration_date": "",
+         "description": "",
+         "data_classification": ""}
+    )
+
+
 @given(parsers.parse('the user creates a new datamanager group "{group_name}"'), target_fixture="api_response")
 def api_datamanager_group_create(user, group_name):
     cat_and_subcat = group_name.split("-", 1)[1]

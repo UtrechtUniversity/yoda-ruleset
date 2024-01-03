@@ -67,6 +67,20 @@ Feature: Group API
             | technicaladmin      | not-a-yoda-group         |
 
 
+    @deposit
+    Scenario Outline: Deposit group creation
+        Given user <user> is authenticated
+        And the group "<group_name>" does not exist
+        And the user creates a new deposit group "<group_name>"
+        Then the response status code is "200"
+        And the group "<group_name>" is created
+
+        Examples:
+            | user                | group_name        |
+            | functionaladminpriv | deposit-api-test2 |
+            | technicaladmin      | deposit-api-test3 |
+
+
     Scenario Outline: Datamanager group creation
         Given user <user> is authenticated
         And the group "<group_name>" does not exist
@@ -169,3 +183,17 @@ Feature: Group API
             | technicaladmin      | datamanager-api-test1    |
             | technicaladmin      | research-csvtestgroup    |
             | technicaladmin      | not-a-yoda-group         |
+
+
+    @deposit
+    Scenario Outline: Group deposit delete
+        Given user <user> is authenticated
+        And the group "<group_name>" exists
+        And the user deletes group "<group_name>"
+        Then the response status code is "200"
+        And the group "<group_name>" no longer exists
+
+        Examples:
+            | user                | group_name        |
+            | functionaladminpriv | deposit-api-test2 |
+            | technicaladmin      | deposit-api-test3 |
