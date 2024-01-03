@@ -273,3 +273,32 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
         log.write(ctx, "response: {}".format(response.status_code))
 
     return response.status_code == 201
+
+def sram_get_co_members(ctx, co_identifier):
+    """Get SRAM Collaboration members.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param co_identifier: SRAM CO identifier
+
+    :returns: Email of the user
+    """
+    url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "get {}".format(url))
+
+    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    data = response.json()
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
+
+    co_members = []
+    for key in data['collaboration_memberships']:
+        co_members.append(key['user']['email'])
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "collaboration_members: {}".format(co_members))
+
+    return co_members
