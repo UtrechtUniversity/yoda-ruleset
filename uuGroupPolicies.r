@@ -297,6 +297,19 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 			# 'read-|vault-' group.
 			succeed;
 		}
+	} else if (*accessLevel == "noinherit") {
+		*forGroup = *policyKv."forGroup";
+		uuGetBaseGroup(*forGroup, *baseGroup);
+		uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+		if (
+			*forGroup like regex "(deposit)-.*"
+			&& *isManagerInBaseGroup
+			&& *objPath == "/$rodsZoneClient/home/*forGroup") {
+			# Allow for deposit groups if the client is a manager
+			# in the basegroup of *forGroup,
+			# and *objPath is *forGroup's home directory.
+			succeed;
+		}
 	}
 
 	fail;
@@ -572,11 +585,11 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
+	uuChop(*groupName, *_, *baseName, "-", true);
 	if (*groupName like regex "(intake|research)-.*") {
 		# This is a group manager managed group with a read-only counterpart.
 		# Clean up the read-only shadow group.
 
-		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
 
