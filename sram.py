@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for communicating with SRAM and some utilities."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import datetime

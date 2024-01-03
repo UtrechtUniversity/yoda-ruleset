@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -1350,18 +1350,19 @@ def rule_group_sram_sync(ctx):
 
         log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
         for member in members:
+            # Validate email
+            if not yoda_names.is_email_username(member):
+                log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+                continue
+
             if member.split('#')[0] not in co_members:
-                # Validate email
-                if not yoda_names.is_email_username(member):
-                    log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
-                    continue
-                elif config.sram_flow == 'join_request':
+                if config.sram_flow == 'join_request':
                     sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
                     log.write(ctx, "User {} added to group {}".format(member, group_name))
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
                     log.write(ctx, "User {} added to group {}".format(member, group_name))
-
+            else:
                 if member in managers:
                     uid = sram.sram_get_uid(ctx, co_identifier, member)
                     if uid == '':
