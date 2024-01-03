@@ -274,6 +274,7 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
 
     return response.status_code == 201
 
+
 def sram_get_co_members(ctx, co_identifier):
     """Get SRAM Collaboration members.
 
