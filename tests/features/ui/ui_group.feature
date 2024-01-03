@@ -159,6 +159,25 @@ Feature: Group UI
             | technicaladmin      | test-datamanager1 | test-datamanager1 | test-datamanager1  |
 
 
+    @deposit
+    Scenario Outline: Group deposit create
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And group type is set to deposit
+        And category is set to <category>
+        And groupname is set to <group>
+        And subcategory is set to <subcategory>
+        When user submits new group data
+        And deposit group <group> is successfully created
+        And check whether deposit group properties <group>, <category> and <subcategory> for user <user>
+
+        Examples:
+            | user                | category        | subcategory     | group    |
+            | functionaladminpriv | test-automation | test-automation | ui-test2 |
+            | technicaladmin      | test-automation | test-automation | ui-test3 |
+
+
     Scenario Outline: Group remove
         Given user <user> is logged in
         And module "group_manager" is shown
@@ -177,6 +196,20 @@ Feature: Group UI
             | functionaladminpriv | test-datamanager  | test-datamanager  | research-test-datamanager     |
             | technicaladmin      | test-datamanager1 | test-datamanager1 | datamanager-test-datamanager1 |
             | technicaladmin      | test-datamanager1 | test-datamanager1 | research-test-datamanager1    |
+
+
+    @deposit
+    Scenario Outline: Group deposit remove
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user clicks remove group
+        And user confirms group removal
+
+        Examples:
+            | user                | category        | subcategory     | group            |
+            | functionaladminpriv | test-automation | test-automation | deposit-ui-test2 |
+            | technicaladmin      | test-automation | test-automation | deposit-ui-test3 |
 
 
     Scenario Outline: Select group in tree view and check group properties are set and active in tree view
