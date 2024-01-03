@@ -141,6 +141,21 @@ def ui_research_multi_move_overwrite(browser, folder_new):
     browser.find_by_id('finishMultiSelect').click()
 
 
+@when(parsers.parse("user multi-select moves overwrites all files / folders to {folder_new}"))
+def ui_research_multi_move_overwrite_all(browser, folder_new):
+    browser.find_by_css('input[data-name="testdata"]').click()
+    browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
+    browser.find_by_id('multiSelect').click()
+    browser.find_by_css('a.multiple-move').click()
+    time.sleep(1)
+    browser.links.find_by_partial_text(folder_new).click()
+    browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_css('.dlg-multi-action-button').click()
+    time.sleep(1)
+    browser.find_by_id('finishMultiSelect').click()
+
+
 @when(parsers.parse("user multi-select copies files / folders to {folder}"))
 def ui_research_multi_copy(browser, folder):
     browser.find_by_css('input[data-name="testdata"]').click()
@@ -167,6 +182,21 @@ def ui_research_multi_copy_overwrite(browser, folder):
     browser.find_by_css('.multi-overwrite-button').click()
     time.sleep(1)
     browser.find_by_css('.multi-overwrite-button').click()
+    time.sleep(1)
+    browser.find_by_id('finishMultiSelect').click()
+
+
+@when(parsers.parse("user multi-select copies overwrites all files / folders to {folder}"))
+def ui_research_multi_copy_overwrite_all(browser, folder):
+    browser.find_by_css('input[data-name="testdata"]').click()
+    browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
+    browser.find_by_id('multiSelect').click()
+    browser.find_by_css('a.multiple-copy').click()
+    time.sleep(1)
+    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_css('.dlg-multi-action-button').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
