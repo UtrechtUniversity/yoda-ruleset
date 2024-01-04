@@ -1053,7 +1053,7 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
 
         # Post SRAM collaboration and connect to service if SRAM is enabled.
         if config.enable_sram:
-            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description)
 
             if "error" in response_sram:
                 message = response_sram['message']
@@ -1323,14 +1323,13 @@ def rule_group_sram_sync(ctx):
         members = group['members']
         managers = group['managers']
         description = group['description'] if 'description' in group else ''
-        expiration_date = group['expiration_date'] if 'expiration_date' in group else ''
 
         log.write(ctx, "Sync group {} with SRAM".format(group_name))
 
         sram_group, co_identifier = sram_enabled(ctx, group_name)
         # Post collaboration group is not yet already SRAM enabled.
         if not sram_group:
-            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description)
 
             if "error" in response_sram:
                 message = response_sram['message']

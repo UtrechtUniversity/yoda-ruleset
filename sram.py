@@ -14,27 +14,17 @@ import mail
 from util import *
 
 
-def sram_post_collaboration(ctx, group_name, description, expiration_date):
+def sram_post_collaboration(ctx, group_name, description):
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:             Combined type of a callback and rei struct
     :param group_name:      Name of the group to create
     :param description:     Description of the group to create
-    :param expiration_date: Retention period for the group
 
     :returns: JSON object with new collaboration details
     """
     url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
-
-    if expiration_date == '':
-        # Now plus a year.
-        expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
-
-    # Get epoch expiry date.
-    date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    epoch_date = int((date - epoch).total_seconds())
 
     disable_join_requests = True
     if config.sram_flow == 'join_request':
@@ -47,7 +37,6 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
         "disclose_email_information": True,
-        "expiry_date": epoch_date,
         "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
     }
 
