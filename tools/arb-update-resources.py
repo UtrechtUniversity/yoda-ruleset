@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """ This script collects and submits data needed for Automatic Resource Balancing (ARB): the
     process of ensuring that new data objects get created on resources that still have space available.
 
@@ -9,19 +8,17 @@
     - If the script is run on the provider, it also invokes the rule that initializes ARB data
       for resources that are not relevant to ARB. This makes ARB ignore these resources.
 """
-
 import argparse
 import json
 import os
-import psutil
 import socket
 import ssl
-
-from io import StringIO
 from collections import OrderedDict
+from io import StringIO
 
-
+import psutil
 from irods.column import In
+from irods.exception import NetworkException
 from irods.models import Resource
 from irods.password_obfuscation import decode as password_decode
 from irods.rule import Rule
@@ -41,8 +38,7 @@ def get_volume_free(path):
 
 
 def parse_args():
-    '''Parse command line arguments'''
-
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter)
@@ -68,20 +64,20 @@ def parse_cs_values(input):
     return result
 
 
-def get_irods_environment(
-        irods_environment_file="/var/lib/irods/.irods/irods_environment.json"):
+def get_irods_environment(irods_environment_file="/var/lib/irods/.irods/irods_environment.json"):
     """Reads the irods_environment.json file, which contains the environment
        configuration.
 
-       :param str irods_environment_file filename of the iRODS environment file.;
-       :return Data structure containing the configuration"""
+       :param irods_environment_file: filename of the iRODS environment file.
+
+       :returns: Data structure containing the configuration
+    """
     with open(irods_environment_file, 'r') as f:
         return json.load(f)
 
 
-def setup_session(irods_environment_config,
-                  ca_file="/etc/pki/tls/certs/chain.crt"):
-    """Use irods environment files to configure a iRODSSession"""
+def setup_session(irods_environment_config, ca_file="/etc/pki/tls/certs/chain.crt"):
+    """Use irods environment files to configure a iRODSSession."""
 
     irodsA = os.path.expanduser("~/.irods/.irodsA")
     with open(irodsA, "r") as r:
@@ -130,14 +126,16 @@ def process_ufs_resources(session, resource_names, override_free_dict, override_
         call_rule_update_resc(session, resource_name, free_space, total_space)
 
 
-def call_rule(session, rulename, params, number_outputs,
-              rule_engine='irods_rule_engine_plugin-irods_rule_language-instance'):
+def call_rule(session, rulename, params, number_outputs, rule_engine='irods_rule_engine_plugin-irods_rule_language-instance'):
     """Run a rule
 
-       :param rulename: name of the rule
-       :param params: dictionary of rule input parameters and their values
-       :param number_output: number of output parameters
-       :param rule_engine: rule engine to run rule on (defaults to legacy rule engine if none provided)
+       :param session:        iRODS session
+       :param rulename:       name of the rule
+       :param params:         dictionary of rule input parameters and their values
+       :param number_outputs: number of output parameters
+       :param rule_engine:    rule engine to run rule on (defaults to legacy rule engine if none provided)
+
+       :returns: Rule output parameters
      """
     body = 'myRule {{\n {}('.format(rulename)
 
@@ -170,8 +168,7 @@ def call_rule(session, rulename, params, number_outputs,
 
 
 def call_rule_update_resc(session, resource, bytes_free, bytes_total):
-    """ Calls rule to update data for a specific resource (and its parent resource)
-    """
+    """Calls rule to update data for a specific resource (and its parent resource)."""
     parms = OrderedDict([
         ('resource', resource),
         ('bytes_free', bytes_free),
@@ -180,9 +177,7 @@ def call_rule_update_resc(session, resource, bytes_free, bytes_total):
 
 
 def call_rule_update_misc(session):
-    """Calls rule to update resources to be ignored by ARB
-
-    """
+    """Calls rule to update resources to be ignored by ARB."""
     parms = OrderedDict([])
     [out] = call_rule(session, 'rule_resource_update_misc_arb_data', parms, 1)
 
@@ -196,20 +191,24 @@ def is_on_provider():
 def main():
     args = parse_args()
     env = get_irods_environment()
-    session = setup_session(env)
-    override_free_dict = parse_cs_values(args.override_free)
-    override_total_dict = parse_cs_values(args.override_total)
-    local_ufs_resources = get_local_ufs_resources(session)
-    process_ufs_resources(session,
-                          local_ufs_resources,
-                          override_free_dict,
-                          override_total_dict,
-                          args.verbose)
 
-    if is_on_provider():
-        if args.verbose:
-            print("Updating misc resources ...")
-        call_rule_update_misc(session)
+    try:
+        session = setup_session(env)
+        override_free_dict = parse_cs_values(args.override_free)
+        override_total_dict = parse_cs_values(args.override_total)
+        local_ufs_resources = get_local_ufs_resources(session)
+        process_ufs_resources(session,
+                              local_ufs_resources,
+                              override_free_dict,
+                              override_total_dict,
+                              args.verbose)
+
+        if is_on_provider():
+            if args.verbose:
+                print("Updating misc resources ...")
+            call_rule_update_misc(session)
+    except NetworkException:
+        print("Could not connect to iRODS sever ...")
 
 
 if __name__ == '__main__':

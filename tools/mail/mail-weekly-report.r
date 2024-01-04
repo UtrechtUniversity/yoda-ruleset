@@ -28,7 +28,6 @@ mail_weekly_report
     msiExecGenQuery(*GenQInp, *GenQOut);
     msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
 
-    *ContInxOld = *ContInxNew;
     while(*ContInxOld > 0) {
         foreach(*row in *GenQOut) {
             *user = *row.USER_NAME;

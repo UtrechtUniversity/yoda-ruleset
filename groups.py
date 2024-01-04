@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -36,7 +35,8 @@ __all__ = ['api_group_data',
            'api_group_user_add',
            'api_group_user_update_role',
            'api_group_get_user_role',
-           'api_group_remove_user_from_group']
+           'api_group_remove_user_from_group',
+           'rule_group_sram_sync']
 
 
 def getGroupsData(ctx):
@@ -270,28 +270,32 @@ def getSubcategories(ctx, category):
     return list(categories)
 
 
-def user_role(ctx, group_name, user):
-    """Return role of user in group.
+def user_role(ctx, username, group_name):
+    """Get role of user in group.
 
     :param ctx:        Combined type of a ctx and rei struct
+    :param username:   User to return type of
     :param group_name: Group name of user
-    :param user:       User to return type of
 
     :returns: User role ('none' | 'reader' | 'normal' | 'manager')
     """
     group = getGroupData(ctx, group_name)
-    if '#' not in user:
-        user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+    if '#' not in username:
+        username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     if group:
-        if user in group["managers"]:
+        if username in group["managers"]:
             return "manager"
-        elif user in group["members"]:
+        elif username in group["members"]:
             return "normal"
-        elif user in group["read"]:
+        elif username in group["read"]:
             return "reader"
 
     return "none"
+
+
+"""API to get role of user in group."""
+api_group_get_user_role = api.make()(user_role)
 
 
 def user_is_datamanager(ctx, category, user):
@@ -303,7 +307,7 @@ def user_is_datamanager(ctx, category, user):
 
     :returns: Boolean indicating if user is datamanager
     """
-    return user_role(ctx, 'datamanager-{}'.format(category), user) \
+    return user_role(ctx, user, 'datamanager-{}'.format(category)) \
         in ('normal', 'manager')
 
 
@@ -585,39 +589,35 @@ def apply_data(ctx, data, allow_update, delete_users):
     :returns: Errors if found any
     """
 
-    for (category, subcategory, groupname, managers, members, viewers) in data:
+    for (category, subcategory, group_name, managers, members, viewers) in data:
         new_group = False
 
-        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(groupname))
+        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, config.default_yoda_schema, '', '', 'unspecified', '', '', '')['arguments']
-        status = response[8]
-        message = response[9]
+        response = group_create(ctx, group_name, category, subcategory, config.default_yoda_schema, '', '', 'unspecified')
 
-        if ((status == '-1089000') | (status == '-809000')) and allow_update:
-            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(groupname))
-        elif status != '0':
-            return "Error while attempting to create group {}. Status/message: {} / {}".format(groupname, status, message)
-        else:
+        if response:
             new_group = True
+        elif response.status == "error_group_exists" and allow_update:
+            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
+        else:
+            return "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
         for username in list(set(allusers)):   # duplicates removed
-            currentrole = user_role(ctx, groupname, username)
+            currentrole = user_role(ctx, username, group_name)
             if currentrole == "none":
-                response = ctx.uuGroupUserAdd(groupname, username, '', '')['arguments']
-                status = response[2]
-                message = response[3]
-                if status == '0':
-                    currentrole = "member"
-                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, groupname))
+                response = group_user_add(ctx, username, group_name)
+                if response:
+                    currentrole = "normal"
+                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
                 else:
-                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
+                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
             else:
-                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, groupname))
+                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, group_name))
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -629,30 +629,25 @@ def apply_data(ctx, data, allow_update, delete_users):
                 role = 'manager'
 
             if _are_roles_equivalent(role, currentrole):
-                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, groupname))
+                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, group_name))
             else:
-                response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
-                status = response[3]
-                message = response[4]
+                response = group_user_update_role(ctx, username, group_name, role)
 
-                if status == '0':
-                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
+                if response:
+                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, group_name, role))
                 else:
-                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, group_name, role))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
-        if (new_group and "rods" not in allusers and user_role(ctx, groupname, "rods") != "none"):
-            response = ctx.uuGroupUserRemove(groupname, "rods", '', '')['arguments']
-            status = response[2]
-            message = response[3]
-            if status == "0":
-                log.write(ctx, "CSV import - Notice: removed rods user from group " + groupname)
+        if (new_group and "rods" not in allusers and user_role(ctx, "rods", group_name) != "none"):
+            response = group_remove_user_from_group(ctx, "rods", group_name)
+            if response:
+                log.write(ctx, "CSV import - Notice: removed rods user from group " + group_name)
             else:
-                if status != 0:
-                    log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(groupname))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
+                log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
         # Remove users not in sheet
         if delete_users:
@@ -661,12 +656,12 @@ def apply_data(ctx, data, allow_update, delete_users):
             for prefix in ['read-', 'initial-', 'research-']:
                 iter = genquery.row_iterator(
                     "USER_GROUP_NAME, USER_NAME, USER_ZONE",
-                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(groupname.split('-')[1:])),
+                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(group_name.split('-')[1:])),
                     genquery.AS_LIST, ctx
                 )
 
                 for row in iter:
-                    # append [user,groupname]
+                    # append [user,group_name]
                     currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
@@ -679,14 +674,13 @@ def apply_data(ctx, data, allow_update, delete_users):
                             continue
                         else:
                             managers.remove(username)
-                    log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
 
-                    response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
-                    status = response[2]
-                    message = response[3]
-                    if status != "0":
+                    response = group_remove_user_from_group(ctx, username, usergroupname)
+                    if response:
+                        log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
+                    else:
                         log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
-                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
     return ''
 
@@ -767,8 +761,6 @@ def _process_csv_line(ctx, line):
         elif not yoda_names.is_email_username(username):
             return None, 'Username "{}" is not a valid email address.'.format(
                 username)
-        # elif not is_valid_domain(username.split('@')[1]):
-        #    return None, 'Username "{}" failed DNS domain validation - domain does not exist or has no MX records.'.format(username)
 
         if column_name.lower().startswith('manager:'):
             managers.append(username)
@@ -975,6 +967,10 @@ def rule_group_check_external_user(ctx, username):
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
+    if config.enable_sram:
+        # All users are internal when SRAM is enabled.
+        return '0'
+
     if yoda_names.is_internal_user(username):
         return '0'
     return '1'
@@ -1038,8 +1034,7 @@ def api_group_exists(ctx, group_name):
     return group.exists(ctx, group_name)
 
 
-@api.make()
-def api_group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+def group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -1058,15 +1053,16 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
 
         # Post SRAM collaboration and connect to service if SRAM is enabled.
         if config.enable_sram:
-            response_sram = sram.sram_post_collaboration(ctx, group_name, description, expiration_date)
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description)
 
             if "error" in response_sram:
                 message = response_sram['message']
                 return api.Error('sram_error', message)
             else:
                 co_identifier = response_sram['identifier']
+                short_name = response_sram['short_name']
 
-            if not sram.sram_connect_service_collaboration(ctx, group_name):
+            if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
@@ -1074,10 +1070,16 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, expirati
         message = response[9]
         if status == '0':
             return api.Result.ok()
+        elif status == '-1089000' or status == '-809000':
+            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
         else:
             return api.Error('policy_error', message)
     except Exception:
         return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
+
+
+"""API to create a new group."""
+api_group_create = api.make()(group_create)
 
 
 @api.make()
@@ -1160,8 +1162,7 @@ def api_group_user_is_member(ctx, username, group_name):
     return group_user_exists(ctx, group_name, username, True)
 
 
-@api.make()
-def api_group_user_add(ctx, username, group_name):
+def group_user_add(ctx, username, group_name):
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1177,12 +1178,9 @@ def api_group_user_add(ctx, username, group_name):
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
             if sram_group:
-                # Email regex.
-                regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-
                 # Validate email
-                if not re.match(regex, username):
-                    return api.Error('invalid_email', 'The user {} cannot be added to the group {} because user email is invalid'.format(username, group_name))
+                if not yoda_names.is_email_username(username):
+                    return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(username, group_name))
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1202,8 +1200,11 @@ def api_group_user_add(ctx, username, group_name):
         return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-@api.make()
-def api_group_user_update_role(ctx, username, group_name, new_role):
+"""API to add a user to a group."""
+api_group_user_add = api.make()(group_user_add)
+
+
+def group_user_update_role(ctx, username, group_name, new_role):
     """Update role of a user in a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1215,13 +1216,14 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
     """
     try:
         if config.enable_sram:
-            sram_group, co_identifier = sram_enabled(ctx, group_name)
-            if sram_group:
-                uid = sram.sram_get_uid(ctx, co_identifier, username)
-                if uid == '':
-                    return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
-                else:
-                    if not sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
+            # Only call SRAM when changing between normal and manager roles.
+            if new_role == "reader" and user_role(ctx, username, group_name) != "normal":
+                sram_group, co_identifier = sram_enabled(ctx, group_name)
+                if sram_group:
+                    uid = sram.sram_get_uid(ctx, co_identifier, username)
+                    if uid == '':
+                        return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+                    elif not sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
                         return api.Error('sram_error', 'Something went wrong updating role for {} user.'.format(username))
 
         response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
@@ -1235,21 +1237,11 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
         return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-@api.make()
-def api_group_get_user_role(ctx, username, group_name):
-    """Get role of a user in a group.
-
-    :param ctx:        Combined type of a ctx and rei struct
-    :param username:   Name of the user
-    :param group_name: Name of the group
-
-    :returns: Role of the user
-    """
-    return user_role(ctx, group_name, username)
+"""API to update role of a user in a group."""
+api_group_user_update_role = api.make()(group_user_update_role)
 
 
-@api.make()
-def api_group_remove_user_from_group(ctx, username, group_name):
+def group_remove_user_from_group(ctx, username, group_name):
     """Remove a user from a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1258,7 +1250,6 @@ def api_group_remove_user_from_group(ctx, username, group_name):
 
     :returns: Dict with API status result
     """
-    # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
         if config.enable_sram:
             sram_group, co_identifier = sram_enabled(ctx, group_name)
@@ -1280,6 +1271,10 @@ def api_group_remove_user_from_group(ctx, username, group_name):
         return api.Result.ok()
     except Exception:
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+"""API to remove a user from a group."""
+api_group_remove_user_from_group = api.make()(group_remove_user_from_group)
 
 
 def sram_enabled(ctx, group_name):
@@ -1305,3 +1300,76 @@ def sram_enabled(ctx, group_name):
             co_identifier = row[0]
 
     return enable_sram_flag, co_identifier
+
+
+@rule.make()
+def rule_group_sram_sync(ctx):
+    """Synchronize groups with SRAM.
+
+    :param ctx: Combined type of a ctx and rei struct
+    """
+    if not user.is_admin(ctx):
+        return
+
+    if not config.enable_sram:
+        log.write(ctx, "SRAM needs to be enabled to sync groups")
+        return
+
+    log.write(ctx, "Start syncing groups with SRAM")
+    groups = getGroupsData(ctx)
+
+    for group in groups:
+        group_name = group["name"]
+        members = group['members']
+        managers = group['managers']
+        description = group['description'] if 'description' in group else ''
+
+        log.write(ctx, "Sync group {} with SRAM".format(group_name))
+
+        sram_group, co_identifier = sram_enabled(ctx, group_name)
+        # Post collaboration group is not yet already SRAM enabled.
+        if not sram_group:
+            response_sram = sram.sram_post_collaboration(ctx, group_name, description)
+
+            if "error" in response_sram:
+                message = response_sram['message']
+                log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
+                break
+            else:
+                co_identifier = response_sram['identifier']
+                short_name = response_sram['short_name']
+                avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
+
+            if not sram.sram_connect_service_collaboration(ctx, short_name):
+                log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
+                break
+
+        log.write(ctx, "Get members of group {} from SRAM".format(group_name))
+        co_members = sram.sram_get_co_members(ctx, co_identifier)
+
+        log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
+        for member in members:
+            # Validate email
+            if not yoda_names.is_email_username(member):
+                log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+                continue
+
+            if member.split('#')[0] not in co_members:
+                if config.sram_flow == 'join_request':
+                    sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
+                    log.write(ctx, "User {} added to group {}".format(member, group_name))
+                elif config.sram_flow == 'invitation':
+                    sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                    log.write(ctx, "User {} added to group {}".format(member, group_name))
+            else:
+                if member in managers:
+                    uid = sram.sram_get_uid(ctx, co_identifier, member)
+                    if uid == '':
+                        log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                    else:
+                        if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                            log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
+                        else:
+                            log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+
+    log.write(ctx, "Finished syncing groups with SRAM")

@@ -137,6 +137,8 @@ rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
 
+touch, TouchError = make('_touch', 'Could not update the data object or collection')
+
 
 def kvpair(ctx, k, v):
     """Create a keyvalpair object, needed by certain msis."""

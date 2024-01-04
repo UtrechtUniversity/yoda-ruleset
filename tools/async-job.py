@@ -19,18 +19,20 @@ import atexit
 
 NAME          = os.path.basename(sys.argv[0])
 
+
 def get_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Yoda replication and revision job')
     parser.add_argument('--verbose', '-v', action='store_const', default="0", const="1",
-                    help='Log more information in rodsLog for troubleshooting purposes')
+                        help='Log more information in rodsLog for troubleshooting purposes')
     parser.add_argument('--balance_id_min', type=int, default=1,
-                    help='Minimal balance id to be handled by this job (range 1-64) for load balancing purposes')
+                        help='Minimal balance id to be handled by this job (range 1-64) for load balancing purposes')
     parser.add_argument('--balance_id_max', type=int, default=64,
-                    help='Maximum balance id to be handled by this job (range 1-64) for load balancing purposes')
+                        help='Maximum balance id to be handled by this job (range 1-64) for load balancing purposes')
     parser.add_argument('--batch_size_limit', type=int, default=1000,
-                    help='Maximum number of items to be processed per batch job')
-
+                        help='Maximum number of items to be processed per batch job')
+    parser.add_argument('--dry-run', '-n', action='store_const', default="0", const="1",
+                        help='Perform a trial run for troubleshooting purposes')
     return parser.parse_args()
 
 
@@ -57,15 +59,15 @@ def lock_or_die(balance_id_min, balance_id_max):
 
 
 if 'replicate' in NAME:
-    rule_name = 'uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit)'
+    rule_name = 'uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run)'
 elif 'revision' in NAME:
-    rule_name = 'uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit)'
+    rule_name = 'uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run)'
 else:
     print('bad command "{}"'.format(NAME), file=sys.stderr)
     exit(1)
 
 args = get_args()
 lock_or_die(args.balance_id_min, args.balance_id_max)
-rule_options = "*verbose={}%*balance_id_min={}%*balance_id_max={}%*batch_size_limit={}".format(args.verbose, args.balance_id_min, args.balance_id_max, args.batch_size_limit)
+rule_options = "*verbose={}%*balance_id_min={}%*balance_id_max={}%*batch_size_limit={}%*dry_run={}".format(args.verbose, args.balance_id_min, args.balance_id_max, args.batch_size_limit, args.dry_run)
 subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-irods_rule_language-instance',
-    rule_name, rule_options, 'ruleExecOut'])
+                rule_name, rule_options, 'ruleExecOut'])

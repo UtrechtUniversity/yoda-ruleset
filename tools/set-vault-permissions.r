@@ -15,7 +15,7 @@ setVaultPermissions {
 				msiSetACL("default", "admin:noinherit", uuClientFullName, *vaultHome);
 
 
-				writeLine("stdout", "Granting read acccess to *vaultHome for *baseGroup");
+				writeLine("stdout", "Granting read access to *vaultHome for *baseGroup");
 				msiSetACL("default", "admin:read", *baseGroup, *vaultHome);	
 			}
 		}

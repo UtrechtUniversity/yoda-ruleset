@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for communicating with SRAM and some utilities."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import datetime
@@ -14,30 +14,17 @@ import mail
 from util import *
 
 
-def sram_post_collaboration(ctx, group_name, description, expiration_date):
+def sram_post_collaboration(ctx, group_name, description):
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:             Combined type of a callback and rei struct
     :param group_name:      Name of the group to create
     :param description:     Description of the group to create
-    :param expiration_date: Retention period for the group
 
     :returns: JSON object with new collaboration details
     """
     url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
-
-    if expiration_date == '':
-        # Now plus a year.
-        expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
-
-    # Get epoch expiry date.
-    date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    epoch_date = int((date - epoch).total_seconds())
-
-    # Create unique short name of group
-    short_name = group.unique_short_name(ctx, group_name)
 
     disable_join_requests = True
     if config.sram_flow == 'join_request':
@@ -46,12 +33,10 @@ def sram_post_collaboration(ctx, group_name, description, expiration_date):
     # Build SRAM payload.
     payload = {
         "name": 'yoda-' + group_name,
-        "short_name": short_name,
         "description": description,
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
         "disclose_email_information": True,
-        "expiry_date": epoch_date,
         "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
     }
 
@@ -90,7 +75,9 @@ def sram_get_uid(ctx, co_identifier, user_name):
 
     uid = ''
     for key in data['collaboration_memberships']:
-        if key['user']['email'] == user_name.split('#')[0]:
+        yoda_name = user_name.split('#')[0]
+        sram_name = key['user']['email']
+        if yoda_name.lower() == sram_name.lower():
             uid = key['user']['uid']
 
     if config.sram_verbose_logging:
@@ -188,19 +175,16 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     return response.status_code == 201
 
 
-def sram_connect_service_collaboration(ctx, group_name):
+def sram_connect_service_collaboration(ctx, short_name):
     """Connect a service to an existing SRAM collaboration.
 
     :param ctx:        Combined type of a ctx and rei struct
-    :param group_name: Name of the group
+    :param short_name: Short name of the group collaboration
 
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
     url = "{}/api/collaborations_services/v1/connect_collaboration_service".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
-
-    # Create unique short name of group
-    short_name = group.unique_short_name(ctx, group_name)
 
     # Build SRAM payload.
     payload = {
@@ -278,3 +262,33 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
         log.write(ctx, "response: {}".format(response.status_code))
 
     return response.status_code == 201
+
+
+def sram_get_co_members(ctx, co_identifier):
+    """Get SRAM Collaboration members.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param co_identifier: SRAM CO identifier
+
+    :returns: Email of the user
+    """
+    url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "get {}".format(url))
+
+    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    data = response.json()
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(data))
+
+    co_members = []
+    for key in data['collaboration_memberships']:
+        co_members.append(key['user']['email'])
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "collaboration_members: {}".format(co_members))
+
+    return co_members

@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
-from pyblake2 import blake2b
 
 import user
 
@@ -58,21 +57,3 @@ def get_category(ctx, grp):
     ret = ctx.uuGroupGetCategory(grp, '', '')
     x = ret['arguments'][1]
     return None if x == '' else x
-
-
-def unique_short_name(ctx, grp):
-    """Create unique short name for group in SRAM.
-
-    :param ctx: Combined type of a callback and rei struct
-    :param grp: Group name
-
-    :returns: blake2b conversion of zone and group name
-    """
-    zone = user.zone(ctx)
-    concat_string = zone + grp
-
-    # Create hash of 16 characters
-    short_name = blake2b(digest_size=8)
-    short_name.update(concat_string.encode())
-
-    return short_name.hexdigest()

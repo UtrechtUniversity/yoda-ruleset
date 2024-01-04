@@ -13,8 +13,8 @@
 # \param[in] balance_id_min    Minimum balance id for batch jobs (value 1-64)
 # \param[in] balance_id_max    Maximum balance id for batch jobs (value 1-64)
 # \param[in] batch_size_limit  Maximum number of items to be processed in a batch job
-uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit) {
-    rule_revision_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit);
+uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dryRun) {
+    rule_revision_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dryRun);
 }
 
 

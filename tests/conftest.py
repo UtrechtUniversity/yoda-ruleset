@@ -17,9 +17,9 @@ from pytest_bdd import (
     when,
 )
 
-
 portal_url = ""
 api_url = ""
+configuration = {}
 roles = {}
 user_cookies = {}
 
@@ -27,11 +27,19 @@ datarequest = False
 deposit = False
 intake = False
 archive = False
-sram = False
+smoke = False
 skip_api = False
 skip_ui = False
 run_all = False
 verbose_test = False
+
+pytest_plugins = [
+    "step_defs.common",
+    "step_defs.api.common",
+    "step_defs.api.common_folder",
+    "step_defs.api.common_vault",
+    "step_defs.ui.common",
+]
 
 
 def pytest_addoption(parser):
@@ -39,7 +47,7 @@ def pytest_addoption(parser):
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
-    parser.addoption("--sram", action="store_true", default=False, help="Run group SRAM tests")
+    parser.addoption("--smoke", action="store_true", default=False, help="Run Smoke tests")
     parser.addoption("--skip-ui", action="store_true", default=False, help="Skip UI tests")
     parser.addoption("--skip-api", action="store_true", default=False, help="Skip API tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
@@ -52,40 +60,37 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
     config.addinivalue_line("markers", "archive: Run vault archive tests")
-    config.addinivalue_line("markers", "sram: Run group SRAM tests")
     config.addinivalue_line("markers", "all: Run all tests")
     config.addinivalue_line("markers", "ui: UI test")
     config.addinivalue_line("markers", "api: API test")
+    config.addinivalue_line("markers", "smoke: Smoke test")
 
     global environment
     environment = config.getoption("--environment")
 
+    # Read environment configuration file.
+    global configuration
     with open(environment) as f:
         configuration = json.loads(f.read())
 
-    global portal_url
+    # Get portal and API url from configuration.
+    global portal_url, api_url
     portal_url = configuration.get("url", "https://portal.yoda.test")
-
-    global api_url
     api_url = "{}/api".format(portal_url)
 
+    # Get roles from configuration.
     global roles
     roles = configuration.get("roles", {})
 
     global verbose_test
     verbose_test = config.getoption("--verbose-test")
 
-    # Store cookies for each user.
-    for role, user in roles.items():
-        csrf, session = login(user["username"], user["password"])
-        user_cookies[role] = (csrf, session)
-
-    global datarequest, deposit, intake, archive, sram, run_all, skip_api, skip_ui
+    global datarequest, deposit, intake, archive, smoke, run_all, skip_api, skip_ui
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
     archive = config.getoption("--archive")
-    sram = config.getoption("--sram")
+    smoke = config.getoption("--smoke")
     skip_ui = config.getoption("--skip-ui")
     skip_api = config.getoption("--skip-api")
     run_all = config.getoption("--all")
@@ -96,12 +101,23 @@ def pytest_configure(config):
     if skip_api and run_all:
         pytest.exit("Error: arguments --skip-api and --all are incompatible.")
 
+    if smoke and run_all:
+        pytest.exit("Error: arguments --smoke and --all are incompatible.")
+
     if run_all:
         datarequest = True
         deposit = True
         intake = True
         archive = True
-        sram = True
+
+    # Store cookies for each user.
+    for role, user in roles.items():
+        if smoke:
+            csrf = user["csrf"]
+            session = user["session"]
+        else:
+            csrf, session = login(user["username"], user["password"])
+        user_cookies[role] = (csrf, session)
 
 
 def pytest_bdd_apply_tag(tag, function):
@@ -121,14 +137,16 @@ def pytest_bdd_apply_tag(tag, function):
         marker = pytest.mark.skip(reason="Skip vault archive")
         marker(function)
         return True
-    elif tag == 'sram' and not sram:
-        marker = pytest.mark.skip(reason="Skip group SRAM")
     elif tag == 'api' and skip_api:
         marker = pytest.mark.skip(reason="Skip API tests")
         marker(function)
         return True
     elif tag == "ui" and skip_ui:
         marker = pytest.mark.skip(reason="Skip UI tests")
+        marker(function)
+        return True
+    elif tag == "smoke" and not smoke:
+        marker = pytest.mark.skip(reason="Skip smoke tests")
         marker(function)
         return True
     elif tag == "fail":
@@ -211,9 +229,12 @@ def api_request(user, request, data, timeout=10):
     # Disable unsecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+    # Replace zone name with zone name from environment configuration.
+    data = json.dumps(data).replace("tempZone", configuration.get("zone_name", "tempZone"))
+
     # Make API request.
     url = api_url + "/" + request
-    files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
+    files = {'csrf_token': (None, csrf), 'data': (None, data)}
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     if verbose_test:
@@ -340,91 +361,7 @@ def ui_module_shown(browser, module):
     browser.visit(url)
 
 
-@given(parsers.parse('text "{text}" is shown'))
-@when(parsers.parse('text "{text}" is shown'))
-@then(parsers.parse('text "{text}" is shown'))
-def ui_text_shown(browser, text):
-    assert browser.is_text_present(text)
-
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
-@given(parsers.parse("collection {collection} exists"))
-def collection_exists(user, collection):
-    http_status, _ = api_request(
-        user,
-        "browse_folder",
-        {"coll": collection}
-    )
-    assert http_status == 200
-
-
-@given(parsers.parse("{collection} is unlocked"))
-def collection_is_unlocked(user, collection):
-    _, body = api_request(
-        user,
-        "research_collection_details",
-        {"path": collection}
-    )
-
-    if body["data"]["status"] == "LOCKED":
-        http_status, _ = api_request(
-            user,
-            "folder_unlock",
-            {"coll": collection}
-        )
-        assert http_status == 200
-    else:
-        assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED"
-
-
-@given(parsers.parse("{collection} is locked"))
-def collection_is_locked(user, collection):
-    _, body = api_request(
-        user,
-        "research_collection_details",
-        {"path": collection}
-    )
-
-    if body["data"]["status"] != "LOCKED":
-        http_status, _ = api_request(
-            user,
-            "folder_lock",
-            {"coll": collection}
-        )
-        assert http_status == 200
-    else:
-        assert body["data"]["status"] == "LOCKED"
-
-
 @given(parsers.parse("the user navigates to {page}"))
 @when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
-
-
-@when(parsers.parse("user browses to folder {folder}"))
-@then(parsers.parse("user browses to folder {folder}"))
-def ui_browse_folder(browser, folder):
-    link = []
-    while len(link) == 0:
-        link = browser.links.find_by_partial_text(folder)
-        if len(link) > 0:
-            link.click()
-        else:
-            browser.find_by_id('file-browser_next').click()
-
-
-@when('user clicks go to group manager')
-def ui_go_to_group_manager(browser):
-    browser.find_by_css('.btn-go-to-group-manager').click()
-
-
-@when(parsers.parse("correct row in tree is active for {group}"))
-@then(parsers.parse("correct row in tree is active for {group}"))
-def ui_group_tree_correct_row_active(browser, group):
-    assert browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1)

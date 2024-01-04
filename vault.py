@@ -203,7 +203,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
+    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -748,7 +748,7 @@ def api_grant_read_access_research_group(ctx, coll):
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
             acl_kv = msi.kvpair(ctx, "actor", actor)
@@ -795,7 +795,7 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
             acl_kv = msi.kvpair(ctx, "actor", actor)

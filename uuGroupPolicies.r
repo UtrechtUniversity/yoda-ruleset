@@ -297,6 +297,19 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 			# 'read-|vault-' group.
 			succeed;
 		}
+	} else if (*accessLevel == "noinherit") {
+		*forGroup = *policyKv."forGroup";
+		uuGetBaseGroup(*forGroup, *baseGroup);
+		uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+		if (
+			*forGroup like regex "(deposit)-.*"
+			&& *isManagerInBaseGroup
+			&& *objPath == "/$rodsZoneClient/home/*forGroup") {
+			# Allow for deposit groups if the client is a manager
+			# in the basegroup of *forGroup,
+			# and *objPath is *forGroup's home directory.
+			succeed;
+		}
 	}
 
 	fail;
@@ -397,23 +410,20 @@ uuGroupPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, 
 uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
 	if (*objType == "-u") {
-		uuGetUserType(*objName, *targetUserType);
-		if (*targetUserType == "rodsuser") {
-			if (*unit != "") {
-				# We do not use / allow the unit field here.
-				fail;
-			}
-			if (*value == "") {
-				# Empty metadata values trigger iRODS bugs.
-				# If a field is allowed to be empty (currently only
-				# 'description', it should be set to '.' instead.
-				# This should of course be hidden by query functions.
-				fail;
-			}
-			uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
-			if (*allowed == 1) {
-				succeed;
-			}
+		if (*unit != "") {
+			# We do not use / allow the unit field here.
+			fail;
+		}
+		if (*value == "") {
+			# Empty metadata values trigger iRODS bugs.
+			# If a field is allowed to be empty (currently only
+			# 'description', it should be set to '.' instead.
+			# This should of course be hidden by query functions.
+			fail;
+		}
+		uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
+		if (*allowed == 1) {
+			succeed;
 		}
 	}
 	fail;
@@ -575,11 +585,11 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
+	uuChop(*groupName, *_, *baseName, "-", true);
 	if (*groupName like regex "(intake|research)-.*") {
 		# This is a group manager managed group with a read-only counterpart.
 		# Clean up the read-only shadow group.
 
-		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
 
