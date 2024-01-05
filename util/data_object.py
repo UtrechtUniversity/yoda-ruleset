@@ -163,13 +163,18 @@ def rename(ctx, path_org, path_target):
     This may raise a error.UUError if the file does not exist, or when the user
     does not have write permission.
     """
+    # Get the modified date of the data object
+    ret = msi.obj_stat(ctx, path_org, irods_types.RodsObjStat())
+    output = ret['arguments'][1]
+    modify_time = int(str(output.modifyTime))
+
     msi.data_obj_rename(ctx,
                         path_org,
                         path_target,
                         '0',
                         irods_types.BytesBuf())
 
-    json_inp = {"logical_path": path_target, "options": {"reference": path_org}}
+    json_inp = {"logical_path": path_target, "options": {"seconds_since_epoch": modify_time}}
     msi.touch(ctx, json.dumps(json_inp))
 
 

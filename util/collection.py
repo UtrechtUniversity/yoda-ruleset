@@ -196,10 +196,8 @@ def copy(ctx, path_org, path_copy, force=True):
         coll = row[0]
         copy(ctx, coll, path_copy + coll[len(path_org):], force)
 
-    # Keep the original modified date for collection if overwrite
-    if force:
-        json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
-        msi.touch(ctx, json.dumps(json_inp))
+    json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
+    msi.touch(ctx, json.dumps(json_inp))
 
 
 def move(ctx, path_org, path_move, force=True):
