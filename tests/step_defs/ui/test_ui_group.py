@@ -34,7 +34,7 @@ def ui_group_check_properties_panel(browser, group):
 
 @when(parsers.parse("correct row in list view is active for {group}"))
 def ui_group_list_view_correct_row_active(browser, group):
-    assert len(browser.find_by_css('#tbl-list-groups tr.active[user-search-result-group="{}"]'.format(group))) == 1
+    assert len(browser.find_by_css('#tbl-list-groups tr.table-active[user-search-result-group="{}"]'.format(group))) == 1
 
 
 @when(parsers.parse("user selects group {group} in list view"))
@@ -169,10 +169,8 @@ def ui_group_user_is_added(browser, member_add):
 
 @when(parsers.parse("user adds {member_add} to group"))
 def ui_group_user_add(browser, member_add):
-    time.sleep(3)
+    time.sleep(1)
     browser.find_by_css('#f-user-create-name').find_by_xpath('..').find_by_css('span .select2-selection').click()
-    # Scroll to bottom.
-    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(3)
     browser.find_by_css('.select2-search__field').fill(member_add)
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
