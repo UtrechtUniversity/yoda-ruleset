@@ -357,3 +357,8 @@ def ui_browse_folder(browser, folder):
             link.click()
         else:
             browser.find_by_id('file-browser_next').click()
+
+
+@then('the 404 error page is shown')
+def ui_404_error(browser):
+    browser.is_text_present("Page not found")
