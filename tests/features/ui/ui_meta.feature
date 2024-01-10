@@ -44,3 +44,13 @@ Feature: Meta UI
         Examples:
             | folder             |
             | research-default-3 |
+
+
+    Scenario Outline: Check that path is safe
+        Given user researcher is logged in
+        When the user navigates to <page>
+        Then the 404 error page is shown
+
+        Examples:
+            | page                                                                 |
+            | /research/metadata/form?path=<script>alert(document.domain)</script> |
