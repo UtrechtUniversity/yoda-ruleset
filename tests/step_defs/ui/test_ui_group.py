@@ -169,7 +169,7 @@ def ui_group_user_is_added(browser, member_add):
 
 @when(parsers.parse("user adds {member_add} to group"))
 def ui_group_user_add(browser, member_add):
-    time.sleep(1)
+    time.sleep(3)
     browser.find_by_css('#f-user-create-name').find_by_xpath('..').find_by_css('span .select2-selection').click()
     time.sleep(3)
     browser.find_by_css('.select2-search__field').fill(member_add)
