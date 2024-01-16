@@ -535,10 +535,10 @@ def parse_data(ctx, csv_header_and_data):
             # EVERY row should have all the headers that were listed at the top of the file
             if header_cols[x] not in line_dict:
                 line_dict[header_cols[x]] = []
-            
+
             if len(data[x]):
-                line_dict[header_cols[x]].append(data[x]) 
-            
+                line_dict[header_cols[x]].append(data[x])
+
         lines.append(line_dict)
 
     for line in lines:
@@ -704,7 +704,7 @@ def parse_csv_file(ctx):
         if label not in reader.fieldnames:
             _exit_with_error(
                 'CSV header is missing compulsory field "{}"'.format(label))
-    
+
     # Check that all header names are valid
     possible_labels = _get_csv_possible_labels()
     for label in header:
@@ -764,8 +764,8 @@ def _process_csv_line(ctx, line):
        and optionally schema id and expiration date.
     """
     if (not len(line['category'])
-        or not len(line['subcategory'])
-        or not len(line['groupname'])):
+            or not len(line['subcategory'])
+            or not len(line['groupname'])):
         return None, "Row has a missing group name, category or subcategory"
 
     category = line['category'][0].strip().lower().replace('.', '')
@@ -810,7 +810,7 @@ def _process_csv_line(ctx, line):
 
     if not yoda_names.is_valid_groupname("research-" + groupname):
         return None, '"{}" is not a valid group name.'.format(groupname)
-    
+
     if not yoda_names.is_valid_schema_id(schema_id):
         return None, '"{}" is not a valid schema id.'.format(schema_id)
 

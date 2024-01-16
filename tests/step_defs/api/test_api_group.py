@@ -294,13 +294,18 @@ def then_user_update_persisted(user, new_user, group_name):
     assert role == "manager"
 
 
-@given('the Yoda API for processing csv group data API is queried', target_fixture="api_response")
-def api_group_import_csv_data(user):
-    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1,member:member3\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com"
+@given(parsers.parse('the Yoda API for processing csv group data API is queried for data "{data_id}"'), target_fixture="api_response")
+def api_group_import_csv_data(user, data_id):
+    headers_and_data = {
+        "csvtestgroup": "category,subcategory,groupname,manager,member,member,viewer,member\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com",
+        "csvtestgroup1": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test,2030-01-01,default-2",
+        "csv-missing-header": "category,,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test",
+        "csv-missing-entry": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,,csvtestgroup1,datamanager@yoda.test",
+    }
     return api_request(
         user,
         "group_process_csv",
-        {"csv_header_and_data": header_and_data,
+        {"csv_header_and_data": headers_and_data[data_id],
          "allow_update": True,
          "delete_users": True}
     )
