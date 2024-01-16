@@ -9,6 +9,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 from config import config
+from datetime import datetime
 
 
 def is_valid_category(name):
@@ -75,3 +76,33 @@ def _is_internal_user(username, external_domain_filter):
                 return True
 
     return False
+
+
+def is_valid_expiration_date(expiration_date):
+    """Validation of expiration date.
+
+    :param expiration_date: String containing date that has to be validated
+
+    :returns: Indication whether expiration date is an accepted value
+    """
+    # Copied from rule_group_expiration_date_validate
+    if expiration_date in ["", "."]:
+        return True
+
+    try:
+        if expiration_date != datetime.strptime(expiration_date, "%Y-%m-%d").strftime('%Y-%m-%d'):
+            raise ValueError
+
+        # Expiration date should be in the future
+        if expiration_date <= datetime.now().strftime('%Y-%m-%d'):
+            raise ValueError
+        return True
+    except ValueError:
+        return False
+
+
+def is_valid_schema_id(schema_id):
+    """Is this schema at least a correctly formatted schema-id?"""
+    if schema_id == "":
+        return True
+    return re.search(r"^[a-zA-Z0-9\-]+\-[0-9]+$", schema_id) is not None

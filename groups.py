@@ -473,7 +473,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     :param ctx:                 Combined type of a ctx and rei struct
     :param csv_header_and_data: CSV data holding a head conform description and the actual row data
     :param allow_update:        Allow updates in groups
-    :param delete_users:         Allow for deleting of users from groups
+    :param delete_users:        Allow for deleting of users from groups
 
     :returns: Dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
@@ -501,7 +501,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
 
 
 def parse_data(ctx, csv_header_and_data):
-    """Process contents of csv data consisting of header and 1 row of data.
+    """Process contents of csv data consisting of header and rows of data.
 
     :param ctx:                 Combined type of a ctx and rei struct
     :param csv_header_and_data: CSV data holding a head conform description and the actual row data
@@ -514,13 +514,16 @@ def parse_data(ctx, csv_header_and_data):
     header = csv_lines[0]
     import_lines = csv_lines[1:]
 
-    # List of dicts each containing label / value pairs.
+    # List of dicts each containing label / list of values pairs.
     lines = []
     header_cols = header.split(',')
     for import_line in import_lines:
         data = import_line.split(',')
         if len(data) != len(header_cols):
             return [], 'Amount of header columns differs from data columns.'
+        # A kind of MultiDict
+        # each key is a header column
+        # each item is a list of items for that header column
         line_dict = {}
         for x in range(0, len(header_cols)):
             if header_cols[x] == '':
@@ -528,11 +531,14 @@ def parse_data(ctx, csv_header_and_data):
                     return [], "Header row ends with ','"
                 else:
                     return [], 'Empty column description found in header row.'
-            try:
-                line_dict[header_cols[x]] = data[x]
-            except (KeyError, IndexError):
-                line_dict[header_cols[x]] = ''
 
+            # EVERY row should have all the headers that were listed at the top of the file
+            if header_cols[x] not in line_dict:
+                line_dict[header_cols[x]] = []
+            
+            if len(data[x]):
+                line_dict[header_cols[x]].append(data[x]) 
+            
         lines.append(line_dict)
 
     for line in lines:
@@ -561,7 +567,7 @@ def validate_data(ctx, data, allow_update):
     can_add_category = user.is_member_of(ctx, 'priv-category-add')
     is_admin = user.is_admin(ctx)
 
-    for (category, subcategory, groupname, managers, members, viewers) in data:
+    for (category, subcategory, groupname, managers, members, viewers, _, _) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
@@ -589,13 +595,15 @@ def apply_data(ctx, data, allow_update, delete_users):
     :returns: Errors if found any
     """
 
-    for (category, subcategory, group_name, managers, members, viewers) in data:
+    for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = group_create(ctx, group_name, category, subcategory, config.default_yoda_schema, '', '', 'unspecified')
+        if not len(schema_id):
+            schema_id = config.default_yoda_schema
+        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', 'unspecified')
 
         if response:
             new_group = True
@@ -615,7 +623,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
                 else:
                     log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
             else:
                 log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, group_name))
 
@@ -691,11 +699,18 @@ def parse_csv_file(ctx):
 
     # Validate header columns (should be first row in file)
 
-    # are all all required fields present?
-    for label in _get_csv_predefined_labels():
+    # Are all required fields present?
+    for label in _get_csv_required_labels():
         if label not in reader.fieldnames:
             _exit_with_error(
                 'CSV header is missing compulsory field "{}"'.format(label))
+    
+    # Check that all header names are valid
+    possible_labels = _get_csv_possible_labels()
+    for label in header:
+        if label not in possible_labels:
+            _exit_with_error(
+                'CSV header contains unknown field "{}"'.format(label))
 
     # duplicate fieldnames present?
     duplicate_columns = _get_duplicate_columns(reader.fieldnames)
@@ -716,8 +731,17 @@ def parse_csv_file(ctx):
     return extracted_data
 
 
-def _get_csv_predefined_labels():
+def _get_csv_possible_labels():
+    return ['category', 'subcategory', 'groupname', 'viewer', 'member', 'manager', 'schema_id', 'expiration_date']
+
+
+def _get_csv_required_labels():
     return ['category', 'subcategory', 'groupname']
+
+
+def _get_csv_predefined_labels():
+    """These labels should not repeat"""
+    return ['category', 'subcategory', 'groupname', 'schema_id', 'expiration_date']
 
 
 def _get_duplicate_columns(fields_list):
@@ -725,7 +749,7 @@ def _get_duplicate_columns(fields_list):
     duplicate_fields = set()
 
     for field in fields_list:
-        if (field in _get_csv_predefined_labels() or field.startswith(("manager:", "viewer:", "member:"))):
+        if field in _get_csv_predefined_labels():
             if field in fields_seen:
                 duplicate_fields.add(field)
             else:
@@ -735,41 +759,45 @@ def _get_duplicate_columns(fields_list):
 
 
 def _process_csv_line(ctx, line):
-    """Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers."""
-    category = line['category'].strip().lower().replace('.', '')
-    subcategory = line['subcategory'].strip()
-    groupname = "research-" + line['groupname'].strip().lower()
+    """Process a line as found in the csv consisting of
+       category, subcategory, groupname, managers, members and viewers,
+       and optionally schema id and expiration date.
+    """
+    if (not len(line['category'])
+        or not len(line['subcategory'])
+        or not len(line['groupname'])):
+        return None, "Row has a missing group name, category or subcategory"
+
+    category = line['category'][0].strip().lower().replace('.', '')
+    subcategory = line['subcategory'][0].strip()
+    groupname = "research-" + line['groupname'][0].strip().lower()
+    schema_id = line['schema_id'][0] if 'schema_id' in line and len(line['schema_id']) else ''
+    expiration_date = line['expiration_date'][0] if 'expiration_date' in line and len(line['expiration_date']) else ''
     managers = []
     members = []
     viewers = []
 
-    for column_name in line.keys():
+    for column_name, item_list in line.items():
         if column_name == '':
             return None, 'Column cannot have an empty label'
         elif column_name in _get_csv_predefined_labels():
             continue
+        elif column_name not in _get_csv_possible_labels():
+            return None, "Column label '{}' is not a valid label.".format(column_name)
 
-        username = line.get(column_name)
+        for i in range(len(item_list)):
+            item_list[i] = item_list[i].strip().lower()
+            username = item_list[i]
+            if not yoda_names.is_email_username(username):
+                return None, 'Username "{}" is not a valid email address.'.format(
+                    username)
 
-        if isinstance(username, list):
-            return None, "Data is present in an unlabelled column"
-
-        username = username.strip().lower()
-
-        if username == '':    # empty value
-            continue
-        elif not yoda_names.is_email_username(username):
-            return None, 'Username "{}" is not a valid email address.'.format(
-                username)
-
-        if column_name.lower().startswith('manager:'):
-            managers.append(username)
-        elif column_name.lower().startswith('member:'):
-            members.append(username)
-        elif column_name.lower().startswith('viewer:'):
-            viewers.append(username)
-        else:
-            return None, "Column label '{}' is neither predefined nor a valid role label.".format(column_name)
+        if column_name.lower() == 'manager':
+            managers = item_list
+        elif column_name.lower() == 'member':
+            members = item_list
+        elif column_name.lower() == 'viewer':
+            viewers = item_list
 
     if len(managers) == 0:
         return None, "Group must have a group manager"
@@ -782,8 +810,15 @@ def _process_csv_line(ctx, line):
 
     if not yoda_names.is_valid_groupname("research-" + groupname):
         return None, '"{}" is not a valid group name.'.format(groupname)
+    
+    if not yoda_names.is_valid_schema_id(schema_id):
+        return None, '"{}" is not a valid schema id.'.format(schema_id)
 
-    row_data = (category, subcategory, groupname, managers, members, viewers)
+    if not yoda_names.is_valid_expiration_date(expiration_date):
+        return None, '"{}" is not a valid expiration date.'.format(expiration_date)
+
+    row_data = (category, subcategory, groupname, managers,
+                members, viewers, schema_id, expiration_date)
     return row_data, None
 
 
