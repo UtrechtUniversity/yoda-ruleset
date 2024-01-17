@@ -7,9 +7,9 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from datetime import datetime
 
 from config import config
-from datetime import datetime
 
 
 def is_valid_category(name):
