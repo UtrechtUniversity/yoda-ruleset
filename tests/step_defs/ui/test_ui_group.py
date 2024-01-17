@@ -276,16 +276,19 @@ def ui_group_click_group_import_dlg_button(browser):
     browser.find_by_css('.import-groups-csv').click()
 
 
-@when("user clicks upload button")
-def ui_group_click_upload_button(browser):
+@when(parsers.parse('user clicks upload button and uploads csv "{csv_file}"'))
+def ui_group_click_upload_button(browser, csv_file):
     cwd = os.getcwd()
     if os.name == 'nt':
-        browser.find_by_css('.csv-import-file')[0].fill("{}\\files\\csv-import-test.csv".format(cwd))
+        browser.find_by_css('.csv-import-file')[0].fill("{}\\files\\{}".format(cwd, csv_file))
     else:
-        browser.find_by_css('.csv-import-file')[0].fill("{}/files/csv-import-test.csv".format(cwd))
+        browser.find_by_css('.csv-import-file')[0].fill("{}/files/{}".format(cwd, csv_file))
 
+
+@then(parsers.parse("there are {num_groups} groups presented"))
+def ui_group_csv_groups_presented(browser, num_groups):
     # File contains 4 groups - check the number of rows presented.
-    assert len(browser.find_by_css('.import-groupname')) == 4
+    assert len(browser.find_by_css('.import-groupname')) == int(num_groups)
 
 
 @when("user clicks allow updates checkbox")
@@ -308,7 +311,7 @@ def ui_group_confirms_group_removal(browser):
     browser.find_by_id('f-group-delete').click()
 
 
-@then("process csv and check number of rows")
+@then("process csv")
 def ui_group_process_csv(browser):
     # Start processing the uploaded file.
     browser.find_by_css('.process-csv').click()
@@ -316,11 +319,14 @@ def ui_group_process_csv(browser):
     # Take enough time so processing is complete.
     time.sleep(5)
 
+
+@then(parsers.parse("check number of rows is {num_rows}"))
+def ui_group_csv_check_rows(browser, num_rows):
     # Check whether 4 checkmarks are present so each row was processed.
-    assert len(browser.find_by_css('.import-groupname-done')) == 4
+    assert len(browser.find_by_css('.import-groupname-done')) == int(num_rows)
 
     # Check whether each row was processed correctly.
-    assert len(browser.find_by_css('.import-csv-group-ok')) == 4
+    assert len(browser.find_by_css('.import-csv-group-ok')) == int(num_rows)
 
 
 @then(parsers.parse("click on imported row {row} and check group properties"))
@@ -333,6 +339,16 @@ def ui_group_csv_click_row(browser, row):
 
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + groupname + ']'
     assert browser.find_by_id('f-group-update-name').value == groupname
+
+
+@then(parsers.parse('schema id is "{schema}"'))
+def ui_group_check_schema_id(browser, schema):
+    assert browser.find_by_id('f-group-update-schema-id').value == schema
+
+
+@then(parsers.parse('expiration date is "{expir}"'))
+def ui_group_check_schema_id_expiration(browser, expir):
+    assert browser.find_by_id('f-group-update-expiration-date').value == expir
 
 
 @then(parsers.parse('find group member "{group_member}"'))

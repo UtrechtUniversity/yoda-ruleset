@@ -159,13 +159,31 @@ Feature: Group API
 
     Scenario Outline: Group import CSV
         Given user technicaladmin is authenticated
-        And the Yoda API for processing csv group data API is queried
+        And the Yoda API for processing csv group data API is queried for data "csvtestgroup"
         Then the response status code is "200"
         And user "functionaladminpriv@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "datamanager@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "researcher@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "viewer@yoda.test" is now a member of the group "research-csvtestgroup"
         And user "researcher1@example.com" is now a member of the group "research-csvtestgroup"
+
+
+    Scenario Outline: Group import CSV schema id and expiration date
+        Given user technicaladmin is authenticated
+        And the Yoda API for processing csv group data API is queried for data "csvtestgroup1"
+        Then the response status code is "200"
+        And user "datamanager@yoda.test" is now a member of the group "research-csvtestgroup1"
+
+
+    Scenario Outline: Group import CSV errors
+        Given user technicaladmin is authenticated
+        And the Yoda API for processing csv group data API is queried for data "<group_name>"
+        Then the response status code is "400"
+        
+        Examples:
+            | group_name         |
+            | csv-missing-header |
+            | csv-missing-entry  |
 
 
     Scenario Outline: Group delete
@@ -182,6 +200,7 @@ Feature: Group API
             | functionaladminpriv | research-api-test1-group |
             | technicaladmin      | datamanager-api-test1    |
             | technicaladmin      | research-csvtestgroup    |
+            | technicaladmin      | research-csvtestgroup1   |
             | technicaladmin      | not-a-yoda-group         |
 
 
