@@ -762,7 +762,13 @@ def _process_csv_line(ctx, line):
     """Process a line as found in the csv consisting of
        category, subcategory, groupname, managers, members and viewers,
        and optionally schema id and expiration date.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param line:     Dictionary of labels and corresponding lists of values
+
+    :returns: Tuple of processed row data (None if error), and error message
     """
+
     if (not len(line['category'])
             or not len(line['subcategory'])
             or not len(line['groupname'])):
