@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -259,10 +259,16 @@ def api_search(ctx,
         cols = ['ORDER(DATA_NAME)', 'COLL_NAME', 'MIN(DATA_CREATE_TIME)', 'MAX(DATA_MODIFY_TIME)', 'DATA_SIZE']
         where = "COLL_NAME like '{}%%' AND DATA_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
     elif search_type == 'folder':
-        cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        if sort_on == 'modified':
+            cols = ['COLL_NAME', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
+        else:
+            cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME' 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "COLL_PARENT_NAME like '{}%%' AND COLL_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
     elif search_type == 'metadata':
-        cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        if sort_on == 'modified':
+            cols = ['COLL_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
+        else:
+            cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_UNITS like '{}%%' AND META_COLL_ATTR_VALUE like '%%{}%%' AND COLL_NAME like '{}%%'".format(
                 constants.UUUSERMETADATAROOT + "_", search_string, "/" + zone + "/home"
         )
@@ -275,7 +281,10 @@ def api_search(ctx,
         else:
             status_name = constants.IIVAULTSTATUSATTRNAME
 
-        cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        if sort_on == 'modified':
+            cols = ['COLL_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
+        else:
+            cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
                 status_name, status_value, "/" + zone + "/home"
         )
