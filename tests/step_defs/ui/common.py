@@ -38,7 +38,7 @@ def ui_browse_folder(browser, folder):
 
 @when(parsers.parse("user clicks on file {file} in folder {folder}"))
 def ui_browse_file(browser, file, folder):
-    browser.find_by_css(f"[data-path='/{folder}/{file}']").click()
+    browser.find_by_css("[data-path='/{}/{}']".format(folder, file)).click()
 
 
 @when('user clicks go to group manager')
