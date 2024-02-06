@@ -23,12 +23,22 @@ def ui_text_shown(browser, text):
 @then(parsers.parse("user browses to folder {folder}"))
 def ui_browse_folder(browser, folder):
     link = []
+    counter = 0
+
     while len(link) == 0:
         link = browser.links.find_by_partial_text(folder)
         if len(link) > 0:
             link.click()
         else:
             browser.find_by_id('file-browser_next').click()
+            if counter > 6:
+                assert False
+            counter += 1
+
+
+@when(parsers.parse("user clicks on file {file} in folder {folder}"))
+def ui_browse_file(browser, file, folder):
+    browser.find_by_css(f"[data-path='/{folder}/{file}']").click()
 
 
 @when('user clicks go to group manager')

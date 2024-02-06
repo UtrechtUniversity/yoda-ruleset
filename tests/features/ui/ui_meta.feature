@@ -4,6 +4,7 @@ Feature: Meta UI
     Background:
         Given user researcher is authenticated
         And collection /tempZone/home/research-initial exists
+        And collection /tempZone/home/research-initial/folder space exists
         And /tempZone/home/research-initial is unlocked
 
 
@@ -12,13 +13,28 @@ Feature: Meta UI
         And module "research" is shown
         When user browses to folder <folder>
         And user opens metadata form
-        And users fills in metadata form
-        And users clicks save button
-        Then metadata form is saved as yoda-metadata.json
+        And user fills in metadata form
+        And user clicks save button
+        Then metadata form is saved as yoda-metadata.json for folder <folder>
 
         Examples:
             | folder           |
             | research-initial |
+
+
+    Scenario Outline: Save metadata subfolder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder1>
+        When user browses to folder <folder2>
+        And user opens metadata form
+        And user fills in metadata form
+        And user clicks save button
+        Then metadata form is saved as yoda-metadata.json for folder <folder>
+
+        Examples:
+            | folder                        | folder1          | folder2      |
+            | research-initial/folder space | research-initial | folder space |
 
 
     Scenario Outline: Delete metadata
@@ -46,10 +62,10 @@ Feature: Meta UI
             | research-default-3 |
 
 
-    Scenario Outline: Check that path is safe
+    Scenario Outline: Script in path
         Given user researcher is logged in
         When the user navigates to <page>
-        Then the 404 error page is shown
+        Then an error is shown that the path does not exist
 
         Examples:
             | page                                                                 |

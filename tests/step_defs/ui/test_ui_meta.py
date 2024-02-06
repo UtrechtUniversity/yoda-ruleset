@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     then,
     when,
@@ -20,7 +21,7 @@ def ui_metadata_open(browser):
     browser.find_by_css('button.metadata-form').click()
 
 
-@when('users fills in metadata form')
+@when('user fills in metadata form')
 def ui_metadata_fill(browser):
     for input in browser.find_by_css('input.is-invalid'):
         if input.visible:
@@ -68,7 +69,7 @@ def ui_metadata_check_person_id_field(browser):
     assert parent.find_by_css('.form-control')[0]['placeholder'] == '51161516100'
 
 
-@when('users clicks save button')
+@when('user clicks save button')
 def ui_metadata_save(browser):
     browser.find_by_css('.yodaButtons .btn-primary').click()
 
@@ -79,11 +80,16 @@ def ui_metadata_delete(browser):
     browser.find_by_css('.confirm').click()
 
 
-@then('metadata form is saved as yoda-metadata.json')
-def ui_metadata_saved(browser):
-    assert browser.is_text_present("Updated metadata of folder </research-initial>")
+@then(parsers.parse('metadata form is saved as yoda-metadata.json for folder {folder}'))
+def ui_metadata_saved(browser, folder):
+    assert browser.is_text_present("Updated metadata of folder </{}>".format(folder))
 
 
 @then('metadata is deleted from folder')
 def ui_metadata_deleted(browser):
     browser.is_text_present("Deleted metadata of folder </research-initial>", wait_time=3)
+
+
+@then('an error is shown that the path does not exist')
+def ui_metadata_path_not_exist(browser):
+    browser.is_text_present("The given path does not exist", wait_time=3)
