@@ -28,7 +28,6 @@ Feature: Meta UI
         When user browses to folder <folder1>
         When user browses to folder <folder2>
         And user opens metadata form
-        And user fills in metadata form
         And user clicks save button
         Then metadata form is saved as yoda-metadata.json for folder <folder>
 
