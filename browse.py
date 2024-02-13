@@ -8,12 +8,14 @@ import re
 from collections import OrderedDict
 
 from genquery import AS_DICT, Query
+import magic
 
 from util import *
 
 __all__ = ['api_browse_folder',
            'api_browse_collections',
-           'api_search']
+           'api_search',
+           'api_load_text_obj']
 
 
 @api.make()
@@ -315,3 +317,46 @@ def _filter_vault_deposit_index(row):
     # Filter out deposit vault index collection
     return not re.match("^/[^/]+/home/vault-[^/]+/deposit-[^/]+/index$",
                         x['COLL_NAME'])
+
+
+@api.make()
+def api_load_text_obj(ctx, file_path='/'):
+    """Retrieve a text file (as a string) in either the research, deposit, or vault space.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param file_path: Full file path of file to load
+
+    :returns: file as a string or API status in case of error
+    """
+    # Obtain some context.
+    # - What kind of collection path is this?
+    space, _, _, _ = pathutil.info(file_path)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
+        return api.Error('invalid_space', 'The given space is not a valid space (should be research, deposit, or vault)')
+
+    # Check exists
+    if not data_object.exists(ctx, file_path):
+        return api.Error('nonexistent', 'The given path does not exist')
+
+    # Check end extension
+    valid_extension = False
+    for ext in config.text_file_extensions:
+        ending = '.' + ext
+        if file_path.lower().endswith(ending):
+            valid_extension = True
+
+    if not valid_extension:
+        return api.Error('not_valid', 'The given data object does not have a valid file extension')
+
+    # If present, get and return the approval conditions
+    try:
+        text_string = data_object.read(ctx, file_path)
+        file_type = magic.from_buffer(text_string)
+        if 'text' in file_type:
+            return text_string
+        else:
+            return api.Error('not_valid', 'The given data object is not a text file')
+    except error.UUFileSizeError:
+        return api.Error('large_size', 'The given text file is too large to render')
+    except error.UUError:
+        return api.Error('ReadError', 'Could not retrieve file')

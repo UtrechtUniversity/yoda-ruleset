@@ -576,6 +576,8 @@ def api_vault_collection_details(ctx, path):
     for _row in iter:
         vault_action_pending = True
 
+    member_type = groups.user_role(ctx, user.full_name(ctx), group)
+
     # Check if research group has access.
     research_group_access = False
 
@@ -607,6 +609,7 @@ def api_vault_collection_details(ctx, path):
         "basename": basename,
         "status": status,
         "metadata": metadata,
+        "member_type": member_type,
         "has_datamanager": has_datamanager,
         "is_datamanager": is_datamanager,
         "vault_action_pending": vault_action_pending,
