@@ -67,8 +67,9 @@ sram_api_key                   =
 sram_verbose_logging           =
 sram_tls_verify                =
 
-
 arb_enabled                    =
 arb_exempt_resources           =
 arb_min_gb_free                =
 arb_min_percent_free           =
+
+python3_interpreter            =
