@@ -113,7 +113,7 @@ def get_json_metadata_errors(callback,
 
     # Create gateway to Python 3.8.
     import execnet
-    gw = execnet.makegateway("popen//python=/usr/local/bin/python3")
+    gw = execnet.makegateway("popen//python=" + config.python3_interpreter)
 
     channel = gw.remote_exec("""
         import jsonschema
