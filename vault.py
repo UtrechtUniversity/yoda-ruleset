@@ -555,7 +555,6 @@ def api_vault_collection_details(ctx, path):
 
     member_type = groups.user_role(ctx, user.full_name(ctx), research_group_name)
 
-
     # Retrieve vault folder status.
     status = get_coll_vault_status(ctx, path).value
 
@@ -585,7 +584,6 @@ def api_vault_collection_details(ctx, path):
     )
     for _row in iter:
         vault_action_pending = True
-
 
     # Check if research group has access.
     research_group_access = False
