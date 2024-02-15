@@ -7,8 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
-from genquery import AS_DICT, Query
 import magic
+from genquery import AS_DICT, Query
 
 from util import *
 
