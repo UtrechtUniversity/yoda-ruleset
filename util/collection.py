@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import json
-import sys
 from functools import reduce
 
 import genquery
