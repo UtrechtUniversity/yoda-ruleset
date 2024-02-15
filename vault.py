@@ -540,18 +540,21 @@ def api_vault_collection_details(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
     # Check if collection is a research group.
-    space, _, group, _ = pathutil.info(path)
+    space, _, group, subpath = pathutil.info(path)
     if space != pathutil.Space.VAULT:
         return {}
 
     basename = pathutil.basename(path)
 
-    # Check if collection is vault package.
-    metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
-    if metadata_path is None:
-        return {}
+    # Find group name to retrieve member type
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
     else:
-        metadata = True
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+
+    member_type = groups.user_role(ctx, user.full_name(ctx), research_group_name)
+
 
     # Retrieve vault folder status.
     status = get_coll_vault_status(ctx, path).value
@@ -562,6 +565,13 @@ def api_vault_collection_details(ctx, path):
     # Check if user is datamanager.
     category = groups.group_category(ctx, group)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    # Check if collection is vault package.
+    metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
+    if metadata_path is None:
+        return {'member_type': member_type, 'is_datamanager': is_datamanager}
+    else:
+        metadata = True
 
     # Check if a vault action is pending.
     vault_action_pending = False
@@ -576,7 +586,6 @@ def api_vault_collection_details(ctx, path):
     for _row in iter:
         vault_action_pending = True
 
-    member_type = groups.user_role(ctx, user.full_name(ctx), group)
 
     # Check if research group has access.
     research_group_access = False
