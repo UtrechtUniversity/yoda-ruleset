@@ -1,3 +1,4 @@
+@ui
 Feature: Group UI
 
     Scenario Outline: Group member add
@@ -75,10 +76,12 @@ Feature: Group UI
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
         When user opens group import dialog
-        And user clicks upload button
-        And user clicks allow updates checkbox
+        And user clicks upload button and uploads csv "csv-import-test.csv"
+        Then there are 4 groups presented
+        When user clicks allow updates checkbox
         And user clicks allow deletions checkbox
-        Then process csv and check number of rows
+        Then process csv
+        And check number of rows is 4
         And click on imported row 0 and check group properties
         And find group member "groupmanager@yoda.test"
         And user opens group import dialog
@@ -92,22 +95,56 @@ Feature: Group UI
         And find group member "viewer@yoda.test"
 
 
-    Scenario Outline: Group research create
+    Scenario: Imports group CSV schema id and expiration date
         Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens group import dialog
+        And user clicks upload button and uploads csv "csv-import-test-exp-schema.csv"
+        Then there are 2 groups presented
+        When user clicks allow updates checkbox
+        And user clicks allow deletions checkbox
+        Then process csv
+        And check number of rows is 2
+        And click on imported row 0 and check group properties
+        And find group member "groupmanager@yoda.test"
+        And find group member "researcher@yoda.test"
+        And user opens group import dialog
+        And click on imported row 1 and check group properties
+        And schema id is "default-3"
+        And expiration date is "2027-01-01"
+        And find group member "groupmanager@yoda.test"
+
+
+    Scenario Outline: Group research create with default schema id
+        Given user <user> is logged in
         And module "group_manager" is shown
         When user opens add group dialog
         And groupname is set to <group>
         And category is set to <category>
         And subcategory is set to <subcategory>
-        And schema id is set to <schema_id>
         And expiration date is set to <expiration_date>
         When user submits new group data
         And research group <group> is successfully created
-        And check whether research group properties <group>, <category>, <subcategory>, <schema_id> and <expiration_date> are correct
+        And check whether research group properties <group>, <category>, <subcategory> and <expiration_date> for user functionaladminpriv
 
         Examples:
-            | category        | subcategory     | group         | schema_id | expiration_date  |
-            | test-automation | test-automation | ui-test-group | teclab-1  | 2030-12-25       |
+            | user                | category          | subcategory       | group             | expiration_date |
+            | functionaladminpriv | test-automation   | test-automation   | ui-test-group     | 2030-12-25      |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | test-datamanager  | 2030-12-25      |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | test-datamanager1 | 2030-12-25      |
+
+
+    Scenario Outline: Create new research group starting from same (sub)category of active group at that moment
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        When user opens add group dialog
+        And new group has <category> and <subcategory> set
+
+        Examples:
+            | category        | subcategory | group            |
+            | test-automation | initial     | research-initial |
 
 
     Scenario Outline: Group research update
@@ -128,19 +165,39 @@ Feature: Group UI
 
 
     Scenario Outline: Group datamanager create
-        Given user technicaladmin is logged in
+        Given user <user> is logged in
         And module "group_manager" is shown
         When user opens add group dialog
         And category is set to <category>
-        And subcategory is set to <subcategory>
         And group type is set to datamanager
+        And subcategory is set to <subcategory>
         When user submits new group data
         And datamanager group <group> is successfully created
         And check whether datamanager group properties <group> and <category> are correct
 
         Examples:
-            | category         | subcategory      | group            |
-            | test-datamanager | test-datamanager | test-datamanager |
+            | user                | category          | subcategory       | group              |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | test-datamanager   |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | test-datamanager1  |
+
+
+    @deposit
+    Scenario Outline: Group deposit create
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And group type is set to deposit
+        And category is set to <category>
+        And groupname is set to <group>
+        And subcategory is set to <subcategory>
+        When user submits new group data
+        And deposit group <group> is successfully created
+        And check whether deposit group properties <group>, <category> and <subcategory> for user <user>
+
+        Examples:
+            | user                | category        | subcategory     | group    |
+            | functionaladminpriv | test-automation | test-automation | ui-test2 |
+            | technicaladmin      | test-automation | test-automation | ui-test3 |
 
 
     Scenario Outline: Group remove
@@ -151,20 +208,39 @@ Feature: Group UI
         And user confirms group removal
 
         Examples:
-            | user                | category         | subcategory      | group                        |
-            | functionaladminpriv | test-automation  | test-automation  | research-ui-test-group       |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
-            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group4     |
-            | technicaladmin      | test-datamanager | test-datamanager | datamanager-test-datamanager |
+            | user                | category          | subcategory       | group                         |
+            | functionaladminpriv | test-automation   | test-automation   | research-ui-test-group        |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group1      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group2      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group3      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group4      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group5      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group6      |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | datamanager-test-datamanager  |
+            | functionaladminpriv | test-datamanager  | test-datamanager  | research-test-datamanager     |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | datamanager-test-datamanager1 |
+            | technicaladmin      | test-datamanager1 | test-datamanager1 | research-test-datamanager1    |
+
+
+    @deposit
+    Scenario Outline: Group deposit remove
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user clicks remove group
+        And user confirms group removal
+
+        Examples:
+            | user                | category        | subcategory     | group            |
+            | functionaladminpriv | test-automation | test-automation | deposit-ui-test2 |
+            | technicaladmin      | test-automation | test-automation | deposit-ui-test3 |
 
 
     Scenario Outline: Select group in tree view and check group properties are set and active in tree view
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects tree view
-        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects group <group> in subcategory <subcategory> and category <category>
         And checks group properties for <group>
         And correct row in tree is active for <group>
         When user selects list view
@@ -179,8 +255,8 @@ Feature: Group UI
         Given user researcher is logged in
         And module "group_manager" is shown
         When user selects list view
-        When user selects group <group> in list view
-        When checks group properties for <group>
+        And user selects group <group> in list view
+        And checks group properties for <group>
         And correct row in list view is active for <group>
         When user selects tree view
         And correct row in tree is active for <group>
@@ -200,5 +276,25 @@ Feature: Group UI
             | user        | search | suggestions |
             | researcher  | yoda   | 5           |
             | datamanager | yoda   | 5           |
-            | researcher  | core   | 2           |
-            | datamanager | core   | 2           |
+            | researcher  | core   | 3           |
+            | datamanager | core   | 3           |
+
+
+    Scenario: Collapsing group properties persists between logins
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user clicks group properties header
+        And user logs out
+        And user functionaladminpriv logs in
+        And module "group_manager" is shown
+        Then group properties is collapsed
+
+
+    Scenario: Collapsing group properties persists between groups
+        Given user groupmanager is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group research-initial in subcategory initial and category test-automation
+        And user clicks group properties header
+        When user selects group research-revisions in subcategory initial and category test-automation
+        Then group properties is collapsed

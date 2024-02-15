@@ -17,7 +17,10 @@
                 "Utrecht University"
             ],
             "Person_Identifier": [
-                {}
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
             ]
         },
         {
@@ -29,7 +32,10 @@
                 "University Džemal Bijedić of Mostar"
             ],
             "Person_Identifier": [
-                {}
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
             ]
         }
     ],
@@ -41,6 +47,12 @@
             },
             "Affiliation": [
                 "University of Göttingen"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
             ]
         },
         {
@@ -50,7 +62,23 @@
             },
             "Affiliation": [
                 "École des Beaux-Arts"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
             ]
+        }
+    ],
+    "Related_Datapackage": [
+        {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://doi.org/10.1038/sdata.2016.18"
+            },
+            "Relation_Type": "References: Current datapackages references",
+            "Title": "The FAIR Guiding Principles for scientific data management and stewardship"
         }
     ],
     "Data_Access_Restriction": "Restricted - available upon request",

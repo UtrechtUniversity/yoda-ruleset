@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for user notifications."""
 
-__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -10,6 +10,7 @@ import json
 import random
 import string
 import time
+import urllib
 from datetime import datetime, timedelta
 
 import genquery
@@ -19,6 +20,7 @@ from genquery import Query
 import data_access_token
 import folder
 import mail
+import meta
 import settings
 from util import *
 
@@ -28,6 +30,7 @@ __all__ = ['api_notifications_load',
            'rule_mail_notification_report',
            'rule_process_ending_retention_packages',
            'rule_process_groups_expiration_date',
+           'rule_process_inactive_research_groups',
            'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
@@ -85,10 +88,10 @@ def api_notifications_load(ctx, sort_order="desc"):
             space, _, group, subpath = pathutil.info(notification["target"])
             if space is pathutil.Space.RESEARCH:
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
-                notification["link"] = "/research/browse?dir=/{}/{}".format(group, subpath)
+                notification["link"] = "/research/browse?dir=" + urllib.quote("/{}/{}".format(group, subpath))
             elif space is pathutil.Space.VAULT:
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
-                notification["link"] = "/vault/browse?dir=/{}/{}".format(group, subpath)
+                notification["link"] = "/vault/browse?dir=" + urllib.quote("/{}/{}".format(group, subpath))
 
                 # Deposit situation required different information to be presented.
                 if subpath.startswith('deposit-'):
@@ -342,6 +345,119 @@ def rule_process_groups_expiration_date(ctx):
             log.write(ctx, 'group expiration date - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
 
     log.write(ctx, 'group expiration date - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
+
+
+@rule.make()
+def rule_process_inactive_research_groups(ctx):
+    """Rule interface for checking for research groups that have not been modified after a certain amount of months.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # Only send notifications if inactivity notifications are enabled.
+    if not config.enable_inactivity_notification:
+        return
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "inactive research group - Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, 'inactive research group - Checking Research packages for last modification dates')
+
+    zone = user.zone(ctx)
+    notify_count = 0
+    inactivity_cutoff = datetime.now() - timedelta(weeks=4.35 * config.inactivity_cutoff_months)
+    inactivity_cutoff_epoch = int((inactivity_cutoff - datetime(1970, 1, 1)).total_seconds())
+
+    # First query: obtain a list of groups with group attributes
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        group_name = row[0]
+        coll = '/{}/home/{}'.format(zone, group_name)
+        # Trigger this flag if there are any files that have been modified after the cut off
+        # If the flag is still false after going through all the files, then that is when we send the notification
+        recent_files_modified = False
+        data_objects_count = 0
+        where_clause = {
+            'self': "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}'".format(coll, group_name),
+            'subfolders': "COLL_NAME LIKE '{}/%' AND USER_GROUP_NAME = '{}'".format(coll, group_name)
+        }
+
+        # Per group two statements are required to gather all data
+        # 1) data in folder itself
+        # 2) data in all subfolders of the folder
+        for folder_type in ['self', 'subfolders']:
+            iter_subcoll = genquery.row_iterator(
+                "COUNT(DATA_NAME)",
+                where_clause[folder_type],
+                genquery.AS_LIST, ctx
+            )
+            # This loop should only run once
+            for sub_row in iter_subcoll:
+                data_objects_count += int(sub_row[0])
+
+        if data_objects_count > 0:
+            for folder_type in ['self', 'subfolders']:
+                if recent_files_modified:
+                    break
+
+                iter_subcoll = genquery.row_iterator(
+                    "DATA_NAME, COLL_NAME",
+                    where_clause[folder_type],
+                    genquery.AS_LIST, ctx
+                )
+
+                for sub_row in iter_subcoll:
+                    if recent_files_modified:
+                        break
+
+                    sub_coll = sub_row[1]
+
+                    # Get count of any data objects that have been modified after the inactivity cut off
+                    iter_recent_data = genquery.row_iterator(
+                        "COUNT(DATA_NAME)",
+                        "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME n> '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
+                        genquery.AS_LIST, ctx
+                    )
+
+                    # This loop should only run once
+                    for count_row in iter_recent_data:
+                        if int(count_row[0]) > 0:
+                            recent_files_modified = True
+        else:
+            # Empty research group, so check the modified date of the collection, then send a notification
+            iter_data = genquery.row_iterator(
+                "COLL_MODIFY_TIME",
+                "COLL_NAME = '{}'".format(coll),
+                genquery.AS_LIST, ctx
+            )
+            # This loop should only run once
+            for sub_row in iter_data:
+                if int(sub_row[0]) > inactivity_cutoff_epoch:
+                    recent_files_modified = True
+
+        if not recent_files_modified:
+            # find corresponding datamanager
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
+            if group.exists(ctx, datamanager_group_name):
+                notify_count += 1
+                # Send notifications to datamanager(s).
+                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
+
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    actor = 'system'
+                    set(ctx, actor, datamanager, coll, message)
+                log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
+
+    log.write(ctx, 'inactive research group - Finished checking research groups for inactivity | notified: {}'.format(notify_count))
 
 
 @rule.make()

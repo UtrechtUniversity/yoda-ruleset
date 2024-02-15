@@ -1,3 +1,4 @@
+@api
 Feature: Research API (locked)
 
     Background:

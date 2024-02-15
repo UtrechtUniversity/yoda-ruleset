@@ -44,14 +44,15 @@ uuUserNameIsValid(*name)
 #
 # NB: Update the category name check below if you change the second half of this pattern.
 #
-# NB: Datamanager is missing in this list. It can only be created by rodsadmin,
-#     and rodsadmin currently bypasses all checks anyway.
-#     This check is applicable only to rodsusers with priv-group-add.
+# NB: Datamanager is missing in this list. uuGroupNameIsDatamanager is for the specific datamanager case.
 #
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
 	= *name like regex ``(intake|research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+
+uuGroupNameIsDatamanager(*name)
+	= *name like regex ``(datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a category name is valid.
 #
@@ -72,6 +73,24 @@ uuGroupCategoryNameIsValid(*name)
 #
 uuGroupSubcategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
+
+# \brief Check if co_identifier is valid.
+#
+# CO Identifier must:
+#
+# - contain only letters, numbers, and hyphens
+#
+# \param[in] name
+# \param[out] valid
+#
+uuGroupCOIdentifierIsValid(*name, *valid) {
+	if (*name like regex ``[0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12}`` || *name == '') {
+		*valid = true;
+	}
+	else {
+		*valid = false;
+	}
+}
 
 # \brief Check if a data classification is valid in combination with a group name.
 #
@@ -122,6 +141,28 @@ uuGroupExpirationDateIsValid(*expiration_date, *valid) {
     *valid = bool(*result);
 }
 
+# \brief Check if actor is a group manager in a group in the category
+#
+# \param[in]  actor
+# \param[in]  category
+# \param[out] isGroupManager
+#
+uuGroupIsGroupManagerInCategory(*actor, *category, *isGroupManager) {
+	*isGroupManager = false;
+
+	uuUserGetGroups(*actor, false, *groups);
+
+	foreach (*actorGroup in *groups) {
+		uuGroupGetCategory(*actorGroup, *agCategory, *agSubcategory);
+		if (*agCategory == *category) {
+			uuGroupUserIsManager(*actorGroup, *actor, *isGroupManager);
+			if (*isGroupManager) {
+				break;
+			}
+		}
+	}
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -134,19 +175,19 @@ uuGroupExpirationDateIsValid(*expiration_date, *valid) {
 # \param[in]  expiration_date
 # \param[in]  description
 # \param[in]  dataClassification
+# \param[in]  co_identifier
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiration_date, *schema_id, *description, *dataClassification, *co_identifier, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; writeLine("serverLog","In CanGroupAdd RODSADMIN");}
-
 	*allowed = 0;
 	*reason  = "";
 
-	uuGroupUserExists("priv-group-add", *actor, false, *hasPriv);
-	if (*hasPriv) {
+	uuGroupUserExists("priv-group-add", *actor, false, *hasPrivGroupAdd);
+	uuGroupUserExists("priv-category-add", *actor, false, *hasPrivCatAdd);
+	if (*hasPrivGroupAdd || *actorUserType == "rodsadmin") {
 		if (uuGroupNameIsValid(*groupName)) {
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
@@ -176,10 +217,17 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 							uuGroupExpirationDateIsValid(*expiration_date, *expirationDateValid);
 							if (*expirationDateValid) {
 							    # Last check.
-    							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+								uuGroupCOIdentifierIsValid(*co_identifier, *coIdentifierValid);
+								if(*coIdentifierValid) {
+									uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+								}
+								else{
+									*reason = "Invalid SRAM CO Identifier when adding group: '*co_identifier'";
+								}
 							} else {
 							    *reason = "Invalid expiration date when adding group: '*expiration_date'";
 							}
+
 						} else {
 							# schema not valid -> report error
 							*reason = "Invalid schema-id used when adding group: '*schema_id'";
@@ -196,8 +244,37 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 				}
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
+		} else if (uuGroupNameIsDatamanager(*groupName)) {
+			if ((*hasPrivGroupAdd && *hasPrivCatAdd) || *actorUserType == "rodsadmin") {
+				# Special case for a datamanager group.
+				uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
+				if (*nameAvailable) {
+					# The category for which the datamanager group is paired with must already exist
+					# And actor must be a group manager in at least one group
+					# in the category for them to be allowed to create a datamanager group
+					*isManagerInCategory = false;
+
+					uuGroupIsGroupManagerInCategory(*actor, *category, *isManagerInCategory)
+					if (*isManagerInCategory) {
+						*allowed = 1
+					}
+					else {
+						*reason = "You must be a manager of a group in category '*category' to create a datamanager- group"
+					}
+				} else {
+					if (*existingType == "rodsuser") {
+						*existingType = "user";
+					} else if (*existingType == "rodsgroup") {
+						*existingType = "group";
+					}
+					*reason = "The name '*groupName' is already in use by another *existingType.";
+				}
+
+			} else {
+				*reason = "You must have priv-group-add and priv-cat-add to add a datamanger group"
+			}
 		} else {
-			*reason = "Group names must start with one of 'intake-' or 'research-' or 'deposit-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-', 'research-', 'deposit-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -216,8 +293,6 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 #
 uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
@@ -236,14 +311,14 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 				}
 			}
 		}
-		if (*isManagerInCategory) {
+		if (*isManagerInCategory || *actorUserType == "rodsadmin") {
 			*allowed = 1;
 		} else {
 			*reason = "You cannot use this group category because you are not a group manager in the *categoryName category.";
 		}
 	} else {
 		uuGroupUserExists("priv-category-add", *actor, false, *hasPriv);
-		if (*hasPriv) {
+		if (*hasPriv || *actorUserType == "rodsadmin") {
 			if (uuGroupCategoryNameIsValid(*categoryName)) {
 				*allowed = 1;
 			} else {
@@ -268,13 +343,11 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
-	if (*isManager) {
+	if (*isManager || *actorUserType == "rodsadmin") {
 		if (*attribute == "category") {
 			if (*groupName like "datamanager-*" && *groupName != "datamanager-*value") {
 				*reason = "The category of a datamanager group cannot be changed.";
@@ -311,6 +384,14 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			} else {
 				*reason = "The chosen expiration date is invalid.";
 			}
+		} else if (*attribute == "co_identifier") {
+			uuGroupCOIdentifierIsValid(*value, *coIdentifierValid);
+			if(*coIdentifierValid) {
+				*allowed = 1;
+			}
+			else{
+				*reason = "The CO Identifier is invalid";
+			}
 		} else {
 			*reason = "Invalid group attribute name.";
 		}
@@ -328,17 +409,15 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 #
 uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
-	if (*isManager) {
-		#                           v  These groups are user-removable  v
-		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*") {
-			# NB: Only rodsadmin can remove datamanager groups.
-			#     Even datamanager group managers cannot remove their own group.
+	# Only a rodsadmin or a privileged group manager in
+	# that category can remove a datamanager-group.
+	#                          v These groups are user-removable v
+	if (*groupName like regex "(grp|intake|research|deposit|vault)-.*" ) {
+		if (*isManager || *actorUserType == "rodsadmin") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -350,15 +429,54 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 			}
 
 			if (*homeCollectionIsEmpty) {
-				*allowed = 1;
+				if (*groupName like regex "(research)-.*") {
+					# Research groups can only be removed when no vault packages exist
+					uuChop(*groupName, *prefix, *base, "-", true);
+					*vaultName = "vault-*base";
+					*zoneName = $rodsZoneClient;
+					*vaultIsEmpty = true;
+
+					# Check whether vault still holds data
+					msiMakeGenQuery("COLL_NAME", "COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
+					msiExecGenQuery(*genQIn, *genQOut);
+					foreach(*genQOut){
+						*vaultIsEmpty = false;
+											break;
+					}
+					if (*vaultIsEmpty) {
+						*allowed = 1;
+					} else {
+						*reason = "There are still datapackages in the vault for group: *groupName. Please remove these first before removing this group.";
+					}
+				} else {
+					*allowed = 1;
+				}
 			} else {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
+			*reason = "You are not a manager of group *groupName.";
+		}
+	} else if (*groupName like regex "(datamanager)-.*") {
+		# Confirm actor is a manager of at least one group in the category
+		# and has the privileges
+		uuGroupGetCategory(*groupName, *category, *agSubcategory);
+		uuGroupIsGroupManagerInCategory(*actor, *category, *isManagerInCategory)
+		if (*isManagerInCategory) {
+			uuGroupUserExists("priv-group-add", *actor, false, *hasPrivGroupAdd);
+			uuGroupUserExists("priv-category-add", *actor, false, *hasPrivCatAdd);
+			if (*hasPrivGroupAdd && *hasPrivCatAdd) {
+				*allowed = 1
+			}
+			else {
+				*reason = "You must have group and category add privileges to delete this datamanager- group";
+			}
+		}
+		else {
+			*reason = "You must be a manager of a group in category '*category' to delete this datamanager- group"
 		}
 	} else {
-		*reason = "You are not a manager of group *groupName.";
+		*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
 	}
 }
 
@@ -372,8 +490,6 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 #
 uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
@@ -394,14 +510,14 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 		) {
 			*isCreator = true;
 		}
-		if (*isCreator) {
+		if (*isCreator || *actorUserType == "rodsadmin") {
 			*allowed = 1;
 		} else {
 			*reason = "You are not a manager of group '*groupName'.";
 		}
 	} else {
 		uuGroupUserIsManager(*groupName, *actor, *isManager);
-		if (*isManager) {
+		if (*isManager || *actorUserType == "rodsadmin") {
 			uuGroupUserExists(*groupName, *newMember, false, *isAlreadyAMember);
 			if (*isAlreadyAMember) {
 				*reason = "User '*newMember' is already a member of group '*groupName'.";
@@ -428,13 +544,11 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 #
 uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
-	if (*isManager) {
+	if (*isManager || *actorUserType == "rodsadmin") {
 		if (*member == *actor) {
 			# This also ensures that groups always have at least one manager.
 			*reason = "You cannot remove yourself from group *groupName.";
@@ -457,8 +571,6 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 #
 uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason = "";
 
@@ -469,7 +581,7 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 			|| (*newRole == "reader" && *groupName like regex "(intake|research|deposit)-.*")) {
 
 			uuGroupUserIsManager(*groupName, *actor, *isManager);
-			if (*isManager) {
+			if (*isManager || *actorUserType == "rodsadmin") {
 				if (*member == *actor) {
 					*reason = "You cannot change your own role in group *groupName.";
 				} else {
@@ -496,28 +608,33 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 #
 uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
-	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
-
 	*allowed = 0;
 	*reason  = "";
 
     # User setting: mail notifications
     if (*attribute == "org_settings_mail_notifications") {
-        if (*actor == *userName) {
+        if (*actor == *userName || *actorUserType == "rodsadmin") {
             *allowed = 1;
         } else {
             *reason = "Cannot modify settings of other user.";
         }
 	# User setting: Number of items
 	} else if (*attribute == "org_settings_number_of_items") {
-        if (*actor == *userName) {
+        if (*actor == *userName || *actorUserType == "rodsadmin") {
             *allowed = 1;
         } else {
             *reason = "Cannot modify settings of other user.";
         }
     # User setting: Initial list to be presented in group manager: Tree or flat list
     } else if (*attribute == "org_settings_group_manager_view") {
-        if (*actor == *userName) {
+        if (*actor == *userName || *actorUserType == "rodsadmin") {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User setting: Color mode
+    } else if (*attribute == "org_settings_color_mode") {
+        if (*actor == *userName || *actorUserType == "rodsadmin") {
             *allowed = 1;
         } else {
             *reason = "Cannot modify settings of other user.";
@@ -526,6 +643,6 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
     } else {
-	*reason = "Invalid user attribute name.";
+		*reason = "Invalid user attribute name.";
     }
 }

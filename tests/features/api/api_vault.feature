@@ -1,3 +1,4 @@
+@api
 Feature: Vault API
 
     Scenario Outline: Vault meta form save in vault
@@ -12,6 +13,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault submit
@@ -27,6 +30,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault cancel
@@ -42,6 +47,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault submit after cancel
@@ -57,6 +64,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault approve
@@ -72,6 +81,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault secured
@@ -85,6 +96,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault preservable formats lists
@@ -99,6 +112,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault unpreservable files
@@ -114,6 +129,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 | DANS |
             | /tempZone/home/vault-core-1    | 4TU  |
             | /tempZone/home/vault-default-2 | DANS |
+            | /tempZone/home/vault-core-2    | 4TU  |
+            | /tempZone/home/vault-default-3 | DANS |
 
 
     Scenario Outline: Vault system metadata
@@ -129,6 +146,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault collection details
@@ -143,6 +162,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Revoke read access to research group
@@ -150,12 +171,15 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault revoke read access research group API is queried on datapackage in <vault>
         Then the response status code is "200"
+
         Examples:
             | vault                          |
             | /tempZone/home/vault-core-0    |
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Revoke grant access to research group
@@ -170,6 +194,8 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault get publication terms
@@ -191,3 +217,5 @@ Feature: Vault API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-core-2    |
+            | /tempZone/home/vault-default-3 |

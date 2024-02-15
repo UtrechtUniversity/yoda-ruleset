@@ -43,6 +43,14 @@ def ui_schema_transformations_upload_metadata(user, schema_from, schema_to):
     )
 
 
+@when(parsers.parse("folder {folder} is unlocked"))
+def ui_folder_is_unlocked(browser, folder):
+    badge = browser.find_by_id('statusBadge')
+    if badge.value == "Locked":
+        browser.find_by_id('actionMenu').click()
+        browser.find_by_css('a.action-unlock').click()
+
+
 @when(parsers.parse("file {file} exists in folder"))
 def ui_schema_trans_file_exists(browser, file):
     browser.is_text_present(file)
@@ -81,15 +89,15 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
     else:
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/yoda-metadata.json")
 
-    with open(download_dir) as f:
+    # assert download_dir == '1'
+    with open(download_dir, encoding='utf-8') as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     # Remove the downloaded yoda-metadata.json file.
     os.remove(download_dir)
 
-    # Check actual content after transformation.
+    # Check actual content after transformation for each schema version
     assert metadata['links'][0]['href'] == "https://yoda.uu.nl/schemas/{}/metadata.json".format(schema_to)
-    assert metadata["License"] == "Custom"
     assert metadata["Data_Access_Restriction"] == "Open - freely retrievable"
     assert metadata["Title"] == "API test {}".format(schema_from)
     assert metadata["Description"] == "API test {}".format(schema_from)
@@ -103,17 +111,23 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
                                           "Natural Sciences - Physical sciences (1.3)"]
         assert metadata["Collected"] == {"Start_Date": "2000-01-01", "End_Date": "2010-01-01"}
         assert metadata["Tag"] == ["key1", "key2"]
-        # research group has to be converted to a contributer with type ResearchGroup
+        # research group has to be converted to a contributor with type ResearchGroup
         assert metadata["Contributor"][1] == {"Affiliation": ["Affiliation"],
                                               "Name": {
                                               "Family_Name": "",
                                               "Given_Name": "Earth sciences - Geochemistry"},
                                               "Contributor_Type": "ResearchGroup"}
+        assert metadata["License"] == "Custom"
     else:
         assert metadata["Data_Classification"] == "Public"
+        assert metadata["License"] == "Creative Commons Attribution 4.0 International Public License"
 
     if schema_from != "default-0":
         assert metadata["Data_Type"] == "Dataset"
 
-    if schema_from != "dag-0" and schema_to == "default-2":
-        assert metadata["Tag"] == ["yoda"]
+    if schema_from != "dag-0":
+        if schema_to == "default-2":
+            assert metadata["Tag"] == ["yoda"]
+        elif schema_to == "default-3":
+            assert metadata["Keyword"] == ["yoda"]
+            assert metadata["Creator"][0]["Affiliation"][0]["Affiliation_Name"] == "Utrecht University"

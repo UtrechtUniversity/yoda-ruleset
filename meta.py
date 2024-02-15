@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 import re
 from collections import OrderedDict
 from datetime import datetime
 
 import genquery
 import irods_types
-import jsonschema
+from deepdiff import DeepDiff
 
+import avu_json
 import provenance
 import publication
 import schema as schema_
 import vault
-from avu_json import avu_json
 from util import *
 
 __all__ = ['rule_meta_validate',
@@ -88,21 +89,66 @@ def get_json_metadata_errors(callback,
         metadata = jsonutil.read(callback, metadata_path)
 
     # Perform validation and filter errors.
-    validator = jsonschema.Draft7Validator(schema)
+    # Validation is handed to a Python 3 interpreter to validate with the Draft201909 validator.
+    # This can be removed when we can use Python 3 in the ruleset (iRODS 4.3.x).
+    # validator = jsonschema.Draft7Validator(schema)
+    #
+    # errors = validator.iter_errors(metadata)
+    #
+    # if ignore_required:
+    #     errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+    #
+    # def transform_error(e):
+    #     """Turn a ValidationError into a data structure for the frontend."""
+    #     return {'message':     e.message,
+    #             'path':        list(e.path),
+    #             'schema_path': list(e.schema_path),
+    #             'validator':   e.validator}
+    #
+    # return map(transform_error, errors)
 
-    errors = validator.iter_errors(metadata)
+    # Can't serialize OrderedDict, so transform to dicts.
+    schema = json.loads(json.dumps(schema))
+    metadata = json.loads(json.dumps(metadata))
 
-    if ignore_required:
-        errors = [e for e in errors if e.validator not in ['required', 'dependencies']]
+    # Create gateway to Python 3.8.
+    import execnet
+    gw = execnet.makegateway("popen//python=/usr/local/bin/python3")
 
-    def transform_error(e):
-        """Turn a ValidationError into a data structure for the frontend."""
-        return {'message':     e.message,
-                'path':        list(e.path),
-                'schema_path': list(e.schema_path),
-                'validator':   e.validator}
+    channel = gw.remote_exec("""
+        import jsonschema
+        errors = []
+        while 1:
+            schema, metadata, ignore_required = channel.receive()
+            if schema is None:
+                break
 
-    return list(map(transform_error, errors))
+            # Perform validation and filter errors.
+            validator = jsonschema.Draft201909Validator(schema)
+            errors = validator.iter_errors(metadata)
+
+            if ignore_required:
+                errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+
+            def transform_error(e):
+                return {'message':     e.message,
+                        'path':        list(e.path),
+                        'schema_path': list(e.schema_path),
+                        'validator':   e.validator}
+
+            errors = list(map(transform_error, errors))
+        channel.send(errors)
+    """)
+
+    channel.send((schema, metadata, ignore_required))
+    channel.send((None, None, None))
+    errors = channel.receive()
+
+    # Log metadata errors.
+    for error in errors:
+        log.write(callback, error)
+
+    return errors
 
 
 def is_json_metadata_valid(callback,
@@ -334,67 +380,69 @@ def ingest_metadata_staging(ctx, path):
 
 def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
-    ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+    msi.coll_create(ctx, path, "", irods_types.BytesBuf())
+    ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
 
     for creator in metadata['Creator']:
         name = creator['Name']
         if 'Given_Name' in name and 'Family_Name' in name:
-            ctx.msi_add_avu('-d', path, 'Creator',
+            ctx.msi_add_avu('-C', path, 'Creator',
                             name['Given_Name'] + ' ' + name['Family_Name'],
                             constants.UUFLATINDEX)
         if 'Owner_Role' in creator:
-            ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
+            ctx.msi_add_avu('-C', path, 'Owner_Role', creator['Owner_Role'],
                             constants.UUFLATINDEX)
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
-            name = contributor['Name']
-            if 'Given_Name' in name and 'Family_Name' in name:
-                ctx.msi_add_avu('-d', path, 'Contributor',
-                                name['Given_Name'] + ' ' + name['Family_Name'],
-                                constants.UUFLATINDEX)
+            if 'Name' in contributor:
+                name = contributor['Name']
+                if 'Given_Name' in name and 'Family_Name' in name:
+                    ctx.msi_add_avu('-C', path, 'Contributor',
+                                    name['Given_Name'] + ' ' + name['Family_Name'],
+                                    constants.UUFLATINDEX)
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
-            ctx.msi_add_avu('-d', path, 'Tag', tag,
+            ctx.msi_add_avu('-C', path, 'Tag', tag,
                             constants.UUFLATINDEX)
 
-    ctx.msi_add_avu('-d', path, 'Title', metadata['Title'],
+    ctx.msi_add_avu('-C', path, 'Title', metadata['Title'],
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path,  'Description', metadata['Description'],
+    ctx.msi_add_avu('-C', path,  'Description', metadata['Description'],
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path, 'Data_Access_Restriction',
+    ctx.msi_add_avu('-C', path, 'Data_Access_Restriction',
                     metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
     if 'Research_Group' in metadata:
-        ctx.msi_add_avu('-d', path, 'Research_Group',
+        ctx.msi_add_avu('-C', path, 'Research_Group',
                         metadata['Research_Group'], constants.UUFLATINDEX)
     if 'Collection_Name' in metadata:
-        ctx.msi_add_avu('-d', path, 'Collection_Name',
+        ctx.msi_add_avu('-C', path, 'Collection_Name',
                         metadata['Collection_Name'], constants.UUFLATINDEX)
     if 'Collected' in metadata:
         if 'Start_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-d', path, 'Collected_Start_Year',
+            ctx.msi_add_avu('-C', path, 'Collected_Start_Year',
                             metadata['Collected']['Start_Date'][:4],
                             constants.UUFLATINDEX)
         if 'End_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-d', path, 'Collected_End_Year',
+            ctx.msi_add_avu('-C', path, 'Collected_End_Year',
                             metadata['Collected']['End_Date'][:4],
                             constants.UUFLATINDEX)
 
     if 'GeoLocation' in metadata:
         for geoLocation in metadata['GeoLocation']:
             if 'Description_Spatial' in geoLocation:
-                ctx.msi_add_avu('-d', path, 'Description_Spatial', geoLocation['Description_Spatial'],
+                ctx.msi_add_avu('-C', path, 'Description_Spatial', geoLocation['Description_Spatial'],
                                 constants.UUFLATINDEX)
 
-    ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
+    ctx.msi_add_avu('-C', path, 'Creation_Time', creation_time,
                     constants.UUFLATINDEX)
-    ctx.msi_add_avu('-d', path, 'Creation_Year',
+    ctx.msi_add_avu('-C', path, 'Creation_Year',
                     str(datetime.fromtimestamp(int(creation_time)).year),
                     constants.UUFLATINDEX)
 
     if config.enable_data_package_reference:
-        ctx.msi_add_avu('-d', path, 'Data_Package_Reference', data_package,
+        ctx.msi_add_avu('-C', path, 'Data_Package_Reference', data_package,
                         constants.UUFLATINDEX)
 
 
@@ -435,8 +483,8 @@ def ingest_metadata_vault(ctx, path):
             data_package = row[0]
 
     # Update flat index metadata for OpenSearch.
-    if config.enable_open_search:
-        update_index_metadata(ctx, path, metadata, creation_time, data_package)
+    if config.enable_open_search and group.exists(ctx, coll.split("/")[3].replace("vault-", "deposit-", 1)):
+        update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
@@ -455,6 +503,7 @@ def rule_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_vault(ctx, path)
+        vault.update_archive(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
         ingest_metadata_research(ctx, path)
     elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
@@ -510,8 +559,13 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Make sure rods has access to the json file.
     client_full_name = user.full_name(ctx)
 
+    # Get the metadata before the ingest
+    previous_metadata = get_latest_vault_metadata_path(ctx, vault_pkg_path)
+    prev_json = jsonutil.read(ctx, previous_metadata)
+    prev_json_data = json.loads(json.dumps(prev_json))
+
     try:
-        ret = msi.check_access(ctx, json_path, 'modify_object', irods_types.BytesBuf())
+        ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
             msi.set_acl(ctx, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError:
@@ -541,11 +595,16 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Copy the file, with its ACLs.
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
-        msi.data_obj_copy(ctx, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, json_path, dest, 'destRescName={}++++verifyChksum='.format(config.resource_vault), irods_types.BytesBuf())
     except error.UUError:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
                    .format(json_path, dest))
         return
+
+    # Get the metadata after the ingest
+    latest_metadata = get_latest_vault_metadata_path(ctx, vault_pkg_path)
+    current_json = jsonutil.read(ctx, latest_metadata)
+    current_json_data = json.loads(json.dumps(current_json))
 
     try:
         callback.iiCopyACLsFromParent(dest, 'default')
@@ -553,11 +612,36 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
         return
 
+    # Log the difference between the metadata before and after the ingest
+    try:
+        meta_diff = DeepDiff(prev_json_data, current_json_data)
+        item_list = {}
+        for i in meta_diff:
+            action = i.split('_')[-1]
+            item_list[action] = []
+            if i.startswith('dictionary'):
+                keys = meta_diff[i]
+            else:
+                keys = meta_diff[i].keys()
+            if keys:
+                for item in keys:
+                    m = re.match("root\['(.*?)'\]", item)
+                    if m:
+                        item_list[action].append(m.group(1).replace('_', ' '))
+
+        for item in item_list:
+            if len(item_list[item]) < 5:
+                list_of_changes = ', '.join(item_list[item])
+                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {}'.format(item.replace('changed', 'modified'), list_of_changes))
+            else:
+                list_of_changes = ', '.join(item_list[item][:4])
+                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {} and more'.format(item.replace('changed', 'modified'), list_of_changes))
+    except Exception:
+        # Log provenance without the differences
+        provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
+
     # Write license file.
     vault.vault_write_license(ctx, vault_pkg_path)
-
-    # Log actions.
-    provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
 
     # Cleanup staging area.
     try:

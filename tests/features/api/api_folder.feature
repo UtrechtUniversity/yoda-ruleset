@@ -1,3 +1,4 @@
+@api
 Feature: Folder API
 
     Scenario Outline: Folder lock
@@ -12,6 +13,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | LOCKED |
             | /tempZone/home/research-core-1    | LOCKED |
             | /tempZone/home/research-default-2 | LOCKED |
+            | /tempZone/home/research-core-2    | LOCKED |
+            | /tempZone/home/research-default-3 | LOCKED |
 
 
     Scenario Outline: Folder get locks
@@ -26,6 +29,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 |
             | /tempZone/home/research-core-1    |
             | /tempZone/home/research-default-2 |
+            | /tempZone/home/research-core-2    |
+            | /tempZone/home/research-default-3 |
 
 
     Scenario Outline: Folder unlock
@@ -40,6 +45,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | FOLDER |
             | /tempZone/home/research-core-1    | FOLDER |
             | /tempZone/home/research-default-2 | FOLDER |
+            | /tempZone/home/research-core-2    | FOLDER |
+            | /tempZone/home/research-default-3 | FOLDER |
 
 
     Scenario Outline: Folder submit
@@ -55,6 +62,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | SUBMITTED |
             | /tempZone/home/research-core-1    | SUBMITTED |
             | /tempZone/home/research-default-2 | SUBMITTED |
+            | /tempZone/home/research-core-2    | SUBMITTED |
+            | /tempZone/home/research-default-3 | SUBMITTED |
 
 
     Scenario Outline: Folder unsubmit
@@ -69,6 +78,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | FOLDER |
             | /tempZone/home/research-core-1    | FOLDER |
             | /tempZone/home/research-default-2 | FOLDER |
+            | /tempZone/home/research-core-2    | FOLDER |
+            | /tempZone/home/research-default-3 | FOLDER |
 
 
     Scenario Outline: Folder resubmit after unsubmit
@@ -83,6 +94,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | SUBMITTED |
             | /tempZone/home/research-core-1    | SUBMITTED |
             | /tempZone/home/research-default-2 | SUBMITTED |
+            | /tempZone/home/research-core-2    | SUBMITTED |
+            | /tempZone/home/research-default-3 | SUBMITTED |
 
 
     Scenario Outline: Folder reject
@@ -97,6 +110,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | REJECTED |
             | /tempZone/home/research-core-1    | REJECTED |
             | /tempZone/home/research-default-2 | REJECTED |
+            | /tempZone/home/research-core-2    | REJECTED |
+            | /tempZone/home/research-default-3 | REJECTED |
 
 
     Scenario Outline: Folder resubmit after reject
@@ -111,6 +126,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | SUBMITTED |
             | /tempZone/home/research-core-1    | SUBMITTED |
             | /tempZone/home/research-default-2 | SUBMITTED |
+            | /tempZone/home/research-core-2    | SUBMITTED |
+            | /tempZone/home/research-default-3 | SUBMITTED |
 
 
     Scenario Outline: Folder accept
@@ -125,6 +142,8 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | ACCEPTED |
             | /tempZone/home/research-core-1    | ACCEPTED |
             | /tempZone/home/research-default-2 | ACCEPTED |
+            | /tempZone/home/research-core-2    | ACCEPTED |
+            | /tempZone/home/research-default-3 | ACCEPTED |
 
 
     Scenario Outline: Folder secured
@@ -137,3 +156,5 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | SECURED  |
             | /tempZone/home/research-core-1    | SECURED  |
             | /tempZone/home/research-default-2 | SECURED  |
+            | /tempZone/home/research-core-2    | SECURED  |
+            | /tempZone/home/research-default-3 | SECURED  |

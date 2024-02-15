@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2021-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
 import time
 
 import genquery
@@ -39,15 +40,15 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
     datasets_moved = 0
 
     # TYPE A:
-    iter = genquery.row_iterator(
+    c_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '" + intake_root + "%'",
+        "META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME = '" + intake_root + "'",
         genquery.AS_LIST, ctx)
 
-    for row in iter:
+    for row in itertools.chain(c_main_collection_iterator):
         toplevel_collection = row[0]
         dataset_id = row[1]
-        # Find locked/fronzen status
+        # Get status ( locked / frozen )
         locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, True)
         if locked_state['locked']:
             # Freeze the dataset
@@ -59,12 +60,12 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
                 datasets_moved += 1
 
     # TYPE B:
-    iter = genquery.row_iterator(
+    d_main_collection_iterator = genquery.row_iterator(
         "COLL_NAME, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '" + intake_root + "%'",
+        "META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME = '" + intake_root + "'",
         genquery.AS_LIST, ctx)
 
-    for row in iter:
+    for row in itertools.chain(d_main_collection_iterator):
         toplevel_collection = row[0]
         dataset_id = row[1]
         # check if to_vault_lock exists on all the dataobjects of this dataset
@@ -250,7 +251,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
                        "dataset_warning", "datasetid"]
 
     if not is_collection:
-        # first chksum the orginal file then use it to verify the vault copy
+        # first chksum the original file then use it to verify the vault copy
         try:
             ctx.msiDataObjChksum(object_path, "forceChksum=", 0)
             ctx.msiDataObjCopy(object_path, vault_path, 'verifyChksum=', 0)
@@ -332,7 +333,7 @@ def vault_walk_ingest_object(ctx, item_parent, item_name, is_collection, buffer)
 
 
 def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
-    """Walk a subtree and perfom 'rule_to_process' per item.
+    """Walk a subtree and perform 'rule_to_process' per item.
 
     :param ctx:             Combined type of a callback and rei struct
     :param path:            Path of collection to treewalk
@@ -388,7 +389,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
 
 def vault_dataset_exists(ctx, vault_root, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
-    # Beware! extra 'ver' before version from orginal code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
+    # Beware! extra 'ver' before version from original code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
     wepv = id_components["wave"] + "_" + id_components["experiment_type"] + "_" + id_components["pseudocode"] + "_ver" + id_components["version"]
     dataset_path = vault_root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv
 
@@ -405,7 +406,7 @@ def vault_dataset_exists(ctx, vault_root, dataset_id):
 
 def get_dataset_path(root, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
-    # Beware! extra 'ver' before version from orginal code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
+    # Beware! extra 'ver' before version from original code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
     wepv = id_components["wave"] + "_" + id_components["experiment_type"] + "_" + id_components["pseudocode"] + "_ver" + id_components["version"]
 
     return root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+from datetime import datetime
 
 import jinja2
 from dateutil import parser
@@ -41,7 +43,7 @@ def persistent_identifier_to_uri(identifier_scheme, identifier):
     return uri
 
 
-def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
+def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema, baseDOI, versions):
     """Get the landing page of published YoDa metadata as a string.
 
     :param callback:      Callback to rule Language
@@ -49,6 +51,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
     :param json_schema:   Dict holding entire contents of metadata.json for the category involved
+    :param baseDOI:       Base DOI of the publication
+    :param versions:      Dict containing all the versions of the publication
 
     :return: Output HTML landing page
     """
@@ -80,6 +84,15 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         return landing_page
 
     # Gather all metadata.
+
+    # Is this datapackage under embargo?
+    no_active_embargo = True
+
+    # Datapackage under embargo?
+    embargo_end_date = dictJsonData.get('Embargo_End_Date', None)
+    if embargo_end_date is not None and len(embargo_end_date):
+        no_active_embargo = (datetime.now().strftime('%Y-%m-%d') >= embargo_end_date)
+
     title = dictJsonData['Title']
     description = dictJsonData['Description']
 
@@ -120,9 +133,11 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     try:
         language = ''
         language_id = dictJsonData['Language']
-        schema_lang_ids = json_schema['definitions']['optionsLanguage']['enum']
-        schema_lang_names = json_schema['definitions']['optionsLanguage']['enumNames']
+        # Convert just the language schemas to unicode to handle when a language has non-ascii characters (like Volapük)
+        schema_lang_ids = map(lambda x: x.decode("utf-8"), json_schema['definitions']['optionsISO639-1']['enum'])
+        schema_lang_names = map(lambda x: x.decode("utf-8"), json_schema['definitions']['optionsISO639-1']['enumNames'])
         index = schema_lang_ids.index(language_id)
+        # Language variable must be kept in unicode, otherwise landing page fails to build with a language with non-ascii characters
         language = schema_lang_names[index]
     except KeyError:
         language = ''
@@ -146,6 +161,11 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         tags = dictJsonData['Tag']  # not mandatory
     except KeyError:
         tags = []
+
+    try:
+        keywords = dictJsonData['Keyword']  # not mandatory
+    except KeyError:
+        keywords = []
 
     try:
         apparatus = dictJsonData['Apparatus']
@@ -209,14 +229,24 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         inferred_deformation_behaviour = []
 
     # Route all domain specific keywords to tag area of landingpage
-    all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure
+    all_taggebles = (tags + keywords + apparatus + main_setting + process_hazard + geological_structure
                      + geomorphical_feature + material + monitoring + software + measured_property
                      + pore_fluid + ancillary_equipment + inferred_deformation_behaviour)
 
+    # from core-2 and default-3 'Datapackage' is renamed to 'Resource'
+    try:
+        related_resources = dictJsonData['Related_Resource']  # not mandatory
+    except KeyError:
+        related_resources = []
+
+    # Resources backward compatibility with older schema definitions
     try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
     except KeyError:
         related_datapackages = []
+
+    # Presence of rel_resources and rel_datapackage is mutually exclusive.
+    all_related_resources = related_resources + related_datapackages
 
     try:
         creators = dictJsonData['Creator']
@@ -268,6 +298,16 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         collection_name = ''
 
+    try:
+        base_doi = baseDOI
+    except KeyError:
+        base_doi = ''
+
+    try:
+        all_versions = versions
+    except KeyError:
+        all_versions = []
+
     tm = Template(template)
     # tm.globals['custom_function'] = custom_function
     tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
@@ -285,6 +325,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         contributors=contributors,
         contacts=contacts,
         publication_date=publication_date,
+        embargo_end_date=embargo_end_date,
+        no_active_embargo=no_active_embargo,
         data_access_restriction=data_access_restriction,
         license=license,
         license_uri=license_uri,
@@ -293,9 +335,11 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         data_classification=data_classification,
         collection_name=collection_name,
         last_modified_date=last_modified_date,
-        related_datapackages=related_datapackages,
+        related_resources=all_related_resources,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
         geolocations=geolocations,
-        covered_geolocation_place=covered_geolocation_place)
+        covered_geolocation_place=covered_geolocation_place,
+        base_doi=base_doi,
+        all_versions=all_versions)
 
     return landing_page

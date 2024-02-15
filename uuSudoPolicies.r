@@ -12,7 +12,7 @@
 # Preproc rules should never issue Sudo actions of their own.
 # Instead, put any additional actions that may need to be taken with a certain
 # sudo action in a postproc rule, which is guaranteed to be executed on
-# succesful completion of the sudo action.
+# successful completion of the sudo action.
 #
 # There are currently three implementations of the preproc set of sudo policy
 # rules, all listed in this rule file.
@@ -59,6 +59,8 @@ acPreSudoGroupRemove(*groupName, *policyKv) {
 	writeLine("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
+  # User is admin, check whether the vault has no datapackages.
+  uuGroupPreSudoGroupRemoveForAdmin(*groupName, *policyKv);
 }
 
 acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {

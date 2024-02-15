@@ -1,3 +1,4 @@
+@api
 Feature: Schema API
 
     Scenario Outline: Schema get schemas
@@ -13,8 +14,17 @@ Feature: Schema API
             | researcher  | default-0 |
             | researcher  | default-1 |
             | researcher  | default-2 |
+            | researcher  | default-3 |
             | datamanager | core-0    |
             | datamanager | core-1    |
             | datamanager | default-0 |
             | datamanager | default-1 |
-            | datamanager | default-2 |
+	          | datamanager | default-2 |
+            | datamanager | default-3 |
+
+
+    Scenario Outline: Schema get schemas and default schema
+        Given user researcher is authenticated
+        And the Yoda schema get schemas API is queried
+        Then the response status code is "200"
+        And default schema is present

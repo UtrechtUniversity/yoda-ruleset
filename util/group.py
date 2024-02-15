@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -52,7 +52,7 @@ def get_category(ctx, grp):
     :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
-    :returns: Categroy of given group
+    :returns: Category of given group
     """
     ret = ctx.uuGroupGetCategory(grp, '', '')
     x = ret['arguments'][1]

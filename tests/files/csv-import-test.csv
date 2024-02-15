@@ -1,4 +1,4 @@
-category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1
+category,subcategory,groupname,manager,member,member,viewer
 test-automation,csv-test,csv-test-group1,groupmanager@yoda.test,researcher@yoda.test,datamanager@yoda.test,viewer@yoda.test
 test-automation,csv-test,csv-test-group2,groupmanager@yoda.test,researcher@yoda.test,datamanager@yoda.test,viewer@yoda.test
 test-automation,csv-test,csv-test-group3,groupmanager@yoda.test,researcher@yoda.test,datamanager@yoda.test,viewer@yoda.test

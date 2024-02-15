@@ -35,7 +35,7 @@ def ui_reset_notifcations(browser):
 
 @when(parsers.parse('user checks and clears notifications for status "{status}"'))
 def ui_notifications(browser, status):
-    time.sleep(6)
+    time.sleep(10)
     status_text = {'Submitted': ['Data package submitted'],
                    'Accepted': ['Data package secured', 'Data package accepted for vault'],
                    'Submitted for publication': ['Data package submitted for publication', 'Data package secured'],
@@ -44,7 +44,7 @@ def ui_notifications(browser, status):
     browser.find_by_id('userDropdown').click()
     browser.links.find_by_partial_text('Notifications')[0].click()
 
-    time.sleep(3)
+    time.sleep(5)
     assert len(browser.find_by_css('.list-group-item-action')) == len(status_text[status])
 
     index = 0
@@ -65,7 +65,7 @@ def ui_check_provenance_research(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct research folder already
     # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
-    # eventhough the folder is used several times in a different test run
+    # even though the folder is used several times in a different test run
     browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
@@ -82,8 +82,23 @@ def ui_check_provenance_vault(browser):
     browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
+
     # Chronological (backward) status changes
     prov_statuses = ['Published', 'Approved for publication', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
+    for index in range(0, len(prov_statuses)):
+        assert action_log_rows[index].value.find(prov_statuses[index]) != -1
+
+
+@when('user checks version provenance info vault')
+def ui_check_version_provenance_vault(browser):
+    # Check presence and chronological order of provenance
+    # precondition is that in the correct vault folder (highest level datapackage) already
+    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon').click()
+    action_log_rows = browser.find_by_css('.list-group-item-action')
+
+    # Chronological (backward) status changes
+    prov_statuses = ['Published', 'Approved for publication', 'Added metadata: related datapackage', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
     for index in range(0, len(prov_statuses)):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
 
@@ -107,13 +122,13 @@ def ui_pub_open_system_metadata(browser):
 
 @then('landingpage content matches yoda-metadata.json')
 def ui_pub_check_landingpage_content(browser, tmpdir):
-    tags = browser.find_by_css('.tag')
-    assert len(tags) == 9  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
+    keywords = browser.find_by_css('.keyword')
+    assert len(keywords) == 9  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
 
     # Build list with tag values
     landingpage_tag_values = []
-    for i in range(len(tags)):
-        landingpage_tag_values.append(tags[i].text)
+    for i in range(len(keywords)):
+        landingpage_tag_values.append(keywords[i].text)
 
     # take yoda-metadata.json into account
     root_dir = Path(tmpdir).parent
@@ -125,7 +140,7 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
     for child in download_dir.iterdir():
         if str(child)[-5:] == ".json":
 
-            # This is dependant on the metadata schema. Now hardcoded and tested only for geo-teclab
+            # This is dependent on the metadata schema. Now hardcoded and tested only for geo-teclab
             metadata_tags = ['Main_Setting', 'Process_Hazard', 'Geological_Structure', 'Material',
                              'Apparatus', 'Monitoring', 'Software', 'Measured_Property', 'Tag']
             with open(str(child)) as json_file:
@@ -141,6 +156,16 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
             return
 
     raise AssertionError()
+
+
+@then('view contents button is present')
+def ui_view_contents_present(browser):
+    browser.is_element_visible_by_css('.view-contents', wait_time=5)
+
+
+@then('view contents button is not present')
+def ui_view_contents_not_present(browser):
+    not browser.is_element_visible_by_css('.view-contents', wait_time=5)
 
 
 @when(parsers.parse("user browses to data package in {vault}"))
@@ -194,6 +219,12 @@ def ui_data_package_submit(browser):
 
 @when('user chooses new publication')
 def ui_data_package_choose(browser):
+    browser.find_by_css('.action-confirm-data-package-select').click()
+
+
+@when('user chooses new version of existing publication')
+def ui_data_package_choose_version(browser):
+    browser.find_by_id('dataPackage1').click()
     browser.find_by_css('.action-confirm-data-package-select').click()
 
 

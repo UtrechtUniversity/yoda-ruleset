@@ -1,3 +1,4 @@
+@api
 Feature: Settings API
 
     Scenario Outline: Settings Save
@@ -13,6 +14,8 @@ Feature: Settings API
             | technicaladmin | group_manager_view      | TREE  |
             | researcher     | number_of_items         | 10    |
             | technicaladmin | number_of_items         | 10    |
+            | researcher     | color_mode              | AUTO  |
+            | technicaladmin | color_mode              | AUTO  |
 
 
     Scenario Outline: Settings Load
@@ -29,3 +32,5 @@ Feature: Settings API
             | technicaladmin | group_manager_view      | TREE  |
             | researcher     | number_of_items         | 10    |
             | technicaladmin | number_of_items         | 10    |
+            | researcher     | color_mode              | AUTO  |
+            | technicaladmin | color_mode              | AUTO  |

@@ -4,7 +4,7 @@
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
 # \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
-# \licens    GPLv3 see LICENSE.
+# \license   GPLv3 see LICENSE.
 
 
 # This policy override enables the datamanager to manage ACL's in the vault
@@ -25,7 +25,16 @@ acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 # \param[in] policyKv
 #
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	*actor = *policyKv.actor;
+	# Initially current user will be set as actor.
+	# If policyKv holds another, then that actor will override.
+	*actor = uuClientFullName;
+	foreach(*key in *policyKv) {
+		if (*key == "actor") {
+			*actor = *policyKv.actor
+			break;
+		}
+	}
+
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
 	writeLine("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
 	if (*allowed) {
@@ -81,7 +90,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		uuGroupExists(*otherName, *datamanagerExists);
 		if (!*datamanagerExists) {
 			*allowed = false;
-			*reason = "User is not a datamanager or *otherName does not exists.";
+			*reason = "User is not a datamanager or *otherName does not exist.";
 			succeed;
 		}
 		uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
@@ -178,7 +187,8 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		}
 	}
 
-	# fallback to prevent users defining and using there own iiCanDatamanagerAclSet. This is also reached when the frontend requests a status change it is not allowed to
+	# fallback to prevent users defining and using their own iiCanDatamanagerAclSet.
+	# This is also reached when the frontend requests a status change it is not allowed to do.
 	on (true) {
 		*allowed = false;
 		*reason = "Current status of folder *objPath is not 'submitted', 'accepted' or 'rejected'. Therefore the requested action can not be completed as a datamanager.";

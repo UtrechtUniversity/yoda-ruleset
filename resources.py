@@ -15,9 +15,11 @@ __all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_full_year_differentiated_group_storage',
-           'rule_resource_store_monthly_storage_statistics',
+           'rule_resource_store_storage_statistics',
            'rule_resource_transform_old_storage_data',
            'rule_resource_research',
+           'rule_resource_update_resc_arb_data',
+           'rule_resource_update_misc_arb_data',
            'rule_resource_vault']
 
 
@@ -166,7 +168,7 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
     """
     # Check permissions for this function
     # Member of this group?
-    member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
+    member_type = groups.user_role(ctx, user.full_name(ctx), group_name)
     if member_type not in ['reader', 'normal', 'manager']:
         category = groups.group_category(ctx, group_name)
         if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
@@ -205,28 +207,33 @@ def api_resource_category_stats(ctx):
     """Collect storage stats of last month for categories.
     Storage is summed up for each category.
 
-    :param ctx:      Combined type of a callback and rei struct
+    :param ctx: Combined type of a callback and rei struct
 
     :returns: Storage stats of last month for a list of categories
     """
-
     categories = get_categories(ctx)
 
+    # Non-admin users don't have access to category storage statistics.
+    # This makes sure the table is not presented in the frontend.
+    if len(categories) == 0:
+        return {'categories': [], 'external_filter': ''}
+
+    # Continue for admins and datamanagers
     storage = {}
 
     # Go through current groups of current categories.
     # This function has no historic value so it is allowed to do so
     for category in categories:
-        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
+        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0, 'internal': 0, 'external': 0}
 
         # for all groups in category
         groups = get_groups_on_categories(ctx, [category])
-        for group in groups:
-            if group.startswith(('research', 'deposit', 'intake', 'grp')):
+        for groupname in groups:
+            if groupname.startswith(('research', 'deposit', 'intake', 'grp')):
                 # Only check the most recent storage measurement
                 iter = list(genquery.Query(ctx,
                             ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                            "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, group),
+                            "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, groupname),
                             offset=0, limit=1, output=genquery.AS_LIST))
 
                 for row in iter:
@@ -239,16 +246,56 @@ def api_resource_category_stats(ctx):
 
     # Now go through all totals
     all_storage = []
+
+    # Totalization for the entire instance.
+    instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
+
+    # Member counts
+    cat_members = {}
+    members_total = []
+    for category in categories:
+        members = []
+        # this information is only available for yoda-admins
+        for groupname in get_groups_on_categories(ctx, [category]):
+            group_members = list(group.members(ctx, groupname))
+            for gm in group_members:
+                members.append(gm[0])
+                members_total.append(gm[0])
+        # deduplicate member list
+        cat_members[category] = list(set(members))
+
+    cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
+
+    def count_externals(members):
+        return len([member for member in members if not yoda_names.is_internal_user(member)])
+
+    def count_internals(members):
+        return len([member for member in members if yoda_names.is_internal_user(member)])
+
     for category in categories:
         storage_humanized = {}
         # humanize storage sizes for the frontend
         for type in ['total', 'research', 'vault', 'revision']:
             storage_humanized[type] = misc.human_readable_size(1.0 * storage[category][type])
+            instance_totals[type] += 1.0 * storage[category][type]
 
+        users = {'internals': count_internals(cat_members[category]), 'externals': count_externals(cat_members[category])}
         all_storage.append({'category': category,
-                           'storage': storage_humanized})
+                            'storage': storage_humanized,
+                            'users': users})
 
-    return sorted(all_storage, key=lambda d: d['category'])
+    # Add the yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL
+    # So the frontend can distinguish instance totals from real category totals
+    users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
+    all_storage.append({'category': "YODA_INSTANCE_TOTAL",
+                        'storage': {'total': misc.human_readable_size(instance_totals['total']),
+                                    'research': misc.human_readable_size(instance_totals['research']),
+                                    'vault': misc.human_readable_size(instance_totals['vault']),
+                                    'revision': misc.human_readable_size(instance_totals['revision'])},
+                        'users': users})
+
+    return {'categories': sorted(all_storage, key=lambda d: d['category']),
+            'external_filter': ', '.join(config.external_users_domain_filter)}
 
 
 @api.make()
@@ -268,6 +315,10 @@ def api_resource_monthly_category_stats(ctx):
     current_month = datetime.now().month
     current_year = datetime.now().year
 
+    # Initialize to prevent errors in log when no data has been registered yet.
+    min_year = -1
+    min_month = -1
+
     # find minimal registered date registered.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
                                "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
@@ -276,6 +327,10 @@ def api_resource_monthly_category_stats(ctx):
     for row in iter:
         min_year = int(row[0][-10:-6])
         min_month = int(row[0][-5:-3])
+
+    if min_month == -1:
+        # if min_month == -1 no minimal date was found. Consequently, stop further processing
+        return {'storage': [], 'dates': []}
 
     # Prepare storage data
     # Create dict with all groups that will contain list of storage values corresponding to complete range from minimal date till now.
@@ -351,7 +406,7 @@ def get_group_category_info(ctx, groupName):
 
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME LIKE '%category'",
+        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME IN('category','subcategory')",
         genquery.AS_LIST, ctx
     )
 
@@ -423,13 +478,8 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 
 
 @rule.make()
-def rule_resource_store_monthly_storage_statistics(ctx):
-    # @rule.make()
-    # def rule_resource_store_group_storage_statistics(ctx):
+def rule_resource_store_storage_statistics(ctx):
     """
-    !!! Function has to be renamed as name does not correspond to its actual function
-
-
     For all categories present, store all found storage data for each group belonging to these categories.
 
     Store as metadata on group level as [category, research, vault, revision, total]
@@ -443,7 +493,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     dt = datetime.today()
     md_storage_date = constants.UUMETADATAGROUPSTORAGETOTALS + dt.strftime("%Y_%m_%d")
 
-    # Delete previous data for this perticular day if present at all
+    # Delete previous data for this particular day if present at all
     # Each group should only have one aggrageted totals attribute per day
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE, USER_GROUP_NAME",
@@ -562,11 +612,83 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                 if group.startswith(('intake', 'grp')):
                     avu.associate_to_group(ctx, group, md_storage_date, storage_val_other)
 
-                log.write(ctx, 'Storage data collected and stored for current month')
+                log.write(ctx, 'Storage data collected and stored for current month <{}>'.format(group))
             else:  # except Exception:
-                log.write(ctx, 'Skipping group as not prefixed with either research-, deposit-, intake- or grp-')
+                log.write(ctx, 'Skipping group as not prefixed with either research-, deposit-, intake- or grp- <{}>'.format(group))
 
     return 'ok'
+
+
+@rule.make(inputs=[0, 1, 2], outputs=[])
+def rule_resource_update_resc_arb_data(ctx, resc_name, bytes_free, bytes_total):
+    """
+    Update ARB data for a specific resource
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param resc_name: Name of a particular unixfilesystem resource
+    :param bytes_free: Free size on this resource, in bytes
+    :param bytes_total: Total size of this resource, in bytes
+    """
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "Error: insufficient permissions to run ARB data update rule.")
+        return
+
+    if not resource.exists(ctx, resc_name):
+        log.write(ctx, "Error: could not find resource named '{}' for ARB update.".format(resc_name))
+        return
+
+    bytes_free_gb = int(bytes_free) / 2 ** 30
+    bytes_free_percent = 100 * (float(bytes_free) / float(bytes_total))
+
+    if resc_name in config.arb_exempt_resources:
+        arb_status = constants.arb_status.EXEMPT
+    elif bytes_free_gb >= config.arb_min_gb_free and bytes_free_percent > config.arb_min_percent_free:
+        arb_status = constants.arb_status.AVAILABLE
+    else:
+        arb_status = constants.arb_status.FULL
+
+    parent_resc_name = resource.get_parent_by_name(ctx, resc_name)
+
+    manager = arb_data_manager.ARBDataManager()
+    manager.put(ctx, resc_name, constants.arb_status.IGNORE)
+
+    if parent_resc_name is not None and resource.get_type_by_name(ctx, parent_resc_name) == "passthru":
+        manager.put(ctx, parent_resc_name, arb_status)
+
+
+@rule.make()
+def rule_resource_update_misc_arb_data(ctx):
+    """Update ARB data for resources that are not covered by the regular process. That is,
+       all resources that are neither unixfilesystem nor passthrough resources, as well as
+       passthrough resources that do not have a unixfilesystem child resource.
+
+       :param ctx: Combined type of a callback and rei struct
+    """
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "Error: insufficient permissions to run ARB data update rule.")
+        return
+
+    manager = arb_data_manager.ARBDataManager()
+
+    all_resources = resource.get_all_resource_names(ctx)
+    ufs_resources = set(resource.get_resource_names_by_type(ctx, "unixfilesystem")
+                        + resource.get_resource_names_by_type(ctx, "unix file system"))
+    pt_resources  = set(resource.get_resource_names_by_type(ctx, "passthru"))
+
+    for resc in all_resources:
+        if resc in ufs_resources:
+            pass
+        elif resc not in pt_resources:
+            manager.put(ctx, resc, constants.arb_status.IGNORE)
+        else:
+            child_resources = resource.get_children_by_name(ctx, resc)
+            child_found = False
+            for child_resource in child_resources:
+                if child_resource in ufs_resources:
+                    child_found = True
+            # Ignore the passthrough resource if it does not have a UFS child resource
+            if not child_found:
+                manager.put(ctx, resc, constants.arb_status.IGNORE)
 
 
 def get_categories(ctx):

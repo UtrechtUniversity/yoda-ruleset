@@ -26,6 +26,12 @@ def ui_settings_check_group_manager_view(browser, type):
     browser.find_by_value(type).click()
 
 
+@when(parsers.parse("user sets color mode to {type}"))
+def ui_settings_check_color_mode(browser, type):
+    browser.find_by_css('#color_mode').click()
+    browser.find_by_value(type).click()
+
+
 @when(parsers.parse("user sets number of items to {type}"))
 def ui_settings_check_number_of_items(browser, type):
     browser.find_by_css('#number_of_items').click()
@@ -50,3 +56,8 @@ def ui_settings_number_of_items_checked(browser, type):
 @then(parsers.parse("group manager view is set to {type}"))
 def ui_settings_group_manager_view_checked(browser, type):
     assert browser.find_by_css('#group_manager_view').value == type
+
+
+@then(parsers.parse("color mode is set to {type}"))
+def ui_settings_color_mode_checked(browser, type):
+    assert browser.find_by_css('#color_mode').value == type

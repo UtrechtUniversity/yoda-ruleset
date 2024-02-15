@@ -1,3 +1,4 @@
+@ui
 Feature: Login UI
 
     Scenario Outline: User login flow
@@ -24,6 +25,18 @@ Feature: Login UI
         Examples:
             | user                |
             | chewbacca@yoda.test |
+
+
+    Scenario Outline: PAM user not in iRODS flow
+        Given user is not logged in
+        And the user is at the login gate
+        When user <user> enters email address
+        And user <user> logs in
+        Then user not in Yoda message is shown
+
+        Examples:
+            | user    |
+            | pamuser |
 
 
     Scenario Outline: Redirected to login page

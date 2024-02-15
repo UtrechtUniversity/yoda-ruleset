@@ -1,0 +1,96 @@
+{
+    "Discipline": [
+        "Natural Sciences - Mathematics (1.1)"
+    ],
+    "Language": "en - English",
+    "Tag": [
+        "yoda"
+    ],
+    "Data_Type": "Dataset",
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
+            },
+            "Affiliation": [
+                "University Džemal Bijedić of Mostar"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Affiliation": [
+                "University of Göttingen"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Affiliation": [
+                "École des Beaux-Arts"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Related_Datapackage": [
+        {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://doi.org/10.1038/sdata.2016.18"
+            },
+            "Relation_Type": "References: Current datapackages references",
+            "Title": "The FAIR Guiding Principles for scientific data management and stewardship"
+        }
+    ],
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/default-2/metadata.json"
+        }
+    ],
+    "Retention_Period": 10,
+    "Title": "API test default-2",
+    "Description": "API test default-2",
+    "Data_Classification": "Public",
+    "License": "Creative Commons Attribution 4.0 International Public License"
+}

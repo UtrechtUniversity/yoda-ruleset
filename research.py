@@ -4,8 +4,6 @@
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import binascii
-
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
@@ -68,7 +66,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders')
 
     # Collection exists?
@@ -93,12 +91,13 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
 
 @api.make()
-def api_research_folder_copy(ctx, folder_path, new_folder_path):
+def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False):
     """Copy a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to copy
     :param new_folder_path: Path to the new copy of the folder
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
@@ -129,7 +128,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected folder')
 
     # Folder not locked?
@@ -140,9 +139,13 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
     if not collection.exists(ctx, folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
+    # Collection exists in destination?
+    if not overwrite and collection.exists(ctx, new_folder_path):
+        return api.Error('invalid_destination', 'Folder with this name already exists in destination')
+
     # All requirements OK
     try:
-        collection.copy(ctx, folder_path, new_folder_path)
+        collection.copy(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -150,12 +153,13 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
 
 @api.make()
-def api_research_folder_move(ctx, folder_path, new_folder_path):
+def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False):
     """Move a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param folder_path:     Path to the folder to move
     :param new_folder_path: Path to the new folder
+    :param overwrite:       Overwrite folder if it already exists
 
     :returns: Dict with API status result
     """
@@ -186,7 +190,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected folder')
 
     # Folder not locked?
@@ -197,9 +201,13 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
     if not collection.exists(ctx, folder_path):
         return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
 
+    # Collection exists in destination?
+    if not overwrite and collection.exists(ctx, new_folder_path):
+        return api.Error('invalid_destination', 'Folder with this name already exists in destination')
+
     # All requirements OK
     try:
-        collection.move(ctx, folder_path, new_folder_path)
+        collection.move(ctx, folder_path, new_folder_path, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -250,7 +258,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected folder')
 
     # Collection exists?
@@ -301,7 +309,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected folder')
 
     # Folder not locked?
@@ -354,12 +362,13 @@ def api_research_list_temporary_files(ctx, coll):
 
 
 @api.make()
-def api_research_file_copy(ctx, filepath, new_filepath):
+def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     """Copy a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to copy
     :param new_filepath: Path to the new copy of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -392,7 +401,7 @@ def api_research_file_copy(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected file')
 
     # Folder not locked?
@@ -404,12 +413,12 @@ def api_research_file_copy(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.copy(ctx, filepath, new_filepath)
+        data_object.copy(ctx, filepath, new_filepath, force=overwrite)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -456,7 +465,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected file')
 
     # Folder not locked?
@@ -471,7 +480,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     if data_object.exists(ctx, path_target):
         return api.Error('invalid_destination', 'The selected filename ' + new_file_name + ' already exists')
 
-    # Does data object has replica in intermediate or locked state? (replica is not actively being written to or opened for read)
+    # Does data object have replica in intermediate or locked state? (replica is not actively being written to or opened for read)
     if data_object.has_replica_with_status(ctx, coll + '/' + org_file_name, [constants.replica_status.INTERMEDIATE_REPLICA,
                                                                              constants.replica_status.READ_LOCKED,
                                                                              constants.replica_status.WRITE_LOCKED]):
@@ -487,12 +496,13 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 
 @api.make()
-def api_research_file_move(ctx, filepath, new_filepath):
+def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     """Move a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
     :param filepath:     Path to the file to move
     :param new_filepath: Path to the new location of the file
+    :param overwrite:    Overwrite file if it already exists
 
     :returns: Dict with API status result
     """
@@ -525,7 +535,7 @@ def api_research_file_move(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected file')
 
     # Folder not locked?
@@ -537,12 +547,16 @@ def api_research_file_move(ctx, filepath, new_filepath):
         return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, new_filepath):
+    if not overwrite and data_object.exists(ctx, new_filepath):
         return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.rename(ctx, filepath, new_filepath)
+        if overwrite:
+            data_object.copy(ctx, filepath, new_filepath, force=overwrite)
+            data_object.remove(ctx, filepath)
+        else:
+            data_object.rename(ctx, filepath, new_filepath)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
@@ -572,7 +586,7 @@ def api_research_file_delete(ctx, coll, file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected file')
 
     # Folder not locked?
@@ -601,22 +615,10 @@ def api_research_system_metadata(ctx, coll):
 
     :returns: Dict with research system metadata
     """
-    import math
-
-    def convert_size(size_bytes):
-        if size_bytes == 0:
-            return "0 B"
-
-        size_name = ('B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB')
-        i = int(math.floor(math.log(size_bytes, 1024)))
-        p = math.pow(1024, i)
-        s = round(size_bytes / p, 2)
-        return '{} {}'.format(s, size_name[i])
-
     data_count = collection.data_count(ctx, coll)
     collection_count = collection.collection_count(ctx, coll)
     size = collection.size(ctx, coll)
-    size_readable = convert_size(size)
+    size_readable = misc.human_readable_size(size)
 
     result = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
@@ -637,7 +639,7 @@ def api_research_collection_details(ctx, path):
     basename = pathutil.chop(path)[1]
 
     # Retrieve user type.
-    member_type = groups.user_role(ctx, group, user.full_name(ctx))
+    member_type = groups.user_role(ctx, user.full_name(ctx), group)
 
     # Retrieve research folder status.
     status = folder.get_status(ctx, path)
@@ -649,25 +651,11 @@ def api_research_collection_details(ctx, path):
     # Retrieve lock count.
     lock_count = meta_form.get_coll_lock_count(ctx, path)
 
-    # Check if vault is accessible.
-    vault_path = ""
-    vault_name = group.replace("research-", "vault-", 1)
-    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + vault_name):
-        vault_path = vault_name
-
     return {"basename": basename,
             "status": status.value,
             "member_type": member_type,
             "is_datamanager": is_datamanager,
-            "lock_count": lock_count,
-            "vault_path": vault_path}
-
-
-def decode_checksum(checksum):
-    if checksum is None:
-        return "0"
-    else:
-        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
+            "lock_count": lock_count}
 
 
 @api.make()
@@ -680,18 +668,18 @@ def api_research_manifest(ctx, coll):
     :returns: List of json objects with name and checksum
     """
     iter = genquery.row_iterator(
-        "ORDER(DATA_NAME), DATA_CHECKSUM",
+        "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         "COLL_NAME = '{}'".format(coll),
         genquery.AS_LIST, ctx
     )
-    checksums = [{"name": row[0], "checksum": decode_checksum(row[1])} for row in iter]
+    checksums = [{"name": row[0], "size": misc.human_readable_size(int(row[1])), "checksum": data_object.decode_checksum(row[2])} for row in iter]
 
     iter_sub = genquery.row_iterator(
-        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
+        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         "COLL_PARENT_NAME like '{}%'".format(coll),
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
-    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "checksum": decode_checksum(row[2])} for row in iter_sub]
+    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub

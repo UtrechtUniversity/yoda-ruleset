@@ -4,11 +4,6 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json
-import os
-from collections import OrderedDict
-from urllib.parse import urlparse
-
 from pytest_bdd import (
     given,
     parsers,
@@ -19,30 +14,6 @@ from pytest_bdd import (
 from conftest import api_request
 
 scenarios('../../features/api/api_meta.feature')
-
-
-@given(parsers.parse("metadata JSON exists in {collection}"))
-def api_meta_form_save(user, collection):
-    _, body = api_request(
-        user,
-        "meta_form_load",
-        {"coll": collection}
-    )
-
-    path = urlparse(body['data']['schema']['$id']).path
-    schema = path.split("/")[2]
-
-    cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, schema)) as f:
-        metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
-
-    http_status, _ = api_request(
-        user,
-        "meta_form_save",
-        {"coll": collection, "metadata": metadata}
-    )
-
-    assert http_status == 200
 
 
 @given(parsers.parse("cloned metadata JSON exists in {clone_collection}"))

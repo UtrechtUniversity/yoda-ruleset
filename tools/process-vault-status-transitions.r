@@ -30,16 +30,23 @@ processVaultActions() {
 					writeLine("stdout", "Failed to process vault request on *collName");
 				} else { # skip processing this vault request
 					# Retrieve collection id from folder.
+					*vaultCollFound = "no";
 					foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
 						*collId = *row.COLL_ID;
+						*vaultCollFound = "yes";
 					}
 
-					# Check if vault package is currently pending for status transition.
 					*pending = false;
-					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId";
-					foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
-						*pending = true;
+					if (*vaultCollFound == "yes" ) {
+						# Check if vault package is currently pending for status transition.
+						*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId";
+						foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
+							*pending = true;
+						}
+					} else {
+						writeLine("serverLog", "Error in vault transition: unable to find folder *folder, which was referred to in metadata from *collName. Ignoring ...");
 					}
+
 
 					# Perform status transition if action is pending.
 					if (*pending) {

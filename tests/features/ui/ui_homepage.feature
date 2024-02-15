@@ -1,3 +1,4 @@
+@ui
 Feature: Homepage UI
 
     Scenario Outline: Viewing homepage logged in

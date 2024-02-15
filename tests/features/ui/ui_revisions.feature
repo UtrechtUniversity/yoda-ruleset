@@ -1,3 +1,4 @@
+@ui
 Feature: Revisions UI
 
     Background:
@@ -14,7 +15,7 @@ Feature: Revisions UI
 
         Examples:
             | name  | revision                                                |
-	        | SIPI  | /research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff |
+            | SIPI  | /research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff |
             | lorem | /research-initial/testdata/lorem.txt                    |
 
 
@@ -25,7 +26,7 @@ Feature: Revisions UI
         And user restores revision <revision>
         Then revision is restored
 
-    Examples:
-        | name  | revision                                                |
-        | SIPI  | /research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff |
-        | lorem | /research-initial/testdata/lorem.txt                    |
+        Examples:
+            | name  | revision                                                |
+            | SIPI  | /research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff |
+            | lorem | /research-initial/testdata/lorem.txt                    |

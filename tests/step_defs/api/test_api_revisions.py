@@ -31,7 +31,7 @@ def api_response_revision_search_result(api_response, revision_search_result):
 
     assert len(body['data']['items']) > 0
 
-    # Check expected result is in reveived search results.
+    # Check expected result is in received search results.
     found = False
     for item in body['data']['items']:
         if revision_search_result in item["main_original_dataname"]:

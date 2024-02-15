@@ -1,66 +1,506 @@
 [
-    {
-		"value": "https://ror.org/04pp8hn57",
-		"label": "Utrecht University"
-	},
-	{
-		"value": "https://ror.org/05grdyy37",
-		"label": "Amsterdam University Medical Centers"
-	},
-	{
-		"value": "https://ror.org/02c2kyt77",
-		"label": "Eindhoven University of Technology"
-	},
-	{
-		"value": "https://ror.org/057w15z03",
-		"label": "Erasmus University Rotterdam"
-	},
-	{
-		"value": "https://ror.org/027bh9e22",
-		"label": "Leiden University"
-	},
-	{
-		"value": "https://ror.org/05xvt9f17",
-		"label": "Leiden University Medical Center"
-	},
-	{
-		"value": "https://ror.org/02jz4aj89",
-		"label": "Maastricht University"
-	},
-	{
-		"value": "https://ror.org/02d9ce178",
-		"label": "Maastricht University Medical Centre"
-	},
-	{
-		"value": "https://ror.org/016xsfp80",
-		"label": "Radboud University Nijmegen"
-	},
-	{
-		"value": "https://ror.org/05wg1m734",
-		"label": "Radboud University Nijmegen Medical Centre"
-	},
-	{
-		"value": "https://ror.org/0575yy874",
-		"label": "University Medical Center Utrecht"
-	},
-	{
-		"value": "https://ror.org/04dkp9463",
-		"label": "University of Amsterdam"
-	},
-	{
-		"value": "https://ror.org/012p63287",
-		"label": "University of Groningen"
-	},
-	{
-		"value": "https://ror.org/006hf6230",
-		"label": "University of Twente"
-	},
-	{
-		"value": "https://ror.org/008xxew50",
-		"label": "Vrije Universiteit Amsterdam"
-	},
-	{
-		"value": "https://ror.org/04qw24q55",
-		"label": "Wageningen University & Research"
-	}
+  {
+    "value": "https://ror.org/04x5wnb75",
+    "label": "Academic Center for Dentistry Amsterdam"
+  },
+  {
+    "value": "https://ror.org/02nt7ap43",
+    "label": "Academie Verloskunde Amsterdam Groningen"
+  },
+  {
+    "value": "https://ror.org/030ms0k96",
+    "label": "Alfa College"
+  },
+  {
+    "value": "https://ror.org/01g0n8690",
+    "label": "Amsterdam Institute for Advanced Metropolitan Solutions"
+  },
+  {
+    "value": "https://ror.org/03dpjfc73",
+    "label": "Amsterdam University College"
+  },
+  {
+    "value": "https://ror.org/00y2z2s03",
+    "label": "Amsterdam University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/04dde1554",
+    "label": "Amsterdam University of the Arts"
+  },
+  {
+    "value": "https://ror.org/05az93f25",
+    "label": "ArtEZ Institute of the Arts"
+  },
+  {
+    "value": "https://ror.org/015d5s513",
+    "label": "Avans University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/003meye08",
+    "label": "Avans+"
+  },
+  {
+    "value": "https://ror.org/014dvgf17",
+    "label": "BASilar artery International Cooperation Study"
+  },
+  {
+    "value": "https://ror.org/05rxmpb48",
+    "label": "BC Broekhin Roermond"
+  },
+  {
+    "value": "https://ror.org/002g6sj22",
+    "label": "Bertrand Russell College"
+  },
+  {
+    "value": "https://ror.org/03nk3sc73",
+    "label": "Bonaventuracollege"
+  },
+  {
+    "value": "https://ror.org/020dp5a36",
+    "label": "C.T. de Wit Graduate School for Production Ecology and Resource Conservation"
+  },
+  {
+    "value": "https://ror.org/041deym60",
+    "label": "Center for Technology & Innovation Management"
+  },
+  {
+    "value": "https://ror.org/02gd5t807",
+    "label": "Christelijk Gymnasium Utrecht"
+  },
+  {
+    "value": "https://ror.org/02rdwwh89",
+    "label": "Christelijke Scholengemeenschap Walcheren"
+  },
+  {
+    "value": "https://ror.org/04tj5wz42",
+    "label": "Christian University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/04vtvrr13",
+    "label": "Codarts Rotterdam"
+  },
+  {
+    "value": "https://ror.org/03kfjwh70",
+    "label": "College voor de Rechten van de Mens"
+  },
+  {
+    "value": "https://ror.org/00e39jm60",
+    "label": "Curio"
+  },
+  {
+    "value": "https://ror.org/02e2c7k09",
+    "label": "Delft University of Technology"
+  },
+  {
+    "value": "https://ror.org/039vq9023",
+    "label": "Design Academy Eindhoven"
+  },
+  {
+    "value": "https://ror.org/05jext738",
+    "label": "Driestar Christian University"
+  },
+  {
+    "value": "https://ror.org/023p2b446",
+    "label": "Dutch Art Institute"
+  },
+  {
+    "value": "https://ror.org/04jrdcy74",
+    "label": "Dutch Network of Systems and Control"
+  },
+  {
+    "value": "https://ror.org/0265xav62",
+    "label": "Dutch postgraduate School for Art History"
+  },
+  {
+    "value": "https://ror.org/02c2kyt77",
+    "label": "Eindhoven University of Technology"
+  },
+  {
+    "value": "https://ror.org/057w15z03",
+    "label": "Erasmus University Rotterdam"
+  },
+  {
+    "value": "https://ror.org/053qcv951",
+    "label": "European Association of Distance Teaching Universities"
+  },
+  {
+    "value": "https://ror.org/00ftg6h50",
+    "label": "European Graduate School of Neuroscience"
+  },
+  {
+    "value": "https://ror.org/05jrbdv26",
+    "label": "Expertise Center Vocational Education"
+  },
+  {
+    "value": "https://ror.org/03tqe0950",
+    "label": "Expertisecentrum Nederlands"
+  },
+  {
+    "value": "https://ror.org/01p232496",
+    "label": "Fons Vitae Lyceum"
+  },
+  {
+    "value": "https://ror.org/01jwcme05",
+    "label": "Fontys University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/02fq0hm69",
+    "label": "Friesland College"
+  },
+  {
+    "value": "https://ror.org/053jpjd80",
+    "label": "Gerrit Rietveld Academy"
+  },
+  {
+    "value": "https://ror.org/0449h4696",
+    "label": "Graduate School Neurosciences Amsterdam Rotterdam"
+  },
+  {
+    "value": "https://ror.org/0500gea42",
+    "label": "HAN University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/05p706d77",
+    "label": "HAS University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/047cqa323",
+    "label": "HZ University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/03skjap48",
+    "label": "Hague Academy of International Law"
+  },
+  {
+    "value": "https://ror.org/00xqtxw43",
+    "label": "Hanze University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/056k6yz11",
+    "label": "Hogeschool de Kempel"
+  },
+  {
+    "value": "https://ror.org/0230zs006",
+    "label": "Hogeschool iPabo"
+  },
+  {
+    "value": "https://ror.org/018t8yw14",
+    "label": "Hotelschool The Hague"
+  },
+  {
+    "value": "https://ror.org/03wyamy27",
+    "label": "Huizinga Instituut"
+  },
+  {
+    "value": "https://ror.org/030deh410",
+    "label": "IHE Delft Institute for Water Education"
+  },
+  {
+    "value": "https://ror.org/039ryse59",
+    "label": "Ichthus College"
+  },
+  {
+    "value": "https://ror.org/03cfsyg37",
+    "label": "Inholland University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/04jxbkz90",
+    "label": "Institute for Programming research and Algorithmics"
+  },
+  {
+    "value": "https://ror.org/04m5bjk54",
+    "label": "Instituut voor Nederlandse Lexicologie"
+  },
+  {
+    "value": "https://ror.org/00bscyw28",
+    "label": "International Bureau of Fiscal Documentation"
+  },
+  {
+    "value": "https://ror.org/027zjnr49",
+    "label": "International New Town Institute"
+  },
+  {
+    "value": "https://ror.org/04484bb06",
+    "label": "International Research Universities Network"
+  },
+  {
+    "value": "https://ror.org/005rems48",
+    "label": "Interuniversity Center for Social Science Theory and Methodology"
+  },
+  {
+    "value": "https://ror.org/047kqmy39",
+    "label": "Iselinge Hogeschool"
+  },
+  {
+    "value": "https://ror.org/02552gk22",
+    "label": "Islamic University of Rotterdam"
+  },
+  {
+    "value": "https://ror.org/05nrjb178",
+    "label": "Katholieke Pabo Zwolle"
+  },
+  {
+    "value": "https://ror.org/01rps2j56",
+    "label": "Koning Willem I College"
+  },
+  {
+    "value": "https://ror.org/027hreq63",
+    "label": "Koninklijke Scholengemeenschap"
+  },
+  {
+    "value": "https://ror.org/027bh9e22",
+    "label": "Leiden University"
+  },
+  {
+    "value": "https://ror.org/04zb8fk81",
+    "label": "Maastricht School of Management"
+  },
+  {
+    "value": "https://ror.org/02jz4aj89",
+    "label": "Maastricht University"
+  },
+  {
+    "value": "https://ror.org/03pdfag88",
+    "label": "Marecollege"
+  },
+  {
+    "value": "https://ror.org/03xws5b35",
+    "label": "Marnix Academie"
+  },
+  {
+    "value": "https://ror.org/05mv4rb84",
+    "label": "Medicines Evaluation Board"
+  },
+  {
+    "value": "https://ror.org/004pfc251",
+    "label": "Middelbaar Beroeps Onderwijs"
+  },
+  {
+    "value": "https://ror.org/02xgxme97",
+    "label": "NHL Stenden University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/04mfj5474",
+    "label": "NHTV Breda University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/025gshh98",
+    "label": "NTI University"
+  },
+  {
+    "value": "https://ror.org/03y974j42",
+    "label": "Nefrovisie"
+  },
+  {
+    "value": "https://ror.org/025fr4535",
+    "label": "Netherlands Graduate Research School of Science, Technology and Modern Culture"
+  },
+  {
+    "value": "https://ror.org/05dbptw67",
+    "label": "Netherlands Graduate School of Linguistics"
+  },
+  {
+    "value": "https://ror.org/0567f1w19",
+    "label": "Netherlands Institute for Catalysis Research"
+  },
+  {
+    "value": "https://ror.org/04mx1wt49",
+    "label": "Netherlands Research School for Literary Studies"
+  },
+  {
+    "value": "https://ror.org/033958n71",
+    "label": "Netherlands School of Public Administration"
+  },
+  {
+    "value": "https://ror.org/018528593",
+    "label": "Nyenrode Business University"
+  },
+  {
+    "value": "https://ror.org/01n92vv28",
+    "label": "Oncode Institute"
+  },
+  {
+    "value": "https://ror.org/018dfmf50",
+    "label": "Open University in the Netherlands"
+  },
+  {
+    "value": "https://ror.org/008za0b72",
+    "label": "Openbare Scholengemeenschap De Hogeberg"
+  },
+  {
+    "value": "https://ror.org/03naar428",
+    "label": "Postmaster Psychologie Opleidingen"
+  },
+  {
+    "value": "https://ror.org/016w23120",
+    "label": "Protestant Theological University"
+  },
+  {
+    "value": "https://ror.org/016xsfp80",
+    "label": "Radboud University Nijmegen"
+  },
+  {
+    "value": "https://ror.org/02ar29j81",
+    "label": "Reformed University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/02z0ywx65",
+    "label": "Regionale scholengemeenschap Goeree-Overflakkee"
+  },
+  {
+    "value": "https://ror.org/01jcjpa26",
+    "label": "Reinwardt Academie"
+  },
+  {
+    "value": "https://ror.org/03bkq6a07",
+    "label": "Research School for Medieval Studies"
+  },
+  {
+    "value": "https://ror.org/0481e1q24",
+    "label": "Rotterdam University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/00490vc18",
+    "label": "Royal Academy of Art"
+  },
+  {
+    "value": "https://ror.org/01mwwwn80",
+    "label": "Royal Conservatory of The Hague"
+  },
+  {
+    "value": "https://ror.org/0175ya539",
+    "label": "Royal Dutch Kentalis"
+  },
+  {
+    "value": "https://ror.org/005t9n460",
+    "label": "Saxion University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/01dcz6f16",
+    "label": "Scalda"
+  },
+  {
+    "value": "https://ror.org/04x99xv31",
+    "label": "Stoas University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/03q7ay915",
+    "label": "TIAS School for Business and Society"
+  },
+  {
+    "value": "https://ror.org/01dn09e98",
+    "label": "Terra"
+  },
+  {
+    "value": "https://ror.org/021zvq422",
+    "label": "The Hague University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/02x435584",
+    "label": "Theological University"
+  },
+  {
+    "value": "https://ror.org/03s2fjy85",
+    "label": "Theological University of Apeldoorn"
+  },
+  {
+    "value": "https://ror.org/0183vre95",
+    "label": "TiFN"
+  },
+  {
+    "value": "https://ror.org/04b8v1s79",
+    "label": "Tilburg University"
+  },
+  {
+    "value": "https://ror.org/054xxtt73",
+    "label": "Tinbergen Institute"
+  },
+  {
+    "value": "https://ror.org/00560h931",
+    "label": "Tio University"
+  },
+  {
+    "value": "https://ror.org/05f0rzm15",
+    "label": "Transnational University Limburg"
+  },
+  {
+    "value": "https://ror.org/04ryr8437",
+    "label": "Udens College"
+  },
+  {
+    "value": "https://ror.org/002fzqp75",
+    "label": "University for Peace"
+  },
+  {
+    "value": "https://ror.org/04dkp9463",
+    "label": "University of Amsterdam"
+  },
+  {
+    "value": "https://ror.org/0093src13",
+    "label": "University of Applied Sciences Leiden"
+  },
+  {
+    "value": "https://ror.org/028z9kw20",
+    "label": "University of Applied Sciences Utrecht"
+  },
+  {
+    "value": "https://ror.org/012p63287",
+    "label": "University of Groningen"
+  },
+  {
+    "value": "https://ror.org/04w5ec154",
+    "label": "University of Humanistic Studies"
+  },
+  {
+    "value": "https://ror.org/006hf6230",
+    "label": "University of Twente"
+  },
+  {
+    "value": "https://ror.org/018bzp792",
+    "label": "University of the Arts Utrecht"
+  },
+  {
+    "value": "https://ror.org/04pp8hn57",
+    "label": "Utrecht University"
+  },
+  {
+    "value": "https://ror.org/02mdbnd10",
+    "label": "Van Hall Larenstein University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/02dnd4c36",
+    "label": "Van Lodenstein College"
+  },
+  {
+    "value": "https://ror.org/026rmnx29",
+    "label": "Via Vinci Academy"
+  },
+  {
+    "value": "https://ror.org/01xpgs822",
+    "label": "Vilentum University of applied sciences"
+  },
+  {
+    "value": "https://ror.org/008xxew50",
+    "label": "Vrije Universiteit Amsterdam"
+  },
+  {
+    "value": "https://ror.org/04qw24q55",
+    "label": "Wageningen University & Research"
+  },
+  {
+    "value": "https://ror.org/036k3ee35",
+    "label": "Windesheim Flevoland"
+  },
+  {
+    "value": "https://ror.org/04zmc0e16",
+    "label": "Windesheim University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/020z55s31",
+    "label": "Wittenborg University"
+  },
+  {
+    "value": "https://ror.org/02m6k0m40",
+    "label": "Zuyd University of Applied Sciences"
+  }
 ]

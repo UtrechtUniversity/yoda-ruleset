@@ -1,0 +1,108 @@
+{
+    "Discipline": [
+        "Natural Sciences - Mathematics (1.1)"
+    ],
+    "Language": "en - English",
+    "Data_Type": "Dataset",
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "Utrecht University",
+                    "Affiliation_Identifier": "https://ror.org/04pp8hn57"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "University Džemal Bijedić of Mostar",
+                    "Affiliation_Identifier": "https://ror.org/00ey4b732"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "University of Göttingen",
+                    "Affiliation_Identifier": "https://ror.org/01y9bpm73"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "École Nationale Supérieure des Beaux-Arts",
+                    "Affiliation_Identifier": "https://ror.org/01cdn3r29"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Related_Resource": [
+        {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://doi.org/10.1038/sdata.2016.18"
+            },
+            "Relation_Type": "References",
+            "Title": "The FAIR Guiding Principles for scientific data management and stewardship"
+        }
+    ],
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/default-3/metadata.json"
+        }
+    ],
+    "Retention_Period": 10,
+    "Title": "API test default-3",
+    "Description": "API test default-3",
+    "Data_Classification": "Public",
+    "License": "Creative Commons Attribution 4.0 International Public License",
+    "Keyword": [
+        "test"
+    ]
+}

@@ -1,3 +1,4 @@
+@api
 Feature: Browse API
 
     Scenario Outline: Browse folder
@@ -37,7 +38,7 @@ Feature: Browse API
 
         Examples:
             | user        | collection                               | sort_on  | sort_order     | result                       |
-            | researcher  | /tempZone/home/research-initial/testdata | name     | asc            | lorem.txt                    |
+            | researcher  | /tempZone/home/research-initial/testdata | name     | asc            | image.txt                    |
             | researcher  | /tempZone/home/research-initial/testdata | name     | desc           | SIPI_Jelly_Beans_4.1.07.tiff |
-            | researcher  | /tempZone/home/research-initial/testdata | size     | asc            | SIPI_Jelly_Beans_4.1.07.tiff |
-            | researcher  | /tempZone/home/research-initial/testdata | size     | desc           | lorem.txt                    |
+            | researcher  | /tempZone/home/research-initial/testdata | size     | asc            | image.txt                    |
+            | researcher  | /tempZone/home/research-initial/testdata | size     | desc           | large-file.html              |

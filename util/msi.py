@@ -9,6 +9,8 @@ all errors to unambiguous Python exceptions.
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import irods_types
+
 import error
 
 
@@ -69,7 +71,7 @@ def _wrap(msi, exception):
     becomes: data_obj_create(callback, x, y, z)
 
     :param msi:       MSI function to wrap
-    :param exception: Exeption to throw on failure
+    :param exception: Exception to throw on failure
 
     :returns: MSI wrapper
     """
@@ -111,6 +113,10 @@ get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get ob
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
 bytes_buf_to_str, BytesBufToStr       = make('BytesBufToStr',  'Could not write bytes buffer to string')
 
+archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
+archive_index,    ArchiveIndexError   = make('ArchiveIndex',   'Could not index archive')
+archive_extract,  ArchiveExtractError = make('ArchiveExtract', 'Could not extract from archive')
+
 register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
 
 string_2_key_val_pair, String2KeyValPairError = \
@@ -131,3 +137,11 @@ add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
 rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
+
+touch, TouchError = make('_touch', 'Could not update the data object or collection')
+obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object or collection')
+
+
+def kvpair(ctx, k, v):
+    """Create a keyvalpair object, needed by certain msis."""
+    return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]

@@ -116,7 +116,7 @@ uuYcVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 			}
 		}
 	} else {   # its not a collection but a data object
-		# first chksum the orginal file then use it to verify the vault copy
+		# first chksum the original file, then use it to verify the vault copy
 		msiDataObjChksum(*objectPath, "forceChksum=", *checksum);
 		msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status);
 		if (*status == 0) {
@@ -315,7 +315,7 @@ uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
 
 	# note that we have to allow for multiple types of datasets:
 	#    type A: a single toplevel collection with a tree underneath
-	#    type B: one or more datafiles located within the same collection
+	#    type B: one or more data files located within the same collection
 	# processing varies slightly between them, so process each type in turn
 	#
 	# TYPE A:
@@ -328,7 +328,7 @@ uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
 		if (*locked) {
 			uuYcDatasetFreeze(*topLevelCollection, *datasetId, *status);
 			if (*status == 0) {
-				# datset frozen, now move to fault and remove from intake area
+				# dataset frozen; now move to vault and remove from intake area
 				uuYcDatasetCollectionMove2Vault(
 						*intakeRoot,
 						*topLevelCollection,

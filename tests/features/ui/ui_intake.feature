@@ -1,4 +1,4 @@
-@intake
+@ui @intake
 Feature: Intake UI
 
     @fail

@@ -1,7 +1,7 @@
 # coding=utf-8
 """Group API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -67,16 +67,49 @@ def api_group_does_not_exist(user, group_name):
 
 @given(parsers.parse('the user creates a new group "{group_name}"'), target_fixture="api_response")
 def api_group_create(user, group_name):
+    cat_and_subcat = "-".join(group_name.split("-")[1:-1])
     return api_request(
         user,
         "group_create",
         {"group_name": group_name,
-         "category": "api-test",
-         "subcategory": "api-test",
+         "category": cat_and_subcat,
+         "subcategory": cat_and_subcat,
          "schema_id": "default-2",
          "expiration_date": "",
          "description": "",
          "data_classification": "public"}
+    )
+
+
+@given(parsers.parse('the user creates a new deposit group "{group_name}"'), target_fixture="api_response")
+def api_group_create_deposit(user, group_name):
+    cat_and_subcat = group_name.split("-", 1)[1]
+    return api_request(
+        user,
+        "group_create",
+        {"group_name": group_name,
+         "category": cat_and_subcat,
+         "subcategory": cat_and_subcat,
+         "schema_id": "default-3",
+         "expiration_date": "",
+         "description": "",
+         "data_classification": ""}
+    )
+
+
+@given(parsers.parse('the user creates a new datamanager group "{group_name}"'), target_fixture="api_response")
+def api_datamanager_group_create(user, group_name):
+    cat_and_subcat = group_name.split("-", 1)[1]
+    return api_request(
+        user,
+        "group_create",
+        {"group_name": group_name,
+         "category": cat_and_subcat,
+         "subcategory": cat_and_subcat,
+         "schema_id": "",
+         "expiration_date": "",
+         "description": "",
+         "data_classification": ""}
     )
 
 
@@ -261,13 +294,18 @@ def then_user_update_persisted(user, new_user, group_name):
     assert role == "manager"
 
 
-@given('the Yoda API for processing csv group data API is queried', target_fixture="api_response")
-def api_group_import_csv_data(user):
-    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1\rdefault-2,default-2,csvtestgroup,man1@uu.nl,member1@uu.nl,member2222@uu.nl,blabla@uu.nl"
+@given(parsers.parse('the Yoda API for processing csv group data API is queried for data "{data_id}"'), target_fixture="api_response")
+def api_group_import_csv_data(user, data_id):
+    headers_and_data = {
+        "csvtestgroup": "category,subcategory,groupname,manager,member,member,viewer,member\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com",
+        "csvtestgroup1": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test,2030-01-01,default-2",
+        "csv-missing-header": "category,,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test",
+        "csv-missing-entry": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,,csvtestgroup1,datamanager@yoda.test",
+    }
     return api_request(
         user,
         "group_process_csv",
-        {"csv_header_and_data": header_and_data,
+        {"csv_header_and_data": headers_and_data[data_id],
          "allow_update": True,
          "delete_users": True}
     )

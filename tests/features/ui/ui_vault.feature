@@ -1,3 +1,4 @@
+@ui
 Feature: Vault UI
 
     Scenario Outline: Vault submit
@@ -133,7 +134,7 @@ Feature: Vault UI
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user clicks metatadata button
+        And user clicks metadata button
         Then metadata form is visible
 
         Examples:
@@ -203,13 +204,13 @@ Feature: Vault UI
             | vault-initial1 |
 
 
-    Scenario Outline: Check datapackage compliancy with policy
+    Scenario Outline: Check datapackage compliance with policy
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user clicks clicks action menu to check compliancy
+        And user clicks clicks action menu to check compliance
         And user chooses policy
-        Then compliancy result is presented
+        Then compliance result is presented
 
         Examples:
             | vault          |
@@ -220,9 +221,21 @@ Feature: Vault UI
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user clicks action menu go to research
+        And user clicks go to research
 	    Then the research space of <vault> is shown
 
         Examples:
             | vault          |
             | vault-initial1 |
+
+
+    Scenario Outline: Go to group manager from vault
+        Given user datamanager is logged in
+        And module "vault" is shown
+        When user browses to data package in <vault>
+        And user clicks go to group manager
+        And correct row in tree is active for <group>
+
+        Examples:
+            | vault          | group             |
+            | vault-initial1 | research-initial1 |

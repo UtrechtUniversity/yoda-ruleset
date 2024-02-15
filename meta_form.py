@@ -128,6 +128,9 @@ def load(ctx, coll):
     # - Who are we dealing with?
     user_full_name = user.full_name(ctx)
 
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
+
     # - What kind of collection path is this?
     space, zone, group, subpath = pathutil.info(coll)
     if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
@@ -136,7 +139,7 @@ def load(ctx, coll):
     category = groups.group_category(ctx, group)
 
     # - What rights does the client have?
-    is_member = groups.user_role(ctx, group, user_full_name) in ['normal', 'manager']
+    is_member = groups.user_role(ctx, user_full_name, group) in ['normal', 'manager']
 
     # - What is the active schema for this category?
     schema, uischema = schema_.get_active_schema_uischema(ctx, coll)
@@ -194,7 +197,7 @@ def load(ctx, coll):
                 except Exception as e:
                     log.write(ctx, 'Unknown error while validating <{}> against schema id <{}>: {}'
                               .format(meta_path, current_schema_id, str(e)))
-                    return api.Error('internal', 'The metadata file is could not be validated due to an internal error.')
+                    return api.Error('internal', 'The metadata file could not be validated due to an internal error.')
                 else:
                     # No errors! Offer automatic transformation.
                     return api.Error('transformation_needed',

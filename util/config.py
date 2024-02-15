@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -72,6 +72,7 @@ class Config(object):
 
 # Note: Must name all valid config items.
 config = Config(environment=None,
+                default_yoda_schema=None,
                 resource_primary=[],
                 resource_trigger_pol=[],
                 resource_replica=[],
@@ -90,21 +91,35 @@ config = Config(environment=None,
                 datacite_username=None,
                 datacite_password=None,
                 datacite_publisher=None,
+                datacite_tls_verify=True,
                 eus_api_fqdn=None,
                 eus_api_port=None,
                 eus_api_secret=None,
+                eus_api_tls_verify=True,
                 enable_deposit=False,
                 enable_open_search=False,
+                enable_inactivity_notification=False,
                 enable_intake=False,
                 enable_datarequest=False,
+                enable_data_package_archive=False,
+                enable_data_package_download=False,
+                data_package_archive_fqdn=None,
+                data_package_archive_minimum=0,
+                data_package_archive_maximum=0,
+                data_package_archive_resource=None,
                 enable_data_package_reference=False,
                 enable_tokens=False,
                 enable_tape_archive=False,
+                inactivity_cutoff_months=3,
                 token_database=None,
                 token_database_password=None,
                 token_length=0,
                 token_lifetime=0,
                 token_expiration_notification=0,
+                async_replication_delay_time=0,
+                async_replication_max_rss=1000000000,
+                async_revision_delay_time=0,
+                async_revision_max_rss=1000000000,
                 yoda_portal_fqdn=None,
                 epic_pid_enabled=False,
                 epic_url=None,
@@ -112,7 +127,19 @@ config = Config(environment=None,
                 epic_key=None,
                 epic_certificate=None,
                 temporary_files=[],
-                external_users_domain_filter=[])
+                external_users_domain_filter=[],
+                enable_sram=True,
+                sram_rest_api_url=None,
+                sram_api_key=None,
+                sram_service_entity_id=None,
+                sram_flow=None,
+                sram_verbose_logging=False,
+                sram_tls_verify=True,
+                arb_enabled=False,
+                arb_exempt_resources=[],
+                arb_min_gb_free=0,
+                arb_min_percent_free=5,
+                text_file_extensions=[])
 
 # }}}
 

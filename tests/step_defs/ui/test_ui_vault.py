@@ -91,7 +91,7 @@ def ui_data_package_status(browser, status):
 def ui_provenance_log(browser, status):
     # Check presence of provenance log item.
     # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
-    # eventhough the folder is used several times in a different test run
+    # even though the folder is used several times in a different test run
     browser.find_by_css('.actionlog-icon')[0].click()
     prov_statuses = {"Unpublished": "Secured in vault",
                      "Submitted for publication": "Submitted for publication",
@@ -123,7 +123,7 @@ def ui_data_package_core_metadata_is_visible(browser):
     browser.is_element_visible_by_css('span.metadata-license', wait_time=3)
 
 
-@when('user clicks metatadata button')
+@when('user clicks metadata button')
 def ui_data_package_click_metadata_button(browser):
     browser.find_by_css('button.metadata-form').click()
 
@@ -212,8 +212,8 @@ def ui_data_package_is_copied_to_research(browser):
     browser.is_element_present_by_css('.action-revoke-vault-access')
 
 
-@when('user clicks clicks action menu to check compliancy')
-def ui_data_package_check_compliancy(browser):
+@when('user clicks clicks action menu to check compliance')
+def ui_data_package_check_compliance(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-check-for-unpreservable-files').click()
 
@@ -224,15 +224,14 @@ def ui_data_package_choose_policy(browser):
     browser.find_option_by_value('DANS').click()
 
 
-@then('compliancy result is presented')
-def ui_data_package_compliancy_is_presented(browser):
+@then('compliance result is presented')
+def ui_data_package_compliance_is_presented(browser):
     assert browser.find_by_css('p.help')
 
 
-@when('user clicks action menu go to research')
+@when('user clicks go to research')
 def ui_data_package_go_to_research(browser):
-    browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-go-to-research').click()
+    browser.find_by_css('.btn-go-to-research').click()
 
 
 @then(parsers.parse("the research space of {vault} is shown"))

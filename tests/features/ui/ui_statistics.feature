@@ -1,3 +1,4 @@
+@ui
 Feature: Statistics UI
 
     Scenario Outline: Viewing storage details of a research group

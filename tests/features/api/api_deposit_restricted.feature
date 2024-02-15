@@ -1,4 +1,4 @@
-@deposit
+@api @deposit
 Feature: Deposit API (restricted)
 
     Scenario: Deposit created
@@ -15,7 +15,7 @@ Feature: Deposit API (restricted)
         Then the response status code is "200"
 
         Examples:
-            | file                   |
+            | file                              |
             | deposit_restricted_test_file1.txt |
             | deposit_restricted_test_file2.txt |
             | deposit_restricted_test_file3.txt |

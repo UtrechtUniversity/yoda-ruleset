@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -109,25 +109,103 @@ def _default1_default2(ctx, m):
 
 def _default2_default3(ctx, m):
     """
-    Capality to add an ROR identifier to affiliation fields for creators and contributors
+    Add affiliation identifiers to creators and contributors.
+
+    Tags are renamed to Keywords, Related Datapackage renamed to Related Resource and improved Affiliation and Person Identifiers.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-2)
+
+    :returns: Transformed (default-3) JSON object
     """
     if m.get('Creator', False):
-        # For this contributor step through all its affiliations
+        # For this creator step through all its affiliations
         for creator in m['Creator']:
-            new_affiliations = []
+            affiliations = []
             for affiliation in creator['Affiliation']:
-                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
-            creator['Affiliation'] = new_affiliations
+                affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+            creator['Affiliation'] = affiliations
+
+            person_identifiers = []
+            for person_identifier in creator['Person_Identifier']:
+                if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
+                    # Check for incorrect ORCID format.
+                    if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_orcid != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_orcid
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
+                    # Check for incorrect ResearcherID format.
+                    if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_researcher_id != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_researcher_id
+                elif 'Name_Identifier_Scheme' not in person_identifier:
+                    continue
+
+                person_identifiers.append({"Name_Identifier_Scheme": person_identifier['Name_Identifier_Scheme'], "Name_Identifier": person_identifier['Name_Identifier']})
+
+            if len(person_identifiers) > 0:
+                creator['Person_Identifier'] = person_identifiers
 
     if m.get('Contributor', False):
         # For this contributor step through all its affiliations
-        for contrib in m['Contributor']:
-            new_affiliations = []
-            for affiliation in contrib['Affiliation']:
-                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
-            contrib['Affiliation'] = new_affiliations
+        for contributor in m['Contributor']:
+            affiliations = []
+            if contributor.get('Affiliation', False):
+                for affiliation in contributor['Affiliation']:
+                    affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
+                contributor['Affiliation'] = affiliations
+
+            person_identifiers = []
+            for person_identifier in contributor['Person_Identifier']:
+                if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
+                    # Check for incorrect ORCID format.
+                    if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_orcid != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_orcid
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
+                    # Check for incorrect ResearcherID format.
+                    if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_researcher_id != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_researcher_id
+                elif 'Name_Identifier_Scheme' not in person_identifier:
+                    continue
+
+                person_identifiers.append({"Name_Identifier_Scheme": person_identifier['Name_Identifier_Scheme'], "Name_Identifier": person_identifier['Name_Identifier']})
+
+            if len(person_identifiers) > 0:
+                contributor['Person_Identifier'] = person_identifiers
+
+    # Rename Tags to Keywords
+    if m.get('Tag', False):
+        keywords = []
+        for tag in m['Tag']:
+            keywords.append(tag)
+        m['Keyword'] = keywords
+        m.pop('Tag')
+
+    # Rename Related_Datapackage to Related_Resource
+    if m.get('Related_Datapackage', False):
+        resources = []
+        for resource in m['Related_Datapackage']:
+            # Only use the identifier regarding relation type
+            if resource.get('Relation_Type', False):
+                resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
+            resources.append(resource)
+        m['Related_Resource'] = resources
+        m.pop('Related_Datapackage')
+
+    # Restricted or closed data packages can't have open license.
+    data_access_restriction = m.get('Data_Access_Restriction', "")
+    if data_access_restriction == "Restricted - available upon request" or data_access_restriction == "Closed":
+        m['License'] = "Custom"
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-3/metadata.json')
 
@@ -136,16 +214,30 @@ def _default2_default3(ctx, m):
 
 def _core1_core2(ctx, m):
     """
-    Capality to add an ROR identifier to affiliation fields for creators
+    Add affiliation identifiers to creators.
+
+    Tags are renamed to Keywords.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (core-1)
+
+    :returns: Transformed (core-2) JSON object
     """
     if m.get('Creator', False):
-        # For this contributor step through all its affiliations
+        # For this creator step through all its affiliations
         for creator in m['Creator']:
             new_affiliations = []
             for affiliation in creator['Affiliation']:
                 new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            # contrib['Affiliation2'] = new_affiliations
             creator['Affiliation'] = new_affiliations
+
+    # Rename Tags to Keywords
+    if m.get('Tag', False):
+        keywords = []
+        for tag in m['Tag']:
+            keywords.append(tag)
+        m['Keyword'] = keywords
+        m.pop('Tag')
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/core-2/metadata.json')
 
@@ -604,3 +696,36 @@ def get(src_id, dst_id):
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)
+
+
+def correctify_orcid(org_orcid):
+    """Correct illformatted ORCID."""
+    # Get rid of all spaces.
+    orcid = org_orcid.replace(' ', '')
+
+    # Upper-case X.
+    orcid = org_orcid.replace('x', 'X')
+
+    # The last part should hold a valid id like eg: 1234-1234-1234-123X.
+    # If not, it is impossible to correct it to the valid orcid format
+    orcs = orcid.split('/')
+    if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
+        # Return original value.
+        return org_orcid
+
+    return "https://orcid.org/{}".format(orcs[-1])
+
+
+def correctify_researcher_id(org_researcher_id):
+    """Correct illformatted ResearcherID."""
+    # Get rid of all spaces.
+    researcher_id = org_researcher_id.replace(' ', '')
+
+    # The last part should hold a valid id like eg: A-1234-1234
+    # If not, it is impossible to correct it to the valid ResearcherID format
+    orcs = researcher_id.split('/')
+    if not re.search("^[A-Z]-[0-9]{4}-[0-9]{4}$", orcs[-1]):
+        # Return original value.
+        return org_researcher_id
+
+    return "https://www.researcherid.com/rid/{}".format(orcs[-1])

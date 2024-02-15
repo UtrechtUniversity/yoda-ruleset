@@ -4,13 +4,13 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import os
-import re
+import itertools
 import time
 
 import genquery
 
 import intake
+from intake_utils import dataset_parse_id, intake_scan_get_metadata_update
 from util import *
 
 
@@ -41,51 +41,23 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
         # Determene lock state for object (no collectoin
         locked_state = object_is_locked(ctx, path, False)
 
-        if not (locked_state['locked'] or locked_state['frozen']):
-            remove_dataset_metadata(ctx, path, False)
-            scan_mark_scanned(ctx, path, False)
-        if in_dataset:
-            subscope = scope.copy()
+        if locked_state['locked'] or locked_state['frozen']:
+            continue
 
-            # Safeguard original data
-            prev_scope = subscope.copy()
+        remove_dataset_metadata(ctx, path, False)
+        scan_mark_scanned(ctx, path, False)
 
-            # Extract tokens of current name
-            intake_extract_tokens_from_name(ctx, row[1], row[0], False, subscope)
+        parent_in_dataset = in_dataset
+        metadata_update = intake_scan_get_metadata_update(ctx, path, False, in_dataset, scope)
 
-            new_deeper_dataset_toplevel = False
-            if not (prev_scope['pseudocode'] == subscope['pseudocode']
-                    and prev_scope['experiment_type'] == subscope['experiment_type']
-                    and prev_scope['wave'] == subscope['wave']):
-                prev_scope['directory'] = prev_scope["dataset_directory"]
-                if 'version' not in prev_scope:
-                    prev_scope['version'] = 'Raw'
-
-                # It is safe to assume that the dataset was collection based without actively checking.
-                # Otherwise it would mean that each found file on this level could potentially change the dataset properties
-                # avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
-                # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
-                try:
-                    avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
-                except msi.Error:
-                    pass
-
-                new_deeper_dataset_toplevel = True
-            apply_dataset_metadata(ctx, path, subscope, False, new_deeper_dataset_toplevel)
-        else:
-            subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope.copy())
-
-            if intake_tokens_identify_dataset(subscope):
+        if metadata_update["in_dataset"]:
+            apply_dataset_metadata(ctx, path, metadata_update["new_metadata"], False)
+            if not parent_in_dataset:
                 # We found a top-level dataset data object.
-                subscope["dataset_directory"] = row[1]
-                apply_dataset_metadata(ctx, path, subscope, False, True)
-                # For reporting purposes collect the subscopes
-                found_datasets.append(subscope)
-            else:
-                # subscope["dataset_directory"] = row[1]
-                # apply_dataset_metadata(ctx, path, subscope, False, True)
-                apply_partial_metadata(ctx, subscope, path, False)
-                avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
+                found_datasets.append(metadata_update["new_metadata"])
+        else:
+            apply_partial_metadata(ctx, metadata_update["new_metadata"], path, False)
+            avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
     # Scan collections under root
     iter = genquery.row_iterator(
@@ -103,61 +75,28 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
             # get locked /frozen status
             locked_state = object_is_locked(ctx, path, True)
 
-            if not (locked_state['locked'] or locked_state['frozen']):
-                remove_dataset_metadata(ctx, path, True)
+            if locked_state['locked'] or locked_state['frozen']:
+                continue
 
-                subscope = scope.copy()
-                child_in_dataset = in_dataset
+            remove_dataset_metadata(ctx, path, True)
+            scan_mark_scanned(ctx, path, True)
 
-                if in_dataset:  # initially is False
-                    # Safeguard original data
-                    prev_scope = subscope.copy()
+            parent_in_dataset = in_dataset
+            metadata_update = intake_scan_get_metadata_update(ctx, path, True, in_dataset, scope)
 
-                    # Extract tokens of current name
-                    intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
+            if metadata_update["in_dataset"]:
+                apply_dataset_metadata(ctx, path, metadata_update["new_metadata"], True)
+                if not parent_in_dataset:
+                    # We found a new top-level dataset data object.
+                    found_datasets.append(metadata_update["new_metadata"])
+            else:
+                apply_partial_metadata(ctx, metadata_update["new_metadata"], path, True)
 
-                    new_deeper_dataset_toplevel = False
-
-                    # A change in path in relation to the dataset_directory invokes handling of deeper lying dataset.
-                    # This, not necessarily with a dataset id change, but it does change the dataset toplevel
-                    # In fact the same dataset simply lies a level deeper which invokes a dataset_toplevel change
-                    if not (prev_scope['pseudocode'] == subscope['pseudocode']
-                            and prev_scope['experiment_type'] == subscope['experiment_type']
-                            and prev_scope['wave'] == subscope['wave']
-                            and path == prev_scope['dataset_directory']):
-                        # Found a deeper lying dataset with more specific attributes
-                        # Prepwork for being able to create a dataset_id
-                        prev_scope['directory'] = prev_scope["dataset_directory"]
-                        if 'version' not in prev_scope:
-                            prev_scope['version'] = 'Raw'
-
-                        # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
-                        try:
-                            avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
-                        except msi.Error:
-                            pass
-
-                        # set flag correctly for creating of new toplevel
-                        new_deeper_dataset_toplevel = True
-
-                    subscope["dataset_directory"] = path
-                    apply_dataset_metadata(ctx, path, subscope, True, new_deeper_dataset_toplevel)
-
-                    scan_mark_scanned(ctx, path, True)
-                else:
-                    subscope = intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
-
-                    if intake_tokens_identify_dataset(subscope):
-                        child_in_dataset = True
-                        # We found a top-level dataset collection.
-                        subscope["dataset_directory"] = path
-                        apply_dataset_metadata(ctx, path, subscope, True, True)
-                        # For reporting purposes collect the subscopes
-                        found_datasets.append(subscope)
-                    else:
-                        apply_partial_metadata(ctx, subscope, path, True)
-                # Go a level deeper
-                found_datasets = intake_scan_collection(ctx, path, subscope, child_in_dataset, found_datasets)
+            found_datasets = intake_scan_collection(ctx,
+                                                    path,
+                                                    metadata_update["new_metadata"],
+                                                    parent_in_dataset or metadata_update["in_dataset"],
+                                                    found_datasets)
 
     return found_datasets
 
@@ -200,118 +139,6 @@ def object_is_locked(ctx, path, is_collection):
                     locked_state['frozen'] = True
 
     return locked_state
-
-
-def intake_tokens_identify_dataset(tokens):
-    """Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
-
-    :param tokens: A key-value list of tokens
-
-    :returns: Returns whether a dataset is identified
-    """
-    required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
-
-    missing = 0
-    for req_token in required:
-        # required tokens must be present and must have a value
-        if req_token not in tokens or tokens[req_token] == "":
-            missing = missing + 1
-
-    return (missing == 0)
-
-
-def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
-    """Extract one or more tokens from a file / directory name and add dataset information as metadata.
-    :param ctx:           Combined type of a callback and rei struct
-    :param path:          Path to object or collection
-    :param name:          Name of object or collection
-    :param is_collection: Indicates if object or collection
-    :param scoped_buffer: Holds dataset buffer with prefilled keys
-    :returns: Returns extended scope buffer
-    """
-    name_without_ext = os.path.splitext(name)[0]
-    parts = re.split("[_-]", name_without_ext)
-    for part in parts:
-        scoped_buffer.update(intake_extract_tokens(ctx, part))
-    return scoped_buffer
-
-
-def intake_extract_tokens(ctx, string):
-    """Extract tokens from a string and return as dict.
-
-    :param ctx:    Combined type of a callback and rei struct
-    :param string: Token of which to be determined whether experiment type, version etc
-
-    :returns: Returns found kv's
-    """
-    exp_types = ["pci",
-                 "echo",
-                 "facehouse",
-                 "faceemo",
-                 "coherence",
-                 "infprogap",
-                 "infsgaze",
-                 "infpop",
-                 # "mriinhibition",
-                 # "mriemotion",
-                 # "mockinhibition",
-                 "chprogap",
-                 "chantigap",
-                 "chsgaze",
-                 "pciconflict",
-                 "pcivacation",
-                 "peabody",
-                 "discount",
-                 "cyberball",
-                 "trustgame",
-                 "other",
-                 # MRI:
-                 "inhibmockbehav",
-                 "inhibmribehav",
-                 "emotionmribehav",
-                 "emotionmriscan",
-                 "anatomymriscan",
-                 "restingstatemriscan",
-                 "dtiamriscan",
-                 "dtipmriscan",
-                 "mriqcreport",
-                 "mriqceval",
-                 "vasmri",
-                 "vasmock",
-                 #
-                 "looklisten",
-                 "handgame",
-                 "infpeabody",
-                 "delaygratification",
-                 "dtimriscan",
-                 "inhibmriscan",
-                 # 16-Apr-2019 fbyoda email request new exp type:
-                 "chdualet",
-                 # 15-Feb-2021 fbyoda email request new exp type:
-                 "functionalmriscan",
-                 "infdualet",
-                 "vrbartbehav",
-                 "infssat"]
-
-    str_lower = string.lower()
-    str_upper = string.upper()
-    str_for_pseudocode_test = string.split('.')[0]
-    str_for_version_test = string.translate(None, ".")
-
-    foundKVs = {}
-    if re.match('^[0-9]{1,2}[wmy]$', str_lower) is not None:
-        # String contains a wave.
-        # Wave validity is checked later on in the dataset checks.
-        foundKVs["wave"] = str_lower
-    elif re.match('^[bap][0-9]{5}$', str_for_pseudocode_test.lower()) is not None:
-        # String contains a pseudocode.
-        foundKVs["pseudocode"] = str_upper[0:len(str_for_pseudocode_test)]
-    elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', str_for_version_test) is not None:
-        foundKVs["version"] = string[3:len(string)]
-    elif str_lower in exp_types:
-        foundKVs["experiment_type"] = str_lower
-
-    return foundKVs
 
 
 def remove_dataset_metadata(ctx, path, is_collection):
@@ -387,44 +214,20 @@ def scan_mark_scanned(ctx, path, is_collection):
         avu.set_on_data(ctx, path, 'scanned', user_and_timestamp)
 
 
-def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
+def apply_dataset_metadata(ctx, path, scope, is_collection):
     """Apply dataset metadata to an object in a dataset.
 
     :param ctx:           Combined type of a callback and rei struct
     :param path:          Path to the object
     :param scope:         A scanner scope containing WEPV values
     :param is_collection: Whether the object is a collection
-    :param is_top_level:  If true, a dataset_toplevel field will be set on the object
     """
-
-    if "version" not in scope:
-        version = "Raw"
-    else:
-        version = scope["version"]
-
-    subscope = {"wave": scope["wave"],
-                "experiment_type":  scope["experiment_type"],
-                "pseudocode": scope["pseudocode"],
-                "version": version,
-                "directory": scope["dataset_directory"]}
-
-    subscope["dataset_id"] = dataset_make_id(subscope)
-
-    # add all keys to this to this level
-
-    for key in subscope:
-        if subscope[key]:
+    for key in scope:
+        if scope[key]:
             if is_collection:
-                avu.set_on_coll(ctx, path, key, subscope[key])
+                avu.set_on_coll(ctx, path, key, scope[key])
             else:
-                avu.set_on_data(ctx, path, key, subscope[key])
-
-    if is_top_level:
-        # Add dataset_id to dataset_toplevel
-        if is_collection:
-            avu.set_on_coll(ctx, path, 'dataset_toplevel', subscope["dataset_id"])
-        else:
-            avu.set_on_data(ctx, path, 'dataset_toplevel', subscope["dataset_id"])
+                avu.set_on_data(ctx, path, key, scope[key])
 
 
 def apply_partial_metadata(ctx, scope, path, is_collection):
@@ -448,19 +251,38 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
                     avu.set_on_data(ctx, path, key, scope[key])
 
 
-def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
+def dataset_add_error(ctx, top_levels, is_collection_toplevel, text, suppress_duplicate_avu_error=False):
     """Add a dataset error to all given dataset toplevels.
 
     :param ctx:                    Combined type of a callback and rei struct
     :param top_levels:             A list of toplevel datasets
     :param is_collection_toplevel: Indication of whether it is a collection or object
     :param text:                   Error text
+    :param suppress_duplicate_avu_error: If an AVU already exists, suppress the irods-error. Allow for this situation
+
+    :raises Exception: Raises exception when associating error to collection or data object fails
     """
     for tl in top_levels:
         if is_collection_toplevel:
-            avu.associate_to_coll(ctx, tl, "dataset_error", text)
+            try:
+                avu.associate_to_coll(ctx, tl, "dataset_error", text)
+            except msi.Error as e:
+                # iRODS errorcode 809000 (CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME)
+                if suppress_duplicate_avu_error and str(e).find("809000") > -1:
+                    log.write(ctx, "Trying to associate dataset_error already present on collection: {}".format(tl))
+                    log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
+                else:
+                    raise Exception(e)
         else:
-            avu.associate_to_data(ctx, tl, "dataset_error", text)
+            try:
+                avu.associate_to_data(ctx, tl, "dataset_error", text)
+            except msi.Error as e:
+                # iRODS errorcode 809000 (CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME)
+                if suppress_duplicate_avu_error and str(e).find("809000") > -1:
+                    log.write(ctx, "Trying to associate dataset_error already present on data object: {}".format(tl))
+                    log.write(ctx, "Suppress error handling for AVU: dataset_error - {}".format(text))
+                else:
+                    raise Exception(e)
 
 
 def dataset_get_ids(ctx, coll):
@@ -472,22 +294,18 @@ def dataset_get_ids(ctx, coll):
     data_ids = set()
 
     # Get distinct data_ids
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'dataset_id' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        if row[0]:
-            data_ids.add(row[0])
 
-    # Get distinct data_ids
-    iter = genquery.row_iterator(
+    subcollection_iterator = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        "COLL_NAME LIKE '" + coll + "%' AND META_DATA_ATTR_NAME = 'dataset_id' ",
+        "COLL_NAME LIKE '" + coll + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         if row[0]:
             data_ids.add(row[0])
 
@@ -508,7 +326,8 @@ def intake_check_datasets(ctx, root):
 def intake_check_dataset(ctx, root, dataset_id):
     """Run checks on the dataset specified by the given dataset id.
 
-    This function adds warnings and errors to objects within the dataset.
+    This function adds object counts and error counts to top-level objects within the dataset.
+    For historical reasons, it also adds a warning count, which is always 0.
 
     :param ctx:        Combined type of a callback and rei struct
     :param root:       Collection name
@@ -526,7 +345,8 @@ def intake_check_dataset(ctx, root, dataset_id):
 
     # check presence of wave, pseudo-ID and experiment
     if '' in [components['wave'], components['experiment_type'], components['pseudocode']]:
-        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing")
+        # Suppress error handing and continue normal processing should a situation arise where Wepv missing is already present on the dataobject/collection
+        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing", True)
 
     for tl in tl_objects:
         # Save the aggregated counts of #objects, #warnings, #errors on object level
@@ -537,7 +357,7 @@ def intake_check_dataset(ctx, root, dataset_id):
         else:
             avu.set_on_data(ctx, tl, "object_count", str(count))
 
-        count = get_aggregated_object_error_count(ctx, dataset_id, tl)
+        count = get_aggregated_object_error_count(ctx, tl)
         if is_collection:
             avu.set_on_coll(ctx, tl, "object_errors", str(count))
         else:
@@ -574,24 +394,19 @@ def get_rel_paths_objects(ctx, root, dataset_id):
     except Exception:
         parent_coll = '/'
 
-    """
-    iter = genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
         "COLL_NAME = '" + parent_coll + "' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        # add objects residing in parent_coll directly to list
-        log.write(ctx, "DIRECT " + row[0])
-        rel_path_objects.append(row[0])
-    """
 
-    iter = genquery.row_iterator(
+    subcollection_iterator = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME LIKE '" + parent_coll + "%' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        "COLL_NAME LIKE '" + parent_coll + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+
+    for row in itertools.chain(main_collection_iterator, subcollection_iterator):
         # Add objects including relative paths
         rel_path_objects.append(row[1][len(parent_coll):] + '/' + row[0])
 
@@ -607,54 +422,41 @@ def get_aggregated_object_count(ctx, dataset_id, tl_collection):
 
     :returns: Aggregated object count
     """
-    return len(list(genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_ID",
-        "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'dataset_id' "
+        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'dataset_id' "
         "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx
-    )))
+    )
+
+    subcollection_iterator = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME like '" + tl_collection + "/%' AND META_DATA_ATTR_NAME = 'dataset_id' "
+        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        genquery.AS_LIST, ctx
+    )
+
+    return len(list(main_collection_iterator) + list(subcollection_iterator))
 
 
-def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
+def get_aggregated_object_error_count(ctx, tl_collection):
     """Return total amount of object errors.
 
     :param ctx:           Combined type of a callback and rei struct
-    :param dataset_id:    Dataset id
     :param tl_collection: Collection name of top level
 
     :returns: Total amount of object errors
     """
-    return len(list(genquery.row_iterator(
+    main_collection_iterator = genquery.row_iterator(
         "DATA_ID",
-        "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'error' ",
+        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'error' ",
         genquery.AS_LIST, ctx
-    )))
+    )
 
+    subcollection_iterator = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME like '" + tl_collection + "/%' AND META_DATA_ATTR_NAME = 'error' ",
+        genquery.AS_LIST, ctx
+    )
 
-def dataset_make_id(scope):
-    """Construct a dateset based on WEPV and directory.
-
-    :param scope: Create a dataset id
-
-    :returns: Dataset identifier
-    """
-    return scope['wave'] + '\t' + scope['experiment_type'] + '\t' + scope['pseudocode'] + '\t' + scope['version'] + '\t' + scope['directory']
-
-
-def dataset_parse_id(dataset_id):
-    """Parse a dataset into its consructive data.
-
-    :param dataset_id: Dataset identifier
-
-    :returns: Dataset as a dict
-    """
-    dataset_parts = dataset_id.split('\t')
-    dataset = {}
-    dataset['wave'] = dataset_parts[0]
-    dataset['experiment_type'] = dataset_parts[1]  # Is DIT NOG ERGENS GOED VOOR
-    dataset['expType'] = dataset_parts[1]
-    dataset['pseudocode'] = dataset_parts[2]
-    dataset['version'] = dataset_parts[3]
-    dataset['directory'] = dataset_parts[4]
-
-    return dataset
+    return len(list(main_collection_iterator) + list(subcollection_iterator))

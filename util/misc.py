@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Miscellaneous functions for interacting with iRODS."""
+"""Miscellaneous util functions."""
 
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import math
-
-import irods_types
-
-import msi
-
-
-def kvpair(ctx, k, v):
-    """Create a keyvalpair object, needed by certain msis."""
-    return msi.string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]
 
 
 def human_readable_size(size_bytes):

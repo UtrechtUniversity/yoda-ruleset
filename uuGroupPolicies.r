@@ -83,10 +83,11 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*groupName,
 				*policyKv."category",
 				*policyKv."subcategory",
-                                *policyKv."schema_id",
-                                *policyKv."expiration_date",
+				*policyKv."expiration_date",
+				*policyKv."schema_id",
 				*policyKv."description",
 				*policyKv."data_classification",
+				*policyKv."co_identifier",
 				*allowed, *reason
 			);
 
@@ -127,6 +128,28 @@ uuGroupPreSudoGroupRemove(*groupName, *policyKv) {
 	}
 
 	fail;
+}
+
+# Specific handling for rodsadmin when removing a group
+uuGroupPreSudoGroupRemoveForAdmin(*groupName, *policyKv) {
+    *prefix = "";
+    *base = "";
+
+    uuChop(*groupName, *prefix, *base, "-", true);
+    *vaultName = "vault-*base";
+    *zoneName = $rodsZoneClient;
+    *vaultIsEmpty = true;
+
+    # Check whether vault still holds data
+    msiMakeGenQuery("COLL_NAME","COLL_NAME like '/*zoneName/home/*vaultName/%'", *genQIn);
+    msiExecGenQuery(*genQIn, *genQOut);
+    foreach(*genQOut){
+        *vaultIsEmpty = false; break;
+    }
+    if (*vaultIsEmpty) {
+        succeed;
+    }
+    fail;
 }
 
 uuGroupPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
@@ -274,6 +297,19 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 			# 'read-|vault-' group.
 			succeed;
 		}
+	} else if (*accessLevel == "noinherit") {
+		*forGroup = *policyKv."forGroup";
+		uuGetBaseGroup(*forGroup, *baseGroup);
+		uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+		if (
+			*forGroup like regex "(deposit)-.*"
+			&& *isManagerInBaseGroup
+			&& *objPath == "/$rodsZoneClient/home/*forGroup") {
+			# Allow for deposit groups if the client is a manager
+			# in the basegroup of *forGroup,
+			# and *objPath is *forGroup's home directory.
+			succeed;
+		}
 	}
 
 	fail;
@@ -374,23 +410,20 @@ uuGroupPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, 
 uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
 	if (*objType == "-u") {
-		uuGetUserType(*objName, *targetUserType);
-		if (*targetUserType == "rodsuser") {
-			if (*unit != "") {
-				# We do not use / allow the unit field here.
-				fail;
-			}
-			if (*value == "") {
-				# Empty metadata values trigger iRODS bugs.
-				# If a field is allowed to be empty (currently only
-				# 'description', it should be set to '.' instead.
-				# This should of course be hidden by query functions.
-				fail;
-			}
-			uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
-			if (*allowed == 1) {
-				succeed;
-			}
+		if (*unit != "") {
+			# We do not use / allow the unit field here.
+			fail;
+		}
+		if (*value == "") {
+			# Empty metadata values trigger iRODS bugs.
+			# If a field is allowed to be empty (currently only
+			# 'description', it should be set to '.' instead.
+			# This should of course be hidden by query functions.
+			fail;
+		}
+		uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
+		if (*allowed == 1) {
+			succeed;
 		}
 	}
 	fail;
@@ -528,12 +561,15 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		if (*policyKv."data_classification" != "") {
 			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
 		}
-                if (*policyKv."schema_id" != "") {
-                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
-                }
-                if (*policyKv."expiration_date" != "") {
-                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "expiration_date", *policyKv."expiration_date", "", ""));
-                }
+		if (*policyKv."schema_id" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
+		}
+		if (*policyKv."expiration_date" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "expiration_date", *policyKv."expiration_date", "", ""));
+		}
+		if (*policyKv."co_identifier" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "co_identifier", *policyKv."co_identifier", "", ""));
+		}
 	}
 
     # Put the group name in the policyKv to assist the acl policy.
@@ -549,11 +585,11 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
+	uuChop(*groupName, *_, *baseName, "-", true);
 	if (*groupName like regex "(intake|research)-.*") {
 		# This is a group manager managed group with a read-only counterpart.
 		# Clean up the read-only shadow group.
 
-		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
 

@@ -181,7 +181,7 @@ def intake_dataset_object_get_status(ctx, path):
     locked = False
     frozen = False
 
-    if collecton.exists(ctx, path):
+    if collection.exists(ctx, path):
         attribute_names = genquery.row_iterator("META_COLL_ATTR_NAME",
                                                 "COLL_NAME = '{}'".format(path),
                                                 genquery.AS_LIST, ctx)

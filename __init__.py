@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.8.0'
-__copyright__ = 'Copyright (c) 2015-2022, Utrecht University'
+__version__   = '1.9.0'
+__copyright__ = 'Copyright (c) 2015-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
+              + ', Roy van Elk'
               + ', Paul Frederiks'
+              + ', Rick van de Hoef'
+              + ', Sirjan Kaur'
               + ', Jan de Mooij'
               + ', Harm de Raaff'
+              + ', Joris de Ruiter'
+              + ', Claire Saliers'
               + ', Chris Smeele'
               + ', Ton Smeele'
-              + ', Lazlo Westerhof')
+              + ', Sietse Snel'
+              + ', Lazlo Westerhof'
+              + ', Jelmer Zondergeld')
 # (in alphabetical order)
 
 # Import all modules containing rules into the package namespace,
@@ -23,7 +30,7 @@ sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util', '/etc/irods
 from browse                 import *
 from folder                 import *
 from groups                 import *
-from json_datacite41        import *
+from json_datacite          import *
 from json_landing_page      import *
 from mail                   import *
 from meta                   import *
@@ -43,6 +50,7 @@ from replication            import *
 from revisions              import *
 from settings               import *
 from notifications          import *
+from integration_tests      import *
 
 # Import certain modules only when enabled.
 from .util.config import config
@@ -62,3 +70,9 @@ if config.enable_tokens:
 
 if config.enable_tape_archive:
     from tape_archive import *
+
+if config.enable_data_package_archive:
+    from vault_archive import *
+
+if config.enable_data_package_download:
+    from vault_download import *

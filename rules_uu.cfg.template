@@ -32,6 +32,7 @@ datacite_password              =
 eus_api_fqdn                   =
 eus_api_port                   =
 eus_api_secret                 =
+eus_api_tls_verify             =
 
 enable_deposit                 =
 enable_open_search             =
@@ -48,6 +49,26 @@ token_database                 =
 token_length                   =
 token_lifetime                 =
 
+enable_inactivity_notification =
+inactivity_cutoff_months       =
+
+async_replication_delay_time   =
+async_replication_max_rss      =
+async_revision_delay_time      =
+async_revision_max_rss         =
+
 enable_tape_archive            =
 
 temporary_files                =
+
+enable_sram                    =
+sram_rest_api_url              =
+sram_api_key                   =
+sram_verbose_logging           =
+sram_tls_verify                =
+
+
+arb_enabled                    =
+arb_exempt_resources           =
+arb_min_gb_free                =
+arb_min_percent_free           =

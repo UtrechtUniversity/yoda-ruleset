@@ -1,3 +1,4 @@
+@api
 Feature: Search API
 
     Scenario Outline: Search file

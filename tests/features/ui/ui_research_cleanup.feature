@@ -1,3 +1,4 @@
+@ui
 Feature: Research cleanup temporary files UI
 
   Scenario Outline: Deposit open and restricted data package

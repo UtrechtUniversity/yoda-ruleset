@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import os
 import re
+import subprocess
 import time
 from datetime import datetime
 
@@ -30,6 +31,8 @@ __all__ = ['api_vault_submit',
            'api_vault_unpreservable_files',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
+           'rule_vault_enable_indexing',
+           'rule_vault_disable_indexing',
            'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
@@ -81,7 +84,7 @@ def api_vault_approve(ctx, coll):
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
     if ret[0] == '':
-        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        log.write(ctx, 'api_vault_approve: iiAdminVaultActions')
         ctx.iiAdminVaultActions()
         return 'Success'
     else:
@@ -199,7 +202,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
+    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -288,7 +291,8 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++verifyChksum='.format(config.resource_vault), 0)
+
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
@@ -340,7 +344,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            data_object.copy(ctx, license_txt, license_file)
+            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++verifyChksum='.format(config.resource_vault), 0)
 
             # Fix ACLs.
             try:
@@ -364,6 +368,42 @@ def vault_write_license(ctx, vault_pkg_coll):
             log.write(ctx, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_enable_indexing(ctx, coll):
+    vault_enable_indexing(ctx, coll)
+    return "Success"
+
+
+def vault_enable_indexing(ctx, coll):
+    if config.enable_open_search:
+        if not collection.exists(ctx, coll + "/index"):
+            # index collection does not exist yet
+            path = meta.get_latest_vault_metadata_path(ctx, coll)
+            ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+            meta.ingest_metadata_vault(ctx, path)
+
+        # add indexing attribute and update opensearch
+        subprocess.call(["imeta", "add", "-C", coll + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_vault_disable_indexing(ctx, coll):
+    vault_disable_indexing(ctx, coll)
+    return "Success"
+
+
+def vault_disable_indexing(ctx, coll):
+    if config.enable_open_search:
+        if collection.exists(ctx, coll + "/index"):
+            coll = coll + "/index"
+
+        # tricky: remove indexing attribute without updating opensearch
+        try:
+            msi.mod_avu_metadata(ctx, "-C", coll, "rm", "irods::indexing::index", "yoda::metadata", "elasticsearch")
+        except Exception:
+            pass
+
+
 @api.make()
 def api_vault_system_metadata(ctx, coll):
     """Return system metadata of a vault collection.
@@ -373,25 +413,13 @@ def api_vault_system_metadata(ctx, coll):
 
     :returns: Dict system metadata of a vault collection
     """
-    import math
-
-    def convert_size(size_bytes):
-        if size_bytes == 0:
-            return "0 B"
-
-        size_name = ('B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB')
-        i = int(math.floor(math.log(size_bytes, 1024)))
-        p = math.pow(1024, i)
-        s = round(size_bytes / p, 2)
-        return '{} {}'.format(s, size_name[i])
-
     system_metadata = {}
 
     # Package size.
     data_count = collection.data_count(ctx, coll)
     collection_count = collection.collection_count(ctx, coll)
     size = collection.size(ctx, coll)
-    size_readable = convert_size(size)
+    size_readable = misc.human_readable_size(size)
     system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     # Modified date.
@@ -509,19 +537,20 @@ def api_vault_collection_details(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
     # Check if collection is a research group.
-    space, _, group, _ = pathutil.info(path)
+    space, _, group, subpath = pathutil.info(path)
     if space != pathutil.Space.VAULT:
         return {}
 
-    dirname = pathutil.dirname(path)
     basename = pathutil.basename(path)
 
-    # Check if collection is vault package.
-    metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
-    if metadata_path is None:
-        return {}
+    # Find group name to retrieve member type
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
     else:
-        metadata = True
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+
+    member_type = groups.user_role(ctx, user.full_name(ctx), research_group_name)
 
     # Retrieve vault folder status.
     status = get_coll_vault_status(ctx, path).value
@@ -532,6 +561,13 @@ def api_vault_collection_details(ctx, path):
     # Check if user is datamanager.
     category = groups.group_category(ctx, group)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    # Check if collection is vault package.
+    metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
+    if metadata_path is None:
+        return {'member_type': member_type, 'is_datamanager': is_datamanager}
+    else:
+        metadata = True
 
     # Check if a vault action is pending.
     vault_action_pending = False
@@ -573,20 +609,26 @@ def api_vault_collection_details(ctx, path):
             if user_name.startswith(("research-", "deposit-")):
                 research_group_access = True
 
-    # Check if research space is accessible.
-    research_path = ""
-    research_name = group.replace("vault-", "research-", 1)
-    if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
-        research_path = research_name
-
-    return {"basename": basename,
-            "status": status,
-            "metadata": metadata,
-            "has_datamanager": has_datamanager,
-            "is_datamanager": is_datamanager,
-            "vault_action_pending": vault_action_pending,
-            "research_group_access": research_group_access,
-            "research_path": research_path}
+    result = {
+        "basename": basename,
+        "status": status,
+        "metadata": metadata,
+        "member_type": member_type,
+        "has_datamanager": has_datamanager,
+        "is_datamanager": is_datamanager,
+        "vault_action_pending": vault_action_pending,
+        "research_group_access": research_group_access
+    }
+    if config.enable_data_package_archive:
+        import vault_archive
+        result["archive"] = {
+            "archivable": vault_archive.vault_archivable(ctx, path),
+            "status": vault_archive.vault_archival_status(ctx, path)
+        }
+    if config.enable_data_package_download:
+        import vault_download
+        result["downloadable"] = vault_download.vault_downloadable(ctx, path)
+    return result
 
 
 @api.make()
@@ -713,10 +755,10 @@ def api_grant_read_access_research_group(ctx, coll):
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
-            acl_kv = misc.kvpair(ctx, "actor", actor)
+            acl_kv = msi.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
             policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
@@ -760,10 +802,10 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
-            acl_kv = misc.kvpair(ctx, "actor", actor)
+            acl_kv = msi.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
             policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
@@ -1045,7 +1087,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 # Persistent Identifier DOI.
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
                     genquery.AS_LIST, callback
                 )
 
@@ -1184,7 +1226,7 @@ def get_doi(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (path),
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
         genquery.AS_LIST, ctx
     )
 
@@ -1235,7 +1277,7 @@ def get_title(ctx, path):
 
 
 def meta_add_new_version(ctx, new_version, previous_version):
-    """Add new version related data package metadata to data package in a vault.
+    """Add new version as related resource metadata to data package in a vault.
 
     :param ctx:              Combined type of a callback and rei struct
     :param new_version:      Path to new version of data package in the vault
@@ -1250,9 +1292,9 @@ def meta_add_new_version(ctx, new_version, previous_version):
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
             },
-            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Relation_Type": "IsNewVersionOf",
             "Title": "{}".format(get_title(ctx, previous_version))
         }
 
@@ -1262,6 +1304,65 @@ def meta_add_new_version(ctx, new_version, previous_version):
             metadata["Related_Datapackage"] = [data_package]
 
         meta_form.save(ctx, new_version, metadata)
+
+    # Only add related resource if it is in the schema.
+    elif "Related_Resource" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
+            },
+            "Relation_Type": "IsNewVersionOf",
+            "Title": "{}".format(get_title(ctx, previous_version))
+        }
+
+        if "Related_Resource" in metadata:
+            metadata["Related_Resource"].append(data_package)
+        else:
+            metadata["Related_Resource"] = [data_package]
+
+        meta_form.save(ctx, new_version, metadata)
+
+
+def get_all_doi_versions(ctx, path):
+    """Get the path and DOI of latest versions of published data package in a vault.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param path:    Path of vault with data packages
+
+    :return: Dict of data packages with DOI
+    """
+
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, GROUP(COLL_NAME)",
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
+        genquery.AS_LIST, ctx
+    )
+
+    data_packages = []
+    org_publ_info = []
+
+    for row in iter:
+        org_publ_info.append([row[0], row[1], row[2]])
+
+    # Group by collection name
+    coll_names = set(map(lambda x: x[2], org_publ_info))
+    grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] + [x] for x in coll_names]
+
+    # If base DOI does not exist, remove from the list and add it in the data package
+    number_of_items = list(map(len, grouped_coll_name))
+    indices = [i for i, x in enumerate(number_of_items) if x < 4]
+
+    for item in indices:
+        data_packages.append([0] + grouped_coll_name[item])
+
+    grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
+
+    # Group by base DOI
+    base_dois = set(map(lambda x: x[0], grouped_coll_name))
+    grouped_base_dois = [[y for y in grouped_coll_name if y[0] == x] for x in base_dois]
+
+    return org_publ_info, data_packages, grouped_base_dois
 
 
 @api.make()
@@ -1273,36 +1374,34 @@ def api_vault_get_published_packages(ctx, path):
 
     :return: Dict of data packages with DOI
     """
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
-        genquery.AS_LIST, ctx
-    )
 
-    data_packages = {}
-    for row in iter:
-        data_packages[row[0]] = row[1]
+    org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, path)
 
-    for doi, path in data_packages.items():
-        # Check if data package DOI has a version.
-        m = re.search("([0-9A-Z-/.]+).v(\d*)", doi)
+    # Sort by publication date
+    sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
 
-        # If data package DOI has a version.
-        if m:
-            doi = m.group(1)
-            version = int(m.group(2))
+    latest_publ = map(lambda x: x[-1], sorted_publ)
 
-            # Remove older versions of data packages.
-            data_packages.pop(doi, None)
-            for v in range(version - 1, 0, -1):
-                data_packages.pop("{}.v{}".format(doi, v), None)
+    # Append to data package
+    for items in latest_publ:
+        data_packages.append(items)
 
-    # Sort on path with timestamp.
-    data_packages = dict(sorted(data_packages.items(), key=lambda x: x[1]))
-
-    # Retrieve title of data package.
+    # Retrieve title of data packages.
     published_packages = {}
-    for doi, path in data_packages.items():
-        published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
+    for item in data_packages:
+        published_packages[item[2]] = {"path": item[3], "title": get_title(ctx, item[3])}
 
     return published_packages
+
+
+def update_archive(ctx, coll, attr=None):
+    """Potentially update archive after metadata changed.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+    :param attr: The AVU that was changed, if any
+    """
+    if config.enable_data_package_archive:
+        import vault_archive
+
+        vault_archive.update(ctx, coll, attr)

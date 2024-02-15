@@ -1,3 +1,4 @@
+@api
 Feature: Schema transformations API
 
     Scenario Outline: Transformation of metadata
@@ -8,8 +9,10 @@ Feature: Schema transformations API
 
         Examples:
             | schema_from | schema_to |
+            | core-1      | core-2    |
             | default-0   | default-1 |
             | default-1   | default-2 |
+            | default-2   | default-3 |
             | dag-0       | default-2 |
             | teclab-0    | teclab-1  |
             | hptlab-0    | hptlab-1  |
