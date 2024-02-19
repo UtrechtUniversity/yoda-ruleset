@@ -774,7 +774,7 @@
                       "Name_Identifier": {
                         "type": "string",
                         "title": "Identifier",
-                        "pattern": "[0-9]{11}"
+                        "pattern": "[0-9]+"
                       }
                     }
                   }
