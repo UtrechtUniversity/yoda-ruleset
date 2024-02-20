@@ -102,9 +102,11 @@ Feature: Research API
         And file <file> exists in <collection>
 
         Examples:
-            | collection                      | file                 | folder                                        |
-            | /tempZone/home/research-initial | upload_test_file.txt | /research-initial                             |
-            | /tempZone/home/research-initial | upload_test_file.txt | /research-initial/api_test_1234567890         |
+            | collection                      | file                   | folder                                |
+            | /tempZone/home/research-initial | upload_test_file.txt   | /research-initial                     |
+            | /tempZone/home/research-initial | upload_test_file.txt   | /research-initial/api_test_1234567890 |
+            | /tempZone/home/research-initial | upload file spaces.txt | /research-initial                     |
+            | /tempZone/home/research-initial | upload_file_áccent.txt | /research-initial                     |
 
 
     Scenario Outline: Research file delete
@@ -114,8 +116,10 @@ Feature: Research API
         And file <file> does not exist in <collection>
 
         Examples:
-            | collection                      | file                 |
-            | /tempZone/home/research-initial | upload_test_file.txt |
+            | collection                      | file                   |
+            | /tempZone/home/research-initial | upload_test_file.txt   |
+            | /tempZone/home/research-initial | upload file spaces.txt |
+            | /tempZone/home/research-initial | upload_file_áccent.txt |
 
 
     Scenario Outline: Research folder delete
