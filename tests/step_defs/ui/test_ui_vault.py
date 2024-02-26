@@ -115,12 +115,12 @@ def ui_provenance_log(browser, status):
 
 @then('core metadata is visible')
 def ui_data_package_core_metadata_is_visible(browser):
-    browser.is_element_visible_by_css('h3.metadata-title', wait_time=3)
-    browser.is_element_visible_by_css('h5.metadata-creator', wait_time=3)
-    browser.is_element_visible_by_css('div.metadata-description', wait_time=3)
-    browser.is_element_visible_by_css('span.metadata-data-classification', wait_time=3)
-    browser.is_element_visible_by_css('span.metadata-access', wait_time=3)
-    browser.is_element_visible_by_css('span.metadata-license', wait_time=3)
+    browser.find_by_css('h3.metadata-title', wait_time=5).is_visible()
+    browser.find_by_css('h5.metadata-creator', wait_time=5).is_visible()
+    browser.find_by_css('div.metadata-description', wait_time=5).is_visible()
+    browser.find_by_css('span.metadata-data-classification', wait_time=5).is_visible()
+    browser.find_by_css('span.metadata-access', wait_time=5).is_visible()
+    browser.find_by_css('hspan.metadata-license', wait_time=5).is_visible()
 
 
 @when('user clicks metadata button')
@@ -130,32 +130,31 @@ def ui_data_package_click_metadata_button(browser):
 
 @then('metadata form is visible')
 def ui_data_package_metadata_form_is_visible(browser):
-    assert browser.is_element_visible_by_css('.metadata-form', wait_time=5)
+    assert browser.find_by_css('.metadata-form', wait_time=5).is_visible()
 
 
 @when('user clicks system metadata icon')
 def ui_data_package_click_system_metadata_icon(browser):
-    browser.is_element_visible_by_css('.system-metadata', wait_time=5)
+    browser.find_by_css('.system-metadata', wait_time=5).is_visible()
     browser.find_by_css('.system-metadata-icon').click()
 
 
 @then('system metadata is visible')
 def ui_data_package_system_metadata_is_visible(browser):
-    assert browser.is_element_visible_by_css('.system-metadata')
-
+    assert browser.find_by_css('.system-metadata', wait_time=5).is_visible()
     assert browser.is_text_present("Data Package Size", wait_time=3)
     assert browser.is_text_present("Data Package Reference", wait_time=3)
 
 
 @when('user clicks provenance icon')
 def ui_data_package_click_provenance_icon(browser):
-    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon', wait_time=5).is_visible()
     browser.find_by_css('.actionlog-icon').click()
 
 
 @then('provenance information is visible')
 def ui_data_package_provenance_information_is_visible(browser):
-    assert browser.is_element_visible_by_css('.actionlog')
+    assert browser.find_by_css('.actionlog', wait_time=5).is_visible()
 
 
 @when('user clicks action menu to revoke access')
