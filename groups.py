@@ -799,11 +799,11 @@ def _process_csv_line(ctx, line):
                     username)
 
         if column_name.lower() == 'manager':
-            managers = item_list
+            managers.extend(item_list)
         elif column_name.lower() == 'member':
-            members = item_list
+            members.extend(item_list)
         elif column_name.lower() == 'viewer':
-            viewers = item_list
+            viewers.extend(item_list)
 
     if len(managers) == 0:
         return None, "Group must have a group manager"
