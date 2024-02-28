@@ -1,0 +1,3 @@
+category,subcategory,groupname,manager:alice,member:bob,member:charlie,viewer:dan
+test-automation,csv-test,csv-test-group1,groupmanager@yoda.test,researcher@yoda.test,datamanager@yoda.test,viewer@yoda.test
+test-automation,csv-test,csv-test-group2,groupmanager@yoda.test,researcher@yoda.test,datamanager@yoda.test,viewer@yoda.test
