@@ -14,6 +14,8 @@ import sys
 # contained modules.
 # i.e. importing code can use these modules like: collection.exists(callback, 'bla')
 
+import yoda_names
+
 if 'unittest' not in sys.modules.keys():
     # We don't import everything when running unit tests, because then we'll have
     # to deal with all the dependencies. Functions that have unit tests should
@@ -37,7 +39,6 @@ if 'unittest' not in sys.modules.keys():
     import resource
     import arb_data_manager
     import cached_data_manager
-    import yoda_names
 
     # Config items can be accessed directly as 'config.foo' by any module
     # that imports * from util.
