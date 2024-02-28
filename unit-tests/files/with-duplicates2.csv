@@ -1,0 +1,5 @@
+category,subcategory,groupname,manager
+test-automation,initial,groupteama2,m.manager@yoda.dev
+test-automation,initial,groupteamb2,m.manager@yoda.dev
+test-automation,initial,data-duplicate2,m.manager@yoda.dev
+test-automation,initial,data-duplicate2,m.manager@yoda.dev
