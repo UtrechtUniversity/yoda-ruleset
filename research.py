@@ -650,12 +650,14 @@ def api_research_collection_details(ctx, path):
 
     # Retrieve lock count.
     lock_count = meta_form.get_coll_lock_count(ctx, path)
+    is_locked = folder.is_locked(ctx, path)
 
     return {"basename": basename,
             "status": status.value,
             "member_type": member_type,
             "is_datamanager": is_datamanager,
-            "lock_count": lock_count}
+            "lock_count": lock_count,
+            "is_locked": is_locked}
 
 
 @api.make()
