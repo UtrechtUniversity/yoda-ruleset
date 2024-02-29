@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'development'
+      - 'release-1.9'
 
 jobs:
   push-image:
@@ -14,6 +15,11 @@ jobs:
       contents: read
       packages: write
     steps:
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+
     - name: Check out Yoda repository
       uses: actions/checkout@v3
       with:
@@ -39,4 +45,4 @@ jobs:
         context: yoda/docker/images/yoda_irods_icat
         file: yoda/docker/images/yoda_irods_icat/Dockerfile
         push: true
-        tags: ghcr.io/utrechtuniversity/yoda-provider:dev-1.9
+        tags: ghcr.io/utrechtuniversity/yoda-provider:${{ steps.extract_branch.outputs.branch }}
