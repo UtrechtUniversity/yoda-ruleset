@@ -22,7 +22,7 @@ from conftest import api_request, upload_data
 scenarios('../../features/api/api_deposit_open.feature', '../../features/api/api_deposit_restricted.feature')
 
 
-@given(parsers.parse('the Yoda deposit create API is queried for deposit group "{depositgroup}"'), target_fixture="api_response")
+@given(parsers.parse('the Yoda deposit create API is queried for deposit group {depositgroup}'), target_fixture="api_response")
 def api_deposit_path_custom_group(user, depositgroup):
     return api_request(
         user,
@@ -36,7 +36,7 @@ def api_deposit_path(user):
     return api_request(
         user,
         "deposit_create",
-        {}
+        {'deposit_group': 'deposit-pilot'}
     )
 
 
