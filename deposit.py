@@ -82,7 +82,7 @@ def api_deposit_copy_data_package(ctx, reference):
 
 
 @api.make()
-def api_deposit_create(ctx, deposit_group=None):
+def api_deposit_create(ctx, deposit_group):
     """Create deposit collection through API
 
     :param ctx:           Combined type of a callback and rei struct
@@ -97,34 +97,7 @@ def api_deposit_create(ctx, deposit_group=None):
     return {"deposit_path": result["deposit_path"]}
 
 
-def deposit_default_deposit_group(ctx):
-    """Get the default deposit group, if available, for this user.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: Name of deposit group
-    """
-    zone = user.zone(ctx)
-
-    qcoll = Query(ctx, ["COLL_NAME"],
-                  "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME like '/{}/home/deposit-%'".format(zone, zone),
-                  output=AS_DICT)
-    qcoll_list = list(qcoll)
-
-    if len(qcoll_list) == 0:
-        return None
-    elif len(qcoll_list) == 1:
-        return qcoll_list[0]['COLL_NAME'].split('/')[-1]
-    else:
-        # If multiple, check if one is DEPOSIT_GROUP and return that one, otherwise pick the first one
-        for coll in qcoll_list:
-            if DEPOSIT_GROUP in coll['COLL_NAME']:
-                return DEPOSIT_GROUP
-
-        return qcoll_list[0]['COLL_NAME'].split('/')[-1]
-
-
-def deposit_create(ctx, deposit_group=None):
+def deposit_create(ctx, deposit_group):
     """Create deposit collection.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -132,10 +105,6 @@ def deposit_create(ctx, deposit_group=None):
 
     :returns: Path to created deposit collection
     """
-    if deposit_group is None:
-        deposit_group = deposit_default_deposit_group(ctx)
-
-    # User has no access to deposit groups
     if deposit_group is None:
         return {"deposit_path": "not_allowed"}
 
