@@ -91,7 +91,7 @@ def api_deposit_create(ctx, deposit_group=None):
     :returns: Path to created deposit collection or API error
     """
     result = deposit_create(ctx, deposit_group)
-        
+
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
     return {"deposit_path": result["deposit_path"]}
@@ -291,8 +291,8 @@ def api_deposit_overview(ctx,
 
     # First collect the names of the deposit groups directly under home
     qcoll_above = Query(ctx, ["COLL_NAME"],
-                  "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(zone, zone, zone),
-                  offset=offset, limit=limit, output=AS_DICT)
+                        "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(zone, zone, zone),
+                        offset=offset, limit=limit, output=AS_DICT)
 
     all_colls = []
     # Then collect the deposits that are directly under the deposit groups
@@ -300,8 +300,8 @@ def api_deposit_overview(ctx,
         coll_name = item['COLL_NAME']
         if "deposit-" in coll_name:
             qcoll = Query(ctx, ccols,
-                        "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
-                        offset=offset, limit=limit, output=AS_DICT)
+                          "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
+                          offset=offset, limit=limit, output=AS_DICT)
             colls = map(transform, list(qcoll))
             all_colls += colls
 
