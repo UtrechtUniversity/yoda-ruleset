@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - development
+    - release-1.9
   pull_request:
 
 jobs:
