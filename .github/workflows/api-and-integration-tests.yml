@@ -25,6 +25,11 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
+
     # For release branches that have a Docker setup, we use the Docker setup version of that release.
     # For other branches, we use the Docker setup of the development branch.
     - name: Determine Yoda repository branch
@@ -35,11 +40,6 @@ jobs:
           echo "branch=development" >> $GITHUB_OUTPUT
         fi
       id: yoda_repo_branch
-
-    - name: Extract branch name
-      shell: bash
-      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
-      id: extract_branch
 
     - name: Install API test dependencies
       run: |
