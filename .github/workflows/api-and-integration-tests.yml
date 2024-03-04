@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - development
+    - release-1.9
   pull_request:
 
 jobs:
@@ -24,6 +25,17 @@ jobs:
       with:
         python-version: 3.8
 
+    # For release branches that have a Docker setup, we use the Docker setup version of that release.
+    # For other branches, we use the Docker setup of the development branch.
+    - name: Determine Yoda repository branch
+      run: |
+        if [ "${{ steps.extract_branch.outputs.branch }}" = "release-1.9" ]; then
+          echo "branch=release-1.9" >> $GITHUB_OUTPUT
+        else
+          echo "branch=development" >> $GITHUB_OUTPUT
+        fi
+      id: yoda_repo_branch
+
     - name: Extract branch name
       shell: bash
       run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
@@ -36,7 +48,7 @@ jobs:
 
     - name: Clone Yoda repo for Docker Setup
       run: |
-        git clone -b development --single-branch https://github.com/UtrechtUniversity/yoda.git
+        git clone -b "${{ steps.yoda_repo_branch.outputs.branch }}" --single-branch https://github.com/UtrechtUniversity/yoda.git
 
     - name: Prepare hosts file for API tests
       run: |
