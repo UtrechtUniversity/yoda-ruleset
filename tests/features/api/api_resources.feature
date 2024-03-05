@@ -35,9 +35,9 @@ Feature: Resources API
         And only 1 group is found
 
         Examples:
-            | user        | group         |
-            | researcher  | deposit-pilot |
-            | datamanager | deposit-pilot |
+            | user        | group          |
+            | researcher  | deposit-pilot  |
+            | datamanager | deposit-pilot1 |
 
 
     @intake
