@@ -1,10 +1,11 @@
 # coding=utf-8
 
-__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os
+import time
 from collections import OrderedDict
 
 from pytest_bdd import (
@@ -85,13 +86,13 @@ def ui_user_clicks_for_data_access(browser, title):
     assert browser.is_text_present(title)
 
 
-@given(parsers.parse("data file is uploaded to deposit by user {user}"), target_fixture="api_response")
-def api_deposit_file_upload(user, deposit_name):
+@given(parsers.parse("data file is uploaded to deposit of deposit group {deposit_group} by user {user}"), target_fixture="api_response")
+def api_deposit_file_upload(user, deposit_name, deposit_group):
     file = 'ui_test.file'
     return upload_data(
         user,
         file,
-        "/deposit-pilot/{}".format(deposit_name)
+        "/{}/{}".format(deposit_group, deposit_name)
     )
 
 
@@ -119,6 +120,11 @@ def ui_deposit_click_deposit_on_dp_access(browser):
     return datapackage
 
 
+@when('user clicks to create the deposit')
+def ui_deposit_modal_create_new_deposit(browser):
+    browser.find_by_css('.btn-confirm-deposit-create', wait_time=3).click()
+
+
 @when(parsers.parse("user clicks on deposit containing {data_access_restriction} in title"))
 def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
     package_title_contains = 'UI test ' + data_access_restriction.title()
@@ -142,6 +148,7 @@ def ui_deposit_dp_submission_confirmed(browser):
 
 @when('user starts a new deposit')
 def ui_deposit_start(browser):
+    time.sleep(2)
     browser.links.find_by_partial_text('Start new deposit').click()
 
 
@@ -160,6 +167,12 @@ def ui_deposit_click_document(browser):
 def ui_deposit_created(browser):
     # assert browser.is_text_present("deposit-pilot[")
     assert browser.is_text_present('[No title]')
+
+
+@then('the start new deposit button is disabled')
+def ui_deposit_button_disabled(browser):
+    time.sleep(1)
+    assert browser.find_by_id('deposit-create-start').has_class('disabled')
 
 
 @then('upload data step is shown')

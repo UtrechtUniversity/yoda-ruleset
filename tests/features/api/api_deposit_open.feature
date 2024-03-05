@@ -1,11 +1,22 @@
 @api @deposit
 Feature: Deposit API (open)
 
-    Scenario: Deposit created
-        Given user researcher is authenticated
-        And the Yoda deposit create API is queried
+    Scenario Outline: Deposit created for deposit group
+        Given user <user> is authenticated
+        And the Yoda deposit create API is queried for deposit group <depositgroup>
         Then the response status code is "200"
         And deposit path is returned
+
+        Examples:
+            | user       | depositgroup   |
+            | researcher | deposit-pilot  |
+            | viewer     | deposit-pilot1 |
+
+
+    Scenario: Deposit attempt to create by user with no access to deposit group
+        Given user groupmanager is authenticated
+        And the Yoda deposit create API is queried for deposit group deposit-pilot
+        Then the response status code is "400"
 
 
     Scenario Outline: Deposit upload data

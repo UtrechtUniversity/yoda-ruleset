@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for deposit module."""
 
-__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -82,27 +82,33 @@ def api_deposit_copy_data_package(ctx, reference):
 
 
 @api.make()
-def api_deposit_create(ctx):
+def api_deposit_create(ctx, deposit_group):
     """Create deposit collection through API
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:           Combined type of a callback and rei struct
+    :param deposit_group: Name of deposit group to create deposit for
 
     :returns: Path to created deposit collection or API error
     """
-    result = deposit_create(ctx)
+    result = deposit_create(ctx, deposit_group)
+
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
     return {"deposit_path": result["deposit_path"]}
 
 
-def deposit_create(ctx):
+def deposit_create(ctx, deposit_group):
     """Create deposit collection.
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:           Combined type of a callback and rei struct
+    :param deposit_group: Name of deposit group to create deposit for
 
     :returns: Path to created deposit collection
     """
-    coll = "/" + user.zone(ctx) + "/home/" + DEPOSIT_GROUP
+    if deposit_group is None:
+        return {"deposit_path": "not_allowed"}
+
+    coll = "/" + user.zone(ctx) + "/home/" + deposit_group
     datapackage_name = pathutil.basename(coll)
 
     if len(datapackage_name) > 235:
@@ -179,7 +185,6 @@ def api_deposit_submit(ctx, path):
 
 @api.make()
 def api_deposit_overview(ctx,
-                         coll='/',
                          sort_on='name',
                          sort_order='asc',
                          offset=0,
@@ -191,7 +196,6 @@ def api_deposit_overview(ctx,
     Specifically for deposit selection which is why it adds deposit-specific data to the result
 
     :param ctx:        Combined type of a callback and rei struct
-    :param coll:       Collection to get paginated contents of
     :param sort_on:    Column to sort on ('name', 'modified' or size)
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
@@ -224,7 +228,11 @@ def api_deposit_overview(ctx,
         for row in iter:
             deposit_access = row[0].split("-")[0].strip()
 
-        return {'name':          x['COLL_NAME'].split('/')[-1],
+        pending_deposit_name = x['COLL_NAME'].split('/')[-1]
+        deposit_group = x['COLL_NAME'].split('/')[-2]
+
+        return {'name':          pending_deposit_name,
+                'path':          '/' + deposit_group + '/' + pending_deposit_name,
                 'type':          'coll',
                 'modify_time':   int(x['COLL_MODIFY_TIME']),
                 'deposit_title': deposit_title,
@@ -250,18 +258,21 @@ def api_deposit_overview(ctx,
 
     zone = user.zone(ctx)
 
-    # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    qcoll = Query(ctx, ccols,
-                  "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
-                  offset=offset, limit=limit, output=AS_DICT)
-    colls = map(transform, list(qcoll))
+    # First collect the names of the deposit groups directly under home
+    qcoll_above = Query(ctx, ["COLL_NAME"],
+                        "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(zone, zone, zone),
+                        offset=offset, limit=limit, output=AS_DICT)
 
-    if len(colls) == 0:
-        # No results at all?
-        # Make sure the collection actually exists.
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
-        # (checking this beforehand would waste a query in the most common situation)
+    all_colls = []
+    # Then collect the deposits that are directly under the deposit groups
+    for item in qcoll_above:
+        coll_name = item['COLL_NAME']
+        if "deposit-" in coll_name:
+            qcoll = Query(ctx, ccols,
+                          "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
+                          offset=offset, limit=limit, output=AS_DICT)
+            colls = map(transform, list(qcoll))
+            all_colls += colls
 
-    return OrderedDict([('total', qcoll.total_rows()),
-                        ('items', colls)])
+    return OrderedDict([('total', len(all_colls)),
+                        ('items', all_colls)])
