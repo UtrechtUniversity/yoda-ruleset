@@ -365,3 +365,8 @@ def ui_module_shown(browser, module):
 @when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
+
+
+@then('the 404 error page is shown')
+def ui_404_error(browser):
+    browser.is_text_present("Page not found")

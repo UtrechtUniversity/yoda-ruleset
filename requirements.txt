@@ -15,6 +15,7 @@ requests_cache==0.5.2
 irods-avu-json==2.2.0
 python2-secrets==1.0.5
 python-dateutil==2.7.0
+python-magic==0.4.27
 certifi==2021.10.8
 pysqlcipher3==1.0.4
 execnet==1.9.0
@@ -22,3 +23,4 @@ deepdiff==3.3.0
 persist-queue==0.8.1
 redis==3.5.3
 psutil==5.9.6
+iteration_utilities==0.8.0

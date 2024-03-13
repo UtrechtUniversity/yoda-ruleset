@@ -1,7 +1,7 @@
 # coding=utf-8
 """Deposit API feature tests."""
 
-__copyright__ = 'Copyright (c) 2021-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -22,12 +22,21 @@ from conftest import api_request, upload_data
 scenarios('../../features/api/api_deposit_open.feature', '../../features/api/api_deposit_restricted.feature')
 
 
+@given(parsers.parse('the Yoda deposit create API is queried for deposit group {depositgroup}'), target_fixture="api_response")
+def api_deposit_path_custom_group(user, depositgroup):
+    return api_request(
+        user,
+        "deposit_create",
+        {'deposit_group': depositgroup}
+    )
+
+
 @given('the Yoda deposit create API is queried', target_fixture="api_response")
 def api_deposit_path(user):
     return api_request(
         user,
         "deposit_create",
-        {}
+        {'deposit_group': 'deposit-pilot'}
     )
 
 

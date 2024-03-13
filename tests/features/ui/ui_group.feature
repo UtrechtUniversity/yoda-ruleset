@@ -76,10 +76,12 @@ Feature: Group UI
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
         When user opens group import dialog
-        And user clicks upload button
-        And user clicks allow updates checkbox
+        And user clicks upload button and uploads csv "csv-import-test.csv"
+        Then there are 4 groups presented
+        When user clicks allow updates checkbox
         And user clicks allow deletions checkbox
-        Then process csv and check number of rows
+        Then process csv
+        And check number of rows is 4
         And click on imported row 0 and check group properties
         And find group member "groupmanager@yoda.test"
         And user opens group import dialog
@@ -91,6 +93,26 @@ Feature: Group UI
         And user opens group import dialog
         And click on imported row 3 and check group properties
         And find group member "viewer@yoda.test"
+
+
+    Scenario: Imports group CSV schema id and expiration date
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens group import dialog
+        And user clicks upload button and uploads csv "csv-import-test-exp-schema.csv"
+        Then there are 2 groups presented
+        When user clicks allow updates checkbox
+        And user clicks allow deletions checkbox
+        Then process csv
+        And check number of rows is 2
+        And click on imported row 0 and check group properties
+        And find group member "groupmanager@yoda.test"
+        And find group member "researcher@yoda.test"
+        And user opens group import dialog
+        And click on imported row 1 and check group properties
+        And schema id is "default-3"
+        And expiration date is "2027-01-01"
+        And find group member "groupmanager@yoda.test"
 
 
     Scenario Outline: Group research create with default schema id
@@ -192,6 +214,8 @@ Feature: Group UI
             | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group2      |
             | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group3      |
             | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group4      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group5      |
+            | functionaladminpriv | test-automation   | csv-test          | research-csv-test-group6      |
             | functionaladminpriv | test-datamanager  | test-datamanager  | datamanager-test-datamanager  |
             | functionaladminpriv | test-datamanager  | test-datamanager  | research-test-datamanager     |
             | technicaladmin      | test-datamanager1 | test-datamanager1 | datamanager-test-datamanager1 |

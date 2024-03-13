@@ -138,7 +138,9 @@ config = Config(environment=None,
                 arb_enabled=False,
                 arb_exempt_resources=[],
                 arb_min_gb_free=0,
-                arb_min_percent_free=5)
+                arb_min_percent_free=5,
+                text_file_extensions=[],
+                python3_interpreter='/usr/local/bin/python3')
 
 # }}}
 

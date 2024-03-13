@@ -29,8 +29,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+          python -m pip install coveragepy==1.6.0
 
       - name: Run unit tests
         run: |
           cd unit-tests
-          python2 -m unittest unit_tests
+          coverage run --omit=test_*.py,unit_tests.py --source=$(cd .. ; pwd),$(cd ../util ; pwd) -m unittest unit_tests
+
+      - name: Report code coverage
+        run: |
+          cd unit-tests
+          coverage report

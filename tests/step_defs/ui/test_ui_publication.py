@@ -66,7 +66,7 @@ def ui_check_provenance_research(browser):
     # precondition is that in the correct research folder already
     # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
     # even though the folder is used several times in a different test run
-    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon', wait_time=5).is_visible()
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
     # Chronological (backwards) status changes
@@ -79,7 +79,7 @@ def ui_check_provenance_research(browser):
 def ui_check_provenance_vault(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct vault folder (highest level datapackage) already
-    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon', wait_time=5).is_visible()
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
 
@@ -93,7 +93,7 @@ def ui_check_provenance_vault(browser):
 def ui_check_version_provenance_vault(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct vault folder (highest level datapackage) already
-    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
+    browser.find_by_css('.actionlog-icon', wait_time=5).is_visible()
     browser.find_by_css('.actionlog-icon').click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
 
@@ -113,7 +113,7 @@ def ui_pub_download_file(browser, file):
 
 @when('user opens landingpage through system metadata')
 def ui_pub_open_system_metadata(browser):
-    browser.is_element_visible_by_css('.system-metadata', wait_time=5)
+    browser.find_by_css('.system-metadata', wait_time=5).is_visible()
     browser.find_by_css('.system-metadata-icon').click()
 
     link = browser.links.find_by_partial_text('.html')
@@ -160,12 +160,12 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
 
 @then('view contents button is present')
 def ui_view_contents_present(browser):
-    browser.is_element_visible_by_css('.view-contents', wait_time=5)
+    browser.find_by_css('.view-contents', wait_time=5).is_visible()
 
 
 @then('view contents button is not present')
 def ui_view_contents_not_present(browser):
-    not browser.is_element_visible_by_css('.view-contents', wait_time=5)
+    browser.find_by_css('.view-contents', wait_time=5).is_not_visible()
 
 
 @when(parsers.parse("user browses to data package in {vault}"))

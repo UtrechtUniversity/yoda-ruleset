@@ -1510,7 +1510,7 @@ def get_all_versions(ctx, path, doi):
     org_publ_info, data_packages, grouped_base_dois = vault.get_all_doi_versions(ctx, coll_parent_name)
 
     # Sort by publication date
-    sorted_publ = [sorted(x, key=lambda x:datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f"), reverse=True) for x in grouped_base_dois]
+    sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f"), reverse=True) for x in grouped_base_dois]
 
     sorted_publ = [element for innerList in sorted_publ for element in innerList]
 

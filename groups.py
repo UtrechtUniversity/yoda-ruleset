@@ -14,6 +14,7 @@ import session_vars
 
 import schema
 import sram
+from groups_import import parse_data
 from util import *
 
 __all__ = ['api_group_data',
@@ -473,7 +474,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     :param ctx:                 Combined type of a ctx and rei struct
     :param csv_header_and_data: CSV data holding a head conform description and the actual row data
     :param allow_update:        Allow updates in groups
-    :param delete_users:         Allow for deleting of users from groups
+    :param delete_users:        Allow for deleting of users from groups
 
     :returns: Dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
@@ -500,53 +501,6 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     return api.Result.ok()
 
 
-def parse_data(ctx, csv_header_and_data):
-    """Process contents of csv data consisting of header and 1 row of data.
-
-    :param ctx:                 Combined type of a ctx and rei struct
-    :param csv_header_and_data: CSV data holding a head conform description and the actual row data
-
-    :returns: Dict containing error and the extracted data
-    """
-    extracted_data = []
-
-    csv_lines = csv_header_and_data.splitlines()
-    header = csv_lines[0]
-    import_lines = csv_lines[1:]
-
-    # List of dicts each containing label / value pairs.
-    lines = []
-    header_cols = header.split(',')
-    for import_line in import_lines:
-        data = import_line.split(',')
-        if len(data) != len(header_cols):
-            return [], 'Amount of header columns differs from data columns.'
-        line_dict = {}
-        for x in range(0, len(header_cols)):
-            if header_cols[x] == '':
-                if x == len(header_cols) - 1:
-                    return [], "Header row ends with ','"
-                else:
-                    return [], 'Empty column description found in header row.'
-            try:
-                line_dict[header_cols[x]] = data[x]
-            except (KeyError, IndexError):
-                line_dict[header_cols[x]] = ''
-
-        lines.append(line_dict)
-
-    for line in lines:
-        rowdata, error = _process_csv_line(ctx, line)
-
-        if error is None:
-            extracted_data.append(rowdata)
-        else:
-            # End processing of csv data due to erroneous input
-            return extracted_data, "Data error: {}".format(error)
-
-    return extracted_data, ''
-
-
 def validate_data(ctx, data, allow_update):
     """Validation of extracted data.
 
@@ -561,7 +515,7 @@ def validate_data(ctx, data, allow_update):
     can_add_category = user.is_member_of(ctx, 'priv-category-add')
     is_admin = user.is_admin(ctx)
 
-    for (category, subcategory, groupname, managers, members, viewers) in data:
+    for (category, subcategory, groupname, managers, members, viewers, _, _) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
@@ -589,13 +543,15 @@ def apply_data(ctx, data, allow_update, delete_users):
     :returns: Errors if found any
     """
 
-    for (category, subcategory, group_name, managers, members, viewers) in data:
+    for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
 
         # First create the group. Note that the actor will become a groupmanager
-        response = group_create(ctx, group_name, category, subcategory, config.default_yoda_schema, '', '', 'unspecified')
+        if not len(schema_id):
+            schema_id = config.default_yoda_schema
+        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', 'unspecified')
 
         if response:
             new_group = True
@@ -615,7 +571,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
                 else:
                     log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
             else:
                 log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, group_name))
 
@@ -683,108 +639,6 @@ def apply_data(ctx, data, allow_update, delete_users):
                         log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
     return ''
-
-
-def parse_csv_file(ctx):
-    extracted_data = []
-    row_number = 0
-
-    # Validate header columns (should be first row in file)
-
-    # are all all required fields present?
-    for label in _get_csv_predefined_labels():
-        if label not in reader.fieldnames:
-            _exit_with_error(
-                'CSV header is missing compulsory field "{}"'.format(label))
-
-    # duplicate fieldnames present?
-    duplicate_columns = _get_duplicate_columns(reader.fieldnames)
-    if (len(duplicate_columns) > 0):
-        _exit_with_error("File has duplicate column(s): " + str(duplicate_columns))
-
-    # Start processing the actual group data rows
-    for line in lines:
-        row_number += 1
-        rowdata, error = _process_csv_line(line)
-
-        if error is None:
-            extracted_data.append(rowdata)
-        else:
-            _exit_with_error("Data error in in row {}: {}".format(
-                str(row_number), error))
-
-    return extracted_data
-
-
-def _get_csv_predefined_labels():
-    return ['category', 'subcategory', 'groupname']
-
-
-def _get_duplicate_columns(fields_list):
-    fields_seen = set()
-    duplicate_fields = set()
-
-    for field in fields_list:
-        if (field in _get_csv_predefined_labels() or field.startswith(("manager:", "viewer:", "member:"))):
-            if field in fields_seen:
-                duplicate_fields.add(field)
-            else:
-                fields_seen.add(field)
-
-    return duplicate_fields
-
-
-def _process_csv_line(ctx, line):
-    """Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers."""
-    category = line['category'].strip().lower().replace('.', '')
-    subcategory = line['subcategory'].strip()
-    groupname = "research-" + line['groupname'].strip().lower()
-    managers = []
-    members = []
-    viewers = []
-
-    for column_name in line.keys():
-        if column_name == '':
-            return None, 'Column cannot have an empty label'
-        elif column_name in _get_csv_predefined_labels():
-            continue
-
-        username = line.get(column_name)
-
-        if isinstance(username, list):
-            return None, "Data is present in an unlabelled column"
-
-        username = username.strip().lower()
-
-        if username == '':    # empty value
-            continue
-        elif not yoda_names.is_email_username(username):
-            return None, 'Username "{}" is not a valid email address.'.format(
-                username)
-
-        if column_name.lower().startswith('manager:'):
-            managers.append(username)
-        elif column_name.lower().startswith('member:'):
-            members.append(username)
-        elif column_name.lower().startswith('viewer:'):
-            viewers.append(username)
-        else:
-            return None, "Column label '{}' is neither predefined nor a valid role label.".format(column_name)
-
-    if len(managers) == 0:
-        return None, "Group must have a group manager"
-
-    if not yoda_names.is_valid_category(category):
-        return None, '"{}" is not a valid category name.'.format(category)
-
-    if not yoda_names.is_valid_subcategory(subcategory):
-        return None, '"{}" is not a valid subcategory name.'.format(subcategory)
-
-    if not yoda_names.is_valid_groupname("research-" + groupname):
-        return None, '"{}" is not a valid group name.'.format(groupname)
-
-    row_data = (category, subcategory, groupname, managers, members, viewers)
-    return row_data, None
 
 
 def _are_roles_equivalent(a, b):

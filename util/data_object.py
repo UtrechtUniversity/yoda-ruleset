@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import binascii
+import json
 
 import genquery
 import irods_types
@@ -133,6 +134,9 @@ def copy(ctx, path_org, path_copy, force=True):
                       'numThreads=1++++verifyChksum={}'.format('++++forceFlag=' if force else ''),
                       irods_types.BytesBuf())
 
+    json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
+    msi.touch(ctx, json.dumps(json_inp))
+
 
 def remove(ctx, path, force=False):
     """Delete a data object.
@@ -159,11 +163,19 @@ def rename(ctx, path_org, path_target):
     This may raise a error.UUError if the file does not exist, or when the user
     does not have write permission.
     """
+    # Get the modified date of the data object
+    ret = msi.obj_stat(ctx, path_org, irods_types.RodsObjStat())
+    output = ret['arguments'][1]
+    modify_time = int(str(output.modifyTime))
+
     msi.data_obj_rename(ctx,
                         path_org,
                         path_target,
                         '0',
                         irods_types.BytesBuf())
+
+    json_inp = {"logical_path": path_target, "options": {"seconds_since_epoch": modify_time}}
+    msi.touch(ctx, json.dumps(json_inp))
 
 
 def name_from_id(ctx, data_id):
