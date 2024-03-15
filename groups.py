@@ -1174,7 +1174,7 @@ def rule_group_sram_sync(ctx):
 
     for group in groups:
         group_name = group["name"]
-        members = group['members']
+        members = group['members'] + group['read']
         managers = group['managers']
         description = group['description'] if 'description' in group else ''
 
