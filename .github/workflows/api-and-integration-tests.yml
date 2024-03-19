@@ -109,7 +109,7 @@ jobs:
         cd tests
         nohup bash -c 'while true ; do sleep 5 ;  ../yoda/docker/run-cronjob.sh copytovault >> ../copytovault.log 2>&1 ; ../yoda/docker/run-cronjob.sh publication >> ../publication.log 2>&1 ; done' &
         test -d mycache || mkdir -p mycache
-        python3 -m pytest --skip-ui --intake --datarequest -o cache_dir=mycache --environment environments/docker.json
+        python3 -m pytest --skip-ui --intake --datarequest --deposit -o cache_dir=mycache --environment environments/docker.json
         cat ../copytovault.log
         cat ../publication.log
 
