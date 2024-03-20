@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -820,36 +820,25 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     # c3) DAC reviewed requests
     elif dac_member and not dacrequests and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
-    #
+    # Execute query
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
-        if sort_on == 'modified':
-            coll_names = [result['COLL_NAME'] for result in list(qcoll)]
-        else:
-            if sort_order == 'desc':
-                coll_names = [result['ORDER_DESC(COLL_NAME)'] for result in list(qcoll)]
-            else:
-                coll_names = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
     else:
         return OrderedDict([('total', 0), ('items', [])])
 
-    # Execute query
+    # Merge datarequest title and status into results.
     colls = map(transform, list(qcoll))
-    #
-    # Merge datarequest title into results
     colls_title = map(transform_title, list(qcoll_title))
-    for datarequest_title in colls_title:
-        for datarequest in colls:
+    colls_status = map(transform_status, list(qcoll_status))
+    for datarequest in colls:
+        for datarequest_title in colls_title:
             if datarequest_title['id'] == datarequest['id']:
                 datarequest['title'] = datarequest_title['title']
                 break
-    #
-    # Merge datarequest status into results
-    colls_status = map(transform_status, list(qcoll_status))
-    for datarequest_status in colls_status:
-        for datarequest in colls:
+
+        for datarequest_status in colls_status:
             if datarequest_status['id'] == datarequest['id']:
                 datarequest['status'] = datarequest_status['status']
                 break
