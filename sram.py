@@ -26,6 +26,10 @@ def sram_post_collaboration(ctx, group_name, description):
     url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
+    group_type = ''
+    if group_name.split('-')[0] in ('research', 'datamanager', 'priv', 'deposit'):
+        group_type = group_name.split('-')[0] 
+
     disable_join_requests = True
     if config.sram_flow == 'join_request':
         disable_join_requests = False
@@ -37,7 +41,8 @@ def sram_post_collaboration(ctx, group_name, description):
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
         "disclose_email_information": True,
-        "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
+        "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]],
+        "tags": ['yoda', group_type]
     }
 
     if config.sram_verbose_logging:
