@@ -28,7 +28,7 @@ def sram_post_collaboration(ctx, group_name, description):
 
     group_type = ''
     if group_name.split('-')[0] in ('research', 'datamanager', 'priv', 'deposit'):
-        group_type = group_name.split('-')[0] 
+        group_type = group_name.split('-')[0]
 
     disable_join_requests = True
     if config.sram_flow == 'join_request':
