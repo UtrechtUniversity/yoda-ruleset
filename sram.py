@@ -37,7 +37,8 @@ def sram_post_collaboration(ctx, group_name, description):
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
         "disclose_email_information": True,
-        "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]]
+        "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]],
+        "logo": config.sram_co_logo_url
     }
 
     if config.sram_verbose_logging:
