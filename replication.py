@@ -27,21 +27,37 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
     :param target_resource: Resource to be used as destination
     """
     zone = user.zone(ctx)
+    replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"
+    replication_avu_value = "{},{},{}".format(source_resource, target_resource, random.randint(1, 64))
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
         # Give rods 'own' access so that they can remove the AVU.
         msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
 
-        # Add random identifier for replication balancing purposes.
-        msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{},{}".format(source_resource, target_resource, random.randint(1, 64)), "")
+        # Check whether the object already has an AVU. If we try to add the AVU when it already
+        # exists, we will catch the exception below, however the SQL error would still result in log
+        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
+        # if an AVU is added after this check.
+        already_has_avu = len(list(genquery.Query(ctx,
+                                                  ['DATA_ID'],
+                                                  "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(
+                                                      pathutil.dirname(path), pathutil.basename(path), replication_avu_name),
+                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
+
+        if not already_has_avu:
+            # Can't use mod_avu/set here (instead of add_avu) because it would be blocked by metadata policies.
+            msi.add_avu(ctx, '-d', path, replication_avu_name, replication_avu_value, "")
     except msi.Error as e:
-        # iRODS error for CAT_UNKNOWN_FILE can be ignored.
-        if str(e).find("-817000") == -1:
+        if "-817000" in str(e):
+            # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to replicate it anymore.
+            pass
+        elif "-806000" in str(e):
+            # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
+            pass
+        else:
             error_status = re.search("status \[(.*?)\]", str(e))
             log.write(ctx, "Schedule replication of data object {} failed with error {}".format(path, error_status.group(1)))
-        else:
-            pass
 
 
 @rule.make()

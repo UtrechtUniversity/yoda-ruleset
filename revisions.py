@@ -260,22 +260,43 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     :param path:     Path of the original
     """
     # Only create revisions for research space
-    if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
-        if not pathutil.basename(path) in constants.UUBLOCKLIST:
-            # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
-            try:
-                # Give rods 'own' access so that they can remove the AVU.
-                msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+    if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
+        return
 
-                # Add random identifier for revision balancing purposes.
-                msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource + ',' + str(random.randint(1, 64)), "")
-            except msi.Error as e:
-                # iRODS error for CAT_UNKNOWN_FILE can be ignored.
-                if str(e).find("-817000") == -1:
-                    error_status = re.search("status \[(.*?)\]", str(e))
-                    log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
-                else:
-                    pass
+    if pathutil.basename(path) in constants.UUBLOCKLIST:
+        return
+
+    revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+    revision_avu_value = resource + ',' + str(random.randint(1, 64))
+
+    # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
+    try:
+        # Give rods 'own' access so that they can remove the AVU.
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
+        # Check whether the object already has an AVU. If we try to add the AVU when it already
+        # exists, we will catch the exception below, however the SQL error would still result in log
+        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
+        # if an AVU is added after this check.
+        already_has_avu = len(list(genquery.Query(ctx,
+                                                  ['DATA_ID'],
+                                                  "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(
+                                                      pathutil.dirname(path), pathutil.basename(path), revision_avu_name),
+                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
+
+        if not already_has_avu:
+            msi.add_avu(ctx, '-d', path, revision_avu_name, revision_avu_value, "")
+
+    except msi.Error as e:
+        if "-817000" in str(e):
+            # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to create revision anymore.
+            pass
+        elif "-806000" in str(e):
+            # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
+            pass
+        else:
+            error_status = re.search("status \[(.*?)\]", str(e))
+            log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
 
 
 @rule.make()
