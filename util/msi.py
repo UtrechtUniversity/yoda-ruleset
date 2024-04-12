@@ -111,6 +111,7 @@ set_acl,          SetACLError         = make('SetACL',         'Could not set AC
 get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Icat time')
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
+stat_vault,       MSIStatVaultError   = make("_stat_vault",    'Could not stat file system object in vault.')
 
 archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
 archive_index,    ArchiveIndexError   = make('ArchiveIndex',   'Could not index archive')
