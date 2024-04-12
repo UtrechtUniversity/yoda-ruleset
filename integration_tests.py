@@ -8,10 +8,27 @@ __all__ = ['rule_run_integration_tests']
 
 import traceback
 
-from util import collection, config, data_object, log, resource, rule, user
+from util import collection, config, data_object, log, msi, resource, rule, user
+
+
+def _call_msvc_stat_vault(ctx, resc_name, data_path):
+    ret = msi.stat_vault(ctx, resc_name, data_path, '', '')
+    return (ret['arguments'][2], ret['arguments'][3])
+
 
 basic_integration_tests = [
-    {"name":   "util.collection.exists.yes",
+    {"name": "msvc.msi_vault_stat.file",
+     "test": lambda ctx: (_call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.uri"),
+                          _call_msvc_stat_vault(ctx, "dev001_2", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri")),
+     "check": lambda x: (x[0][0] == "FILE" and x[0][1] == "45") or (x[1][0] == "FILE" and x[1][1] == "45")},
+    {"name": "msvc.msi_vault_stat.dir",
+     "test": lambda ctx: (_call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/home"),
+                          _call_msvc_stat_vault(ctx, "dev001_2", "/var/lib/irods/Vault1_2/home")),
+     "check": lambda x: (x[0][0] == "DIR" and x[0][1] == "0") or (x[1][0] == "DIR" and x[1][1] == "0")},
+    {"name": "msvc.msi_vault_stat.notexist",
+     "test": lambda ctx: _call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/doesnotexist"),
+     "check": lambda x: x[0] == "NOTEXIST" and x[1] == "0"},
+    {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
     {"name":   "util.collection.exists.no",
