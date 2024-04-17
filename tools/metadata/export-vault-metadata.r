@@ -63,6 +63,26 @@ def get_doi(ctx, path):
     return None
 
 
+def get_data_package_reference(ctx, path):
+    """Get the Data Package Reference of a data package in the vault.
+
+    :param ctx:  iRODS context
+    :param path: Vault package to get the Data Package Reference of
+
+    :return: Data Package Reference or None
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_data_package_reference'" % (path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return "yoda/{}".format(row[0])
+
+    return None
+
+
 def get_latest_vault_metadata_path(ctx, path):
     """
     Get the latest vault metadata JSON file.
@@ -166,6 +186,11 @@ def main(rule_args, ctx, rei):
             doi = get_doi(ctx, path)
             if doi:
                 vault_metadata['doi'] = "https://doi.org/{}".format(doi)
+
+            # Data Package Reference
+            data_package_reference = get_data_package_reference(ctx, path)
+            if data_package_reference:
+                vault_metadata['data_package_reference'] = data_package_reference
 
             # Package size
             vault_metadata['size'] = get_size(ctx, path)
