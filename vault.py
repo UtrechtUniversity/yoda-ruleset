@@ -30,6 +30,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
+           'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
            'rule_vault_enable_indexing',
@@ -294,7 +295,7 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++verifyChksum='.format(config.resource_vault), 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++numThreads={}++++verifyChksum='.format(config.resource_vault, config.vault_copy_numthreads), 0)
 
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
@@ -347,7 +348,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++verifyChksum='.format(config.resource_vault), 0)
+            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++numThreads={}++++verifyChksum='.format(config.resource_vault, config.vault_copy_numthreads), 0)
 
             # Fix ACLs.
             try:
@@ -924,7 +925,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         # CREATE COPY OF DATA OBJECT
         try:
             # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
-            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
+            ctx.msiDataObjCopy(source_path, dest_path, 'numThreads={}++++verifyChksum='.format(config.vault_copy_numthreads), 0)
         except msi.Error:
             return 1
 
@@ -1408,3 +1409,8 @@ def update_archive(ctx, coll, attr=None):
         import vault_archive
 
         vault_archive.update(ctx, coll, attr)
+
+
+@rule.make(inputs=[], outputs=[0])
+def rule_vault_copy_numthreads(ctx):
+    return config.vault_copy_numthreads

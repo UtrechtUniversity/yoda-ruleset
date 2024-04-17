@@ -142,6 +142,7 @@ config = Config(environment=None,
                 arb_min_gb_free=0,
                 arb_min_percent_free=5,
                 text_file_extensions=[],
+                vault_copy_numthreads=0,
                 python3_interpreter='/usr/local/bin/python3')
 
 # }}}
