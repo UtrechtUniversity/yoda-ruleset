@@ -1084,9 +1084,8 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 	uuGroupGetMemberType(*groupName, *fullName, *oldRole);
 
 	if (*newRole == *oldRole) {
-		# Nothing to do.
-		*status  = '0';
-		*message = "";
+		*status  = '1';
+		*message = *userName ++ " already has this role in group " ++ *groupName ++ ".";
 
 		succeed;
 	}
