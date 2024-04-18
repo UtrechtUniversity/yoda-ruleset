@@ -16,6 +16,15 @@ def _call_msvc_stat_vault(ctx, resc_name, data_path):
     return (ret['arguments'][2], ret['arguments'][3])
 
 
+def _call_msvc_stat_vault_check_exc(ctx, resc_name, data_path):
+    """Verifies whether a call to the stat vault microservices raises an exception"""
+    try:
+        msi.stat_vault(ctx, resc_name, data_path, '', '')
+        return False
+    except Exception:
+        return True
+
+
 basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.file",
      "test": lambda ctx: (_call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.uri"),
@@ -28,6 +37,15 @@ basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.notexist",
      "test": lambda ctx: _call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/doesnotexist"),
      "check": lambda x: x[0] == "NOTEXIST" and x[1] == "0"},
+    {"name": "msvc.msi_vault_stat.resourcenotexist",
+     "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "doesnotexist", "/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.uri"),
+     "check": lambda x: x},
+    {"name": "msvc.msi_vault_stat.outsidevault1",
+     "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/etc/passwd"),
+     "check": lambda x: x},
+    {"name": "msvc.msi_vault_stat.outsidevault2",
+     "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
+     "check": lambda x: x},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
