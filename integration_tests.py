@@ -11,20 +11,6 @@ import traceback
 from util import collection, config, data_object, log, msi, resource, rule, user
 
 
-def _call_msvc_stat_vault(ctx, resc_name, data_path):
-    ret = msi.stat_vault(ctx, resc_name, data_path, '', '')
-    return (ret['arguments'][2], ret['arguments'][3])
-
-
-def _call_msvc_stat_vault_check_exc(ctx, resc_name, data_path):
-    """Verifies whether a call to the stat vault microservices raises an exception"""
-    try:
-        msi.stat_vault(ctx, resc_name, data_path, '', '')
-        return False
-    except Exception:
-        return True
-
-
 basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.file",
      "test": lambda ctx: (_call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.uri"),
@@ -45,6 +31,15 @@ basic_integration_tests = [
      "check": lambda x: x},
     {"name": "msvc.msi_vault_stat.outsidevault2",
      "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dataobj_np_checksum.file",
+     "test": lambda ctx: _call_msvc_np_checksum(ctx, '/tempZone/yoda/licenses/GNU General Public License v3.0.txt', '0'),
+     "check": lambda x: x == "sha2:OXLcl0T2SZ8Pmy2/dmlvKuetivmyPd5m1q+Gyd+zaYY="},
+    {"name": "msvc.msi_dataobj_np_checksum.file_not_exist",
+     "test": lambda ctx: _call_msvc_np_checksum_check_exc(ctx, '/tempZone/yoda/licenses/doesnotexist.txt', '0'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dataobj_np_checksum.repl_num_not_exist",
+     "test": lambda ctx: _call_msvc_np_checksum_check_exc(ctx, '/tempZone/yoda/licenses/GNU General Public License v3.0.txt', '9'),
      "check": lambda x: x},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
@@ -165,3 +160,31 @@ def rule_run_integration_tests(ctx):
         return_value += name + " " + verdict + "\n"
 
     return return_value
+
+
+def _call_msvc_stat_vault(ctx, resc_name, data_path):
+    ret = msi.stat_vault(ctx, resc_name, data_path, '', '')
+    return (ret['arguments'][2], ret['arguments'][3])
+
+
+def _call_msvc_stat_vault_check_exc(ctx, resc_name, data_path):
+    """Verifies whether a call to the stat vault microservice raises an exception"""
+    try:
+        msi.stat_vault(ctx, resc_name, data_path, '', '')
+        return False
+    except Exception:
+        return True
+
+
+def _call_msvc_np_checksum(ctx, obj_name, repl_num):
+    ret = msi.dataObj_np_checksum(ctx, obj_name, repl_num, '')
+    return ret['arguments'][2]
+
+
+def _call_msvc_np_checksum_check_exc(ctx, obj_name, repl_num):
+    """Verifies whether a call to the non-persistent checksum microservice raises an exception"""
+    try:
+        msi.dataObj_np_checksum(ctx, obj_name, repl_num, '')
+        return False
+    except Exception:
+        return True
