@@ -807,9 +807,28 @@ def removeExternalUser(ctx, username, userzone):
     return str(response.status_code)
 
 
-def rule_group_remove_external_user(rule_args, ctx, rei):
-    """Remove external user."""
-    log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
+@rule.make(inputs=[0, 1], outputs=[])
+def rule_group_remove_external_user(ctx, username, userzone):
+    """Remove external user from EUS
+
+      :param ctx:      Combined type of a ctx and rei struct
+      :param username: Name of user to remove
+      :param userzone: Zone of user to remove
+
+      :returns:        HTTP status code of remove request, or "0"
+                       if insufficient permissions.
+   """
+    if user.is_admin(ctx):
+        ret = removeExternalUser(ctx, username, userzone)
+        ctx.writeLine("serverLog", "Status code for removing external user "
+                                   + username + "#" + userzone
+                                   + " : " + ret)
+        return ret
+    else:
+        ctx.writeLine("serverLog", "Cannot remove external user "
+                                   + username + "#" + userzone
+                                   + " : need admin permissions.")
+        return '0'
 
 
 @rule.make(inputs=[0], outputs=[1])
