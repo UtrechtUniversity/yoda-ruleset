@@ -239,8 +239,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     # Start actual restoration of the revision
     try:
         # Workaround the PREP deadlock issue: Restrict threads to 1.
-        ofFlags = 'forceFlag=++++numThreads=1'
-        msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
+        data_object.copy(ctx, source_path, coll_target + '/' + new_filename, True)
     except msi.Error as e:
         return api.Error('copy_failed', 'The file could not be copied', str(e))
 
@@ -561,8 +560,7 @@ def revision_create(ctx, resource, data_id, max_size, verbose):
         # actual copying to revision store
         try:
             # Workaround the PREP deadlock issue: Restrict threads to 1.
-            ofFlags = 'forceFlag=++++numThreads=1'
-            msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
+            data_object.copy(ctx, path, rev_path, True)
 
             revision_created = True
 
