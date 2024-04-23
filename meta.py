@@ -305,7 +305,7 @@ def api_meta_clone_file(ctx, target_coll):
         return
 
     try:
-        msi.data_obj_copy(ctx, source_data, target_data, '', irods_types.BytesBuf())
+        data_object.copy(ctx, source_data, target_data)
     except msi.Error as e:
         raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
 

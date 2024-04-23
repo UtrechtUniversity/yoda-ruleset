@@ -14,7 +14,6 @@ import re
 import time
 
 import genquery
-import irods_types
 import session_vars
 
 import meta
@@ -36,7 +35,7 @@ def execute_transformation(ctx, metadata_path, transform, keep_metadata_backup=T
     if group_name.startswith('research-'):
         if keep_metadata_backup:
             backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
-            msi.data_obj_copy(ctx, metadata_path, backup, '', irods_types.BytesBuf())
+            data_object.copy(ctx, metadata_path, backup)
         jsonutil.write(ctx, metadata_path, metadata)
     elif group_name.startswith('vault-'):
         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))

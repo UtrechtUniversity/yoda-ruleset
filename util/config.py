@@ -141,7 +141,8 @@ config = Config(environment=None,
                 arb_exempt_resources=[],
                 arb_min_gb_free=0,
                 arb_min_percent_free=5,
-                text_file_extensions=[])
+                text_file_extensions=[],
+                vault_copy_multithread_enabled=True)
 
 # }}}
 
