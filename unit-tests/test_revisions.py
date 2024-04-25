@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for the revision functions"""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -10,10 +10,42 @@ from unittest import TestCase
 sys.path.append('..')
 
 from revision_strategies import get_revision_strategy
-from revision_utils import get_deletion_candidates, revision_cleanup_prefilter
+from revision_utils import get_deletion_candidates, revision_cleanup_prefilter, revision_eligible
 
 
 class RevisionTest(TestCase):
+
+    def test_revision_eligible(self):
+        # Happy flow
+        eligible, msg = revision_eligible(100, True, 2, "/zone/obj", [["research-initial"]], True)
+        self.assertTrue(eligible)
+        self.assertEquals(msg, "")
+
+        # Data obj does not exist
+        eligible, msg = revision_eligible(100, False, None, "/zone/obj", [["research-initial"]], True)
+        self.assertFalse(eligible)
+        self.assertIn("was not found", msg)
+
+        # No groups
+        eligible, msg = revision_eligible(100, True, 2, "/zone/obj", [], True)
+        self.assertFalse(eligible)
+        self.assertIn("Cannot find owner", msg)
+
+        # Too many groups
+        eligible, msg = revision_eligible(100, True, 2, "/zone/obj", [["research-initial"], ["research-initial1"]], True)
+        self.assertFalse(eligible)
+        self.assertIn("Cannot find unique owner", msg)
+
+        # Too large data object (not an error)
+        eligible, msg = revision_eligible(2, True, "100", "/zone/obj", [["research-initial"]], True)
+        self.assertFalse(eligible)
+        self.assertEquals(msg, "")
+
+        # No revision store
+        eligible, msg = revision_eligible(100, True, 2, "/zone/obj", [["research-initial"]], False)
+        self.assertFalse(eligible)
+        self.assertIn("Revision store", msg)
+        self.assertIn("does not exist", msg)
 
     def test_revision_strategy(self):
         strategy = get_revision_strategy("B")
