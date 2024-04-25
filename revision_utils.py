@@ -61,7 +61,6 @@ def calculate_end_of_calendar_day():
 def get_revision_store_path(zone, trailing_slash=False):
     """Produces the logical path of the revision store
 
-       :param ctx: Combined type of a callback and rei struct
        :param zone: zone name
        :param trailing_slash: Add a trailing slash (default: False)
 

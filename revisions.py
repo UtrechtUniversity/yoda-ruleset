@@ -613,7 +613,6 @@ def revision_cleanup_scan_revision_objects(ctx, revision_list):
 
     :param ctx: Combined type of a callback and rei struct
     :param revision_list: List of revision data object IDs
-    :param verbose_mode: Whether to print additional information for troubleshooting (boolean)
 
     :returns:   Nested list, where the outer list represents revisioned data objects,
                 and the inner list represents revisions for that data object.
