@@ -96,7 +96,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
         minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
         log.write(ctx, "verbose = {}".format(verbose))
-        if verbose:
+        if print_verbose:
             log.write(ctx, "async_replication_delay_time = {} seconds".format(config.async_replication_delay_time))
             log.write(ctx, "max_rss = {} bytes".format(config.async_replication_max_rss))
             log.write(ctx, "dry_run = {}".format(dry_run))
@@ -153,7 +153,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 # Skip this one and go to the next data object to be replicated.
                 continue
 
-            # For totalization only count the dataobjects that are within the specified balancing range
+            # For totalization only count the data objects that are within the specified balancing range
             count += 1
             data_resc_name = row[4]
 
@@ -231,7 +231,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
 
 
 def is_replication_blocked_by_admin(ctx):
-    """Admin can put the replication process on a hold by adding a file called 'stop_replication' in collection /yoda/flags.
+    """Admin can put the replication process on hold by adding a file called 'stop_replication' in collection /yoda/flags.
 
     :param ctx: Combined type of a callback and rei struct
 

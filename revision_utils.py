@@ -1,21 +1,53 @@
 # -*- coding: utf-8 -*-
 """Utility functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
 import datetime
+import hashlib
 import os
 
 from revision_strategies import get_revision_strategy
 from util import constants, log
 
 
-def calculate_end_of_calendar_day(ctx):
-    """Calculate the unix timestamp for the end of the current day (Same as start of next day).
+def revision_eligible(max_size, data_obj_exists, data_size, path, groups, revision_store_exists):
+    """Determine whether can create a revision of given data object.
 
-    :param ctx: Combined type of a callback and rei struct
+    :param max_size:              Max size that file can be to create a revision (in bytes)
+    :param data_obj_exists:       Whether the data object exists
+    :param data_size:             Size of the data object
+    :param path:                  Path to the given data object (for logging)
+    :param groups:                List of groups retrieved for this data object
+    :param revision_store_exists: Whether revision store for this group exists
+
+    :returns: 2-tuple containing True / False whether a revision should be created,
+              and the message (if this is a error condition)
+    """
+
+    if not data_obj_exists:
+        return False, "Data object <{}> was not found or path was collection".format(path)
+
+    if len(groups) == 0:
+        return False, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path)
+
+    if len(groups) > 1:
+        return False, "Cannot find unique owner of data object <{}>. Skipping.".format(path)
+
+    if not revision_store_exists:
+        return False, "Revision store collection does not exist for data object <{}>".format(path)
+
+    # A revision should not be created, but this is not an error condition
+    if int(data_size) > max_size:
+        return False, ""
+
+    return True, ""
+
+
+def calculate_end_of_calendar_day():
+    """Calculate the unix timestamp for the end of the current day (Same as start of next day).
 
     :returns: End of calendar day - Timestamp of the end of the current day
     """
@@ -26,7 +58,7 @@ def calculate_end_of_calendar_day(ctx):
     return int(tomorrow.strftime("%s"))
 
 
-def get_revision_store_path(ctx, zone, trailing_slash=False):
+def get_revision_store_path(zone, trailing_slash=False):
     """Produces the logical path of the revision store
 
        :param ctx: Combined type of a callback and rei struct
@@ -47,7 +79,7 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
 
     :param ctx:                      Combined type of a callback and rei struct
     :param revision_strategy:        Revision strategy object
-    :param revisions:                List of revisions for a particular data object. Each revision is represented by a 3-tupel
+    :param revisions:                List of revisions for a particular data object. Each revision is represented by a 3-tuple
                                      (revision ID, modification time in epoch time, original path)
     :param initial_upper_time_bound: Initial upper time bound for first bucket
     :param verbose:                  Whether to print additional information for troubleshooting (boolean)
@@ -144,7 +176,7 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
 
        :param ctx:                    Combined type of a callback and rei struct
        :param revisions_list:         List of versioned data objects. Each versioned data object is represented as a list of revisions,
-                                      with each revision represented as a 3-tupel (revision ID, modification time in epoch time, original
+                                      with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
        :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
                                       https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
@@ -153,7 +185,7 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
 
        :returns:                      List of versioned data objects, after prefiltered versioned data objects / revisions have been
                                       removed. Each versioned data object is represented as a list of revisions,
-                                      with each revision represented as a 3-tupel (revision ID, modification time in epoch time, original
+                                      with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
        """
     minimum_bucket_size = get_revision_strategy(revision_strategy_name).get_minimum_bucket_size()
@@ -161,3 +193,36 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
         log.write(ctx, "Removing following revisioned data objects in prefiltering for cleanup: "
                   + str([object for object in revisions_list if len(object) <= minimum_bucket_size]))
     return [object for object in revisions_list if len(object) > min(minimum_bucket_size, 1)]
+
+
+def get_resc(row):
+    """Get the resc id for a data object given the metadata provided (for revision job).
+
+    :param row: metadata for the data object
+
+    :returns: resc
+    """
+    info = row[3].split(',')
+    if len(info) == 2:
+        return info[0]
+
+    # Backwards compatibility with revision metadata created in v1.8 or earlier.
+    return row[3]
+
+
+def get_balance_id(row, path):
+    """Get the balance id for a data object given the metadata provided (for revision job).
+
+    :param row:  metadata for the data object
+    :param path: path to the data object
+
+    :returns: Balance id
+    """
+    info = row[3].split(',')
+    if len(info) == 2:
+        return int(info[1])
+
+    # Backwards compatibility with revision metadata created in v1.8 or earlier.
+    # Determine a balance_id for this dataobject based on its path.
+    # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+    return int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
