@@ -58,7 +58,7 @@ def is_internal_user(username):
 
        :param username: name of the user
 
-       :returns: boolean value that indicates whether this username refers to an an internal user
+       :returns: boolean value that indicates whether this username refers to an internal user
 """
     return _is_internal_user(username, config.external_users_domain_filter)
 
