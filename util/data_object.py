@@ -211,11 +211,12 @@ def decode_checksum(checksum):
         return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
 
 
-def get_group_owners(ctx, data_id):
+def get_group_owners(ctx, path):
     """Return list of groups of data object, each entry being name of the group and the zone."""
+    parent, basename = pathutil.chop(path)
     groups = list(genquery.row_iterator(
-        "USER_NAME, USER_ZONE",
-        "DATA_ID = '" + data_id + "' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
+        "USER_NAME, USER_ZONE", 
+        "COLL_NAME = '{}' and DATA_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'".format(parent, basename),
         genquery.AS_LIST, ctx
     ))
     return groups

@@ -257,11 +257,16 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     :param zone:     Zone where the original can be found
     :param path:     Path of the original
     """
-    # Only create revisions for research space
-    if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
-        return
+    size = data_object.size(ctx, path)
+    groups = data_object.get_group_owners(ctx, path)
+    if groups:
+        revision_store = get_revision_store(ctx, groups[0][0])
+        revision_store_exists = revision_store is not None
+    else:
+        revision_store_exists = False
 
-    if pathutil.basename(path) in constants.UUBLOCKLIST:
+    should_create_rev, _ = revision_eligible(constants.UUMAXREVISIONSIZE, size is not None, size, path, groups, revision_store_exists)
+    if not should_create_rev:
         return
 
     revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
@@ -418,7 +423,7 @@ def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data
     """
     revision_created = False
     size = data_object.size(ctx, path)
-    groups = data_object.get_group_owners(ctx, data_id)
+    groups = data_object.get_group_owners(ctx, path)
     if groups:
         revision_store = get_revision_store(ctx, groups[0][0])
         revision_store_exists = revision_store is not None

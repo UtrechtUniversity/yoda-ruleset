@@ -13,7 +13,7 @@ from revision_strategies import get_revision_strategy
 from util import constants, log, pathutil
 
 
-def revision_eligible(max_size, data_obj_exists, data_size, path, groups, revision_store_exists):
+def revision_eligible(max_size, data_obj_exists, size, path, groups, revision_store_exists):
     """Determine whether can create a revision of given data object.
 
     :param max_size:              Max size that file can be to create a revision (in bytes)
@@ -41,8 +41,9 @@ def revision_eligible(max_size, data_obj_exists, data_size, path, groups, revisi
 
     _, zone, _, _ = pathutil.info(path)
 
-    # A revision should not be created, but this is not an error condition
-    if int(data_size) > max_size:
+    # A revision should not be created when the data object is too big,
+    # but this is not an error condition
+    if int(size) > max_size:
         return False, ""
 
     # Only create revisions for research space

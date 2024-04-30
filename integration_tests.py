@@ -71,8 +71,7 @@ basic_integration_tests = [
      "test": lambda ctx: data_object.size(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == 1003240},
     {"name":   "util.data_object.get_group_owners",
-     # data id of lorem.txt
-     "test": lambda ctx: data_object.get_group_owners(ctx, "39201"),
+     "test": lambda ctx: data_object.get_group_owners(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == [['research-initial', 'tempZone']]},
     {"name":   "util.resource.exists.yes",
      "test": lambda ctx: resource.exists(ctx, "irodsResc"),
