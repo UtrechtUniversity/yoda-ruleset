@@ -18,7 +18,7 @@ def revision_eligible(max_size, data_obj_exists, size, path, groups, revision_st
 
     :param max_size:              Max size that file can be to create a revision (in bytes)
     :param data_obj_exists:       Whether the data object exists
-    :param data_size:             Size of the data object
+    :param size:                  Size of the data object
     :param path:                  Path to the given data object (for logging)
     :param groups:                List of groups retrieved for this data object
     :param revision_store_exists: Whether revision store for this group exists
