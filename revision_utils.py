@@ -10,7 +10,7 @@ import hashlib
 import os
 
 from revision_strategies import get_revision_strategy
-from util import constants, log
+from util import constants, log, pathutil
 
 
 def revision_eligible(max_size, data_obj_exists, data_size, path, groups, revision_store_exists):
@@ -39,8 +39,17 @@ def revision_eligible(max_size, data_obj_exists, data_size, path, groups, revisi
     if not revision_store_exists:
         return False, "Revision store collection does not exist for data object <{}>".format(path)
 
+    _, zone, _, _ = pathutil.info(path)
+
     # A revision should not be created, but this is not an error condition
     if int(data_size) > max_size:
+        return False, ""
+
+    # Only create revisions for research space
+    if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
+        return False, ""
+
+    if pathutil.basename(path) in constants.UUBLOCKLIST:
         return False, ""
 
     return True, ""

@@ -418,7 +418,7 @@ def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data
     """
     revision_created = False
     size = data_object.size(ctx, path)
-    groups = data_object.get_groups(ctx, data_id)
+    groups = data_object.get_group_owners(ctx, data_id)
     if groups:
         revision_store = get_revision_store(ctx, groups[0][0])
         revision_store_exists = revision_store is not None

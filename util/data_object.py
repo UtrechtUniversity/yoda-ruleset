@@ -211,7 +211,7 @@ def decode_checksum(checksum):
         return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
 
 
-def get_groups(ctx, data_id):
+def get_group_owners(ctx, data_id):
     """Return list of groups of data object, each entry being name of the group and the zone."""
     groups = list(genquery.row_iterator(
         "USER_NAME, USER_ZONE",
