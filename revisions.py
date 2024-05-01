@@ -287,10 +287,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
                                                       pathutil.dirname(path), pathutil.basename(path), revision_avu_name),
                                                   offset=0, limit=1, output=genquery.AS_LIST))) > 0
 
-        # Check that size is not too big to make a revision
-        data_size = data_object.size(ctx, path)
-
-        if int(data_size) <= constants.UUMAXREVISIONSIZE and not already_has_avu:
+        if not already_has_avu:
             msi.add_avu(ctx, '-d', path, revision_avu_name, revision_avu_value, "")
 
     except msi.Error as e:
