@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import binascii
@@ -34,7 +34,14 @@ def owner(ctx, path):
 
 
 def size(ctx, path):
-    """Get a data object's size in bytes."""
+    """Get a data object's size in bytes.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param path:     Path to iRODS data object
+
+    :returns: Data object's size or None if object is not found
+    """
+
     iter = genquery.row_iterator(
         "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
@@ -202,3 +209,14 @@ def decode_checksum(checksum):
         return "0"
     else:
         return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
+
+
+def get_group_owners(ctx, path):
+    """Return list of groups of data object, each entry being name of the group and the zone."""
+    parent, basename = pathutil.chop(path)
+    groups = list(genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "COLL_NAME = '{}' and DATA_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'".format(parent, basename),
+        genquery.AS_LIST, ctx
+    ))
+    return groups

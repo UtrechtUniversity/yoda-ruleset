@@ -11,7 +11,7 @@ def get_revision_strategy(strategy_name):
        object can be used to obtain information about the revision strategy.
 
        :param strategy_name: Name of the strategy ("A", B", "Simple"). See
-                             See https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
+                             https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                              for an explanation.
 
        :returns: RevisionStrategy object

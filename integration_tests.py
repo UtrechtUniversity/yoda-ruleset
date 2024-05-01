@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Integration tests for the development environment."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
@@ -70,6 +70,9 @@ basic_integration_tests = [
     {"name":   "util.data_object.size",
      "test": lambda ctx: data_object.size(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == 1003240},
+    {"name":   "util.data_object.get_group_owners",
+     "test": lambda ctx: data_object.get_group_owners(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
+     "check": lambda x: x == [['research-initial', 'tempZone']]},
     {"name":   "util.resource.exists.yes",
      "test": lambda ctx: resource.exists(ctx, "irodsResc"),
      "check": lambda x: x},
