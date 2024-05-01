@@ -25,7 +25,68 @@ def _call_msvc_stat_vault_check_exc(ctx, resc_name, data_path):
         return True
 
 
+def _call_msvc_json_arrayops(ctx, jsonstr, val, ops, index, argument_index):
+    """Returns an output argument from the json_arrayops microservice"""
+    return ctx.msi_json_arrayops(jsonstr, val, ops, index)["arguments"][argument_index]
+
+
+def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
+    """Returns an output argument from the json_objops microservice"""
+    return ctx.msi_json_objops(jsonstr, val, ops)["arguments"][argument_index]
+
+
 basic_integration_tests = [
+    {"name": "msvc.json_arrayops.add",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "add", 0, 0),
+     "check": lambda x: x == '["a", "b", "c", "d"]'},
+    {"name": "msvc.json_arrayops.find_exist",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "b", "find", 0, 3),
+     "check": lambda x: x == 1},
+    {"name": "msvc.json_arrayops.find_notexist",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "find", 0, 3),
+     "check": lambda x: x == -1},
+    {"name": "msvc.json_arrayops.get",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "", "get", 1, 1),
+     "check": lambda x: x == 'b'},
+    {"name": "msvc.json_arrayops.rm_exist",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "b", "rm", 0, 0),
+     "check": lambda x: x == '["a", "c"]'},
+    {"name": "msvc.json_arrayops.rm_notexist",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "rm", 0, 0),
+     "check": lambda x: x == '["a", "b", "c"]'},
+    {"name": "msvc.json_arrayops.size",
+     "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "", "size", 0, 3),
+     "check": lambda x: x == 3},
+    {"name": "msvc.json_objops.add_notexist_empty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '', msi.kvpair(ctx, "e", "f"), 'add',  0),
+     "check": lambda x: x == '{"e": "f"}'},
+    {"name": "msvc.json_objops.add_notexist_nonempty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b"}', msi.kvpair(ctx, "e", "f"), 'add',  0),
+     "check": lambda x: x == '{"a": "b", "e": "f"}'},
+    {"name": "msvc.json_objops.add_exist_nonempty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b"}', msi.kvpair(ctx, "e", "g"), 'add',  0),
+     "check": lambda x: x == '{"a": "b", "e": "g"}'},
+    {"name": "msvc.json_objops.get_exist",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b", "c": "d"}', msi.kvpair(ctx, "c", ""), 'get',  1),
+     "check": lambda x: str(x) == "(['c'], ['d'])"},
+    {"name": "msvc.json_objops.get_notexist",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b", "c": "d"}', msi.kvpair(ctx, "e", ""), 'get',  1),
+     "check": lambda x: str(x) == "(['e'], [''])"},
+    {"name": "msvc.json_objops.rm_exist",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b", "c": "d"}', msi.kvpair(ctx, "c", "d"), 'rm',  0),
+     "check": lambda x: x == '{"a": "b"}'},
+    {"name": "msvc.json_objops.rm_notexist",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b", "c": "d"}', msi.kvpair(ctx, "c", "e"), 'rm',  0),
+     "check": lambda x: x == '{"a": "b", "c": "d"}'},
+    {"name": "msvc.json_objops.set_notexist_empty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '', msi.kvpair(ctx, "e", "f"), 'set',  0),
+     "check": lambda x: x == '{"e": "f"}'},
+    {"name": "msvc.json_objops.set_notexist_nonempty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b"}', msi.kvpair(ctx, "e", "f"), 'set',  0),
+     "check": lambda x: x == '{"a": "b", "e": "f"}'},
+    {"name": "msvc.json_objops.set_exist_nonempty",
+     "test": lambda ctx: _call_msvc_json_objops(ctx, '{"a": "b"}', msi.kvpair(ctx, "e", "g"), 'set',  0),
+     "check": lambda x: x == '{"a": "b", "e": "g"}'},
     {"name": "msvc.msi_vault_stat.file",
      "test": lambda ctx: (_call_msvc_stat_vault(ctx, "dev001_1", "/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.uri"),
                           _call_msvc_stat_vault(ctx, "dev001_2", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri")),
