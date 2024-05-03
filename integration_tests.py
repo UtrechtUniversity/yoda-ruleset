@@ -7,8 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import traceback
+import uuid
 
-from util import collection, config, data_object, log, msi, resource, rule, user
+from util import avu, collection, config, data_object, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -35,7 +36,67 @@ def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
     return ctx.msi_json_objops(jsonstr, val, ops)["arguments"][argument_index]
 
 
+def _create_tmp_object(ctx):
+    """Creates a randomly named test data object and returns its name"""
+    path = "/{}/home/rods/{}.test".format(user.zone(ctx), str(uuid.uuid4()))
+    data_object.write(ctx, path, "test")
+    return path
+
+
+def _create_tmp_collection(ctx):
+    """Creates a randomly named test collection and returns its name"""
+    path = "/{}/home/rods/{}-test".format(user.zone(ctx), str(uuid.uuid4()))
+    collection.create(ctx, path)
+    return path
+
+
+def _test_msvc_add_avu_object(ctx):
+    tmp_object = _create_tmp_object(ctx)
+    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_add_avu_collection(ctx):
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_rmw_avu_object(ctx, rmw_attributes):
+    tmp_object = _create_tmp_object(ctx)
+    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-d', tmp_object, "foot", "hand", "head")
+    ctx.msi_add_avu('-d', tmp_object, "aap", "noot", "mies")
+    ctx.msi_rmw_avu('-d', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-c', tmp_object, "foot", "hand", "head")
+    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
+    ctx.msi_rmw_avu('-c', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
 basic_integration_tests = [
+    {"name": "msvc.add_avu_collection",
+     "test": lambda ctx: _test_msvc_add_avu_collection(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
+    {"name": "msvc.add_avu_object",
+     "test": lambda ctx: _test_msvc_add_avu_object(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
     {"name": "msvc.json_arrayops.add",
      "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "add", 0, 0),
      "check": lambda x: x == '["a", "b", "c", "d"]'},
@@ -107,6 +168,39 @@ basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.outsidevault2",
      "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
      "check": lambda x: x},
+    {"name": "msvc.rmw_avu_collection_literal",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("foo", "bar", "baz")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foot", "hand", "head") in x
+                         and len(x) == 2)},
+    {"name": "msvc.rmw_avu_object_literal",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("foo", "bar", "baz")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foot", "hand", "head") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 2
+                         )},
+    {"name": "msvc.rmw_avu_collection_literal_notexist",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("does", "not", "exist")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foo", "bar", "baz") in x
+                         and ("foot", "hand", "head") in x
+                         and len(x) == 3)},
+    {"name": "msvc.rmw_avu_object_literal_notexist",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("does", "not", "exist")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foo", "bar", "baz") in x
+                         and ("foot", "hand", "head") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 3
+                         )},
+    {"name": "msvc.rmw_avu_collection_wildcard",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("fo%", "%", "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len(x) == 1)},
+    {"name": "msvc.rmw_avu_object_wildcard",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("fo%", "%", "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
