@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
 
+import json
+import os
 import traceback
 
 from util import collection, config, data_object, log, msi, resource, rule, user
@@ -107,14 +109,36 @@ basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.outsidevault2",
      "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
      "check": lambda x: x},
-    {"name": "msvc.msi_dataobj_np_checksum.file",
-     "test": lambda ctx: _call_msvc_np_checksum(ctx, '/tempZone/yoda/licenses/GNU General Public License v3.0.txt', '0'),
+
+    {"name": "msvc.msi_file_checksum.file",
+     "test": lambda ctx: _call_file_checksum_either_resc(ctx, "/var/lib/irods/VaultX/yoda/licenses/GNU General Public License v3.0.txt"),
      "check": lambda x: x == "sha2:OXLcl0T2SZ8Pmy2/dmlvKuetivmyPd5m1q+Gyd+zaYY="},
-    {"name": "msvc.msi_dataobj_np_checksum.file_not_exist",
-     "test": lambda ctx: _call_msvc_np_checksum_check_exc(ctx, '/tempZone/yoda/licenses/doesnotexist.txt', '0'),
+    {"name": "msvc.msi_file_checksum.file_not_exist",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/licenses/doesnotexist.txt', 'dev001_2'),
      "check": lambda x: x},
-    {"name": "msvc.msi_dataobj_np_checksum.repl_num_not_exist",
-     "test": lambda ctx: _call_msvc_np_checksum_check_exc(ctx, '/tempZone/yoda/licenses/GNU General Public License v3.0.txt', '9'),
+    {"name": "msvc.msi_file_checksum.resc_not_exist",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.txt', 'non-existent-resource'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_file_checksum.outside_vault",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/etc/passwd', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.dir",
+     "test": lambda ctx: _call_dir_list(ctx, "/var/lib/irods/Vault1_1/yoda", "dev001_1"),
+     "check": lambda x: len(x) == len([entry for entry in os.listdir("/var/lib/irods/Vault1_1/yoda") if os.path.isdir("/var/lib/irods/Vault1_1/yoda/" + entry)])},
+    {"name": "msvc.msi_dir_list.dir_not_exist",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/doesnotexist', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.file_resc_1",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.txt', 'dev001_1'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.file_resc_2",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.txt', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.resc_not_exist",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda', 'non-existent-resource'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.outside_vault",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/etc/passwd', 'dev001_2'),
      "check": lambda x: x},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
@@ -240,15 +264,43 @@ def rule_run_integration_tests(ctx):
     return return_value
 
 
-def _call_msvc_np_checksum(ctx, obj_name, repl_num):
-    ret = msi.dataObj_np_checksum(ctx, obj_name, repl_num, '')
+def _call_file_checksum_either_resc(ctx, filename):
+    """Returns result of file checksum microservice for either of the
+       two main UFS resources (dev001_1, dev001_2). If one returns an
+       exception, we try the other.
+
+       :param ctx: combined type of a callback and rei struct
+       :param filename: name of file to checksum
+
+       :returns: output of file checksum microservice
+    """
+    try:
+        vault_filename = filename.replace("VaultX", "Vault1_1")
+        ret = msi.file_checksum(ctx, vault_filename, 'dev001_1', '')
+    except Exception:
+        vault_filename = filename.replace("VaultX", "Vault1_2")
+        ret = msi.file_checksum(ctx, vault_filename, 'dev001_2', '')
     return ret['arguments'][2]
 
 
-def _call_msvc_np_checksum_check_exc(ctx, obj_name, repl_num):
-    """Verifies whether a call to the non-persistent checksum microservice raises an exception"""
+def _call_file_checksum_check_exc(ctx, filename, resc_name):
+    """Verifies whether a call to the file checksum microservice raises an exception"""
     try:
-        msi.dataObj_np_checksum(ctx, obj_name, repl_num, '')
+        msi.file_checksum(ctx, filename, resc_name, '')
+        return False
+    except Exception:
+        return True
+
+
+def _call_dir_list(ctx, dirname, resc_name):
+    ret = msi.dir_list(ctx, dirname, resc_name, "")
+    print(ret['arguments'][2])
+    return json.loads(ret['arguments'][2])
+
+
+def _call_dir_list_check_exc(ctx, dirname, resc_name):
+    try:
+        msi.dir_list(ctx, dirname, resc_name, "")
         return False
     except Exception:
         return True
