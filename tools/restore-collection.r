@@ -56,7 +56,7 @@ restoreCollection {
                         }
                         uuChopPath(*originalPath, *coll, *filename);
 
-                        # Hanlde restore path.
+                        # Handle restore path.
                         if (*restorePath != "") {
                                 *coll = *restorePath;
 

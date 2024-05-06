@@ -5,7 +5,7 @@
 # \copyright   Copyright (c) 2016-2022 Utrecht University. All rights reserved.
 # \license     GPLv3, see LICENSE.
 
-# \constants uuORGMETADATAPREFIX Prefix for organisational metadata
+# \constants UUORGMETADATAPREFIX Prefix for organisational metadata
 UUORGMETADATAPREFIX = "org_"
 
 # \constant UUSYSTEMCOLLECTION   irods path of a system collection to store system support files in

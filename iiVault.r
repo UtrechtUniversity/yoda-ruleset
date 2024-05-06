@@ -69,8 +69,10 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	} else {
 	    # Copy data object to vault and compute checksum.
 	    *resource = "";
-	    *err = errorcode(rule_resource_vault(*resource));
-	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++verifyChksum=", *status));
+		*numThreads = "";
+	    *err1 = errorcode(rule_resource_vault(*resource));
+		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
 	    if (*error < 0) {
 		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
 	    }
@@ -111,8 +113,10 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 		}
 	} else {
 		*resource = "";
-		*err = errorcode(rule_resource_research(*resource));
-		*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++verifyChksum=", *status));
+		*numThreads = "";
+		*err1 = errorcode(rule_resource_research(*resource));
+		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
 		if (*error < 0) {
 			*buffer.msg = "Failed to copy *sourcePath to *destPath";
 		}
