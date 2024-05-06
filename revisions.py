@@ -318,6 +318,8 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
     :param balance_id_max:   Maximum balance id for batch jobs (value 1-64)
     :param batch_size_limit: Maximum number of items to be processed within one batch
     :param dry_run:          When '1' do not actually create revisions, only log what would have been created
+
+    :raises Exception:       If one of the parameters is invalid
     """
     count         = 0
     count_ok      = 0
@@ -327,6 +329,17 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
+
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "The revision creation job can only be started by a rodsadmin user.")
+        return
+
+    if not (batch_size_limit.isdigit() and int(batch_size_limit) > 0):
+        raise Exception("Batch size limit is invalid. It needs to be a positive integer.")
+
+    if not ((balance_id_min.isdigit() and int(balance_id_min) >= 1 and int(balance_id_min) <= 64)
+            and (balance_id_max.isdigit() and int(balance_id_max) >= 1 and int(balance_id_max) <= 64)):
+        raise Exception("Balance ID is invalid. The balance IDs need to be integers between 1 and 64.")
 
     # Stop further execution if admin has blocked revision process.
     if is_revision_blocked_by_admin(ctx):
