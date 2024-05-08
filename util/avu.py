@@ -40,6 +40,13 @@ def of_group(ctx, group):
                                               "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
+def of_user_or_group(ctx, user_or_group):
+    """Get (a,v,u) triplets for a given group."""
+    return itertools.imap(lambda x: Avu(*x),
+                          genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                              "USER_NAME = '{}'".format(user_or_group)))
+
+
 def of_resource(ctx, resource):
     """Get (a,v,u) triplets for a given resource."""
     return itertools.imap(lambda x: Avu(*x),

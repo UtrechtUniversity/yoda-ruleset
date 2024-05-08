@@ -170,7 +170,16 @@ folder_transitions = [(research_package_state(x),
                                    ('SECURED',   'SUBMITTED')]]
 
 
+# Namespaces should not contain underscores
+SYSTEM_METADATA_NAMESPACE_DATAHEALTH = "data-health"
+SYSTEM_METADATA_NAMESPACE_INTEGRATIONTEST = "integration-test"
+# Set of namespaces used with the system metadata persisters.
+SYSTEM_METADATA_NAMESPACES = {SYSTEM_METADATA_NAMESPACE_DATAHEALTH,
+                              SYSTEM_METADATA_NAMESPACE_INTEGRATIONTEST}
+
 # List of valid replica states.
+
+
 class replica_status(Enum):
     STALE_REPLICA        = 0  # Replica is no longer known to be good
     GOOD_REPLICA         = 1  # Replica is good
@@ -185,3 +194,12 @@ class arb_status(Enum):
     IGNORE               = "IGNORE"     # ARB ignores this resource by design
     AVAILABLE            = "AVAILABLE"  # ARB applies to this resource. The resource has enough space available.
     FULL                 = "FULL"       # ARB applies to this resource. The resource does not have enough space available
+
+# List of iRODS object types
+
+
+class ObjectType(Enum):
+    RESOURCE             = "resource"
+    USER                 = "user"
+    COLLECTION           = "collection"
+    DATAOBJECT           = "dataobject"
