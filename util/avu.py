@@ -40,6 +40,13 @@ def of_group(ctx, group):
                                               "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
+def of_resource(ctx, resource):
+    """Get (a,v,u) triplets for a given resource."""
+    return itertools.imap(lambda x: Avu(*x),
+                          genquery.Query(ctx, "META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE, META_RESC_ATTR_UNITS",
+                                              "RESC_NAME = '{}'".format(resource)))
+
+
 def set_on_data(ctx, path, a, v):
     """Set key/value metadata on a data object."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
@@ -56,6 +63,12 @@ def set_on_resource(ctx, resource, a, v):
     """Set key/value metadata on a resource."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
+
+
+def set_on_group(ctx, group, a, v):
+    """Set key/value metadata on a group or user."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], group, '-u')
 
 
 def associate_to_data(ctx, path, a, v):
@@ -100,6 +113,12 @@ def rm_from_group(ctx, group, a, v):
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], group, '-u')
 
 
+def rm_from_resource(ctx, resource, a, v):
+    """Remove key/value metadata from a resource."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], resource, '-R')
+
+
 def rmw_from_coll(ctx, obj, a, v, u=''):
     """Remove AVU from collection with wildcards."""
     msi.rmw_avu(ctx, '-C', obj, a, v, u)
@@ -113,3 +132,8 @@ def rmw_from_data(ctx, obj, a, v, u=''):
 def rmw_from_group(ctx, group, a, v, u=''):
     """Remove AVU from group with wildcards."""
     msi.rmw_avu(ctx, '-u', group, a, v, u)
+
+
+def rmw_from_resource(ctx, resource, a, v, u=''):
+    """Remove AVU from resource with wildcards."""
+    msi.rmw_avu(ctx, '-R', resource, a, v, u)
