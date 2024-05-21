@@ -65,21 +65,21 @@ def preconditions_for_data_object(data, callback):
                 if expected_size == actual_size:
                     callback.writeLine("stdout", "The replica and data file are compatible by size.")
 
-                    #  Calculate checksum of data file if replica checksum is registered.
-                    if actual_chksum:
-                        try:
-                            chksum_output = callback.msi_file_checksum(data['expected_datapath'], data['resc_name'], '')
-                            expected_chksum = chksum_output['arguments'][2]
-                        except RuntimeError as e:
-                            callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e)))
-                            return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e))
-                    else:
+                    #  Calculate checksum of replica if it is not registered and then compare it to data file checksum.
+                    if not actual_chksum:
                         try:
                             chksum_output = callback.msi_file_checksum(data['actual_datapath'], data['resc_name'], '')
                             actual_chksum = chksum_output['arguments'][2]
                         except RuntimeError as e:
                             callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data['actual_datapath'], errorcode(e)))
                             return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data['actual_datapath'], errorcode(e))
+                    
+                    try:
+                        chksum_output = callback.msi_file_checksum(data['expected_datapath'], data['resc_name'], '')
+                        expected_chksum = chksum_output['arguments'][2]
+                    except RuntimeError as e:
+                        callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e)))
+                        return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e))
 
                     if expected_chksum == actual_chksum:
                         callback.writeLine("stdout", "The checksum of replica and data file matches.")
