@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import log
 from enum import Enum
 
 
