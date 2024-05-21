@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -497,9 +497,6 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if config.enable_tape_archive and cmd in ['dmattr', 'dmget', 'admin-tape-archive-set-state.sh']:
-        return policy.succeed()
-
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
         return policy.succeed()
 
@@ -548,9 +545,6 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
 
     for resource in config.resource_replica:
         replication.replicate_asynchronously(ctx, path, instance_name, resource)
-
-    if config.enable_tape_archive:
-        ctx.uuTapeArchiveReplicateAsynchronously(path)
 
     try:
         # Import metadata if a metadata JSON file was changed.

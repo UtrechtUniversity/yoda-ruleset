@@ -2,7 +2,7 @@
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
 __version__   = '1.9.0'
-__copyright__ = 'Copyright (c) 2015-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2015-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
@@ -64,9 +64,6 @@ if config.enable_deposit:
 
 if config.enable_tokens:
     from data_access_token import *
-
-if config.enable_tape_archive:
-    from tape_archive import *
 
 if config.enable_data_package_archive:
     from vault_archive import *
