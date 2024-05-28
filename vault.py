@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -57,6 +57,10 @@ def api_vault_submit(ctx, coll, previous_version=None):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, previous_version)
 
     if ret[0] == '':
@@ -76,6 +80,10 @@ def api_vault_approve(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     # Check for previous version.
     previous_version = get_previous_version(ctx, coll)
 
@@ -102,6 +110,10 @@ def api_vault_cancel(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
 
     if ret[0] == '':
@@ -121,6 +133,10 @@ def api_vault_depublish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
 
     if ret[0] == '':
@@ -140,6 +156,10 @@ def api_vault_republish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
 
     if ret[0] == '':
@@ -251,7 +271,9 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 
     :returns: Set of unpreservable file formats
     """
-    zone = pathutil.info(coll)[1]
+    space, zone, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     # Retrieve JSON list of preservable file formats.
     list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
@@ -422,6 +444,10 @@ def api_vault_system_metadata(ctx, coll):
 
     :returns: Dict system metadata of a vault collection
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     system_metadata = {}
 
     # Package size.
@@ -545,9 +571,9 @@ def api_vault_collection_details(ctx, path):
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is a research group.
+    # Check if collection is in vault spcae.
     space, _, group, subpath = pathutil.info(path)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return {}
 
     basename = pathutil.basename(path)
@@ -676,6 +702,10 @@ def api_vault_get_landingpage_data(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
     # Try to load the metadata file.
@@ -751,7 +781,7 @@ def api_grant_read_access_research_group(ctx, coll):
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
@@ -798,7 +828,7 @@ def api_revoke_read_access_research_group(ctx, coll):
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
@@ -1383,12 +1413,14 @@ def api_vault_get_published_packages(ctx, path):
 
     :return: Dict of data packages with DOI
     """
+    space, _, _, _ = pathutil.info(path)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, path)
 
     # Sort by publication date
     sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-
     latest_publ = map(lambda x: x[-1], sorted_publ)
 
     # Append to data package
