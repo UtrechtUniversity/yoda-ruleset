@@ -272,7 +272,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     :returns: Set of unpreservable file formats
     """
     space, zone, _, _ = pathutil.info(coll)
-    if space is not pathutil.Space.VAULT:
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
         return api.Error('invalid_path', 'Invalid vault path.')
 
     # Retrieve JSON list of preservable file formats.
