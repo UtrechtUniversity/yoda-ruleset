@@ -94,6 +94,7 @@ def api_deposit_create(ctx, deposit_group):
 
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
+
     return {"deposit_path": result["deposit_path"]}
 
 
@@ -147,6 +148,11 @@ def api_deposit_status(ctx, path):
     :returns: Deposit status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.DEPOSIT:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'Deposit collection does not exist.')
 
@@ -177,6 +183,11 @@ def api_deposit_submit(ctx, path):
     :returns: API status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.DEPOSIT:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'Deposit collection does not exist.')
 
