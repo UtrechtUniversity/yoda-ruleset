@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import uuid
@@ -38,6 +38,10 @@ def set_status(ctx, coll, status):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     # Ideally we would pass in the current (expected) status as part of the
     # request, and perform a metadata 'mod' operation instead of a 'set'.
     # However no such msi exists.
@@ -64,7 +68,18 @@ def set_status(ctx, coll, status):
 
 
 def set_status_as_datamanager(ctx, coll, status):
-    """Change a folder's status as a datamanager."""
+    """Change a folder's status as a datamanager.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param coll:   Folder to change status of
+    :param status: Status to change to
+
+    :returns: API status
+    """
+    space, _, _, _ = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     res = ctx.iiFolderDatamanagerAction(coll, status.value, '', '')
     if res['arguments'][2] != 'Success':
         return api.Error(*res['arguments'][1:])
