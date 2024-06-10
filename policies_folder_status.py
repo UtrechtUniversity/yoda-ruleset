@@ -131,11 +131,7 @@ def post_status_transition(ctx, path, actor, status):
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
         avu.set_on_coll(ctx, path, attribute, constants.CRONJOB_STATE['PENDING'])
-        # ctx.iiScheduleCopyToVault()
-        # TODO iiScheduleCollCopy isn't working. I think I'm doing something wrong with it?
         ctx.iiScheduleCollCopyToVault(path)
-        # Can't do this either because we're not rodsadmin, and we need to be rodsadmin to do folder secure
-        # folder.folder_secure(ctx, path)
 
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.
@@ -156,7 +152,6 @@ def post_status_transition(ctx, path, actor, status):
         message = "Data package rejected for vault"
         notifications.set(ctx, actor, submitter, path, message)
 
-    # TODO here is the delete issue with deposit
     elif status is constants.research_package_state.SECURED:
         actor = "system"
         provenance.log_action(ctx, actor, path, "secured in vault")

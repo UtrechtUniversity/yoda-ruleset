@@ -832,7 +832,10 @@ def api_revoke_read_access_research_group(ctx, coll):
 @rule.make()
 def rule_vault_copy_accepted_retry_to_vault(ctx):
     """ Collect all accepted folders (that have previously failed to copy)
-        and try to copy them to the vault."""
+        and try to copy them to the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    """
     iter = get_copy_to_vault_colls(ctx, constants.CRONJOB_STATE['RETRY'])
     for row in iter:
         coll = row[0]
@@ -847,9 +850,6 @@ def rule_vault_copy_accepted_retry_to_vault(ctx):
 
 
 def get_copy_to_vault_colls(ctx, cronjob_state):
-    # TODO Before, this also included a filter for just research- groups,
-    # but this was too restrictive for deposit
-    # but also need to filter out the stuff that is in the trash!
     iter = list(genquery.Query(ctx,
                 ['COLL_NAME'],
                 "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
@@ -868,19 +868,18 @@ def copy_folder_to_vault(ctx, coll, target):
     :param coll:   Path of a folder in the research space
     :param target: Path of a package in the vault space
 
+    :returns: True for successful copy
     """
     returncode = 0
-    log.write(ctx, "irsync coll: {}".format(coll))
-    log.write(ctx, "irsync target: {}".format(target))
     try:
         returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
     except Exception as e:
-        # TODO This line has never been run somehow
         log.write(ctx, "irsync failure: " + e)
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
         return False
 
     if returncode != 0:
-        log.write(ctx, "irsync failure")
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
         return False
 
     return True
@@ -938,6 +937,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     source_path = parent + "/" + item
     read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
 
+    # TODO use set_acl_check?
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
@@ -972,7 +972,6 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         except msi.Error:
             return 1
 
-    # TODO call utilty func here (or this func will be deleted)
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)

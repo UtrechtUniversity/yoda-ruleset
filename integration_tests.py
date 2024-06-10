@@ -6,9 +6,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
 
+import re
 import traceback
 import uuid
 
+import folder
 from util import avu, collection, config, data_object, log, msi, resource, rule, user
 
 
@@ -85,6 +87,46 @@ def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
     ctx.msi_rmw_avu('-c', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
     result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
     collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_set_collection(ctx, catch):
+    # Test setting avu with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    avu.set_on_coll(ctx, tmp_object, "foo", "bar", catch)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_rmw_collection(ctx, rmw_attributes):
+    # Test removing with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
+    avu.rmw_from_coll(ctx, tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2], rmw_attributes[3])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_set_can_modify(ctx):
+    # Happy flow
+    tmp_coll = _create_tmp_collection(ctx)
+    result = folder.set_can_modify(ctx, tmp_coll)
+    # Needed to be able to delete collection
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
+def _test_check_folder_secure(ctx):
+    # Happy flow
+    tmp_coll = _create_tmp_collection(ctx)
+    result = folder.check_folder_secure(ctx, tmp_coll)
+    # Needed to be able to delete collection
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
     return result
 
 
@@ -201,6 +243,41 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "avu.set_from_coll.catch.yes",
+     "test": lambda ctx: _test_avu_set_collection(ctx, True),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.set_from_coll.catch.no",
+     "test": lambda ctx: _test_avu_set_collection(ctx, False),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.yes",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", True, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.no",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", False, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name":  "folder.set_can_modify",
+     "test": lambda ctx: _test_set_can_modify(ctx),
+     "check": lambda x: x},
+    {"name":  "folder.check_folder_secure",
+     "test": lambda ctx: _test_check_folder_secure(ctx),
+     "check": lambda x: x},
+    {"name":  "folder.determine_new_vault_target.research",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-initial\/testdata\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.deposit",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/deposit-pilot/deposit-hi[123123]"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-pilot\/deposit-hi\[[0-9]*\]\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.invalid",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
+     "check": lambda x: x == ""},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},

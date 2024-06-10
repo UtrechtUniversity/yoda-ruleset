@@ -120,8 +120,7 @@ config = Config(environment=None,
                 async_replication_max_rss=1000000000,
                 async_revision_delay_time=0,
                 async_revision_max_rss=1000000000,
-                # TODO should be 5 minutes eventually probably
-                copy_backoff_time=30,
+                copy_backoff_time=300,
                 copy_max_retries=5,
                 yoda_portal_fqdn=None,
                 epic_pid_enabled=False,
@@ -166,7 +165,7 @@ try:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
+                raise Exception('Configuration syntax error at {} line {}'.format(cfgpath, i + 1))
 
             # List-type values are separated by whitespace.
             try:

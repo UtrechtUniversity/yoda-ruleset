@@ -162,7 +162,7 @@ def rule_folder_secure(ctx, coll):
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
 
-    :return: result of securing action (1 for successfully secured folder)
+    :return: result of securing action (1 for successfully secured or skipped folder)
     """
     if not precheck_folder_secure(ctx, coll):
         return '1'
@@ -176,13 +176,20 @@ def rule_folder_secure(ctx, coll):
 
 def precheck_folder_secure(ctx, coll):
     """Whether to continue with securing. Should not touch the retry attempts,
-       these are prechecks and don't count toward the retry attempts limit"""
+       these are prechecks and don't count toward the retry attempts limit
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Folder to secure
+
+    :returns: True when successful
+    """
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "folder_secure: User is not rodsadmin")
         return False
 
-    if (not correct_copytovault_start_status(ctx, coll) or
-        not backoff_time_acceptable(ctx, coll)):
+    found, last_run = get_last_run_time(ctx, coll)
+    if (not correct_copytovault_start_status(ctx, coll)
+            or not misc.last_run_time_acceptable(coll, found, last_run, config.copy_backoff_time)):
         return False
 
     return True
@@ -190,10 +197,16 @@ def precheck_folder_secure(ctx, coll):
 
 def check_folder_secure(ctx, coll):
     """Some initial set up that determines whether folder secure can continue.
-       These WILL affect the retry attempts."""
-    if (not set_can_modify(ctx, coll) or
-        not retry_attempts(ctx, coll) or
-        not set_backoff_time(ctx, coll)):
+       These WILL affect the retry attempts.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Folder to secure
+
+    :returns: True when successful
+    """
+    if (not set_can_modify(ctx, coll)
+            or not retry_attempts(ctx, coll)
+            or not set_last_run_time(ctx, coll)):
         return False
 
     return True
@@ -230,9 +243,6 @@ def folder_secure(ctx, coll):
     if not vault.copy_folder_to_vault(ctx, coll, target):
         return False
 
-    # TODO remove, here to create the retry state
-    # return False
-
     # Starting point of last part of securing a folder into the vault
     # Generate UUID4 and set as Data Package Reference.
     if config.enable_data_package_reference:
@@ -259,11 +269,11 @@ def folder_secure(ctx, coll):
         return False
 
     # Set cronjob status to OK.
-    if not set_avu_catch(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK']):
+    if not avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'], True):
         return False
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
-    if not set_avu_catch(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED):
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED, True):
         return False
 
     if not set_acl_check(ctx, "recursive", "admin:write", coll, 'Could not set ACL (admin:write) for collection: ' + coll):
@@ -309,11 +319,10 @@ def get_cronjob_status(ctx, coll):
         return row[0]
 
 
-def backoff_time_acceptable(ctx, coll):
-    """Return whether the backoff time is acceptable."""
+def get_last_run_time(ctx, coll):
+    """Get the last run time, if found"""
     found = False
     last_run = 1
-    now = int(time.time())
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYLASTRUN + "'",
@@ -321,35 +330,21 @@ def backoff_time_acceptable(ctx, coll):
     )
     for row in iter:
         last_run = int(row[0])
-        log.write(ctx, "last time run {}".format(row[0]))
         found = True
 
-    if found:
-        # Too soon to run
-        if now < last_run + config.copy_backoff_time:
-            log.write(ctx, "Too soon to rerun copy to vault for coll {}".format(coll))
-            return False
-
-    return True
+    return found, last_run
 
 
-def set_backoff_time(ctx, coll):
-    """Set backoff time, return True for success"""
+def set_last_run_time(ctx, coll):
+    """Set last run time, return True for successful set"""
     now = int(time.time())
-    try:
-        avu.set_on_coll(ctx, coll, constants.IICOPYLASTRUN, str(now))
-    except Exception:
-        log.write("Failed to set last run avu on coll {}".format(coll))
-        return False
-
-    return True
+    return avu.set_on_coll(ctx, coll, constants.IICOPYLASTRUN, str(now), True)
 
 
 def set_can_modify(ctx, coll):
-    log.write(ctx, "Checking modify access")
+    """Check if have permission to modify, set if necessary"""
     check_access_result = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = check_access_result['arguments'][2]
-    log.write(ctx, "Modify access: {}".format(modify_access))
     if modify_access != b'\x01':
         # TODO set to a lower read?
         # This allows us permission to copy the files
@@ -364,7 +359,6 @@ def set_can_modify(ctx, coll):
 
 def get_retry_count(ctx, coll):
     """ Get the retry count, if not such AVU, return 0 """
-    found = False
     retry_count = 0
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE, COLL_NAME",
@@ -373,15 +367,12 @@ def get_retry_count(ctx, coll):
     )
     for row in iter:
         retry_count = int(row[0])
-        log.write(ctx, "retry count coll {} b4 int {}".format(row[1], row[0]))
-        found = True
 
     return retry_count
 
 
 def retry_attempts(ctx, coll):
-    """ Check if there have been too many retries.
-    """
+    """ Check if there have been too many retries. """
     retry_count = get_retry_count(ctx, coll)
 
     if retry_count >= config.copy_max_retries:
@@ -392,40 +383,46 @@ def retry_attempts(ctx, coll):
 
 def folder_secure_succeed_avus(ctx, coll):
     """Set/rm AVUs on source folder when successfully secured folder"""
-    # In cases where copytovault only ran once, this is okay
-    rm_avu_catch(ctx, coll, constants.IICOPYRETRYCOUNT)
-    rm_avu_catch(ctx, coll, constants.IICOPYLASTRUN)
+    # attributes = [x[0] for x in avu.of_coll(ctx, coll)]
+    attributes = [x[0] for x in get_org_metadata(ctx, coll)]
 
-    if (not rm_avu_catch(ctx, coll, constants.IICOPYPARAMSNAME) or
-        not rm_cronjob_status(ctx, coll)):
+    # In cases where copytovault only ran once, okay that these attributes were not created
+    if constants.IICOPYRETRYCOUNT in attributes:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True):
+            return False
+    if constants.IICOPYLASTRUN in attributes:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, "%", True):
+            return False
+
+    if (not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
+            or not rm_cronjob_status(ctx, coll)):
         return False
 
     # Note: this is the AVU that must always be *last* to be set in folder secure,
     # otherwise could be a problem for deposit groups
-    if not set_avu_catch(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED):
+    if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED, True):
         return False
 
     return True
 
 
 def folder_secure_set_retry_avu(ctx, coll):
-    """ When a folder secure fails, try to set the retry AVU and other applicable AVUs.
-        If too many attempts, fail.
-    """
+    # When a folder secure fails, try to set the retry AVU and other applicable AVUs.
+    # If too many attempts, fail.
     new_retry_count = get_retry_count(ctx, coll) + 1
     if new_retry_count > config.copy_max_retries:
         folder_secure_fail(ctx, coll)
     else:
-        set_avu_catch(ctx, coll, constants.IICOPYRETRYCOUNT, str(new_retry_count))
+        avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(new_retry_count), True)
         set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
 
 
 def folder_secure_fail(ctx, coll):
     """When there are too many retries, give up, set the AVUs and send notifications"""
     # Errors are caught here in hopes that will still be able to set UNRECOVERABLE status at least
-    rm_avu_catch(ctx, coll, constants.IICOPYRETRYCOUNT)
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True)
     # Remove target AVU
-    rm_avu_catch(ctx, coll, constants.IICOPYPARAMSNAME)
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
     set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
     send_fail_folder_secure_notification(ctx, coll)
 
@@ -461,49 +458,15 @@ def set_epic_pid(ctx, target):
 
 
 def rm_cronjob_status(ctx, coll):
-    return rm_avu_catch(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault")
-
-
-def set_avu_catch(ctx, coll, attr, val):
-    """Set AVU, but catch exception. Useful if want to set retry status after a failed avu set here"""
-    try:
-        avu.set_on_coll(ctx, coll, attr, val)
-    except Exception:
-        log.write(ctx, "Failed to set AVU {} on coll {}".format(attr, coll))
-        return False
-
-    return True
-
-
-def rm_avu_catch(ctx, coll, attr):
-    """Remove AVU, but catch exception. Useful if want to set retry status after a failed avu remove"""
-    try:
-        avu.rmw_from_coll(ctx, coll, attr, '%')
-    except Exception:
-        log.write(ctx, "Failed to remove AVU {} from coll {}".format(attr, coll))
-        return False
-
-    return True
+    return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", True)
 
 
 def set_cronjob_status(ctx, status, coll):
-    try:
-        avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status)
-    except Exception:
-        log.write(ctx, "Failed to set AVU {} from coll {}".format(constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", coll))
-        return False
-
-    return True
-
-
-def set_copy_params_target(ctx, coll, target):
-    return set_avu_catch(ctx, coll, constants.IICOPYPARAMSNAME, target)
+    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
 
 
 def set_acl_parents(ctx, acl_recurse, acl_type, coll):
     """Set ACL for parent collections"""
-    # TODO This is going upward, setting the ACL, why? Lazlo says to set
-    # metadata on the collection we need write access to the parent collection.
     parent, _ = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":
         set_acl_check(ctx, acl_recurse, acl_type, parent, "Could not set the ACL ({}) on {}".format(acl_type, parent))
@@ -511,7 +474,7 @@ def set_acl_parents(ctx, acl_recurse, acl_type, coll):
 
 
 def set_acl_check(ctx, acl_recurse, acl_type, coll, error_msg=''):
-    # Set the acl if possible, error msg for if it goes wrong
+    """Set the ACL if possible, log error_msg if it goes wrong"""
     # TODO turn acl_recurse into a boolean
     try:
         msi.set_acl(ctx, acl_recurse, acl_type, user.full_name(ctx), coll)
@@ -523,10 +486,10 @@ def set_acl_check(ctx, acl_recurse, acl_type, coll, error_msg=''):
     return True
 
 
-def determine_and_set_vault_target(ctx, coll):
-    """Determine and set target on coll"""
+def get_existing_vault_target(ctx, coll):
+    """Determine vault target on coll, if it was already determined before """
     found = False
-    # Get the target folder (if it was already determined before)
+    target = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYPARAMSNAME + "'",
@@ -536,6 +499,26 @@ def determine_and_set_vault_target(ctx, coll):
         target = row[0]
         found = True
 
+    return found, target
+
+
+def set_vault_target(ctx, coll, target):
+    """Create vault target and AVUs"""
+    msi.coll_create(ctx, target, '', irods_types.BytesBuf())
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE, True):
+        return False
+
+    # Note on the source the target folder in case a copy stops midway
+    if not avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target, True):
+        return False
+
+    return True
+
+
+def determine_and_set_vault_target(ctx, coll):
+    """Determine and set target on coll"""
+    found, target = get_existing_vault_target(ctx, coll)
+
     # Determine vault target if it does not exist.
     if not found:
         target = determine_new_vault_target(ctx, coll)
@@ -544,13 +527,8 @@ def determine_and_set_vault_target(ctx, coll):
             return ""
 
         # Create vault target and set status to INCOMPLETE.
-        msi.coll_create(ctx, target, '', irods_types.BytesBuf())
-        if not set_avu_catch(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE):
-            return False
-
-        # Note on the source the target folder in case a copy stops midway
-        if not set_avu_catch(ctx, coll, constants.IICOPYPARAMSNAME, target):
-            return False
+        if not set_vault_target(ctx, coll, target):
+            return ""
 
     return target
 
