@@ -103,6 +103,7 @@ config = Config(environment=None,
                 enable_datarequest=False,
                 enable_data_package_archive=False,
                 enable_data_package_download=False,
+                enable_tape_archive=False,  # TODO: REMOVE IT LATER
                 data_package_archive_fqdn=None,
                 data_package_archive_minimum=0,
                 data_package_archive_maximum=0,
