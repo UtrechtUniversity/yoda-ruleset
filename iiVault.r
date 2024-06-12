@@ -72,7 +72,6 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 		*numThreads = "";
 	    *err1 = errorcode(rule_resource_vault(*resource));
 		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
-		# THIS is the part to change? Or I think the part that goes wrong https://github.com/irods/irods_rule_engine_plugin_python/issues/54
 	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
 	    if (*error < 0) {
 		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
