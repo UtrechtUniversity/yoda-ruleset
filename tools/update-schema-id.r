@@ -80,7 +80,7 @@ def main(rule_args, callback, rei):
     for row in userIter:
         name = row[0]
         # Normalish groups
-        if name.startswith("research-") or name.startswith("deposit-") or name.startswith("grp-") or name.startswith("intake-"):
+        if name.startswith("research-"):
             metaIter = genquery.row_iterator(
                 "META_USER_ATTR_NAME",
                 "USER_GROUP_NAME = '{}' AND USER_ZONE = '{}'".format(name, zone),
