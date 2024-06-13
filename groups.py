@@ -656,10 +656,8 @@ def _are_roles_equivalent(a, b):
         return False
 
 
-def group_user_exists(ctx, group_name, username, include_readonly):# TODO: CHECK
+def group_user_exists(ctx, group_name, username, include_readonly):
     group = getGroupData(ctx, group_name)
-    log.debug(ctx, "dev env is " +config.environment + group_name) #TODO: Test logging
-    log.write(ctx, "DBG: client name is TEST") #TODO: Test logging
     if '#' not in username:
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
@@ -672,7 +670,7 @@ def group_user_exists(ctx, group_name, username, include_readonly):# TODO: CHECK
         return False
 
 
-def rule_group_user_exists(rule_args, callback, rei):# TODO: CHECK
+def rule_group_user_exists(rule_args, callback, rei):
     """Check if a user is a member of the given group.
 
     rule_group_user_exists(group, user, includeRo, membership)
