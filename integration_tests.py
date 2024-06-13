@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Integration tests for the development environment."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
@@ -11,7 +11,13 @@ import traceback
 from util import collection, config, data_object, log, resource, rule, user
 
 basic_integration_tests = [
-    {"name":   "util.collection.exists.yes",
+    {"name": "policies.check_anonymous_access_allowed.local",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "policies.check_anonymous_access_allowed.remote",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
     {"name":   "util.collection.exists.no",

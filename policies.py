@@ -607,5 +607,19 @@ def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host
         return "read=1.0;write=1.0"
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_check_anonymous_access_allowed(ctx, address):
+    """Check if access to the anonymous account is allowed from a particular network
+       address. Non-local access to the anonymous account should only be allowed from
+       DavRODS servers, for security reasons.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param address: Network address to check
+
+    :returns: 'true' if access from this network address is allowed; otherwise 'false'
+    """
+    permit_list = ["127.0.0.1"] + config.remote_anonymous_access
+    return "true" if address in permit_list else "false"
+
 # }}}
 # }}}
