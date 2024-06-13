@@ -7,11 +7,12 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import re
+import time
 import traceback
 import uuid
 
 import folder
-from util import avu, collection, config, data_object, log, msi, resource, rule, user
+from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -119,6 +120,24 @@ def _test_folder_set_retry_avus(ctx):
     return True
 
 
+def _test_folder_cronjob_status(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result_set = folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], tmp_coll)
+    status = folder.get_cronjob_status(ctx, tmp_coll)
+    correct_status = status == constants.CRONJOB_STATE['RETRY']
+    result_rm = folder.rm_cronjob_status(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result_set, correct_status, result_rm
+
+
+def _test_folder_set_get_last_run(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result = folder.set_last_run_time(ctx, tmp_coll)
+    found, last_run = folder.get_last_run_time(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result, found, last_run
+
+
 def _test_folder_secure_func(ctx, func):
     """Create tmp collection, apply func to it and get result, and clean up.
        Used for testing functions that modify avu/acls related to folder secure.
@@ -130,10 +149,13 @@ def _test_folder_secure_func(ctx, func):
     :returns: Result of action
     """
     tmp_coll = _create_tmp_collection(ctx)
+    # Assume returns True/False, or does not return
     result = func(ctx, tmp_coll)
-    # Needed to be able to delete collection
+    # Needed to be able to delete collection in situations where func changed ACLs
     msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
     collection.remove(ctx, tmp_coll)
+    if result is None:
+        return True
     return result
 
 
@@ -273,8 +295,20 @@ basic_integration_tests = [
     {"name":  "folder.set_can_modify",
      "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
      "check": lambda x: x},
+    {"name":  "folder.cronjob_status",
+     "test": lambda ctx: _test_folder_cronjob_status(ctx),
+     "check": lambda x: x[0] and x[1] and x[2]},
+    {"name":  "folder.set_get_last_run_time",
+     "test": lambda ctx: _test_folder_set_get_last_run(ctx),
+     "check": lambda x: x[0] and x[1] and x[2] + 25 >= int(time.time())},
+    {"name":  "folder.set_last_run_time",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_last_run_time),
+     "check": lambda x: x},
     {"name":  "folder.check_folder_secure",
      "test": lambda ctx: _test_folder_secure_func(ctx, folder.check_folder_secure),
+     "check": lambda x: x},
+    {"name":  "folder.folder_secure_fail",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.folder_secure_fail),
      "check": lambda x: x},
     {"name":  "folder.set_retry_avus",
      "test": lambda ctx: _test_folder_set_retry_avus(ctx),

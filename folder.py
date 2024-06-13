@@ -195,23 +195,6 @@ def precheck_folder_secure(ctx, coll):
     return True
 
 
-def check_folder_secure(ctx, coll):
-    """Some initial set up that determines whether folder secure can continue.
-       These WILL affect the retry attempts.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Folder to secure
-
-    :returns: True when successful
-    """
-    if (not set_can_modify(ctx, coll)
-            or not retry_attempts(ctx, coll)
-            or not set_last_run_time(ctx, coll)):
-        return False
-
-    return True
-
-
 def folder_secure(ctx, coll):
     """Secure a folder to the vault. If the previous copy did not finish, retry
 
@@ -234,7 +217,7 @@ def folder_secure(ctx, coll):
     if not set_cronjob_status(ctx, constants.CRONJOB_STATE['PROCESSING'], coll):
         return False
 
-    # Get the target folder (if it was already determined before)
+    # Get the target folder
     target = determine_and_set_vault_target(ctx, coll)
     if not target:
         return False
@@ -246,7 +229,8 @@ def folder_secure(ctx, coll):
     # Starting point of last part of securing a folder into the vault
     # Generate UUID4 and set as Data Package Reference.
     if config.enable_data_package_reference:
-        avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()))
+        if not avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()), True):
+            return False
 
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
@@ -269,7 +253,7 @@ def folder_secure(ctx, coll):
         return False
 
     # Set cronjob status to OK.
-    if not avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'], True):
+    if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
         return False
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
@@ -299,6 +283,23 @@ def folder_secure(ctx, coll):
     return True
 
 
+def check_folder_secure(ctx, coll):
+    """Some initial set up that determines whether folder secure can continue.
+       These WILL affect the retry attempts.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Folder to secure
+
+    :returns: True when successful
+    """
+    if (not set_can_modify(ctx, coll)
+            or not retry_attempts(ctx, coll)
+            or not set_last_run_time(ctx, coll)):
+        return False
+
+    return True
+
+
 def correct_copytovault_start_status(ctx, coll):
     """Confirm that the copytovault cronjob avu status is correct state to start securing"""
     cronjob_status = get_cronjob_status(ctx, coll)
@@ -306,17 +307,6 @@ def correct_copytovault_start_status(ctx, coll):
         return True
 
     return False
-
-
-def get_cronjob_status(ctx, coll):
-    """Get the cronjob status of given collection"""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        return row[0]
 
 
 def get_last_run_time(ctx, coll):
@@ -459,6 +449,17 @@ def set_epic_pid(ctx, target):
             epic.save_epic_pid(ctx, target, url, pid)
 
     return True
+
+
+def get_cronjob_status(ctx, coll):
+    """Get the cronjob status of given collection"""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        return row[0]
 
 
 def rm_cronjob_status(ctx, coll):
