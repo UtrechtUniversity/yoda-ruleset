@@ -110,20 +110,13 @@ def _test_avu_rmw_collection(ctx, rmw_attributes):
     return result
 
 
-def _test_set_can_modify(ctx):
-    # Happy flow
+def _test_folder_secure_func(ctx, func):
+    """Create tmp collection, apply func to it and get result, and clean up.
+       Used for testing functions that modify avu/acls related to folder secure.
+       Happy flow.
+    """
     tmp_coll = _create_tmp_collection(ctx)
-    result = folder.set_can_modify(ctx, tmp_coll)
-    # Needed to be able to delete collection
-    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
-    collection.remove(ctx, tmp_coll)
-    return result
-
-
-def _test_check_folder_secure(ctx):
-    # Happy flow
-    tmp_coll = _create_tmp_collection(ctx)
-    result = folder.check_folder_secure(ctx, tmp_coll)
+    result = func(ctx, tmp_coll)
     # Needed to be able to delete collection
     msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
     collection.remove(ctx, tmp_coll)
@@ -264,10 +257,13 @@ basic_integration_tests = [
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
     {"name":  "folder.set_can_modify",
-     "test": lambda ctx: _test_set_can_modify(ctx),
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
      "check": lambda x: x},
     {"name":  "folder.check_folder_secure",
-     "test": lambda ctx: _test_check_folder_secure(ctx),
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.check_folder_secure),
+     "check": lambda x: x},
+    {"name":  "folder.set_retry_avus",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.folder_secure_set_retry_avus),
      "check": lambda x: x},
     {"name":  "folder.determine_new_vault_target.research",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
