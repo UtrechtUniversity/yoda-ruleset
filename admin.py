@@ -5,14 +5,14 @@ __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 __all__ = [
-    'api_admin_has_click',
+    'api_admin_has_access',
 ]
 
 from util import *
 
 
 @api.make()
-def api_admin_has_click(ctx, group_name="priv-group-add"):  # TODO: Update the default group
+def api_admin_has_access(ctx, group_name="priv-group-add"):  # TODO: Update the default group
     """
     Checks if the user has admin access based on user rights or membership in a specified group.
 
@@ -28,6 +28,6 @@ def api_admin_has_click(ctx, group_name="priv-group-add"):  # TODO: Update the d
 
     # if user is in the privilege group
     in_priv_group = user.is_member_of(ctx, group_name)
-    log.write(ctx, "in_priv_group?: " + str(in_priv_category))  # Corrected space after ':'
+    log.write(ctx, "in_priv_group?: " + str(in_priv_group))  # Corrected space after ':'
 
     return is_admin or in_priv_group
