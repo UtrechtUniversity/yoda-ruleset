@@ -201,6 +201,12 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "policies.check_anonymous_access_allowed.local",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "policies.check_anonymous_access_allowed.remote",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
