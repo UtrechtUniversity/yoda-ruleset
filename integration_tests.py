@@ -114,6 +114,11 @@ def _test_folder_secure_func(ctx, func):
     """Create tmp collection, apply func to it and get result, and clean up.
        Used for testing functions that modify avu/acls related to folder secure.
        Happy flow.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param func: Function to test
+
+    :returns: Result of action
     """
     tmp_coll = _create_tmp_collection(ctx)
     result = func(ctx, tmp_coll)
