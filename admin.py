@@ -17,7 +17,7 @@ def api_admin_has_click(ctx, group_name="priv-group-add"):  # TODO: Update the d
     Checks if the user has admin access based on user rights or membership in a specified group.
 
     :param ctx:         Combined type of a ctx and rei struct
-    :param group_name   The name of the privilege group to check against. Defaults to "priv-group-add".
+    :param group_name:  The name of the privilege group to check against. Defaults to "priv-group-add".
 
     :returns: True if the user has the admin access, False otherwise.
     """
