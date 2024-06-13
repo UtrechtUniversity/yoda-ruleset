@@ -110,6 +110,15 @@ def _test_avu_rmw_collection(ctx, rmw_attributes):
     return result
 
 
+def _test_folder_set_retry_avus(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    folder.folder_secure_set_retry_avus(ctx, tmp_coll, 2)
+    # Needed to be able to delete collection
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return True
+
+
 def _test_folder_secure_func(ctx, func):
     """Create tmp collection, apply func to it and get result, and clean up.
        Used for testing functions that modify avu/acls related to folder secure.
@@ -268,7 +277,7 @@ basic_integration_tests = [
      "test": lambda ctx: _test_folder_secure_func(ctx, folder.check_folder_secure),
      "check": lambda x: x},
     {"name":  "folder.set_retry_avus",
-     "test": lambda ctx: _test_folder_secure_func(ctx, folder.folder_secure_set_retry_avus),
+     "test": lambda ctx: _test_folder_set_retry_avus(ctx),
      "check": lambda x: x},
     {"name":  "folder.determine_new_vault_target.research",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
