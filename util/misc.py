@@ -9,7 +9,7 @@ import time
 
 
 def last_run_time_acceptable(coll, found, last_run, config_backoff_time):
-    """Return whether the last run time is acceptable."""
+    """Return whether the last run time is acceptable to continue with task."""
     now = int(time.time())
 
     if found:

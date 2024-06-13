@@ -30,7 +30,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
-           'rule_vault_copy_accepted_retry_to_vault',
+           'rule_vault_copy_to_vault',
            'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
@@ -830,23 +830,24 @@ def api_revoke_read_access_research_group(ctx, coll):
 
 
 @rule.make()
-def rule_vault_copy_accepted_retry_to_vault(ctx):
-    """ Collect all accepted folders (that have previously failed to copy)
+def rule_vault_copy_to_vault(ctx, state):
+    """ Collect all folders with a given cronjob state
         and try to copy them to the vault.
 
     :param ctx:  Combined type of a callback and rei struct
+    :param state: one of constants.CRONJOB_STATE
     """
-    iter = get_copy_to_vault_colls(ctx, constants.CRONJOB_STATE['RETRY'])
+    iter = get_copy_to_vault_colls(ctx, state)
     for row in iter:
         coll = row[0]
-        log.write(ctx, "copy_accepted_to_vault retry: {}".format(coll))
+        log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
         if not folder.precheck_folder_secure(ctx, coll):
             continue
 
         # failed copy
         if not folder.folder_secure(ctx, coll):
-            log.write(ctx, "copy_accepted_to_vault retry failed for collection <{}>".format(coll))
-            folder.folder_secure_set_retry_avu(ctx, coll)
+            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            folder.folder_secure_set_retry(ctx, coll)
 
 
 def get_copy_to_vault_colls(ctx, cronjob_state):

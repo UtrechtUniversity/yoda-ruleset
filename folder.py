@@ -168,7 +168,7 @@ def rule_folder_secure(ctx, coll):
         return '1'
 
     if not folder_secure(ctx, coll):
-        folder_secure_set_retry_avu(ctx, coll)
+        folder_secure_set_retry(ctx, coll)
         return '0'
 
     return '1'
@@ -189,7 +189,7 @@ def precheck_folder_secure(ctx, coll):
 
     found, last_run = get_last_run_time(ctx, coll)
     if (not correct_copytovault_start_status(ctx, coll)
-            or not misc.last_run_time_acceptable(coll, found, last_run, config.copy_backoff_time)):
+            or not misc.last_run_time_acceptable(coll, found, last_run, config.vault_copy_backoff_time)):
         return False
 
     return True
@@ -375,7 +375,7 @@ def retry_attempts(ctx, coll):
     """ Check if there have been too many retries. """
     retry_count = get_retry_count(ctx, coll)
 
-    if retry_count >= config.copy_max_retries:
+    if retry_count >= config.vault_copy_max_retries:
         return False
 
     return True
@@ -406,15 +406,20 @@ def folder_secure_succeed_avus(ctx, coll):
     return True
 
 
-def folder_secure_set_retry_avu(ctx, coll):
-    # When a folder secure fails, try to set the retry AVU and other applicable AVUs.
+def folder_secure_set_retry(ctx, coll):
+    # When a folder secure fails, try to set the retry AVU and other applicable AVUs on source folder.
     # If too many attempts, fail.
     new_retry_count = get_retry_count(ctx, coll) + 1
-    if new_retry_count > config.copy_max_retries:
+    if new_retry_count > config.vault_copy_max_retries:
         folder_secure_fail(ctx, coll)
+        send_fail_folder_secure_notification(ctx, coll)
     else:
-        avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(new_retry_count), True)
-        set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
+        folder_secure_set_retry_avus(ctx, coll, new_retry_count)
+
+
+def folder_secure_set_retry_avus(ctx, coll, retry_count):
+    avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(retry_count), True)
+    set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
 
 
 def folder_secure_fail(ctx, coll):
@@ -424,7 +429,6 @@ def folder_secure_fail(ctx, coll):
     # Remove target AVU
     avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
     set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
-    send_fail_folder_secure_notification(ctx, coll)
 
 
 def send_fail_folder_secure_notification(ctx, coll):
@@ -458,10 +462,25 @@ def set_epic_pid(ctx, target):
 
 
 def rm_cronjob_status(ctx, coll):
+    """Remove cronjob_copy_to_vault attribute on source collection
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Source collection (folder that was being secured)
+
+    :returns: True when successfully removed
+    """
     return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", True)
 
 
 def set_cronjob_status(ctx, status, coll):
+    """Set cronjob_copy_to_vault attribute on source collection
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param status: Status to set on collection
+    :param coll:   Source collection (folder being secured)
+
+    :returns: True when successfully set
+    """
     return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
 
 
