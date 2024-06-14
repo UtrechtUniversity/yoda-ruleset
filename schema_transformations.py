@@ -127,7 +127,7 @@ def _default2_default3(ctx, m):
             creator['Affiliation'] = affiliations
 
             person_identifiers = []
-            for person_identifier in creator['Person_Identifier']:
+            for person_identifier in creator.get('Person_Identifier', []):
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
@@ -160,7 +160,7 @@ def _default2_default3(ctx, m):
                 contributor['Affiliation'] = affiliations
 
             person_identifiers = []
-            for person_identifier in contributor['Person_Identifier']:
+            for person_identifier in contributor.get('Person_Identifier', []):
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
