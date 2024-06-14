@@ -274,7 +274,7 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
                     log.write(callback, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
 
         except Exception as e:
-            log.write(callback, "Exception occurred during ORCID transformation of %s: %s" % (coll_name, str(e)))
+            log.write(callback, "Exception occurred during ORCID transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
