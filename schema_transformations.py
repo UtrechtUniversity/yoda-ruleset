@@ -133,7 +133,10 @@ def _default2_default3(ctx, m):
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
                         # Only it an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid != person_identifier['Name_Identifier']:
+                        if corrected_orcid is None:
+                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
@@ -166,7 +169,10 @@ def _default2_default3(ctx, m):
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
                         # Only it an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid != person_identifier['Name_Identifier']:
+                        if corrected_orcid is None:
+                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
