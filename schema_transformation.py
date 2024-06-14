@@ -181,12 +181,14 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
             metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
+            log.write(callback, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
             if metadata_path  != '':
                 transform = get(callback, metadata_path)
                 if transform is not None:
+                    log.write(callback, "[METADATA] Executing transformation for: " + metadata_path)
                     execute_transformation(callback, metadata_path, transform)
-        except Exception:
-            pass
+        except Exception as e:
+            log.write(callback, "[METADATA] Exception occurred during schema transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
