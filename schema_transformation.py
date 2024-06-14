@@ -309,7 +309,7 @@ def transform_orcid(ctx, m):
     for pi_holder in ['Creator', 'Contributor']:
         if m.get(pi_holder, False):
             for holder in m[pi_holder]:
-                for pi in holder['Person_Identifier']:
+                for pi in holder.get('Person_Identifier', dict()):
                     if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
                         # If incorrect ORCID format => try to correct.
                         if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", pi.get('Name_Identifier', None)):
