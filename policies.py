@@ -444,7 +444,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
     return policy.succeed()
 
 
-# This PEP is called after a AVU is added (option = 'add'), set (option =
+# This PEP is called after an AVU is added (option = 'add'), set (option =
 # 'set') or removed (option = 'rm') in the research area or the vault. Post
 # conditions defined in folder.py and iiVaultTransitions.r
 # are called here.

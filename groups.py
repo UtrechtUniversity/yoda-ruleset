@@ -70,7 +70,7 @@ def getGroupsData(ctx):
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description" or attr == "expiration_date":
+        elif attr in ('description', 'expiration_date'):
             # Deal with legacy use of '.' for empty description metadata and expiration date.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
@@ -163,7 +163,7 @@ def getGroupData(ctx, name):
         user = row[0]
         zone = row[1]
 
-        if name != user and name != "rodsadmin" and name != "public":
+        if name not in (user, 'rodsadmin', 'public'):
             group["members"].append(user + "#" + zone)
 
     if name.startswith("research-"):

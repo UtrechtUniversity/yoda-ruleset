@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
 import uuid
 
 import genquery
@@ -11,6 +12,7 @@ import irods_types
 
 import epic
 import meta
+import notifications
 import policies_folder_status
 import provenance
 import vault
@@ -169,58 +171,360 @@ def api_folder_reject(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
-@rule.make(inputs=[0, 1], outputs=[2])
-def rule_folder_secure(ctx, coll, target):
-
+@rule.make(inputs=[0], outputs=[1])
+def rule_folder_secure(ctx, coll):
     """Rule interface for processing vault status transition request.
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
-    :param target:          Vault target to copy research package to including license file etc
 
-    :return: returns result of securing action
+    :return: result of securing action (1 for successfully secured or skipped folder)
     """
-    return folder_secure(ctx, coll, target)
+    if not precheck_folder_secure(ctx, coll):
+        return '1'
+
+    if not folder_secure(ctx, coll):
+        folder_secure_set_retry(ctx, coll)
+        return '0'
+
+    return '1'
 
 
-def folder_secure(ctx, coll, target):
-    """Secure a folder to the vault.
+def precheck_folder_secure(ctx, coll):
+    """Whether to continue with securing. Should not touch the retry attempts,
+       these are prechecks and don't count toward the retry attempts limit
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Folder to secure
+
+    :returns: True when successful
+    """
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "folder_secure: User is not rodsadmin")
+        return False
+
+    found, last_run = get_last_run_time(ctx, coll)
+    if (not correct_copytovault_start_status(ctx, coll)
+            or not misc.last_run_time_acceptable(coll, found, last_run, config.vault_copy_backoff_time)):
+        return False
+
+    return True
+
+
+def folder_secure(ctx, coll):
+    """Secure a folder to the vault. If the previous copy did not finish, retry
 
     This function should only be called by a rodsadmin
     and should not be called from the portal.
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to secure
-    :param target: Target folder in vault
 
-    :returns: '0' when nu error occurred
+    :returns: True when successful
     """
-    """
-    # Following code is overturned by code in the rule language.
-    # This, as large files were not properly copied to the vault.
-    # Using the rule language this turned out to work fine.
 
     log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
 
-    if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "folder_secure: User is no rodsadmin")
-        return '1'
-
-    # Check modify access on research folder.
-    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
-
-    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
+    # Checks before start securing
+    if not check_folder_secure(ctx, coll):
+        return False
 
     # Set cronjob status
-    if modify_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-        except msi.Error as e:
-            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
-            return '1'
+    if not set_cronjob_status(ctx, constants.CRONJOB_STATE['PROCESSING'], coll):
+        return False
 
-    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['PROCESSING'])
+    # Get the target folder
+    target = determine_and_set_vault_target(ctx, coll)
+    if not target:
+        return False
 
+    # Copy all original info to vault
+    if not vault.copy_folder_to_vault(ctx, coll, target):
+        return False
+
+    # Starting point of last part of securing a folder into the vault
+    # Generate UUID4 and set as Data Package Reference.
+    if config.enable_data_package_reference:
+        if not avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()), True):
+            return False
+
+    meta.copy_user_metadata(ctx, coll, target)
+    vault.vault_copy_original_metadata_to_vault(ctx, target)
+    vault.vault_write_license(ctx, target)
+    group_name = collection_group_name(ctx, coll)
+
+    # Enable indexing on vault target.
+    if group_name.startswith("deposit-"):
+        vault.vault_enable_indexing(ctx, target)
+
+    # Copy provenance log from research folder to vault package.
+    provenance.provenance_copy_log(ctx, coll, target)
+
+    # Try to register EPIC PID if enabled.
+    if not set_epic_pid(ctx, target):
+        return False
+
+    # Set vault permissions for new vault package.
+    if not vault.set_vault_permissions(ctx, coll, target):
+        return False
+
+    # Set cronjob status to OK.
+    if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
+        return False
+
+    # Vault package is ready, set vault package state to UNPUBLISHED.
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED, True):
+        return False
+
+    if not set_acl_check(ctx, "recursive", "admin:write", coll, 'Could not set ACL (admin:write) for collection: ' + coll):
+        return False
+    set_acl_parents(ctx, "recursive", "admin:write", coll)
+
+    # Save vault package for notification.
+    set_vault_data_package(ctx, coll, target)
+
+    # Everything is done, set research folder state to SECURED.
+    if not folder_secure_succeed_avus(ctx, coll):
+        return False
+
+    # Deposit group has been deleted once secured status is set,
+    # so cannot change AVUs on collection
+    if not group_name.startswith("deposit-"):
+        if not set_acl_check(ctx, "recursive", "admin:null", coll, "Could not set ACL (admin:null) for collection: {}".format(coll)):
+            return False
+
+        set_acl_parents(ctx, "default", "admin:null", coll)
+
+    # All went well
+    return True
+
+
+def check_folder_secure(ctx, coll):
+    """Some initial set up that determines whether folder secure can continue.
+       These WILL affect the retry attempts.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Folder to secure
+
+    :returns: True when successful
+    """
+    if (not set_can_modify(ctx, coll)
+            or not retry_attempts(ctx, coll)
+            or not set_last_run_time(ctx, coll)):
+        return False
+
+    return True
+
+
+def correct_copytovault_start_status(ctx, coll):
+    """Confirm that the copytovault cronjob avu status is correct state to start securing"""
+    cronjob_status = get_cronjob_status(ctx, coll)
+    if cronjob_status in (constants.CRONJOB_STATE['PENDING'], constants.CRONJOB_STATE['RETRY']):
+        return True
+
+    return False
+
+
+def get_last_run_time(ctx, coll):
+    """Get the last run time, if found"""
     found = False
+    last_run = 1
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYLASTRUN + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        last_run = int(row[0])
+        found = True
+
+    return found, last_run
+
+
+def set_last_run_time(ctx, coll):
+    """Set last run time, return True for successful set"""
+    now = int(time.time())
+    return avu.set_on_coll(ctx, coll, constants.IICOPYLASTRUN, str(now), True)
+
+
+def set_can_modify(ctx, coll):
+    """Check if have permission to modify, set if necessary"""
+    check_access_result = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
+    modify_access = check_access_result['arguments'][2]
+    if modify_access != b'\x01':
+        # TODO set to a lower read?
+        # This allows us permission to copy the files
+        if not set_acl_check(ctx, "recursive", "admin:read", coll, "Could not set ACL (admin:read) for collection: {}".format(coll)):
+            return False
+        # This allows us permission to set AVUs
+        if not set_acl_check(ctx, "default", "admin:write", coll, "Could not set ACL (admin:write) for collection: {}".format(coll)):
+            return False
+
+    return True
+
+
+def get_retry_count(ctx, coll):
+    """ Get the retry count, if not such AVU, return 0 """
+    retry_count = 0
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE, COLL_NAME",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYRETRYCOUNT + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        retry_count = int(row[0])
+
+    return retry_count
+
+
+def retry_attempts(ctx, coll):
+    """ Check if there have been too many retries. """
+    retry_count = get_retry_count(ctx, coll)
+
+    if retry_count >= config.vault_copy_max_retries:
+        return False
+
+    return True
+
+
+def folder_secure_succeed_avus(ctx, coll):
+    """Set/rm AVUs on source folder when successfully secured folder"""
+    # attributes = [x[0] for x in avu.of_coll(ctx, coll)]
+    attributes = [x[0] for x in get_org_metadata(ctx, coll)]
+
+    # In cases where copytovault only ran once, okay that these attributes were not created
+    if constants.IICOPYRETRYCOUNT in attributes:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True):
+            return False
+    if constants.IICOPYLASTRUN in attributes:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, "%", True):
+            return False
+
+    if (not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
+            or not rm_cronjob_status(ctx, coll)):
+        return False
+
+    # Note: this is the AVU that must always be *last* to be set in folder secure,
+    # otherwise could be a problem for deposit groups
+    if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED, True):
+        return False
+
+    return True
+
+
+def folder_secure_set_retry(ctx, coll):
+    # When a folder secure fails, try to set the retry AVU and other applicable AVUs on source folder.
+    # If too many attempts, fail.
+    new_retry_count = get_retry_count(ctx, coll) + 1
+    if new_retry_count > config.vault_copy_max_retries:
+        folder_secure_fail(ctx, coll)
+        send_fail_folder_secure_notification(ctx, coll)
+    else:
+        folder_secure_set_retry_avus(ctx, coll, new_retry_count)
+
+
+def folder_secure_set_retry_avus(ctx, coll, retry_count):
+    avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(retry_count), True)
+    set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
+
+
+def folder_secure_fail(ctx, coll):
+    """When there are too many retries, give up, set the AVUs and send notifications"""
+    # Errors are caught here in hopes that will still be able to set UNRECOVERABLE status at least
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True)
+    # Remove target AVU
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
+    set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
+
+
+def send_fail_folder_secure_notification(ctx, coll):
+    """Send notifications to datamanagers that copy to vault failed"""
+    if datamanager_exists(ctx, coll):
+        datamanagers = get_datamanagers(ctx, coll)
+        message = "Data package failed to copy to vault after maximum retries"
+        for datamanager in datamanagers:
+            datamanager = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, "system", datamanager, coll, message)
+
+
+def set_epic_pid(ctx, target):
+    """Try to set epic pid, if fails return False"""
+    if config.epic_pid_enabled:
+        ret = epic.register_epic_pid(ctx, target)
+        url = ret['url']
+        pid = ret['pid']
+        http_code = ret['httpCode']
+
+        if http_code not in ('0', '200', '201'):
+            # Something went wrong while registering EPIC PID, return false so retry status will be set
+            log.write(ctx, "folder_secure: epic pid returned http <{}>".format(http_code))
+            return False
+
+        if http_code != "0":
+            # save EPIC Persistent ID in metadata
+            epic.save_epic_pid(ctx, target, url, pid)
+
+    return True
+
+
+def get_cronjob_status(ctx, coll):
+    """Get the cronjob status of given collection"""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        return row[0]
+
+
+def rm_cronjob_status(ctx, coll):
+    """Remove cronjob_copy_to_vault attribute on source collection
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Source collection (folder that was being secured)
+
+    :returns: True when successfully removed
+    """
+    return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", True)
+
+
+def set_cronjob_status(ctx, status, coll):
+    """Set cronjob_copy_to_vault attribute on source collection
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param status: Status to set on collection
+    :param coll:   Source collection (folder being secured)
+
+    :returns: True when successfully set
+    """
+    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
+
+
+def set_acl_parents(ctx, acl_recurse, acl_type, coll):
+    """Set ACL for parent collections"""
+    parent, _ = pathutil.chop(coll)
+    while parent != "/" + user.zone(ctx) + "/home":
+        set_acl_check(ctx, acl_recurse, acl_type, parent, "Could not set the ACL ({}) on {}".format(acl_type, parent))
+        parent, _ = pathutil.chop(parent)
+
+
+def set_acl_check(ctx, acl_recurse, acl_type, coll, error_msg=''):
+    """Set the ACL if possible, log error_msg if it goes wrong"""
+    # TODO turn acl_recurse into a boolean
+    try:
+        msi.set_acl(ctx, acl_recurse, acl_type, user.full_name(ctx), coll)
+    except msi.Error:
+        if error_msg:
+            log.write(ctx, error_msg)
+        return False
+
+    return True
+
+
+def get_existing_vault_target(ctx, coll):
+    """Determine vault target on coll, if it was already determined before """
+    found = False
+    target = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYPARAMSNAME + "'",
@@ -230,158 +534,46 @@ def folder_secure(ctx, coll, target):
         target = row[0]
         found = True
 
-    if found:
-        avu.rm_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
+    return found, target
 
-    if modify_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-        except msi.Error as e:
-            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-            return '1'
+
+def set_vault_target(ctx, coll, target):
+    """Create vault target and AVUs"""
+    msi.coll_create(ctx, target, '', irods_types.BytesBuf())
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE, True):
+        return False
+
+    # Note on the source the target folder in case a copy stops midway
+    if not avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target, True):
+        return False
+
+    return True
+
+
+def determine_and_set_vault_target(ctx, coll):
+    """Determine and set target on coll"""
+    found, target = get_existing_vault_target(ctx, coll)
 
     # Determine vault target if it does not exist.
     if not found:
-        target = determine_vault_target(ctx, coll)
+        target = determine_new_vault_target(ctx, coll)
         if target == "":
-            log.write(ctx, "folder_secure: No vault target found")
-            return '1'
+            log.write(ctx, "folder_secure: No possible vault target found")
+            return ""
 
         # Create vault target and set status to INCOMPLETE.
-        msi.coll_create(ctx, target, '', irods_types.BytesBuf())
-        avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
+        if not set_vault_target(ctx, coll, target):
+            return ""
 
-    # Copy all original info to vault
-    # try:
-    # vault.copy_folder_to_vault(ctx, coll, target)
-    # except Exception as e:
-    # log.write(ctx, e)
-    # return '1'
-
-    ctx.iiCopyFolderToVault(coll, target)
-    """
-    # Starting point of last part of securing a folder into the vault
-    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
-    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
-
-    # Generate UUID4 and set as Data Package Reference.
-    if config.enable_data_package_reference:
-        avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()))
-
-    meta.copy_user_metadata(ctx, coll, target)
-    vault.vault_copy_original_metadata_to_vault(ctx, target)
-    vault.vault_write_license(ctx, target)
-
-    # Enable indexing on vault target.
-    if collection_group_name(ctx, coll).startswith("deposit-"):
-        vault.vault_enable_indexing(ctx, target)
-
-    # Copy provenance log from research folder to vault package.
-    provenance.provenance_copy_log(ctx, coll, target)
-
-    # Try to register EPIC PID if enabled.
-    if config.epic_pid_enabled:
-        ret = epic.register_epic_pid(ctx, target)
-        url = ret['url']
-        pid = ret['pid']
-        http_code = ret['httpCode']
-
-        if (http_code != "0" and http_code != "200" and http_code != "201"):
-            # Something went wrong while registering EPIC PID, set cronjob state to retry.
-            log.write(ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
-            if modify_access != b'\x01':
-                try:
-                    msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-                except msi.Error:
-                    return '1'
-
-            avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
-            avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
-
-            if modify_access != b'\x01':
-                try:
-                    msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-                except msi.Error:
-                    log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-                    return '1'
-
-        if http_code != "0":
-            # save EPIC Persistent ID in metadata
-            epic.save_epic_pid(ctx, target, url, pid)
-
-    # Set vault permissions for new vault package.
-    group = collection_group_name(ctx, coll)
-    if group == '':
-        log.write(ctx, "folder_secure: Cannot determine which deposit or research group <{}> belongs to".format(coll))
-        return '1'
-
-    vault.set_vault_permissions(ctx, group, coll, target)
-
-    # Set cronjob status to OK.
-    if modify_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-        except msi.Error:
-            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
-            return '1'
-
-    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'])
-
-    if modify_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-        except msi.Error:
-            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-            return '1'
-
-    # Vault package is ready, set vault package state to UNPUBLISHED.
-    avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
-
-    # Everything is done, set research folder state to SECURED.
-    try:
-        msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
-    except msi.Error:
-        log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
-        return '1'
-
-    parent, chopped_coll = pathutil.chop(coll)
-    while parent != "/" + user.zone(ctx) + "/home":
-        try:
-            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
-        except msi.Error:
-            log.write(ctx, "Could not set ACL on " + parent)
-        parent, chopped_coll = pathutil.chop(parent)
-
-    # Save vault package for notification.
-    set_vault_data_package(ctx, coll, target)
-
-    # Set folder status to SECURED.
-    avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
-
-    try:
-        msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
-    except msi.Error:
-        log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-
-    parent, chopped_coll = pathutil.chop(coll)
-    while parent != "/" + user.zone(ctx) + "/home":
-        try:
-            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), parent)
-        except msi.Error:
-            log.write(ctx, "Could not set ACL (admin:null) on " + parent)
-
-        parent, chopped_coll = pathutil.chop(parent)
-
-    # All went well
-    return '0'
+    return target
 
 
-def determine_vault_target(ctx, folder):
+def determine_new_vault_target(ctx, folder):
     """Determine vault target path for a folder."""
 
     group = collection_group_name(ctx, folder)
     if group == '':
-        log.write(ctx, "Cannot determine which deposit or research group " + + " belongs to")
+        log.write(ctx, "Cannot determine which deposit or research group <{}> belongs to".format(folder))
         return ""
 
     parts = group.split('-')

@@ -142,6 +142,8 @@ config = Config(environment=None,
                 arb_min_gb_free=0,
                 arb_min_percent_free=5,
                 text_file_extensions=[],
+                vault_copy_backoff_time=300,
+                vault_copy_max_retries=5,
                 vault_copy_multithread_enabled=True,
                 python3_interpreter='/usr/local/bin/python3')
 
@@ -163,7 +165,7 @@ try:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
+                raise Exception('Configuration syntax error at {} line {}'.format(cfgpath, i + 1))
 
             # List-type values are separated by whitespace.
             try:
