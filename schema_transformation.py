@@ -6,9 +6,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
            'rule_batch_vault_metadata_correct_orcid_format',
+           'rule_batch_vault_metadata_schema_report',
            'rule_get_transformation_info',
            'api_transform_metadata']
 
+import json
 import os
 import re
 import time
@@ -17,6 +19,7 @@ import genquery
 import session_vars
 
 import meta
+import meta_form
 import schema
 import schema_transformations
 from util import *
@@ -364,3 +367,67 @@ def html(f):
     description = re.sub('((:param).*)|((:returns:).*)', ' ', description)
 
     return description
+
+
+@rule.make(inputs=[], outputs=[0])
+def rule_batch_vault_metadata_schema_report(ctx):
+    """Show vault metadata schema about each data package in vault
+
+    :param ctx:      Combined type of a callback and rei struct
+
+    :returns:        JSON-encoded dictionary, where each key is a vault data package path.
+                     Values are dictionaries with keys "schema" (contains the short name of the schema
+                     (e.g. 'default-3', as per the information in the metadata file, or empty if no metadata
+                     schema could be found), and match_schema (contains a boolean value that indicates whether
+                     the metadata matches the JSON schema). match_schema only has a meaning if a metadata schema
+                     could be found.
+    """
+    results = dict()
+    schema_cache = dict()
+
+    # Find all vault collections
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND COLL_NAME NOT LIKE '%%/original/%%' AND DATA_NAME like 'yoda-metadata%%json'" %
+        (user.zone(ctx)),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        coll_name = row[0]
+        metadata_path = meta.get_latest_vault_metadata_path(ctx, coll_name)
+
+        if metadata_path == '' or metadata_path is None:
+            log.write(ctx, "Vault metadata schema report skips %s, because metadata could not be found."
+                           % (coll_name))
+            continue
+
+        try:
+            metadata = jsonutil.read(ctx, metadata_path)
+        except Exception as exc:
+            log.write(ctx, "Vault metadata report skips %s, because of exception while reading metadata file %s: %s."
+                           % (coll_name, metadata_path, str(exc)))
+            continue
+
+        # Determine schema
+        schema_id = schema.get_schema_id(ctx, metadata_path)
+        schema_shortname = schema_id.split("/")[-2]
+
+        # Retrieve schema and cache it for future use
+        schema_path = schema.get_schema_path_by_id(ctx, metadata_path, schema_id)
+        if schema_shortname in schema_cache:
+            schema_contents = schema_cache[schema_shortname]
+        else:
+            schema_contents = jsonutil.read(ctx, schema_path)
+            schema_cache[schema_shortname] = schema_contents
+
+        # Check whether metadata matches schema and log any errors
+        error_list = meta.get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
+        match_schema = len(error_list) == 0
+        if not match_schema:
+            log.write(ctx, "Vault metadata schema report: metadata %s did not match schema %s: %s" %
+                           (metadata_path, schema_shortname, str([meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list])))
+
+        # Update results
+        results[coll_name] = {"schema": schema_shortname, "match_schema": match_schema}
+
+    return json.dumps(results)
