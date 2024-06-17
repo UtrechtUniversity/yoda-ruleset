@@ -29,8 +29,9 @@ def get_metadata_as_dict(callback, path):
 
 
 def main(rule_args, callback, rei):
-    # Schemas preceding the ones containing the regex for orcid
-    schemas_to_be_checked = ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
+    # Schemas that have regex validation for ORCIDs, as well as their previous versions.
+    # Also includes schemas that don't have validation yet, but might have it in a future version.
+    schemas_to_be_checked = ['core-1', 'core-2', 'default-1', 'default-2', 'default-3', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
 
     for schema in schemas_to_be_checked:
 
