@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -497,9 +497,6 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if config.enable_tape_archive and cmd in ['dmattr', 'dmget', 'admin-tape-archive-set-state.sh']:
-        return policy.succeed()
-
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
         return policy.succeed()
 
@@ -548,9 +545,6 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
 
     for resource in config.resource_replica:
         replication.replicate_asynchronously(ctx, path, instance_name, resource)
-
-    if config.enable_tape_archive:
-        ctx.uuTapeArchiveReplicateAsynchronously(path)
 
     try:
         # Import metadata if a metadata JSON file was changed.
@@ -606,6 +600,20 @@ def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host
     else:
         return "read=1.0;write=1.0"
 
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_check_anonymous_access_allowed(ctx, address):
+    """Check if access to the anonymous account is allowed from a particular network
+       address. Non-local access to the anonymous account should only be allowed from
+       DavRODS servers, for security reasons.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param address: Network address to check
+
+    :returns: 'true' if access from this network address is allowed; otherwise 'false'
+    """
+    permit_list = ["127.0.0.1"] + config.remote_anonymous_access
+    return "true" if address in permit_list else "false"
 
 # }}}
 # }}}

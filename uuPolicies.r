@@ -109,6 +109,16 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *user_name = *comm.user_user_name;
     *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
+
+    if ( *user_name == "anonymous" ) {
+       *access_allowed = '';
+       rule_check_anonymous_access_allowed(*client_addr, *access_allowed);
+        if ( *access_allowed != "true" ) {
+            writeLine("serverLog", "Refused access to anonymous account from address *client_addr.");
+            failmsg(-1, "Refused access to anonymous account from address *client_addr.");
+        }
+    }
+
     writeLine("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 

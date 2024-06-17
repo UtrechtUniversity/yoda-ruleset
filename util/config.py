@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -109,7 +109,6 @@ config = Config(environment=None,
                 data_package_archive_resource=None,
                 enable_data_package_reference=False,
                 enable_tokens=False,
-                enable_tape_archive=False,
                 inactivity_cutoff_months=3,
                 token_database=None,
                 token_database_password=None,
@@ -128,6 +127,7 @@ config = Config(environment=None,
                 epic_certificate=None,
                 temporary_files=[],
                 external_users_domain_filter=[],
+                remote_anonymous_access=[],
                 enable_sram=True,
                 sram_rest_api_url=None,
                 sram_api_key=None,
