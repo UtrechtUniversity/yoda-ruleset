@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -87,6 +87,8 @@ IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IIARCHIVEATTRNAME     = UUORGMETADATAPREFIX + 'archival_status'
 IIBAGITOR             = UUORGMETADATAPREFIX + 'bagitor'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
+IICOPYRETRYCOUNT      = UUORGMETADATAPREFIX + 'retry_count'
+IICOPYLASTRUN         = UUORGMETADATAPREFIX + 'last_run'
 
 DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
 
