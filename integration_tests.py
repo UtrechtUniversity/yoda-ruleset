@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
 
+import json
 import traceback
 
 from util import collection, config, data_object, log, resource, rule, user
@@ -17,6 +18,10 @@ basic_integration_tests = [
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    # Vault metadata schema report: only check return value type, not contents
+    {"name": "schema_transformation.batch_vault_metadata_schema_report",
+     "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
+     "check": lambda x: isinstance(json.loads(x['arguments'][0]), dict)},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
