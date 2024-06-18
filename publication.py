@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -353,16 +353,20 @@ def generate_datacite_json(ctx, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_state, doi, send_method):
+def post_metadata_to_datacite(ctx, publication_state, doi, send_method, base_doi=False):
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     :param doi:                DataCite DOI to update metadata
     :param send_method:        http verb (either 'post' or 'put')
+    :param base_doi:           Indicates if we are sending metadata for base DOI
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
+
+    if base_doi:
+        datacite_json = datacite_json.replace(publication_state['versionDOI'], doi)
 
     try:
         if send_method == 'post':
@@ -875,7 +879,7 @@ def process_publication(ctx, vault_package):
                 if verbose:
                     log.write(ctx, "Updating base DOI.")
                 base_doi = publication_state['baseDOI']
-                post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action)
+                post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action, base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while sending metadata to Datacite: " + str(e))
             publication_state["status"] = "Retry"
@@ -1236,7 +1240,7 @@ def process_republication(ctx, vault_package):
             post_metadata_to_datacite(ctx, publication_state, publication_state['versionDOI'], 'put')
 
             if update_base_doi:
-                post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put')
+                post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put', base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while posting metadata to Datacite during republication: " + str(e))
             publication_state["status"] = "Retry"
@@ -1417,7 +1421,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         try:
             post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
-                post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
+                post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put', base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + str(e))
             publication_state["status"] = "Retry"
