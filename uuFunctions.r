@@ -87,3 +87,8 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run) {
     rule_replicate_batch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run);
 }
+
+# Disable msiSendMail.
+msiSendMail(*xtoAddr,*xsubjectLine,*xbody){
+    writeLine('serverLog','WARNING: msiSendMail is disabled');
+}
