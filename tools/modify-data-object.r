@@ -20,112 +20,175 @@ def data_file_exists(resc_name, data_path, callback):
     try:
         output = callback.msi_stat_vault(resc_name, data_path, "", "")
         type, size = output['arguments'][2], output['arguments'][3]
+        if type == 'FILE':
+            exists = True
+        else:
+            exists = False
     except RuntimeError as e:
         callback.writeLine("stdout","[msi_stat_vault failed on path '{}' with error - '{}'".format(data_path, errorcode(e)))
-        return -1, "[msi_stat_vault failed on path '{}' with error - '{}'".format(data_path, errorcode(e))
+        return str(False), -1, "[msi_stat_vault failed on path '{}' with error - '{}'".format(data_path, errorcode(e))
 
-    return type, size
+    return exists, type, size
 
-def preconditions_for_data_object(data, callback):
-
+def count_replicas_on_path(data_id, data_path, callback):
+    # Count other replicas with same data path
     replicas_list = []
+    expected_iter = genquery.row_iterator(
+    "DATA_ID, DATA_REPL_NUM, RESC_NAME, RESC_LOC", 
+    "DATA_PATH = '{}'".format(data_path),
+    genquery.AS_LIST,
+    callback)
 
-    # Check if file exists in the current data path
-    actual_file_type, actual_file_size = data_file_exists(data['resc_name'], data['actual_datapath'], callback)
+    for row in expected_iter:
+        if row[0] == data_id:
+            replicas_list.append(row[0])
 
-    if actual_file_type == 'NOTEXIST':
-        expected_type, expected_size = data_file_exists(data['resc_name'], data['expected_datapath'], callback)
+    return replicas_list
 
-        if expected_type == 'FILE':
-            # Count other replicas with same data path
-            expected_iter = genquery.row_iterator(
-            "DATA_ID, DATA_REPL_NUM, RESC_NAME, RESC_LOC", 
-            "DATA_PATH = '{}'".format(data['expected_datapath']),
-            genquery.AS_LIST,
-            callback)
 
-            for row in expected_iter:
-                if row[0] != data['data_id']:
-                    replicas_list.append(row[0])
+def calculate_chksum(resc_name, data_path, callback):
+    #  Calculate checksum data file and compare it to the replica checksum.
+    try:
+        chksum_output = callback.msi_file_checksum(data_path, resc_name, '')
+        chksum = chksum_output['arguments'][2]
+    except RuntimeError as e:
+        callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data_path, errorcode(e)))
+        return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data_path, errorcode(e))
 
-            if len(replicas_list) == 0:
-                callback.writeLine("stdout", "Expected data path is not used by other replicas.")
+    return chksum
 
-                # The data file should pass compatibility check with the replica
-                actual_iter = genquery.row_iterator(
-                "DATA_SIZE, DATA_CHECKSUM, RESC_LOC",
-                "DATA_ID ='{}' AND DATA_REPL_NUM = '{}'".format(data['data_id'], data['data_repl_num']),
-                genquery.AS_TUPLE,
-                callback)
 
-                for row in actual_iter:
-                    actual_size = row[0]
-                    actual_chksum = row[1]
+def replica_compatibility(data_id, repl_num, resc_name, data_path, data_file_size, callback):
+    # The data file should pass compatibility check with the replica
+    replica_chksum = ""
+    replica_size = ""
 
-                if expected_size == actual_size:
-                    callback.writeLine("stdout", "The replica and data file are compatible by size.")
+    replica_iter = genquery.row_iterator(
+    "DATA_SIZE, DATA_CHECKSUM, RESC_LOC",
+    "DATA_ID ='{}' AND DATA_REPL_NUM = '{}'".format(data_id, repl_num),
+    genquery.AS_TUPLE,
+    callback)
 
-                    #  Calculate checksum of replica if it is not registered and then compare it to data file checksum.
-                    if not actual_chksum:
-                        try:
-                            chksum_output = callback.msi_file_checksum(data['actual_datapath'], data['resc_name'], '')
-                            actual_chksum = chksum_output['arguments'][2]
-                        except RuntimeError as e:
-                            callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data['actual_datapath'], errorcode(e)))
-                            return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data['actual_datapath'], errorcode(e))
-                    
-                    try:
-                        chksum_output = callback.msi_file_checksum(data['expected_datapath'], data['resc_name'], '')
-                        expected_chksum = chksum_output['arguments'][2]
-                    except RuntimeError as e:
-                        callback.writeLine("stdout","msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e)))
-                        return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data['expected_datapath'], errorcode(e))
+    for row in replica_iter:
+        replica_size = row[0]
+        replica_chksum = row[1]
 
-                    if expected_chksum == actual_chksum:
-                        callback.writeLine("stdout", "The checksum of replica and data file matches.")
-
-                        # Modify data object
-                        status = modify_data_object(data, callback)
-                        if status == '':
-                            return 0, status
-                        else:
-                            return -1, status
-
-                    else:
-                        return -1, "preconditions_for_data_object: Checksum of data file does not match with the replica."
-                else:
-                    return -1, "preconditions_for_data_object: The data file and replica are not compatible."
-            else:
-                return -1, "preconditions_for_data_object: Expected data path is in use by other replicas."
+    if replica_size == data_file_size:
+        if replica_chksum:
+            data_file_chksum = calculate_chksum(resc_name, data_path, callback)
+            if data_file_chksum == replica_chksum:
+                return True
         else:
-            return -1, "preconditions_for_data_object: Data file does not exist in the expected location."
+            return True
     else:
-        return -1, "preconditions_for_data_object: Actual file exists in the current data path."
+        return False
         
 
-def modify_data_object(data, callback):
+# Identify use case
+def preconditions_for_data_object(data, dry_run, callback):
+
+    expected_is_compatible = False 
+    actual_is_compatible = False
+    replicas_list = []
+    
+    # Data file exists or not
+    expected_data_file_exists, expected_data_file_type, expected_data_file_size = data_file_exists(data['resc_name'], data['expected_data_path'], callback)
+    actual_data_file_exists, actual_data_file_type, actual_data_file_size = data_file_exists(data['resc_name'], data['actual_data_path'], callback)
+    
+    # Check compatibility
+    if expected_data_file_exists:
+        expected_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], data['expected_data_path'], expected_data_file_size, callback)
+
+    if actual_data_file_exists:
+        actual_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], data['actual_data_path'], actual_data_file_size, callback)
+
+    if expected_data_file_exists and not eval(data['expected_linked_use']) and expected_is_compatible and not actual_data_file_exists:
+        callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC1")
+        status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run)
+        if status == '':
+            return True, 0, status
+        else:
+            return False, -1, status    
+    elif expected_data_file_exists and not eval(data['expected_linked_use']) and expected_is_compatible and actual_data_file_exists and eval(data['actual_linked_use']) and not actual_is_compatible:
+        callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC2")
+        status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run)
+        if status == '':
+            return True, 0, status
+        else:
+            return False, -1, status
+    elif not expected_is_compatible and not actual_is_compatible and eval(data['actual_linked_use']):
+            callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC3")
+            replicas_list = count_replicas_on_path(data['data_id'], data['actual_data_path'], callback)
+            if len(replicas_list) == 1:
+                # Use scope = data_object for unregistering the replica
+                status = unregister_replica(data['data_repl_num'], data['actual_data_path'], dry_run, scope = 'object')
+            elif len(replica_list) > 1: 
+                #Unregister the replica
+                status = unregister_replica(data['data_repl_num'], data['actual_data_path'])
+
+            if status == '':
+                return True, 0, status
+            else:
+                return False, -1, status
+    else:
+        return False, -1, "Data ID: " + data['data_id'] + " does not match any existing repair usecases."
+
+def modify_data_object(data_id, repl_num, data_path, dry_run):
     # Modify the replica with correct data path
-    status = subprocess.check_output(['iadmin', 'modrepl', 'data_id', data['data_id'], 'replica_number', data['data_repl_num'], 'DATA_PATH', data['expected_datapath']], stderr=subprocess.STDOUT)
-    return str(status)
+    if not dry_run:
+        try:
+            status = subprocess.check_output(['iadmin', 'modrepl', 'data_id', data_id, 'replica_number', repl_num, 'DATA_PATH', data_path], stderr=subprocess.STDOUT)
+        except Exception as e:
+            status = e.output[e.output.find("ERROR:"):].rstrip()
+
+        if "\n" in status:
+            status = status.replace("\n", " ").strip()
+        else:
+            status = status.strip()
+    else:
+        status = ''
+
+    return status
+
+def unregister_replica(repl_num, data_path, dry_run, scope = 'replica'):
+    if not dry_run:
+        data_path =  "'" + data_path.replace("'","'\\''") + "'"
+        if scope == 'object':
+            try:
+                status = subprocess.check_output(['iunreg', data_path], stderr=subprocess.STDOUT)
+            except Exception as e:
+                status =  e.output[e.output.find("ERROR:"):].rstrip()
+        else:
+            try:
+                status = subprocess.check_output(['iunreg', '-n', repl_num, '-N', '0', data_path], stderr=subprocess.STDOUT)
+            except Exception as e:
+                status =  e.output[e.output.find("ERROR:"):].rstrip()
+        status = status.strip()
+    else:
+        status = ''
+    return status
 
 
 def main(rule_args, callback, rei):
 
-    file = global_vars["*file"]
+    input_file = global_vars["*input_file"]
+    output_file = global_vars["*output_file"]
+    dry_run = global_vars["*dry_run"]
     # Read CSV
-    with open(file, 'r') as csvfile, open('/etc/irods/yoda-ruleset/tools/result_1.csv', 'w') as result:
-        reader = csv.DictReader(csvfile)
+    with open(input_file, 'r') as csvfile, open(output_file, 'w') as result:
+        reader = csv.DictReader(csvfile, delimiter = ";")
         fieldnames = reader.fieldnames + ['message']
-        writer = csv.DictWriter(result, fieldnames)
+        writer = csv.DictWriter(result, fieldnames, delimiter = ";")
         writer.writeheader()
 
         for row in reader:
-            row['resc_name'] = row['resc_name'].strip('\'')
-            row['expected_datapath'] = row['expected_datapath'].strip('\'')
-            row['actual_datapath'] = row['actual_datapath'].strip('\'')
-            print(row['data_id'])
+            row['data_id'] = row['data_id'].strip('\"')
+            row['resc_name'] = row['resc_name'].strip('\"')
+            row['expected_data_path'] = row['expected_data_path'].strip('\"')
+            row['actual_data_path'] = row['actual_data_path'].strip('\"')
+            row['data_repl_num'] = row['data_repl_num'].strip('\"')
             if row['processed'] in ('ERROR', 'NO'):
-                retCode, msg = preconditions_for_data_object(row, callback)
+                boolvar, retCode, msg = preconditions_for_data_object(row, dry_run, callback)
                 if retCode == 0:
                     msg = 'Success'
                     row['processed'] = 'YES'
@@ -135,5 +198,5 @@ def main(rule_args, callback, rei):
                     row['processed'] = 'ERROR'
                     writer.writerow(dict(row, message=msg))
 
-INPUT *file=/etc/irods/yoda-ruleset/tools/test_1.csv
+INPUT *input_file=/etc/irods/yoda-ruleset/tools/test_script.csv, *output_file=/etc/irods/yoda-ruleset/tools/result_script.csv, *dry_run=True
 OUTPUT ruleExecOut 
