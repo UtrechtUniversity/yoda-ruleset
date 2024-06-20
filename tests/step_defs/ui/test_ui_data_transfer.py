@@ -53,8 +53,6 @@ def ui_data_transfer_page_content(browser, title):
 def ui_data_transfer_icommands_configuration_copied(browser):
     browser.find_by_id('button1').click()
     clipboard_content = get_clipboard_content()
-    print(clipboard_content)
-    assert False
     assert clipboard_content is not None
 
 
