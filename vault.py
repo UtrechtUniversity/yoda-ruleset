@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -30,6 +30,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
+           'rule_vault_copy_to_vault',
            'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
@@ -57,6 +58,10 @@ def api_vault_submit(ctx, coll, previous_version=None):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, previous_version)
 
     if ret[0] == '':
@@ -76,6 +81,10 @@ def api_vault_approve(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     # Check for previous version.
     previous_version = get_previous_version(ctx, coll)
 
@@ -102,6 +111,10 @@ def api_vault_cancel(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
 
     if ret[0] == '':
@@ -121,6 +134,10 @@ def api_vault_depublish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
 
     if ret[0] == '':
@@ -140,6 +157,10 @@ def api_vault_republish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
 
     if ret[0] == '':
@@ -251,7 +272,9 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 
     :returns: Set of unpreservable file formats
     """
-    zone = pathutil.info(coll)[1]
+    space, zone, _, _ = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     # Retrieve JSON list of preservable file formats.
     list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
@@ -422,6 +445,10 @@ def api_vault_system_metadata(ctx, coll):
 
     :returns: Dict system metadata of a vault collection
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     system_metadata = {}
 
     # Package size.
@@ -545,9 +572,9 @@ def api_vault_collection_details(ctx, path):
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is a research group.
+    # Check if collection is in vault spcae.
     space, _, group, subpath = pathutil.info(path)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return {}
 
     basename = pathutil.basename(path)
@@ -676,6 +703,10 @@ def api_vault_get_landingpage_data(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
     # Try to load the metadata file.
@@ -751,7 +782,7 @@ def api_grant_read_access_research_group(ctx, coll):
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
@@ -798,7 +829,7 @@ def api_revoke_read_access_research_group(ctx, coll):
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
@@ -828,24 +859,61 @@ def api_revoke_read_access_research_group(ctx, coll):
     return {'status': 'Success', 'statusInfo': ''}
 
 
-def copy_folder_to_vault(ctx, folder, target):
-    """Copy folder and all its contents to target in vault.
+@rule.make()
+def rule_vault_copy_to_vault(ctx, state):
+    """ Collect all folders with a given cronjob state
+        and try to copy them to the vault.
 
-    The data will reside onder folder '/original' within the vault.
+    :param ctx:  Combined type of a callback and rei struct
+    :param state: one of constants.CRONJOB_STATE
+    """
+    iter = get_copy_to_vault_colls(ctx, state)
+    for row in iter:
+        coll = row[0]
+        log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
+        if not folder.precheck_folder_secure(ctx, coll):
+            continue
+
+        # failed copy
+        if not folder.folder_secure(ctx, coll):
+            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            folder.folder_secure_set_retry(ctx, coll)
+
+
+def get_copy_to_vault_colls(ctx, cronjob_state):
+    iter = list(genquery.Query(ctx,
+                ['COLL_NAME'],
+                "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
+                    constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault",
+                    cronjob_state),
+                output=genquery.AS_LIST))
+    return iter
+
+
+def copy_folder_to_vault(ctx, coll, target):
+    """Copy folder and all its contents to target in vault using irsync.
+
+    The data will reside under folder '/original' within the vault.
 
     :param ctx:    Combined type of a callback and rei struct
-    :param folder: Path of a folder in the research space
+    :param coll:   Path of a folder in the research space
     :param target: Path of a package in the vault space
 
-    :raises Exception: Raises exception when treewalk_and_ingest did not finish correctly
+    :returns: True for successful copy
     """
-    destination = target + '/original'
-    origin = folder
+    returncode = 0
+    try:
+        returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
+    except Exception as e:
+        log.write(ctx, "irsync failure: " + e)
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
 
-    # Origin is a never changing value to be able to designate a relative path within ingest_object
-    error = 0  # Initial error state. Should stay 0.
-    if treewalk_and_ingest(ctx, folder, destination, origin, error):
-        raise Exception('copy_folder_to_vault: Error copying folder to vault')
+    if returncode != 0:
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    return True
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
@@ -900,6 +968,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     source_path = parent + "/" + item
     read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
 
+    # TODO use set_acl_check?
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
@@ -943,12 +1012,16 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     return 0
 
 
-def set_vault_permissions(ctx, group_name, folder, target):
+def set_vault_permissions(ctx, coll, target):
     """Set permissions in the vault as such that data can be copied to the vault."""
+    group_name = folder.collection_group_name(ctx, coll)
+    if group_name == '':
+        log.write(ctx, "set_vault_permissions: Cannot determine which deposit or research group <{}> belongs to".format(coll))
+        return False
+
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
 
-    parts = folder.split('/')
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
     # Check if noinherit is set
@@ -1025,6 +1098,8 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Grant research group read access to vault package.
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+
+    return True
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
@@ -1157,7 +1232,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
     # Except for status transition to PUBLISHED/DEPUBLISHED,
     # because it is requested by the system before previous pending
     # transition is removed.
-    if new_vault_status != constants.vault_package_state.PUBLISHED and new_vault_status != constants.vault_package_state.DEPUBLISHED:
+    if new_vault_status not in (constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED):
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",
@@ -1383,12 +1458,14 @@ def api_vault_get_published_packages(ctx, path):
 
     :return: Dict of data packages with DOI
     """
+    space, _, _, _ = pathutil.info(path)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, path)
 
     # Sort by publication date
     sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-
     latest_publ = map(lambda x: x[-1], sorted_publ)
 
     # Append to data package

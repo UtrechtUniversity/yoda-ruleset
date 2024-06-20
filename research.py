@@ -379,8 +379,9 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     if filepath == new_filepath:
         return api.Error('invalid_filepath', 'Origin and copy file paths are equal. Please choose another destination')
 
-    coll = pathutil.chop(new_filepath)[0]
-    data_name = pathutil.chop(new_filepath)[1]
+    _, org_data_name = pathutil.chop(filepath)
+    # These are of the NEW filepath
+    coll, data_name = pathutil.chop(new_filepath)
     try:
         validate_filename(data_name.decode('utf-8'))
     except Exception:
@@ -410,7 +411,7 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
 
     # Does org file exist?
     if not data_object.exists(ctx, filepath):
-        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
+        return api.Error('invalid_source', 'The original file ' + org_data_name + ' can not be found')
 
     # new filename already exists?
     if not overwrite and data_object.exists(ctx, new_filepath):

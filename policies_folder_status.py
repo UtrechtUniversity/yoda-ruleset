@@ -131,7 +131,7 @@ def post_status_transition(ctx, path, actor, status):
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
         avu.set_on_coll(ctx, path, attribute, constants.CRONJOB_STATE['PENDING'])
-        ctx.iiScheduleCopyToVault()
+        ctx.iiScheduleCollCopyToVault(path)
 
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.

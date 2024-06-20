@@ -8,9 +8,13 @@ __all__ = ['rule_run_integration_tests']
 
 import json
 import os
+import re
+import time
 import traceback
+import uuid
 
-from util import collection, config, data_object, log, msi, resource, rule, user
+import folder
+from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -37,7 +41,135 @@ def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
     return ctx.msi_json_objops(jsonstr, val, ops)["arguments"][argument_index]
 
 
+def _create_tmp_object(ctx):
+    """Creates a randomly named test data object and returns its name"""
+    path = "/{}/home/rods/{}.test".format(user.zone(ctx), str(uuid.uuid4()))
+    data_object.write(ctx, path, "test")
+    return path
+
+
+def _create_tmp_collection(ctx):
+    """Creates a randomly named test collection and returns its name"""
+    path = "/{}/home/rods/{}-test".format(user.zone(ctx), str(uuid.uuid4()))
+    collection.create(ctx, path)
+    return path
+
+
+def _test_msvc_add_avu_object(ctx):
+    tmp_object = _create_tmp_object(ctx)
+    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_add_avu_collection(ctx):
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_rmw_avu_object(ctx, rmw_attributes):
+    tmp_object = _create_tmp_object(ctx)
+    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-d', tmp_object, "foot", "hand", "head")
+    ctx.msi_add_avu('-d', tmp_object, "aap", "noot", "mies")
+    ctx.msi_rmw_avu('-d', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
+
+
+def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-c', tmp_object, "foot", "hand", "head")
+    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
+    ctx.msi_rmw_avu('-c', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_set_collection(ctx, catch):
+    # Test setting avu with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    avu.set_on_coll(ctx, tmp_object, "foo", "bar", catch)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_rmw_collection(ctx, rmw_attributes):
+    # Test removing with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
+    avu.rmw_from_coll(ctx, tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2], rmw_attributes[3])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_folder_set_retry_avus(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    folder.folder_secure_set_retry_avus(ctx, tmp_coll, 2)
+    # Needed to be able to delete collection
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return True
+
+
+def _test_folder_cronjob_status(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result_set = folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], tmp_coll)
+    status = folder.get_cronjob_status(ctx, tmp_coll)
+    correct_status = status == constants.CRONJOB_STATE['RETRY']
+    result_rm = folder.rm_cronjob_status(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result_set, correct_status, result_rm
+
+
+def _test_folder_set_get_last_run(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result = folder.set_last_run_time(ctx, tmp_coll)
+    found, last_run = folder.get_last_run_time(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result, found, last_run
+
+
+def _test_folder_secure_func(ctx, func):
+    """Create tmp collection, apply func to it and get result, and clean up.
+       Used for testing functions that modify avu/acls related to folder secure.
+       Happy flow.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param func: Function to test
+
+    :returns: Result of action
+    """
+    tmp_coll = _create_tmp_collection(ctx)
+    # Assume returns True/False, or does not return
+    result = func(ctx, tmp_coll)
+    # Needed to be able to delete collection in situations where func changed ACLs
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    if result is None:
+        return True
+    return result
+
+
 basic_integration_tests = [
+    {"name": "msvc.add_avu_collection",
+     "test": lambda ctx: _test_msvc_add_avu_collection(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
+    {"name": "msvc.add_avu_object",
+     "test": lambda ctx: _test_msvc_add_avu_object(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
     {"name": "msvc.json_arrayops.add",
      "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "add", 0, 0),
      "check": lambda x: x == '["a", "b", "c", "d"]'},
@@ -109,7 +241,6 @@ basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.outsidevault2",
      "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
      "check": lambda x: x},
-
     {"name": "msvc.msi_file_checksum.file",
      "test": lambda ctx: _call_file_checksum_either_resc(ctx, "/var/lib/irods/VaultX/yoda/licenses/GNU General Public License v3.0.txt"),
      "check": lambda x: x == "sha2:OXLcl0T2SZ8Pmy2/dmlvKuetivmyPd5m1q+Gyd+zaYY="},
@@ -140,6 +271,95 @@ basic_integration_tests = [
     {"name": "msvc.msi_dir_list.outside_vault",
      "test": lambda ctx: _call_dir_list_check_exc(ctx, '/etc/passwd', 'dev001_2'),
      "check": lambda x: x},
+    {"name": "msvc.rmw_avu_collection_literal",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("foo", "bar", "baz")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foot", "hand", "head") in x
+                         and len(x) == 2)},
+    {"name": "msvc.rmw_avu_object_literal",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("foo", "bar", "baz")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foot", "hand", "head") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 2
+                         )},
+    {"name": "msvc.rmw_avu_collection_literal_notexist",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("does", "not", "exist")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foo", "bar", "baz") in x
+                         and ("foot", "hand", "head") in x
+                         and len(x) == 3)},
+    {"name": "msvc.rmw_avu_object_literal_notexist",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("does", "not", "exist")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and ("foo", "bar", "baz") in x
+                         and ("foot", "hand", "head") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 3
+                         )},
+    {"name": "msvc.rmw_avu_collection_wildcard",
+     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("fo%", "%", "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len(x) == 1)},
+    {"name": "msvc.rmw_avu_object_wildcard",
+     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("fo%", "%", "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.set_from_coll.catch.yes",
+     "test": lambda ctx: _test_avu_set_collection(ctx, True),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.set_from_coll.catch.no",
+     "test": lambda ctx: _test_avu_set_collection(ctx, False),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.yes",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", True, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.no",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", False, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name":  "folder.set_can_modify",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
+     "check": lambda x: x},
+    {"name":  "folder.cronjob_status",
+     "test": lambda ctx: _test_folder_cronjob_status(ctx),
+     "check": lambda x: x[0] and x[1] and x[2]},
+    {"name":  "folder.set_get_last_run_time",
+     "test": lambda ctx: _test_folder_set_get_last_run(ctx),
+     "check": lambda x: x[0] and x[1] and x[2] + 25 >= int(time.time())},
+    {"name":  "folder.set_last_run_time",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_last_run_time),
+     "check": lambda x: x},
+    {"name":  "folder.check_folder_secure",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.check_folder_secure),
+     "check": lambda x: x},
+    {"name":  "folder.folder_secure_fail",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.folder_secure_fail),
+     "check": lambda x: x},
+    {"name":  "folder.set_retry_avus",
+     "test": lambda ctx: _test_folder_set_retry_avus(ctx),
+     "check": lambda x: x},
+    {"name":  "folder.determine_new_vault_target.research",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-initial\/testdata\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.deposit",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/deposit-pilot/deposit-hi[123123]"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-pilot\/deposit-hi\[[0-9]*\]\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.invalid",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
+     "check": lambda x: x == ""},
+    {"name": "policies.check_anonymous_access_allowed.local",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "policies.check_anonymous_access_allowed.remote",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
