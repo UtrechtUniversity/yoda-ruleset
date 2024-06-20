@@ -33,8 +33,8 @@ def api_response_data(api_response, expected_result):
     """
     # Convert the expected result to a boolean
     expected_bool = expected_result.lower() == 'true'
-    
+
     # Extract response data
     _, response_data = api_response
-    
+
     assert response_data['data'] == expected_bool, f"Expected {expected_bool}, got {response_data['data']}"
