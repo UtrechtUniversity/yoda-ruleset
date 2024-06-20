@@ -267,10 +267,6 @@ def folder_secure(ctx, coll):
     if not vault.set_vault_permissions(ctx, coll, target):
         return False
 
-    # Set cronjob status to OK.
-    if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
-        return False
-
     # Vault package is ready, set vault package state to UNPUBLISHED.
     if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED, True):
         return False
@@ -283,18 +279,16 @@ def folder_secure(ctx, coll):
     set_vault_data_package(ctx, coll, target)
 
     # Everything is done, set research folder state to SECURED.
-    if not folder_secure_succeed_avus(ctx, coll):
+    if not folder_secure_succeed_avus(ctx, coll, group_name):
         return False
 
     # Deposit group has been deleted once secured status is set,
     # so cannot change AVUs on collection
     if not group_name.startswith("deposit-"):
-        if not set_acl_check(ctx, "recursive", "admin:null", coll, "Could not set ACL (admin:null) for collection: {}".format(coll)):
-            return False
-
+        set_acl_check(ctx, "recursive", "admin:null", coll, "Could not set ACL (admin:null) for collection: {}".format(coll))
         set_acl_parents(ctx, "default", "admin:null", coll)
 
-    # All went well
+    # All (mostly) went well
     return True
 
 
@@ -386,9 +380,8 @@ def retry_attempts(ctx, coll):
     return True
 
 
-def folder_secure_succeed_avus(ctx, coll):
+def folder_secure_succeed_avus(ctx, coll, group_name):
     """Set/rm AVUs on source folder when successfully secured folder"""
-    # attributes = [x[0] for x in avu.of_coll(ctx, coll)]
     attributes = [x[0] for x in get_org_metadata(ctx, coll)]
 
     # In cases where copytovault only ran once, okay that these attributes were not created
@@ -399,13 +392,23 @@ def folder_secure_succeed_avus(ctx, coll):
         if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, "%", True):
             return False
 
-    if (not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
-            or not rm_cronjob_status(ctx, coll)):
+    # Set cronjob status to final state before deletion
+    if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
         return False
 
-    # Note: this is the AVU that must always be *last* to be set in folder secure,
-    # otherwise could be a problem for deposit groups
+    if not rm_cronjob_status(ctx, coll):
+        return False
+
+    # Note: this is the status that must always be one of the last to be set
+    # in folder secure, otherwise could be a problem for deposit groups
     if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED, True):
+        return False
+
+    # Remove target AVU on source folder. This should be done after all possibly failing steps
+    # have occurred in folder_secure (any "return False" steps), so that if those trip a retry state,
+    # on retry folder_secure can reuse the target from before.
+    if (not group_name.startswith("deposit-")
+            and not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)):
         return False
 
     return True
@@ -417,14 +420,15 @@ def folder_secure_set_retry(ctx, coll):
     new_retry_count = get_retry_count(ctx, coll) + 1
     if new_retry_count > config.vault_copy_max_retries:
         folder_secure_fail(ctx, coll)
-        send_fail_folder_secure_notification(ctx, coll)
+        send_folder_secure_notification(ctx, coll, "Data package failed to copy to vault after maximum retries")
     else:
-        folder_secure_set_retry_avus(ctx, coll, new_retry_count)
+        if not folder_secure_set_retry_avus(ctx, coll, new_retry_count):
+            send_folder_secure_notification(ctx, coll, "Failed to set retry state on data package")
 
 
 def folder_secure_set_retry_avus(ctx, coll, retry_count):
     avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(retry_count), True)
-    set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
+    return set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
 
 
 def folder_secure_fail(ctx, coll):
@@ -436,11 +440,10 @@ def folder_secure_fail(ctx, coll):
     set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
 
 
-def send_fail_folder_secure_notification(ctx, coll):
-    """Send notifications to datamanagers that copy to vault failed"""
+def send_folder_secure_notification(ctx, coll, message):
+    """Send notification about folder secure to relevant datamanagers"""
     if datamanager_exists(ctx, coll):
         datamanagers = get_datamanagers(ctx, coll)
-        message = "Data package failed to copy to vault after maximum retries"
         for datamanager in datamanagers:
             datamanager = '{}#{}'.format(*datamanager)
             notifications.set(ctx, "system", datamanager, coll, message)
