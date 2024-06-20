@@ -1,13 +1,14 @@
 # coding=utf-8
 """Admin access check API feature tests."""
 
-__copyright__ = 'Copyright (c) 2024, Utrecht University'
+__copyright__ = 'Copyright 2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
+
 from pytest_bdd import (
     given,
-    then,
     parsers,
     scenarios,
+    then,
 )
 
 from conftest import api_request
