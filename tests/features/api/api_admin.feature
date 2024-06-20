@@ -9,9 +9,8 @@ Feature: Admin Acess Check API
         Examples:
             | user                |
             | technicaladmin      | # Role: irodsadmin
-            | functionaladminpriv | # Group: priv-group-add
-            | technicaladmin      | # Role: irodsadmin and Group: priv-group-add #TODO: check with Lazlo which user, add user to needed group
-
+            | functionaladminpriv | # Group: priv-admin
+            | technicaladmin      | # Role: irodsadmin and Group: priv-admin 
 
     Scenario Outline: User has NO admin access
         Given user <user> is authenticated 

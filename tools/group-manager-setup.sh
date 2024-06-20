@@ -21,7 +21,7 @@ if ! [[ "$RODS_ZONE$RODS_USER" =~ ^[a-zA-Z0-9@._-]+$ ]]; then
 	exit 1
 fi
 
-for GROUP_NAME in priv-group-add priv-category-add ; do
+for GROUP_NAME in priv-group-add priv-category-add priv-admin; do
 	# TODO: Replace this script with a rule file that calls the Sudo microservices.
 	echo "Setting up group $GROUP_NAME"
 	set -x

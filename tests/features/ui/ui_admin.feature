@@ -1,7 +1,7 @@
 @ui
 Feature: Admin UI
 
-    Scenario Outline: Admin page view
+    Scenario Outline: Admin page view by admin users
         Given user <user> is logged in 
         When user opens link to admin page
         Then the text Administration is shown
@@ -10,8 +10,7 @@ Feature: Admin UI
         Examples:
             | user                |  
             | technicaladmin      | # Role: irodsadmin
-            | functionaladminpriv | # Group: priv-admin-group
-            | technicaladmin      | # Role: irodsadmin and Group: priv-group-add #TODO: FUnctionaladmivpriv, add user to needed group
+            | functionaladminpriv | # Group: priv-admin
 
 
     Scenario Outline: Admin page view by non-admin user

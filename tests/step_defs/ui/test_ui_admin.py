@@ -19,7 +19,7 @@ scenarios("../../features/ui/ui_admin.feature")
 @when(parsers.parse("user opens link to admin page"))
 def ui_admin_access(browser):
     url = "{}/admin".format(portal_url)
-    # time.sleep(10)  # FIXME:In case of slow VM machine
+    time.sleep(10)  # FIXME:In case of slow VM machine
     browser.visit(url)
 
 
