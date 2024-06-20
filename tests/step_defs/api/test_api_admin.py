@@ -37,4 +37,4 @@ def api_response_data(api_response, expected_result):
     # Extract response data
     _, response_data = api_response
 
-    assert response_data['data'] == expected_bool, f"Expected {expected_bool}, got {response_data['data']}"
+    assert response_data['data'] == expected_bool
