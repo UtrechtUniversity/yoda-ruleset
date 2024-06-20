@@ -10,10 +10,18 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from pytest_bdd import parsers, scenarios, then, when
-
+import tkinter as tk
 from conftest import portal_url
 
 scenarios('../../features/ui/ui_data_transfer.feature')
+
+
+def get_clipboard_content():
+    root = tk.Tk()
+    root.withdraw()
+    clipboard_content = root.clipboard_get()
+    root.destroy()
+    return clipboard_content
 
 
 @when("user opens the Data Transfer page")
@@ -43,7 +51,7 @@ def ui_data_transfer_page_content(browser, title):
 @then('user clicks on iCommands copy button')
 def ui_data_transfer_icommands_configuration_copied(browser):
     browser.find_by_id('button1').click()
-    clipboard_content = browser.evaluate_script("navigator.clipboard.readText()")
+    clipboard_content = get_clipboard_content()
 
     assert clipboard_content is not None
 
@@ -89,7 +97,7 @@ def ui_data_transfer_gocommands_page(browser):
 @then('user clicks on Gocommands copy button')
 def ui_data_transfer_go_commands_configuration_copied(browser):
     browser.find_by_id('button2').click()
-    clipboard_content = browser.evaluate_script("navigator.clipboard.readText()")
+    clipboard_content = get_clipboard_content()
 
     assert clipboard_content is not None
 
