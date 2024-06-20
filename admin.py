@@ -12,16 +12,16 @@ from util import *
 
 
 @api.make()
-def api_admin_has_access(ctx):  # TODO: Update the default group-> create a new one priv-admin # Add the group by groupmanagersetup.sh
+def api_admin_has_access(ctx):  # TODO: # Add the group by groupmanagersetup.sh
     """
-    Checks if the user has admin access based on user rights or membership in group priv-group-add".
+    Checks if the user has admin access based on user rights or membership in admin-priv group.
 
     :param ctx:         Combined type of a ctx and rei struct
 
     :returns: True if the user has the admin access, False otherwise.
     """
 
-    group_name="priv-group-add" #TODO: change to another group, and search replace all 
+    group_name="priv-admin" 
 
     # if user has admin right #TODO: IMPROVE CODES, try except blocks?
     is_admin = user.is_admin(ctx)
