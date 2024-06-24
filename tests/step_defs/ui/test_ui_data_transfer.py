@@ -16,6 +16,9 @@ from conftest import portal_url
 
 scenarios('../../features/ui/ui_data_transfer.feature')
 
+icommands_url = "https://docs.irods.org/4.2.12/icommands/user/"
+gocommands_url = "https://github.com/cyverse/gocommands/blob/main/README.md"
+
 
 @when("user opens the Data Transfer page")
 def ui_data_transfer_page(browser):
@@ -23,34 +26,44 @@ def ui_data_transfer_page(browser):
     browser.visit(url)
 
 
-@then("user clicks on the iCommands docs page")
-def ui_data_transfer_icommands_page(browser):
-    url = "https://docs.irods.org/4.2.12/icommands/user/"
-    browser.links.find_by_href(url).first.click()
-    time.sleep(2)
-
-    # change to the new tab
-    browser.windows.current = browser.windows[-1]
-
-    assert browser.url == url
-    assert urlparse(browser.url).path == urlparse(url).path
-
-
 @then(parsers.parse("{title} is shown"))
 def ui_data_transfer_page_content(browser, title):
     assert browser.is_text_present(title)
 
 
-@then('user clicks on iCommands copy button')
-def ui_data_transfer_icommands_configuration_copied(browser):
+@when("user clicks on the iCommands docs page")
+def ui_data_transfer_icommands_page(browser):
+    browser.links.find_by_href(icommands_url).first.click()
+    time.sleep(2)
+
+    # change to the new tab
+    browser.windows.current = browser.windows[-1]
+
+
+@then("iCommands docs page is displayed")
+def ui_data_transfer_icommands_page_content(browser):
+    assert browser.url == icommands_url
+    assert urlparse(browser.url).path == urlparse(icommands_url).path
+
+
+@when('user clicks on iCommands copy button')
+def ui_data_transfer_icommands_configuration_copy_button(browser):
     browser.find_by_id('button1').click()
+
+
+@then('iCommands configuration is copied')
+def ui_data_transfer_icommands_configuration_copied():
     clipboard_content = pyperclip.paste()
     assert clipboard_content is not None
 
 
-@then(parsers.parse("user clicks on iCommands download button and configuration file is downloaded as {format}"))
-def ui_data_transfer_icommands_configuration_downloaded(browser, tmpdir, format):
+@when("user clicks on iCommands download button")
+def ui_data_transfer_icommands_configuration_download_button(browser):
     browser.find_by_id('download-button1').click()
+
+
+@then(parsers.parse("iCommands configuration file is downloaded as {format}"))
+def ui_data_transfer_icommands_configuration_file_downloaded(browser, tmpdir, format):
     if os.name == "nt":
         assert True
         return
@@ -68,36 +81,44 @@ def ui_data_transfer_icommands_configuration_downloaded(browser, tmpdir, format)
     raise AssertionError()
 
 
-@then('user clicks on Gocommands tab')
+@when('user clicks on Gocommands tab')
 def ui_data_transfer_gocommands_tab(browser):
     browser.find_by_text('Gocommands').click()
 
 
-@then("user clicks on the Gocommands docs page")
+@when("user clicks on the Gocommands docs page")
 def ui_data_transfer_gocommands_page(browser):
-    url = "https://github.com/cyverse/gocommands/blob/main/README.md"
-    browser.links.find_by_href(url).first.click()
+    browser.links.find_by_href(gocommands_url).first.click()
     time.sleep(2)
 
     # change to the new tab
     browser.windows.current = browser.windows[-1]
 
-    assert browser.url == url
-    assert urlparse(browser.url).path == urlparse(url).path
+
+@then("Gocommands docs page is displayed")
+def ui_data_transfer_gocommands_page_content(browser):
+    assert browser.url == gocommands_url
+    assert urlparse(browser.url).path == urlparse(gocommands_url).path
 
 
-@then('user clicks on Gocommands copy button')
-def ui_data_transfer_go_commands_configuration_copied(browser):
+@when('user clicks on Gocommands copy button')
+def ui_data_transfer_gocommands_configuration_copy_button(browser):
     browser.find_by_id('button2').click()
-    clipboard_content = pyperclip.paste()
 
+
+@then("Gocommands configuration is copied")
+def ui_data_transfer_gocommands_configuration_is_copied():
+    clipboard_content = pyperclip.paste()
     assert clipboard_content is not None
 
 
-@then(parsers.parse("user clicks on Gocommands download button and configuration file is downloaded as {format}"))
-def ui_data_transfer_gocommands_configuration_downloaded(browser, tmpdir, format):
+@when("user clicks on Gocommands download button")
+def ui_data_transfer_gocommands_configuration_download_button(browser):
     browser.find_by_id('download-button2').click()
 
+
+@then(parsers.parse("Gocommands configuration file is downloaded as {format}"))
+def ui_data_transfer_gocommands_configuration_downloaded(browser, tmpdir, format):
     if os.name == "nt":
         assert True
         return

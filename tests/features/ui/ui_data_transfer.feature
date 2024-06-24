@@ -15,7 +15,8 @@ Feature: Data Transfer UI
     Scenario Outline: User clicks on the iCommands docs page
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then user clicks on the iCommands docs page
+        And user clicks on the iCommands docs page
+        Then iCommands docs page is displayed
 
         Examples:
             | user           |
@@ -26,7 +27,8 @@ Feature: Data Transfer UI
     Scenario Outline: User copies iCommands configuration
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then user clicks on iCommands copy button
+        And user clicks on iCommands copy button
+        Then iCommands configuration is copied
 
         Examples:
             | user           |
@@ -37,7 +39,8 @@ Feature: Data Transfer UI
     Scenario Outline: User downloads iCommands configuration file
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then user clicks on iCommands download button and configuration file is downloaded as <format>
+        And user clicks on iCommands download button
+        Then iCommands configuration file is downloaded as <format>
 
         Examples:
             | user           | format       |
@@ -48,8 +51,9 @@ Feature: Data Transfer UI
     Scenario Outline: User clicks on the Gocommands docs page
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then  user clicks on Gocommands tab
-        Then user clicks on the Gocommands docs page
+        And  user clicks on Gocommands tab
+        And user clicks on the Gocommands docs page
+        Then Gocommands docs page is displayed
 
         Examples:
             | user           |
@@ -60,8 +64,9 @@ Feature: Data Transfer UI
     Scenario Outline: User copies Gocommands configuration
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then user clicks on Gocommands tab
-        Then user clicks on Gocommands copy button
+        And user clicks on Gocommands tab
+        And user clicks on Gocommands copy button
+        Then Gocommands configuration is copied
 
         Examples:
             | user           |
@@ -72,8 +77,9 @@ Feature: Data Transfer UI
     Scenario Outline: User downloads Gocommands configuration file
         Given user <user> is logged in
         When user opens the Data Transfer page
-        Then user clicks on Gocommands tab
-        Then user clicks on Gocommands download button and configuration file is downloaded as <format>
+        And user clicks on Gocommands tab
+        And user clicks on Gocommands download button
+        Then Gocommands configuration file is downloaded as <format>
 
         Examples:
             | user           | format      |
