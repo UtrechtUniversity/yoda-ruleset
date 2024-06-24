@@ -8,13 +8,10 @@
 
 set -e
 
-# Set error handling and enable tracing of steps
-#set -uo pipefail
-#set -x  # Trace steps
-
 echo "Running command: iadmin lg | grep priv"
 command_output=$(iadmin lg 2>&1 | grep priv) || echo "iadmin lg command failed with status $?"
 
+# Read existing groups names containing "priv"
 priv_group_list=()
 # Only read into the array if command_output is not empty
 if [ -z "$command_output" ]; then
