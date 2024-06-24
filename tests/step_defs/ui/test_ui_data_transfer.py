@@ -6,7 +6,6 @@ __license__ = 'GPLv3, see LICENSE'
 
 import os
 import time
-
 from pathlib import Path
 from urllib.parse import urlparse
 
