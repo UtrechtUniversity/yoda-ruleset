@@ -51,7 +51,7 @@ Feature: Data Transfer UI
     Scenario Outline: User clicks on the Gocommands docs page
         Given user <user> is logged in
         When user opens the Data Transfer page
-        And  user clicks on Gocommands tab
+        And user clicks on Gocommands tab
         And user clicks on the Gocommands docs page
         Then Gocommands docs page is displayed
 
