@@ -321,7 +321,7 @@ def api_resource_monthly_category_stats(ctx):
 
     # find minimal registered date registered.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
-                               "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                               "META_USER_ATTR_NAME like '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
                                offset=0, limit=1, output=genquery.AS_LIST))
 
     for row in iter:
