@@ -17,6 +17,7 @@ import policies_intake
 import replication
 import revisions
 import vault
+from policies_utils import is_safe_genquery_inp
 from util import *
 
 
@@ -615,5 +616,12 @@ def rule_check_anonymous_access_allowed(ctx, address):
     permit_list = ["127.0.0.1"] + config.remote_anonymous_access
     return "true" if address in permit_list else "false"
 
+
+@rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
+def pep_database_gen_query_pre(ctx, dbtype, _ctx, results, genquery_inp, genquery_out):
+    if not is_safe_genquery_inp(genquery_inp):
+        # We can't use log here, because the REI is not (always) available.
+        print("Refused unsafe query: " + str(genquery_inp))
+        ctx.msiOprDisallowed()
 # }}}
 # }}}
