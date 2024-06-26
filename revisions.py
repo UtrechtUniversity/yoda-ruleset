@@ -717,8 +717,15 @@ def _update_revision_store_acls(ctx):
     """
     revision_store = get_revision_store_path(user.zone(ctx))
     if user.user_type(ctx) == 'rodsadmin':
-        msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
-        msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
+        try:
+            msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
+            msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
+        except msi.Error as e:
+            if "-809000" in str(e):
+                # CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME: AVU is already present. No need to set it anymore.
+                pass
+            else:
+                raise Exception("Cannot update revision store ACLs, an error eccured: error: {}".format(str(e)))
     else:
         raise Exception("Cannot update revision store ACLs, because present user is not rodsadmin.")
 
