@@ -453,7 +453,13 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contributor.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier }}{{ ", " if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}:
+                                                {% if id.Name_Identifier_Scheme not in ('DAI', 'Author identifier (Scopus)') %}
+                                                    <a href="{{ id.Name_Identifier }}" target="_blank"> {{ id.Name_Identifier }} </a>
+                                                {% else %}
+                                                    {{ id.Name_Identifier }}
+                                                {% endif %}
+                                                {{ ", " if not loop.last }}
                                             {% endfor %}
                                 </span>
                             </div>
