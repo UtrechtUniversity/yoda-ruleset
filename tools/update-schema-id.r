@@ -69,6 +69,8 @@ def main(rule_args, callback, rei):
     userList = []
 
     default_schema = global_vars["*defaultSchema"][1:-1]
+    
+    callback.writeLine("stdout", "update_schema_id script started")
 
     # Get the group names
     userIter = genquery.row_iterator(
@@ -79,7 +81,7 @@ def main(rule_args, callback, rei):
 
     for row in userIter:
         name = row[0]
-        # Normalish groups
+
         if name.startswith("research-"):
             metaIter = genquery.row_iterator(
                 "META_USER_ATTR_NAME",
@@ -96,7 +98,10 @@ def main(rule_args, callback, rei):
                 schema_collection = get_schema_collection(callback, zone, name, default_schema)
                 callback.uuGroupModify(name, 'schema_id', schema_collection, '', '') 
                 callback.writeLine("stdout", "Group {} set with schema id {}".format(name, schema_collection))
+            else:
+                callback.writeLine("stdout", "Group {} ignored, has schema id metadata already set".format(name))
 
+    callback.writeLine("stdout", "update_schema_id script finished")
 
 INPUT *defaultSchema=""
 OUTPUT ruleExecOut
