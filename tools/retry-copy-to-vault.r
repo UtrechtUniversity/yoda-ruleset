@@ -1,9 +1,8 @@
 retryCopyToVault {
-	# Copy research folder to vault.
+	# Try to copy accepted and retry research folders to vault.
 	# This script is kept as dumb as possible.
-	# All processing and error handling is done by rule_vault_copy_accepted_retry_to_vault
-	*state = "CRONJOB_RETRY"
-	rule_vault_copy_to_vault(*state);
+	# All processing and error handling is done by rule_vault_retry_copy_to_vault
+	rule_vault_retry_copy_to_vault();
 }
 input null
 output ruleExecOut
