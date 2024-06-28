@@ -30,14 +30,14 @@
     </script>
 </head>
 
-<body>
+<body vocab="http://purl.org/dc/terms/">
     <div class="container bg-white no-padding">
         <header>
             <div class="logo pt-2">
                 <img src="/static/img/logo.svg"/>
                 </div>
                 <div class="header-title">
-                    <h1>Data publication platform of Utrecht University</h1>
+                    <h1 property="title">Data publication platform of Utrecht University</h1>
                 </div>
         </header>
         <main>
@@ -45,21 +45,21 @@
                 <div class="row content">
                     <div class="col-lg-8">
                         <div class="creators">
-                            {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
+                            {% for creator in creators %} <span property="dc:creator"> {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} </span> {{ "&" if not loop.last }} {% endfor %}
                         </div>
                         <section>
-                            <h2>{{ title }}</h2>
+                            <h2 property="dc:title">{{ title }}</h2>
                             <div class="meta">
                                 <label>Publication Date:</label>
-                                <span class="date">{{ publication_date }}</span>
+                                <span class="date" property="dc:created">{{ publication_date }}</span>
                                 <label>Accessibility:</label>
-                                <span>{{ data_access_restriction }}</span>
+                                <span property="dct:accesibility">{{ data_access_restriction }}</span>
                             </div>
-                            <p class="description">{{ description }}</p>
+                            <p class="description" property="dc:description">{{ description }}</p>
                             <div class="keywords">
                                 <label>Keywords</label>
                                 {% for tag in tags %}
-                                <span class="keyword">{{ tag }}</span>
+                                <span class="keyword" property="dc:subject">{{ tag }}</span>
                                 {% endfor %}
                             </div>
                         </section>
@@ -74,10 +74,10 @@
                                             {% for version in all_versions %}
                                                 <tr>
                                                     <td>
-                                                        <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                        <a href="https://doi.org/{{version[1]}}" property="dc:identifier" resource="#{{version[1]}}">https://doi.org/{{version[1]}}</a>
                                                     </td>
                                                     <td>
-                                                        <small title="{{version[2]}}">{{version[0]}}</small>
+                                                        <small title="{{version[2]}}" property="dc:title" about="#{{version[1]}}">{{version[0]}}</small>
                                                     </td>
                                                 </tr>
                                             {% endfor %}
@@ -147,7 +147,7 @@
                                 <label>Version</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ version }}</span>
+                                <span property="dc:hasVersion">{{ version }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -155,7 +155,7 @@
                                 <label>Language</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ language }}</span>
+                                <span property="dc:language">{{ language }}</span>
                             </div>
                         </div>
                     </div>
@@ -313,7 +313,7 @@
                                 <label>Publication Date</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ publication_date }}</span>
+                                <span property="dc:date">{{ publication_date }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -321,7 +321,7 @@
                                 <label>Last Modification</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ last_modified_date }}</span>
+                                <span property="dct:modified">{{ last_modified_date }}</span>
                             </div>
                         </div>
                         {% if embargo_end_date %}
@@ -330,7 +330,7 @@
                                 <label>Embargo End Date</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ embargo_end_date }}</span>
+                                <span property="dct:available">{{ embargo_end_date }}</span>
                             </div>
                         </div>
                         {% endif %}
@@ -347,7 +347,7 @@
                                 <label>Related resource</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ pack.Title }}</span>
+                                <span property="dct:title">{{ pack.Title }}</span>
                             </div>
                         </div>
 
@@ -389,7 +389,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
+                                <span property="creator">{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
                             </div>
                         </div>
                         {% endif %}
@@ -442,7 +442,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
+                                <span property="contributor">{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
 
