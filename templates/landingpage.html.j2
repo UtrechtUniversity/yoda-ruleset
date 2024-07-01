@@ -52,8 +52,8 @@
                             <div class="meta">
                                 <label>Publication Date:</label>
                                 <span class="date" property="dc:created">{{ publication_date }}</span>
-                                <label>Accessibility:</label>
-                                <span property="dct:accesibility">{{ data_access_restriction }}</span>
+                                <label property="dc:rights">Accessibility:</label>
+                                <span>{{ data_access_restriction }}</span>
                             </div>
                             <p class="description" property="dc:description">{{ description }}</p>
                             <div class="keywords">
@@ -83,10 +83,10 @@
                                             {% endfor %}
                                         </tbody>
                                     </table>
-                                    <small>
-                                        <b>Base DOI:</b>
-                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
-                                        This DOI represents all versions of this publication and will resolve to the latest publication.
+                                    <small typeof="dc:BibliographicResource">
+                                        <b property="dc:title">Base DOI:</b>
+                                        <a href="https://doi.org/{{base_doi}}" property="dc:identifier">https://doi.org/{{base_doi}}</a><br/>
+                                        <span property="dc:description">This DOI represents all versions of this publication and will resolve to the latest publication.</span>
                                     </small>
                                 </div>
                             </div>
@@ -103,7 +103,7 @@
             <section class="metadata">
                 <h2>Metadata</h2>
                 <div class="list">
-                    <div class="group">
+                    <div class="group" typeof="dc:BibliographicResource">
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Disciplines</label>
@@ -181,7 +181,7 @@
                                 <label>Geolocation</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ loc }}</span>
+                                <span property="dc:coverage">{{ loc }}</span>
                             </div>
                         </div>
 
@@ -356,7 +356,7 @@
                                 <label class="indented">Type of relation</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ pack.Relation_Type }}</span>
+                                <span property="dc:relation">{{ pack.Relation_Type }}</span>
                             </div>
                         </div>
 
@@ -566,7 +566,7 @@
                                 <label>License</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:license">
                                     {% if license_uri|length>1 %}
                                         <a href="{{ license_uri }}" target="blank">{{ license }}</a>
                                     {% else %}
@@ -581,7 +581,7 @@
                                 <label>Collection name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ collection_name }}</span>
+                                <span property="dc:collection">{{ collection_name }}</span>
                             </div>
                         </div>
                         {% endif %}
