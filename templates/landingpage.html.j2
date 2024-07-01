@@ -366,7 +366,7 @@
                                 <label class="indented">Persistent Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                 <a href="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
                                   {{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
                                 </a>
@@ -398,7 +398,7 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in creator.Person_Identifier %}
                                                 {{ id.Name_Identifier_Scheme }}:
                                                 {% if id.Name_Identifier_Scheme not in ('DAI', 'Author identifier (Scopus)') %}
@@ -451,7 +451,7 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in contributor.Person_Identifier %}
                                                 {{ id.Name_Identifier_Scheme }}:
                                                 {% if id.Name_Identifier_Scheme not in ('DAI', 'Author identifier (Scopus)') %}
@@ -526,7 +526,7 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in contact.Person_Identifier %}
                                                 <a href="{{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
                                                 {{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
