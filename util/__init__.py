@@ -39,6 +39,7 @@ if 'unittest' not in sys.modules.keys():
     import resource
     import arb_data_manager
     import cached_data_manager
+    import irods_type_info
 
     # Config items can be accessed directly as 'config.foo' by any module
     # that imports * from util.
@@ -48,5 +49,4 @@ if 'unittest' not in sys.modules.keys():
         import bagit
 
     if config.environment == 'development':
-        import irods_type_info
         ping = api_ping = api.make()(lambda ctx, x=42: x)
