@@ -45,15 +45,15 @@
                 <div class="row content">
                     <div class="col-lg-8">
                         <div class="creators">
-                            {% for creator in creators %} <span property="dc:creator"> {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} </span> {{ "&" if not loop.last }} {% endfor %}
+                            {% for creator in creators %} <span> {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} </span> {{ "&" if not loop.last }} {% endfor %}
                         </div>
                         <section>
                             <h2 property="dc:title">{{ title }}</h2>
                             <div class="meta">
                                 <label>Publication Date:</label>
                                 <span class="date" property="dc:created">{{ publication_date }}</span>
-                                <label property="dc:rights">Accessibility:</label>
-                                <span>{{ data_access_restriction }}</span>
+                                <label>Accessibility:</label>
+                                <span property="dc:accessRights">{{ data_access_restriction }}</span>
                             </div>
                             <p class="description" property="dc:description">{{ description }}</p>
                             <div class="keywords">
@@ -83,10 +83,10 @@
                                             {% endfor %}
                                         </tbody>
                                     </table>
-                                    <small typeof="dc:BibliographicResource">
-                                        <b property="dc:title">Base DOI:</b>
-                                        <a href="https://doi.org/{{base_doi}}" property="dc:identifier">https://doi.org/{{base_doi}}</a><br/>
-                                        <span property="dc:description">This DOI represents all versions of this publication and will resolve to the latest publication.</span>
+                                    <small>
+                                        <b>Base DOI:</b>
+                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                        <span>This DOI represents all versions of this publication and will resolve to the latest publication.</span>
                                     </small>
                                 </div>
                             </div>
@@ -321,7 +321,7 @@
                                 <label>Last Modification</label>
                             </div>
                             <div class="col-sm-10">
-                                <span property="dct:modified">{{ last_modified_date }}</span>
+                                <span property="dc:modified">{{ last_modified_date }}</span>
                             </div>
                         </div>
                         {% if embargo_end_date %}
