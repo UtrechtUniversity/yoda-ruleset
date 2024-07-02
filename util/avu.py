@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with AVUs."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -10,6 +10,7 @@ from collections import namedtuple
 import genquery
 import irods_types
 
+import log
 import msi
 import pathutil
 
@@ -46,10 +47,38 @@ def set_on_data(ctx, path, a, v):
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
 
 
-def set_on_coll(ctx, coll, a, v):
-    """Set key/value metadata on a collection."""
+def set_on_coll(ctx, coll, a, v, catch=False):
+    """Set key/value metadata on a collection. Optionally catch any exceptions that occur.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection to get paginated contents of
+    :param a:     Attribute
+    :param v:     Value
+    :param catch: Whether to catch any exceptions that occur
+
+    :returns: True if catch=True and no exceptions occurred during operation
+    """
+    if catch:
+        return _set_on_coll_catch(ctx, coll, a, v)
+
+    _set_on_coll(ctx, coll, a, v)
+    return True
+
+
+def _set_on_coll(ctx, coll, a, v):
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+
+
+def _set_on_coll_catch(ctx, coll, a, v):
+    """Set AVU, but catch exception."""
+    try:
+        _set_on_coll(ctx, coll, a, v)
+    except Exception:
+        log.write(ctx, "Failed to set AVU {} on coll {}".format(a, coll))
+        return False
+
+    return True
 
 
 def set_on_resource(ctx, resource, a, v):
@@ -100,9 +129,37 @@ def rm_from_group(ctx, group, a, v):
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], group, '-u')
 
 
-def rmw_from_coll(ctx, obj, a, v, u=''):
-    """Remove AVU from collection with wildcards."""
+def rmw_from_coll(ctx, obj, a, v, catch=False, u=''):
+    """Remove AVU from collection with wildcards. Optionally catch any exceptions that occur.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param obj:  Collection to get paginated contents of
+    :param a:     Attribute
+    :param v:     Value
+    :param catch: Whether to catch any exceptions that occur
+    :param u:     Unit
+
+    :returns: True if catch=True and no exceptions occurred during operation
+    """
+    if catch:
+        return _rmw_from_coll_catch(ctx, obj, a, v, u)
+
+    _rmw_from_coll(ctx, obj, a, v, u)
+    return True
+
+
+def _rmw_from_coll(ctx, obj, a, v, u=''):
     msi.rmw_avu(ctx, '-C', obj, a, v, u)
+
+
+def _rmw_from_coll_catch(ctx, obj, a, v, u=''):
+    try:
+        _rmw_from_coll(ctx, obj, a, v, u)
+    except Exception:
+        log.write(ctx, "Failed to rm AVU {} on coll {}".format(a, obj))
+        return False
+
+    return True
 
 
 def rmw_from_data(ctx, obj, a, v, u=''):

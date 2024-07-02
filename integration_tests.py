@@ -6,10 +6,14 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
 
+import json
+import re
+import time
 import traceback
 import uuid
 
-from util import avu, collection, config, data_object, log, msi, resource, rule, user
+import folder
+from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -85,6 +89,74 @@ def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
     ctx.msi_rmw_avu('-c', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
     result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
     collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_set_collection(ctx, catch):
+    # Test setting avu with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    avu.set_on_coll(ctx, tmp_object, "foo", "bar", catch)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_avu_rmw_collection(ctx, rmw_attributes):
+    # Test removing with catch and without catch
+    tmp_object = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
+    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
+    avu.rmw_from_coll(ctx, tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2], rmw_attributes[3])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
+    collection.remove(ctx, tmp_object)
+    return result
+
+
+def _test_folder_set_retry_avus(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    folder.folder_secure_set_retry_avus(ctx, tmp_coll, 2)
+    # Needed to be able to delete collection
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return True
+
+
+def _test_folder_cronjob_status(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result_set = folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], tmp_coll)
+    status = folder.get_cronjob_status(ctx, tmp_coll)
+    correct_status = status == constants.CRONJOB_STATE['RETRY']
+    result_rm = folder.rm_cronjob_status(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result_set, correct_status, result_rm
+
+
+def _test_folder_set_get_last_run(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    result = folder.set_last_run_time(ctx, tmp_coll)
+    found, last_run = folder.get_last_run_time(ctx, tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    return result, found, last_run
+
+
+def _test_folder_secure_func(ctx, func):
+    """Create tmp collection, apply func to it and get result, and clean up.
+       Used for testing functions that modify avu/acls related to folder secure.
+       Happy flow.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param func: Function to test
+
+    :returns: Result of action
+    """
+    tmp_coll = _create_tmp_collection(ctx)
+    # Assume returns True/False, or does not return
+    result = func(ctx, tmp_coll)
+    # Needed to be able to delete collection in situations where func changed ACLs
+    msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
+    collection.remove(ctx, tmp_coll)
+    if result is None:
+        return True
     return result
 
 
@@ -201,6 +273,84 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "avu.set_from_coll.catch.yes",
+     "test": lambda ctx: _test_avu_set_collection(ctx, True),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.set_from_coll.catch.no",
+     "test": lambda ctx: _test_avu_set_collection(ctx, False),
+     "check": lambda x: (("foo", "bar", "") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.yes",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", True, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.rmw_from_coll_wildcard.catch.no",
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", False, "%")),
+     "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name":  "folder.set_can_modify",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
+     "check": lambda x: x},
+    {"name":  "folder.cronjob_status",
+     "test": lambda ctx: _test_folder_cronjob_status(ctx),
+     "check": lambda x: x[0] and x[1] and x[2]},
+    {"name":  "folder.set_get_last_run_time",
+     "test": lambda ctx: _test_folder_set_get_last_run(ctx),
+     "check": lambda x: x[0] and x[1] and x[2] + 25 >= int(time.time())},
+    {"name":  "folder.set_last_run_time",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_last_run_time),
+     "check": lambda x: x},
+    {"name":  "folder.check_folder_secure",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.check_folder_secure),
+     "check": lambda x: x},
+    {"name":  "folder.folder_secure_fail",
+     "test": lambda ctx: _test_folder_secure_func(ctx, folder.folder_secure_fail),
+     "check": lambda x: x},
+    {"name":  "folder.set_retry_avus",
+     "test": lambda ctx: _test_folder_set_retry_avus(ctx),
+     "check": lambda x: x},
+    {"name":  "folder.determine_new_vault_target.research",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-initial\/testdata\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.deposit",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/deposit-pilot/deposit-hi[123123]"),
+     "check": lambda x: re.match("^\/tempZone\/home\/vault-pilot\/deposit-hi\[[0-9]*\]\[[0-9]*\]$", x) is not None},
+    {"name":  "folder.determine_new_vault_target.invalid",
+     "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
+     "check": lambda x: x == ""},
+    {"name": "groups.rule_group_expiration_date_validate.1",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.2",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate(".", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.3",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("abc", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.4",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2020-02-02", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.5",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-01-32", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.6",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "policies.check_anonymous_access_allowed.local",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "policies.check_anonymous_access_allowed.remote",
+     "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    # Vault metadata schema report: only check return value type, not contents
+    {"name": "schema_transformation.batch_vault_metadata_schema_report",
+     "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
+     "check": lambda x: isinstance(json.loads(x['arguments'][0]), dict)},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},

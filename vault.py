@@ -30,6 +30,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
+           'rule_vault_retry_copy_to_vault',
            'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
@@ -858,24 +859,66 @@ def api_revoke_read_access_research_group(ctx, coll):
     return {'status': 'Success', 'statusInfo': ''}
 
 
-def copy_folder_to_vault(ctx, folder, target):
-    """Copy folder and all its contents to target in vault.
+@rule.make()
+def rule_vault_retry_copy_to_vault(ctx):
+    copy_to_vault(ctx, constants.CRONJOB_STATE["PENDING"])
+    copy_to_vault(ctx, constants.CRONJOB_STATE["RETRY"])
 
-    The data will reside onder folder '/original' within the vault.
+
+def copy_to_vault(ctx, state):
+    """ Collect all folders with a given cronjob state
+        and try to copy them to the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param state: one of constants.CRONJOB_STATE
+    """
+    iter = get_copy_to_vault_colls(ctx, state)
+    for row in iter:
+        coll = row[0]
+        log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
+        if not folder.precheck_folder_secure(ctx, coll):
+            continue
+
+        # failed copy
+        if not folder.folder_secure(ctx, coll):
+            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            folder.folder_secure_set_retry(ctx, coll)
+
+
+def get_copy_to_vault_colls(ctx, cronjob_state):
+    iter = list(genquery.Query(ctx,
+                ['COLL_NAME'],
+                "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
+                    constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault",
+                    cronjob_state),
+                output=genquery.AS_LIST))
+    return iter
+
+
+def copy_folder_to_vault(ctx, coll, target):
+    """Copy folder and all its contents to target in vault using irsync.
+
+    The data will reside under folder '/original' within the vault.
 
     :param ctx:    Combined type of a callback and rei struct
-    :param folder: Path of a folder in the research space
+    :param coll:   Path of a folder in the research space
     :param target: Path of a package in the vault space
 
-    :raises Exception: Raises exception when treewalk_and_ingest did not finish correctly
+    :returns: True for successful copy
     """
-    destination = target + '/original'
-    origin = folder
+    returncode = 0
+    try:
+        returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
+    except Exception as e:
+        log.write(ctx, "irsync failure: " + e)
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
 
-    # Origin is a never changing value to be able to designate a relative path within ingest_object
-    error = 0  # Initial error state. Should stay 0.
-    if treewalk_and_ingest(ctx, folder, destination, origin, error):
-        raise Exception('copy_folder_to_vault: Error copying folder to vault')
+    if returncode != 0:
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    return True
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
@@ -930,6 +973,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     source_path = parent + "/" + item
     read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
 
+    # TODO use set_acl_check?
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
@@ -973,12 +1017,16 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     return 0
 
 
-def set_vault_permissions(ctx, group_name, folder, target):
+def set_vault_permissions(ctx, coll, target):
     """Set permissions in the vault as such that data can be copied to the vault."""
+    group_name = folder.collection_group_name(ctx, coll)
+    if group_name == '':
+        log.write(ctx, "set_vault_permissions: Cannot determine which deposit or research group <{}> belongs to".format(coll))
+        return False
+
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
 
-    parts = folder.split('/')
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
     # Check if noinherit is set
@@ -1055,6 +1103,8 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Grant research group read access to vault package.
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+
+    return True
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
@@ -1187,7 +1237,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
     # Except for status transition to PUBLISHED/DEPUBLISHED,
     # because it is requested by the system before previous pending
     # transition is removed.
-    if new_vault_status != constants.vault_package_state.PUBLISHED and new_vault_status != constants.vault_package_state.DEPUBLISHED:
+    if new_vault_status not in (constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED):
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",

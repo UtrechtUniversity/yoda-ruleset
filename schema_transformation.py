@@ -6,9 +6,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
            'rule_batch_vault_metadata_correct_orcid_format',
+           'rule_batch_vault_metadata_schema_report',
            'rule_get_transformation_info',
            'api_transform_metadata']
 
+import json
 import os
 import re
 import time
@@ -17,6 +19,7 @@ import genquery
 import session_vars
 
 import meta
+import meta_form
 import schema
 import schema_transformations
 from util import *
@@ -181,12 +184,14 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
             metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
+            log.write(callback, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
             if metadata_path  != '':
                 transform = get(callback, metadata_path)
                 if transform is not None:
+                    log.write(callback, "[METADATA] Executing transformation for: " + metadata_path)
                     execute_transformation(callback, metadata_path, transform)
-        except Exception:
-            pass
+        except Exception as e:
+            log.write(callback, "[METADATA] Exception occurred during schema transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -215,6 +220,7 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
                       [1] Batch size, <= 256
                       [2] Pause between checks (float)
                       [3] Delay between batches in seconds
+                      [4] Dry-run mode ('true' or 'false'; everything else is considered 'false')
     :param callback:  Callback to rule Language
     :param rei:       The rei struct
     """
@@ -223,6 +229,7 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
     batch   = int(rule_args[1])
     pause   = float(rule_args[2])
     delay   = int(rule_args[3])
+    dryrun_mode = rule_args[4] == "true"
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Check one batch of metadata schemas.
@@ -239,39 +246,43 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
         coll_name = row[1]
         path_parts = coll_name.split('/')
 
-        # ORCID-correction is limited to ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']
-        if path_parts[3].replace('vault-', '') in ['core-1', 'default-1', 'default-2', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
-            try:
-                # Get vault package path.
-                vault_package = '/'.join(path_parts[:5])
-                metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
-                if metadata_path  != '':
-                    # PREVENT EACH VAULT METADATA.JSON FILE FROM BEING REWRITTEN
-                    # Prevent transformation of every latest metadata.json file.
-                    # Possibly an individual file does not contain ORCID or illformatted ORCID.
-                    # Skip these files!
-                    metadata = jsonutil.read(callback, metadata_path)
+        try:
+            # Get vault package path.
+            vault_package = '/'.join(path_parts[:5])
+            metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
+            if metadata_path  != '':
+                metadata = jsonutil.read(callback, metadata_path)
 
-                    # Correct the incorrect orcid(s) if possible
-                    # result is a dict containing 'data_changed' 'metadata'
-                    result = transform_orcid(callback, metadata)
+                # We only need to transform metadata with schemas that do not constrain ORCID format
+                license_url = metadata.get("links", {})[0].get("href", "")
+                license = license_url.replace("https://yoda.uu.nl/schemas/", "").replace("/metadata.json", "")
+                if license not in ['core-1', 'core-2', 'default-1', 'default-2', 'default-3', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
+                    log.write(callback, "Skipping data package '%s' for ORCID transformation because license '%s' is excluded."
+                              % (vault_package, license))
+                    continue
 
-                    # In order to minimize changes within the vault only save a new metadata.json if there actually has been at least one orcid correction.
-                    if result['data_changed']:
-                        # orcid('s) has/have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
-                        coll, data = os.path.split(metadata_path)
-                        new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
-                        # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
-                        jsonutil.write(callback, new_path, result['metadata'])
-                        copy_acls_from_parent(callback, new_path, "default")
-                        callback.rule_provenance_log_action("system", coll, "updated person identifier metadata")
-                        log.write(callback, "Transformed ORCIDs for: %s" % (new_path))
+                # Correct the incorrect orcid(s) if possible
+                # result is a dict containing 'data_changed' 'metadata'
+                result = transform_orcid(callback, metadata)
 
-            except Exception:
-                pass
+                # In order to minimize changes within the vault only save a new metadata.json if there actually has been at least one orcid correction.
+                if result['data_changed'] and not dryrun_mode:
+                    # orcid('s) has/have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
+                    coll, data = os.path.split(metadata_path)
+                    new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
+                    log.write(callback, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+                    jsonutil.write(callback, new_path, result['metadata'])
+                    copy_acls_from_parent(callback, new_path, "default")
+                    callback.rule_provenance_log_action("system", coll, "updated person identifier metadata")
+                    log.write(callback, "Transformed ORCIDs for: %s" % (new_path))
+                elif result['data_changed']:
+                    log.write(callback, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
 
-            # Sleep briefly between checks.
-            time.sleep(pause)
+        except Exception as e:
+            log.write(callback, "Exception occurred during ORCID transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
+
+        # Sleep briefly between checks.
+        time.sleep(pause)
 
         # The next collection to check must have a higher COLL_ID.
         coll_id += 1
@@ -303,21 +314,25 @@ def transform_orcid(ctx, m):
     for pi_holder in ['Creator', 'Contributor']:
         if m.get(pi_holder, False):
             for holder in m[pi_holder]:
-                for pi in holder['Person_Identifier']:
+                for pi in holder.get('Person_Identifier', dict()):
                     if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
                         # If incorrect ORCID format => try to correct.
                         if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", pi.get('Name_Identifier', None)):
-                            corrected_orcid = correctify_orcid(pi['Name_Identifier'])
+                            original_orcid = pi['Name_Identifier']
+                            corrected_orcid = correctify_orcid(original_orcid)
                             # Only it an actual correction took place change the value and mark this data as 'changed'.
-                            if corrected_orcid != pi['Name_Identifier']:
-                                pi['Name_Identifier'] = correctify_orcid(pi['Name_Identifier'])
+                            if corrected_orcid is None:
+                                log.write(ctx, "Warning: unable to automatically fix ORCID '%s'" % (original_orcid))
+                            elif corrected_orcid != original_orcid:
+                                log.write(ctx, "Updating ORCID '%s' to '%s'" % (original_orcid, corrected_orcid))
+                                pi['Name_Identifier'] = corrected_orcid
                                 data_changed = True
 
     return {'metadata': m, 'data_changed': data_changed}
 
 
 def correctify_orcid(org_orcid):
-    """Function to correct illformatted ORCIDs."""
+    """Function to correct illformatted ORCIDs. Returns None if value cannot be fixed."""
     # Get rid of all spaces.
     orcid = org_orcid.replace(' ', '')
 
@@ -328,8 +343,7 @@ def correctify_orcid(org_orcid):
     # If not, it is impossible to correct it to the valid orcid format
     orcs = orcid.split('/')
     if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
-        # Return original value.
-        return org_orcid
+        return None
 
     return "https://orcid.org/{}".format(orcs[-1])
 
@@ -353,3 +367,67 @@ def html(f):
     description = re.sub('((:param).*)|((:returns:).*)', ' ', description)
 
     return description
+
+
+@rule.make(inputs=[], outputs=[0])
+def rule_batch_vault_metadata_schema_report(ctx):
+    """Show vault metadata schema about each data package in vault
+
+    :param ctx:      Combined type of a callback and rei struct
+
+    :returns:        JSON-encoded dictionary, where each key is a vault data package path.
+                     Values are dictionaries with keys "schema" (contains the short name of the schema
+                     (e.g. 'default-3', as per the information in the metadata file, or empty if no metadata
+                     schema could be found), and match_schema (contains a boolean value that indicates whether
+                     the metadata matches the JSON schema). match_schema only has a meaning if a metadata schema
+                     could be found.
+    """
+    results = dict()
+    schema_cache = dict()
+
+    # Find all vault collections
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND COLL_NAME NOT LIKE '%%/original/%%' AND DATA_NAME like 'yoda-metadata%%json'" %
+        (user.zone(ctx)),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        coll_name = row[0]
+        metadata_path = meta.get_latest_vault_metadata_path(ctx, coll_name)
+
+        if metadata_path == '' or metadata_path is None:
+            log.write(ctx, "Vault metadata schema report skips %s, because metadata could not be found."
+                           % (coll_name))
+            continue
+
+        try:
+            metadata = jsonutil.read(ctx, metadata_path)
+        except Exception as exc:
+            log.write(ctx, "Vault metadata report skips %s, because of exception while reading metadata file %s: %s."
+                           % (coll_name, metadata_path, str(exc)))
+            continue
+
+        # Determine schema
+        schema_id = schema.get_schema_id(ctx, metadata_path)
+        schema_shortname = schema_id.split("/")[-2]
+
+        # Retrieve schema and cache it for future use
+        schema_path = schema.get_schema_path_by_id(ctx, metadata_path, schema_id)
+        if schema_shortname in schema_cache:
+            schema_contents = schema_cache[schema_shortname]
+        else:
+            schema_contents = jsonutil.read(ctx, schema_path)
+            schema_cache[schema_shortname] = schema_contents
+
+        # Check whether metadata matches schema and log any errors
+        error_list = meta.get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
+        match_schema = len(error_list) == 0
+        if not match_schema:
+            log.write(ctx, "Vault metadata schema report: metadata %s did not match schema %s: %s" %
+                           (metadata_path, schema_shortname, str([meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list])))
+
+        # Update results
+        results[coll_name] = {"schema": schema_shortname, "match_schema": match_schema}
+
+    return json.dumps(results)

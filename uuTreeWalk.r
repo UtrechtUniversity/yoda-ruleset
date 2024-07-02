@@ -7,8 +7,8 @@
 # \brief Walks through a collection tree and calls an arbitrary rule for each tree-item.
 #
 # \param[in] direction           can be "forward" or "reverse"
-#                                forward means process collection itself, then childs
-#                                reverse means process childs first
+#                                forward means process collection itself, then children
+#                                reverse means process children first
 #                                reverse is useful e.g. to delete collection trees
 # \param[in] topLevelCollection  pathname of the root of the tree, must be collection
 #                                NB: the root itself is also processed
