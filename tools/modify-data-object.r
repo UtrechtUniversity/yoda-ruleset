@@ -32,7 +32,7 @@ def data_file_exists(resc_name, data_path, callback):
 
 def count_replicas_on_path(data_id, repl_num, data_path, callback):
     # Count other replicas with same data path
-    replicas_list = []
+    replicas_in_use_list = []
     resc_loc = ""
 
     rescloc_iter = genquery.row_iterator(
@@ -53,13 +53,29 @@ def count_replicas_on_path(data_id, repl_num, data_path, callback):
 
     for row in replica_iter:
         if row[0] != data_id or row[1] != repl_num:
-            replicas_list.append(row[0])
+            replicas_in_use_list.append(row[0])
+
+    return replicas_in_use_list
+
+
+def get_replicas_list(data_id, callback):
+    # Get number of replicas of data object
+    replicas_list = []
+
+    replica_iter = genquery.row_iterator(
+    "DATA_REPL_NUM", 
+    "DATA_ID = '{}'".format(data_id),
+    genquery.AS_LIST,
+    callback)
+
+    for row in replica_iter:
+        replicas_list.append(row[0])
 
     return replicas_list
 
 
 def calculate_chksum(resc_name, data_path, callback):
-    #  Calculate checksum data file and compare it to the replica checksum.
+    # Calculate checksum data file and compare it to the replica checksum.
     try:
         chksum_output = callback.msi_file_checksum(data_path, resc_name, '')
         chksum = chksum_output['arguments'][2]
@@ -90,12 +106,15 @@ def replica_compatibility(data_id, repl_num, resc_name, data_path, data_file_siz
             data_file_chksum = calculate_chksum(resc_name, data_path, callback)
             if data_file_chksum == replica_chksum:
                 return True
+            else:
+                return False
         else:
             return True
     else:
         return False
 
 def get_logical_path(data_id, callback):
+
     path = ""
 
     logicalpath_iter = genquery.row_iterator(
@@ -109,7 +128,9 @@ def get_logical_path(data_id, callback):
 
     return path
 
+
 def get_actual_data_path(data_id, repl_num, callback):
+
     path = ""
 
     path_iter = genquery.row_iterator(
@@ -124,16 +145,18 @@ def get_actual_data_path(data_id, repl_num, callback):
     return path
         
 
-# Identify use case
+# Identify use case and modify data objects accordingly
 def preconditions_for_data_object(data, run_type, dry_run, callback):
 
     expected_is_compatible = False 
     actual_is_compatible = False
     expected_linked_use = False
     actual_linked_use = False
-    expected_replicas_list = []
     actual_replicas_list = []
-    
+    expected_replicas_in_use_list = []
+    actual_replicas_in_use_list = []
+
+
     actual_data_path = get_actual_data_path(data['data_id'], data['data_repl_num'], callback)
     logical_path = get_logical_path(data['data_id'], callback)
 
@@ -143,17 +166,18 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
         callback.writeLine("stdout", 'Row with data id: ' + data['data_id'] + ' is ignored.')
         return True, 0, status
 
-    # Data file exists or not
+
     expected_data_file_exists, expected_data_file_type, expected_data_file_size = data_file_exists(data['resc_name'], data['expected_data_path'], callback)
 
     actual_data_file_exists, actual_data_file_type, actual_data_file_size = data_file_exists(data['resc_name'], actual_data_path, callback)
-    
-    # Check compatibility
+
     if expected_data_file_exists:
         expected_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], data['expected_data_path'], expected_data_file_size, callback)
     
-    expected_replicas_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], data['expected_data_path'], callback)
-    if len(expected_replicas_list) == 0:
+    
+    expected_replicas_in_use_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], data['expected_data_path'], callback)
+
+    if len(expected_replicas_in_use_list) == 0:
         expected_linked_use = False
     else:
         expected_linked_use = True
@@ -161,18 +185,21 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
     if actual_data_file_exists:
         actual_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], actual_data_path, actual_data_file_size, callback)
     
-    actual_replicas_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], actual_data_path, callback)
-    if len(actual_replicas_list) == 0:
+    actual_replicas_in_use_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], actual_data_path, callback)
+
+    if len(actual_replicas_in_use_list) == 0:
         actual_linked_use = False
     else:
         actual_linked_use = True
 
+    actual_replicas_list = get_replicas_list(data['data_id'], callback)
+
     if run_type == 'repair':
         if expected_data_file_exists and not expected_linked_use and expected_is_compatible and not actual_data_file_exists:
-            callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC1")
+            callback.writeLine("stdout", "Use case 1 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Modifying data object on path: " + logical_path + " for use case 1.")
+                callback.writeLine("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 1.")
 
             status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run, callback)
             if status == '':
@@ -180,10 +207,10 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
             else:
                 return False, -1, status    
         elif expected_data_file_exists and not expected_linked_use and expected_is_compatible and actual_data_file_exists and actual_linked_use and not actual_is_compatible:
-            callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC2")
+            callback.writeLine("stdout", "Use case 2 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Modifying data object on path: " + logical_path + " for use case 2.")
+                callback.writeLine("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 2.")
 
             status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run, callback)
             if status == '':
@@ -195,17 +222,19 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
     
     elif run_type == 'clean':
         if not expected_is_compatible and not actual_is_compatible and actual_linked_use:
-            callback.writeLine("stdout", "Data ID: " + data['data_id'] + " - Testcase: UC3")
+            callback.writeLine("stdout", "Use case 3 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Unregistering replica on logical path: " + logical_path + " for use case 3.")
+                callback.writeLine("serverLog", "Unregistering replica with data id: "+ data['data_id'] + " on path: " + logical_path + " for use case 3.")
 
             if len(actual_replicas_list) == 1:
-                # Use scope = data_object for unregistering the replica
+                # Use scope = object for unregistering the replica
                 status = unregister_replica(data['data_repl_num'], logical_path, dry_run, callback, scope = 'object')
             elif len(actual_replicas_list) > 1: 
                 # Unregister the replica
                 status = unregister_replica(data['data_repl_num'], logical_path, dry_run, callback)
+            else:
+                status = 'There are no registered for data object with data id: ' + data['data_id'] + ' and path: ' + logical_path
 
             if status == '':
                 return True, 0, status
@@ -220,6 +249,7 @@ def modify_data_object(data_id, repl_num, data_path, dry_run, callback):
     # Modify the replica with correct data path
     if dry_run == 'False':
         try:
+            callback.writeLine("serverLog", "Subprocess - iadmin - logical_path: " + logical_path)
             status = subprocess.check_output(['iadmin', 'modrepl', 'data_id', data_id, 'replica_number', repl_num, 'DATA_PATH', data_path], stderr=subprocess.STDOUT)
         except Exception as e:
             status = e.output[e.output.find("ERROR:"):].rstrip()
@@ -237,11 +267,13 @@ def unregister_replica(repl_num, logical_path, dry_run, callback, scope = 'repli
     if dry_run == 'False':
         if scope == 'object':
             try:
+                callback.writeLine("serverLog", "Subprocess - iunreg - object scope - logical_path: " + logical_path)
                 status = subprocess.check_output(['iunreg', logical_path], stderr=subprocess.STDOUT)
             except Exception as e:
                 status =  e.output[e.output.find("ERROR:"):].rstrip()
         else:
             try:
+                callback.writeLine("serverLog", "Subprocess - iunreg - replica scope - logical_path: " + logical_path)
                 status = subprocess.check_output(['iunreg', '-n', repl_num, '-N', '0', logical_path], stderr=subprocess.STDOUT)
             except Exception as e:
                 status =  e.output[e.output.find("ERROR:"):].rstrip()
