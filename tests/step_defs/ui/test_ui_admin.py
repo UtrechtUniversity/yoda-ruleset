@@ -4,8 +4,6 @@
 __copyright__ = "Copyright (c) 2024, Utrecht University"
 __license__ = "GPLv3, see LICENSE"
 
-import time
-
 from pytest_bdd import (
     parsers,
     scenarios,
