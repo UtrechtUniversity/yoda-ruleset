@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Data Publication platform of Utrecht University" />
-    <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI>
+    <meta name="description" content="Data Publication platform of Utrecht University">
+    <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI">
     <meta name="DC.title" content="{{ title }}">
     {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}">
     {% endfor %}
@@ -93,7 +93,7 @@
                         </div>
                     {% endif%}
                 </div>
-                <hr />
+                <hr>
                 {%if no_active_embargo and data_access_restriction.startswith('Open') %}
                 <a class="btn btn-primary access-btn view-contents" target="_blank" href="{{ open_access_link }}">
                     View contents
@@ -587,7 +587,7 @@
                         {% endif %}
                     </div>
                 </div>
-                <br />
+                <br>
             </section>
             <section class="questions">
                 <h2>Questions?</h2>
