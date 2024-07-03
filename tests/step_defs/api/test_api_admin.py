@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Admin access check API feature tests."""
+"""Admin API feature tests."""
 
 __copyright__ = 'Copyright 2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
@@ -31,10 +31,10 @@ def api_response_data(api_response, expected_result):
     """
     Checks if the API response matches the expected boolean result.
     """
-    # Convert the expected result to a boolean
+    # Convert the expected result to a boolean.
     expected_bool = expected_result.lower() == 'true'
 
-    # Extract response data
+    # Extract response data.
     _, response_data = api_response
 
     assert response_data['data'] == expected_bool

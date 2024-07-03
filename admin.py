@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions for admin access check."""
+"""Functions for admin module."""
 
 __copyright__ = 'Copyright 2024, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
@@ -20,13 +20,10 @@ def api_admin_has_access(ctx):
 
     :returns: True if the user has the admin access, False otherwise.
     """
-
-    group_name = "priv-admin"
-
-    # if user has admin right
+    # Check if user is admin.
     is_admin = user.is_admin(ctx)
 
-    # if user is in the privilege group
-    in_priv_group = user.is_member_of(ctx, group_name)
+    # Check if user is in the priv-admin group.
+    in_priv_group = user.is_member_of(ctx, "priv-admin")
 
     return is_admin or in_priv_group
