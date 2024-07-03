@@ -78,7 +78,7 @@ def get_replicas_list(data_id, callback):
     :param data_id:  Data Object id
     :param callback: iRODS callback
 
-    :returns: List with dat object replicas
+    :returns: List with data object replicas
     """
     replicas_list = []
 
