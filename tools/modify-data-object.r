@@ -15,7 +15,14 @@ def errorcode(e):
 
 
 def data_file_exists(resc_name, data_path, callback):
-    """Verify that data file exists in given data path."""
+    """Verify that data file exists in given physical data path.
+
+    :param resc_name: Resource name
+    :param data_path: Physical data path
+    :param callback:  iRODS callback
+
+    :returns: Triple, boolean indicating physical data file exists, type and size
+    """
     try:
         output = callback.msi_stat_vault(resc_name, data_path, "", "")
         type, size = output['arguments'][2], output['arguments'][3]
@@ -30,8 +37,16 @@ def data_file_exists(resc_name, data_path, callback):
     return exists, type, size
 
 
-def count_replicas_on_path(data_id, repl_num, data_path, callback):
-    """Count other replicas with same data path."""
+def list_replicas_on_path(data_id, repl_num, data_path, callback):
+    """List other replicas with same data path.
+
+    :param data_id:   Data Object id
+    :param repl_num:  Data Object replica number
+    :param data_path: Physical data path
+    :param callback:  iRODS callback
+
+    :returns: List with other replicas with same data path
+    """
     replicas_in_use_list = []
     resc_loc = ""
 
@@ -58,7 +73,13 @@ def count_replicas_on_path(data_id, repl_num, data_path, callback):
 
 
 def get_replicas_list(data_id, callback):
-    """Get number of replicas of data object."""
+    """Get list of replicas of data object.
+
+    :param data_id:  Data Object id
+    :param callback: iRODS callback
+
+    :returns: List with dat object replicas
+    """
     replicas_list = []
 
     replica_iter = genquery.row_iterator(
@@ -74,7 +95,14 @@ def get_replicas_list(data_id, callback):
 
 
 def calculate_chksum(resc_name, data_path, callback):
-    """Calculate checksum data file and compare it to the replica checksum."""
+    """Calculate checksum of data file.
+
+    :param resc_name: Resource name
+    :param data_path: Physical data path
+    :param callback:  iRODS callback
+
+    :returns: SHA256 checksum
+    """
     try:
         chksum_output = callback.msi_file_checksum(data_path, resc_name, '')
         chksum = chksum_output['arguments'][2]
@@ -86,7 +114,17 @@ def calculate_chksum(resc_name, data_path, callback):
 
 
 def replica_compatibility(data_id, repl_num, resc_name, data_path, data_file_size, callback):
-    """The data file should pass compatibility check with the replica."""
+    """The data file should pass compatibility check with the replica.
+
+    :param data_id:        Data Object id
+    :param repl_num:       Data Object replica number
+    :param resc_name:      Resource name
+    :param data_path:      Physical data path
+    :param data_file_size: Size of physical data file
+    :param callback:       iRODS callback
+
+    :returns: Boolean indicating if data file is compatible with replica
+    """
     replica_chksum = ""
     replica_size = ""
 
@@ -114,6 +152,13 @@ def replica_compatibility(data_id, repl_num, resc_name, data_path, data_file_siz
 
 
 def get_logical_path(data_id, callback):
+    """Get logical path of data object by id.
+
+    :param data_id:  Data Object id
+    :param callback: iRODS callback
+
+    :returns: Logical path
+    """
     path = ""
 
     logicalpath_iter = genquery.row_iterator(
@@ -129,6 +174,14 @@ def get_logical_path(data_id, callback):
 
 
 def get_actual_data_path(data_id, repl_num, callback):
+    """Get physical path of data object by id and replica number.
+
+    :param data_id:  Data Object id
+    :param repl_num: Data Object replica number
+    :param callback: iRODS callback
+
+    :returns: Physical path
+    """
     path = ""
 
     path_iter = genquery.row_iterator(
@@ -168,7 +221,7 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
     if expected_data_file_exists:
         expected_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], data['expected_data_path'], expected_data_file_size, callback)
 
-    expected_replicas_in_use_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], data['expected_data_path'], callback)
+    expected_replicas_in_use_list = list_replicas_on_path(data['data_id'], data['data_repl_num'], data['expected_data_path'], callback)
     if len(expected_replicas_in_use_list) == 0:
         expected_linked_use = False
     else:
@@ -177,7 +230,7 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
     if actual_data_file_exists:
         actual_is_compatible = replica_compatibility(data['data_id'], data['data_repl_num'], data['resc_name'], actual_data_path, actual_data_file_size, callback)
 
-    actual_replicas_in_use_list = count_replicas_on_path(data['data_id'], data['data_repl_num'], actual_data_path, callback)
+    actual_replicas_in_use_list = list_replicas_on_path(data['data_id'], data['data_repl_num'], actual_data_path, callback)
     if len(actual_replicas_in_use_list) == 0:
         actual_linked_use = False
     else:
