@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import json
+import os
 import re
 import time
 import traceback
