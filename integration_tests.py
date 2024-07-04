@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import json
-import os
 import re
 import time
 import traceback
@@ -354,12 +353,34 @@ basic_integration_tests = [
     {"name":  "folder.determine_new_vault_target.invalid",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
      "check": lambda x: x == ""},
+    {"name": "groups.rule_group_expiration_date_validate.1",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.2",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate(".", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.3",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("abc", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.4",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2020-02-02", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.5",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-01-32", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.6",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
     {"name": "policies.check_anonymous_access_allowed.local",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    # Vault metadata schema report: only check return value type, not contents
+    {"name": "schema_transformation.batch_vault_metadata_schema_report",
+     "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
+     "check": lambda x: isinstance(json.loads(x['arguments'][0]), dict)},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},

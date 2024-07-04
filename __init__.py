@@ -24,6 +24,7 @@ __author__    =  ('Felix Croes'
 # Import all modules containing rules into the package namespace,
 # so that they become visible to iRODS.
 
+from admin                  import *
 from browse                 import *
 from folder                 import *
 from groups                 import *
