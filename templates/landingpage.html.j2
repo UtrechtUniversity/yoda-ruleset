@@ -11,7 +11,9 @@
     <meta name="DC.publisher" content="Utrecht University">
     <meta name="DC.date" content="{{ publication_date }}" scheme="DCTERMS.W3CDTF">
     <meta name="DC.type" content="{{ datatype }}">
-    <meta name="DC.identifier" content="{{ open_access_link }}">
+    {%if no_active_embargo and data_access_restriction.startswith('Open') %}
+        <link rel="item" href="{{ open_access_link }}">
+    {% endif %}
     <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
     <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet">
