@@ -14,6 +14,7 @@ import traceback
 import uuid
 
 import folder
+import schema
 from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
 
@@ -138,6 +139,34 @@ def _test_folder_set_get_last_run(ctx):
     found, last_run = folder.get_last_run_time(ctx, tmp_coll)
     collection.remove(ctx, tmp_coll)
     return result, found, last_run
+
+
+def _test_schema_active_schema_deposit_from_default(ctx):
+    avu.rm_from_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot")
+    avu.associate_to_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    return result
+
+
+def _test_schema_active_schema_research_from_default(ctx):
+    avu.rm_from_group(ctx, "research-core-2", "schema_id", "core-2")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2")
+    avu.associate_to_group(ctx, "research-core-2", "schema_id", "core-2")
+    return result
+
+
+def _test_schema_active_schema_vault_research_override(ctx):
+    avu.associate_to_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2")
+    avu.rm_from_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    return result
+
+
+def _test_schema_active_schema_vault_without_research(ctx):
+    ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
+    ctx.uuGroupRemove("vault-without-research", "", "")
+    return result
 
 
 def _test_folder_secure_func(ctx, func):
@@ -378,6 +407,30 @@ basic_integration_tests = [
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    {"name":  "schema.get_active_schema_path.deposit",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
+    {"name":  "schema.get_active_schema_path.deposit-from-default",
+     "test": lambda ctx: _test_schema_active_schema_deposit_from_default(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_active_schema_path.research",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/core-2/metadata.json"},
+    {"name":  "schema.get_active_schema_path.research-from-default",
+     "test": lambda ctx: _test_schema_active_schema_research_from_default(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-deposit",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/vault-pilot"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-research",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/core-2/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-research-override",
+     "test": lambda ctx: _test_schema_active_schema_vault_research_override(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/integration-test-schema-1/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-without-research",
+     "test": lambda ctx: _test_schema_active_schema_vault_without_research(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
     # Vault metadata schema report: only check return value type, not contents
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
