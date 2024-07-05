@@ -13,6 +13,7 @@ import time
 import traceback
 import uuid
 
+import data_access_token
 import folder
 from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
@@ -324,6 +325,9 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "data_access_token.get_all_tokens",
+     "test": lambda ctx: data_access_token.get_all_tokens(ctx),
+     "check": lambda x: isinstance(x, list)},
     {"name":  "folder.set_can_modify",
      "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
      "check": lambda x: x},
