@@ -5,6 +5,8 @@ on:
     branches:
     - development
     - release-1.9
+    - "**-atr"
+    # We can force an integration/API test run without opening a PR by pushing to a branch name that ends with "-atr"
   pull_request:
 
 jobs:
