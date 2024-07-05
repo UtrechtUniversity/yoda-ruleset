@@ -50,7 +50,6 @@ def get_schema_collection(ctx, rods_zone, group_name, default_schema):
         # If not, fall back to default schema collection.
         # /tempZone/yoda/schemas/default/metadata.json
         schema_path = '/' + rods_zone + '/yoda/schemas/' + category
-        schema_coll = default_schema
 
         iter = genquery.row_iterator(
             "COLL_NAME",
@@ -59,9 +58,9 @@ def get_schema_collection(ctx, rods_zone, group_name, default_schema):
         )
 
         for _row in iter:
-            schema_coll = category  # As collection is present, the schema_collection can be assigned the category.
+            return category
 
-    return schema_coll
+    return default_schema
 
 
 def main(rule_args, callback, rei):
