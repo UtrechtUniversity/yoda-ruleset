@@ -74,10 +74,10 @@
                                             {% for version in all_versions %}
                                                 <tr>
                                                     <td>
-                                                        <a href="https://doi.org/{{version[1]}}" property="dc:identifier" resource="#{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                        <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
                                                     </td>
                                                     <td>
-                                                        <small title="{{version[2]}}" property="dc:title" about="#{{version[1]}}">{{version[0]}}</small>
+                                                        <small title="{{version[2]}}">{{version[0]}}</small>
                                                     </td>
                                                 </tr>
                                             {% endfor %}
@@ -347,7 +347,7 @@
                                 <label>Related resource</label>
                             </div>
                             <div class="col-sm-10">
-                                <span property="dc:title">{{ pack.Title }}</span>
+                                <span property="dc:references" content="{{ pack.Title }}">{{ pack.Title }}</span>
                             </div>
                         </div>
 
@@ -356,7 +356,7 @@
                                 <label class="indented">Type of relation</label>
                             </div>
                             <div class="col-sm-10">
-                                <span property="dc:relation">{{ pack.Relation_Type }}</span>
+                                <span>{{ pack.Relation_Type }}</span>
                             </div>
                         </div>
 
@@ -367,9 +367,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span property="dc:identifier">
-                                <a href="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
-                                  {{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
-                                </a>
+                                    <a href="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank" property="dc:references" content="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}">
+                                        {{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
+                                    </a>
                                 </span>
                             </div>
                         </div>
