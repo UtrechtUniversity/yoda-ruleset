@@ -30,7 +30,7 @@ def persistent_identifier_to_uri(identifier_scheme, identifier):
     # Create a URI from the identifier scheme and identifier.
     uri = ""
     if identifier_scheme == 'DOI':
-        uri = "https://handle.test.datacite.org/{}".format(identifier)
+        uri = "https://doi.org/{}".format(identifier)
     elif identifier_scheme == 'ORCID':
         uri = "https://orcid.org/{}".format(identifier)
     elif identifier_scheme == 'Handle':
