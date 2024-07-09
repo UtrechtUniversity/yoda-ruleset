@@ -2,10 +2,10 @@ setuptools==44.0.0
 MarkupSafe==1.1.1
 enum34==1.1.10
 Jinja2==2.11.3
-requests==2.25.1
+requests==2.32.2
 pyrsistent==0.15.7
 configparser==4.0.2
-zipp==1.2.0
+zipp==3.19.1
 contextlib2==0.6.0.post1
 importlib-metadata==2.1.1
 jsonschema==3.2.0
@@ -16,7 +16,7 @@ irods-avu-json==2.2.0
 python2-secrets==1.0.5
 python-dateutil==2.7.0
 python-magic==0.4.27
-certifi==2021.10.8
+certifi==2024.7.4
 pysqlcipher3==1.0.4
 execnet==1.9.0
 deepdiff==3.3.0
