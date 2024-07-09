@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import hashlib
 import random
 import re
 import time
@@ -127,16 +126,8 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             from_path = info[0]
             to_path = info[1]
 
-            # Backwards compatibility with replication metadata created in v1.8 or earlier.
-            backwards_compatibility = False
-
             if len(info) == 3:
                 balance_id = int(info[2])
-            elif len(info) == 2:
-                backwards_compatibility = True
-                # Determine a balance_id for this dataobject based on its path.
-                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
-                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
             else:
                 # Not replicable.
                 log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
@@ -201,10 +192,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             # rods should have been given own access via policy to allow AVU changes
             avu_deleted = False
             try:
-                if backwards_compatibility:
-                    avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
-                else:
-                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 avu_deleted = True
             except Exception:
                 avu_deleted = False
@@ -215,10 +203,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                     # The object's ACLs may have changed.
                     # Force the ACL and try one more time.
                     msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    if backwards_compatibility:
-                        avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
-                    else:
-                        avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 except Exception:
                     # error => report it but still continue
                     log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))

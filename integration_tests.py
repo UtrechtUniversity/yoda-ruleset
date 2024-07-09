@@ -7,12 +7,15 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import json
+import os
 import re
 import time
 import traceback
 import uuid
 
+import data_access_token
 import folder
+import schema
 from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
 
 
@@ -139,6 +142,34 @@ def _test_folder_set_get_last_run(ctx):
     return result, found, last_run
 
 
+def _test_schema_active_schema_deposit_from_default(ctx):
+    avu.rm_from_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot")
+    avu.associate_to_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    return result
+
+
+def _test_schema_active_schema_research_from_default(ctx):
+    avu.rm_from_group(ctx, "research-core-2", "schema_id", "core-2")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2")
+    avu.associate_to_group(ctx, "research-core-2", "schema_id", "core-2")
+    return result
+
+
+def _test_schema_active_schema_vault_research_override(ctx):
+    avu.associate_to_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2")
+    avu.rm_from_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    return result
+
+
+def _test_schema_active_schema_vault_without_research(ctx):
+    ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
+    ctx.uuGroupRemove("vault-without-research", "", "")
+    return result
+
+
 def _test_folder_secure_func(ctx, func):
     """Create tmp collection, apply func to it and get result, and clean up.
        Used for testing functions that modify avu/acls related to folder secure.
@@ -240,6 +271,36 @@ basic_integration_tests = [
     {"name": "msvc.msi_vault_stat.outsidevault2",
      "test": lambda ctx: _call_msvc_stat_vault_check_exc(ctx, "dev001_1", "/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.uri"),
      "check": lambda x: x},
+    {"name": "msvc.msi_file_checksum.file",
+     "test": lambda ctx: _call_file_checksum_either_resc(ctx, "/var/lib/irods/VaultX/yoda/licenses/GNU General Public License v3.0.txt"),
+     "check": lambda x: x == "sha2:OXLcl0T2SZ8Pmy2/dmlvKuetivmyPd5m1q+Gyd+zaYY="},
+    {"name": "msvc.msi_file_checksum.file_not_exist",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/licenses/doesnotexist.txt', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_file_checksum.resc_not_exist",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.txt', 'non-existent-resource'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_file_checksum.outside_vault",
+     "test": lambda ctx: _call_file_checksum_check_exc(ctx, '/etc/passwd', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.dir",
+     "test": lambda ctx: _call_dir_list(ctx, "/var/lib/irods/Vault1_1/yoda", "dev001_1"),
+     "check": lambda x: len(x) == len([entry for entry in os.listdir("/var/lib/irods/Vault1_1/yoda") if os.path.isdir("/var/lib/irods/Vault1_1/yoda/" + entry)])},
+    {"name": "msvc.msi_dir_list.dir_not_exist",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/doesnotexist', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.file_resc_1",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda/licenses/GNU General Public License v3.0.txt', 'dev001_1'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.file_resc_2",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/licenses/GNU General Public License v3.0.txt', 'dev001_2'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.resc_not_exist",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_1/yoda', 'non-existent-resource'),
+     "check": lambda x: x},
+    {"name": "msvc.msi_dir_list.outside_vault",
+     "test": lambda ctx: _call_dir_list_check_exc(ctx, '/etc/passwd', 'dev001_2'),
+     "check": lambda x: x},
     {"name": "msvc.rmw_avu_collection_literal",
      "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("foo", "bar", "baz")),
      "check": lambda x: (("aap", "noot", "mies") in x
@@ -293,6 +354,9 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "data_access_token.get_all_tokens",
+     "test": lambda ctx: data_access_token.get_all_tokens(ctx),
+     "check": lambda x: isinstance(x, list)},
     {"name":  "folder.set_can_modify",
      "test": lambda ctx: _test_folder_secure_func(ctx, folder.set_can_modify),
      "check": lambda x: x},
@@ -347,6 +411,30 @@ basic_integration_tests = [
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    {"name":  "schema.get_active_schema_path.deposit",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
+    {"name":  "schema.get_active_schema_path.deposit-from-default",
+     "test": lambda ctx: _test_schema_active_schema_deposit_from_default(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_active_schema_path.research",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/core-2/metadata.json"},
+    {"name":  "schema.get_active_schema_path.research-from-default",
+     "test": lambda ctx: _test_schema_active_schema_research_from_default(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-deposit",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/vault-pilot"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-research",
+     "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2"),
+     "check": lambda x: x == "/tempZone/yoda/schemas/core-2/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-research-override",
+     "test": lambda ctx: _test_schema_active_schema_vault_research_override(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/integration-test-schema-1/metadata.json"},
+    {"name":  "schema.get_active_schema_path.vault-without-research",
+     "test": lambda ctx: _test_schema_active_schema_vault_without_research(ctx),
+     "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
     # Vault metadata schema report: only check return value type, not contents
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
@@ -473,3 +561,45 @@ def rule_run_integration_tests(ctx):
         return_value += name + " " + verdict + "\n"
 
     return return_value
+
+
+def _call_file_checksum_either_resc(ctx, filename):
+    """Returns result of file checksum microservice for either of the
+       two main UFS resources (dev001_1, dev001_2). If one returns an
+       exception, we try the other.
+
+       :param ctx: combined type of a callback and rei struct
+       :param filename: name of file to checksum
+
+       :returns: output of file checksum microservice
+    """
+    try:
+        vault_filename = filename.replace("VaultX", "Vault1_1")
+        ret = msi.file_checksum(ctx, vault_filename, 'dev001_1', '')
+    except Exception:
+        vault_filename = filename.replace("VaultX", "Vault1_2")
+        ret = msi.file_checksum(ctx, vault_filename, 'dev001_2', '')
+    return ret['arguments'][2]
+
+
+def _call_file_checksum_check_exc(ctx, filename, resc_name):
+    """Verifies whether a call to the file checksum microservice raises an exception"""
+    try:
+        msi.file_checksum(ctx, filename, resc_name, '')
+        return False
+    except Exception:
+        return True
+
+
+def _call_dir_list(ctx, dirname, resc_name):
+    ret = msi.dir_list(ctx, dirname, resc_name, "")
+    print(ret['arguments'][2])
+    return json.loads(ret['arguments'][2])
+
+
+def _call_dir_list_check_exc(ctx, dirname, resc_name):
+    try:
+        msi.dir_list(ctx, dirname, resc_name, "")
+        return False
+    except Exception:
+        return True

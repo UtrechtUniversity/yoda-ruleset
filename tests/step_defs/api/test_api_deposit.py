@@ -143,12 +143,13 @@ def data_access_restriction_restricted(user, deposit_name):
     )
 
 
-@given(parsers.parse("the Yoda browse collections API is queried with {collection}"), target_fixture="api_response")
-def api_browse_collections(user, collection):
+# Workaround for https://github.com/pytest-dev/pytest-bdd/issues/689
+@given(parsers.parse("as viewer the Yoda browse collections API is queried with {collection}"), target_fixture="api_response")
+def api_browse_folder(collection):
     return api_request(
-        user,
-        "browse_collections",
-        {"coll": collection, "sort_order": "desc"}
+        "viewer",
+        "browse_folder",
+        {"coll": collection}
     )
 
 

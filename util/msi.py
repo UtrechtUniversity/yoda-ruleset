@@ -112,6 +112,8 @@ get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Ic
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
 stat_vault,       MSIStatVaultError   = make("_stat_vault",    'Could not stat file system object in vault.')
+file_checksum,    FileChecksumError   = make("_file_checksum", 'Could not calculate non-persistent checksum of vault file.')
+dir_list,         DirListError        = make("_dir_list",      'Could not list vault directory contents.')
 
 archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
 archive_index,    ArchiveIndexError   = make('ArchiveIndex',   'Could not index archive')
