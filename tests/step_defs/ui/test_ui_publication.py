@@ -263,7 +263,7 @@ def ui_landingpage_contains_url_of_the_downloaded_content(browser):
 
 
 @then("landingpage contains RDFa terms")
-def ui_landingpage_contains_url_of_the_downloaded_content(browser):
+def ui_landingpage_contains_rdfa_terms(browser):
     time.sleep(1)
     if browser.is_element_present_by_xpath('//body[@vocab="http://purl.org/dc/terms/"]'):
         return True
