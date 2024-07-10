@@ -68,6 +68,10 @@ def main(rule_args, callback, rei):
     userList = []
 
     default_schema = global_vars["*defaultSchema"][1:-1]
+
+    if default_schema == "":
+        callback.writeLine("stdout", "Error: this rule needs a default schema parameter value to run.")
+        return
     
     callback.writeLine("stdout", "update_schema_id script started")
 
