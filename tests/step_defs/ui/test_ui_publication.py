@@ -243,7 +243,6 @@ def ui_data_package_approve(browser):
 @then(parsers.parse('the data package status is "{status}"'))
 def ui_data_package_status(browser, status):
     for _i in range(30):
-        time.sleep(1)
         if browser.is_text_present(status, wait_time=3):
             return True
         browser.reload()
