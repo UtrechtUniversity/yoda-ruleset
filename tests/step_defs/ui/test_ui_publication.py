@@ -243,8 +243,30 @@ def ui_data_package_approve(browser):
 @then(parsers.parse('the data package status is "{status}"'))
 def ui_data_package_status(browser, status):
     for _i in range(30):
+        time.sleep(1)
         if browser.is_text_present(status, wait_time=3):
             return True
         browser.reload()
 
+    raise AssertionError()
+
+
+@then("landingpage contains URL of the downloadable content")
+def ui_landingpage_contains_url_of_the_downloaded_content(browser):
+    time.sleep(1)
+    links = browser.find_by_tag('link')
+    
+    for link in links:
+        if link['rel'] == 'item':
+            return True
+        
+    raise AssertionError()
+
+
+@then("landingpage contains RDFa terms")
+def ui_landingpage_contains_url_of_the_downloaded_content(browser):
+    time.sleep(1)
+    if browser.is_element_present_by_xpath('//body[@vocab="http://purl.org/dc/terms/"]'):
+        return True
+        
     raise AssertionError()

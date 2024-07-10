@@ -196,3 +196,29 @@ Feature: Publication UI
         Examples:
             | vault          |
             | vault-teclab-0 |
+
+
+    Scenario Outline: Landingpage contains URL of the downloadable content
+        Given user researcher is logged in
+        And module "vault" is shown
+        When user browses to data package in <vault>
+        And user downloads file yoda-metadata.json
+        And user opens landingpage through system metadata
+        Then landingpage contains URL of the downloadable content
+
+        Examples:
+            | vault          |
+            | vault-teclab-0 |
+
+
+    Scenario Outline: Landingpage contains RDFa terms
+        Given user researcher is logged in
+        And module "vault" is shown
+        When user browses to data package in <vault>
+        And user downloads file yoda-metadata.json
+        And user opens landingpage through system metadata
+        Then landingpage contains RDFa terms
+
+        Examples:
+            | vault          |
+            | vault-teclab-0 |
