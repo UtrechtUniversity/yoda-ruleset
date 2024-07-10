@@ -12,7 +12,6 @@ from pytest_bdd import (
     when,
 )
 
-import time  #TODO: Remove it later
 from conftest import portal_url
 
 scenarios("../../features/ui/ui_admin.feature")
@@ -33,7 +32,6 @@ def ui_admin_home_access(browser):
 
 @when("the user navigates to the admin page")
 def ui_admin_access(browser):
-    time.sleep(10)  #TODO: Remove it
     url = "{}/admin".format(portal_url)
     browser.visit(url)
 
@@ -50,7 +48,7 @@ def ui_admin_control_importance(browser, action):
     elif action == "unchecks":
         browser.uncheck("importance")
     else:
-        raise ValueError(f"Unsupported action: {action}.")
+        raise ValueError("Unsupported action.")
 
 
 @when(parsers.parse("the user click button {button}"))
@@ -101,12 +99,5 @@ def ui_admin_remove_banner(browser):
 @then(parsers.parse("the banner background color should be {color}"))
 def ui_admin_display_banner_color(browser, color):
     element = browser.find_by_css('div.non-production[role="alert"]').first
-    print("elemetn:", element)
-    class_attribute = element['class']
-    print("class_attribute:", class_attribute)
-
-    is_color_present = color in class_attribute.split()
-    print("is_color_present:", is_color_present)
-
-    # Assert or print out the result
+    is_color_present = color in element['class'].split()
     assert is_color_present
