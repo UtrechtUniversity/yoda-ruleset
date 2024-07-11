@@ -150,4 +150,3 @@ def api_response_data_sorted(api_response, sort_on, sort_order):
         print(sizes)
         assert sizes == sorted(sizes, reverse=True if sort_order=='desc' else False)
     assert AssertionError()
-    
