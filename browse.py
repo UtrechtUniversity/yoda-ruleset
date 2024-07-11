@@ -339,6 +339,8 @@ def api_load_text_obj(ctx, file_path='/'):
         file_type = magic.from_buffer(text_string)
         if 'text' in file_type:
             return text_string
+        elif 'JSON' in file_type and 'json' in config.text_file_extensions:
+            return text_string
         else:
             return api.Error('not_valid', 'The given data object is not a text file')
     except error.UUFileSizeError:

@@ -7,8 +7,9 @@ Feature: Fileviewer API
         Then the response status code is "200"
 
         Examples:
-            | file                                               |
-            | /tempZone/home/research-initial/testdata/lorem.txt |
+            | file                                                    |
+            | /tempZone/home/research-initial/testdata/lorem.txt      |
+            | /tempZone/home/research-initial/testdata/creatures.json |
   
 
     Scenario Outline: Text file view errors
