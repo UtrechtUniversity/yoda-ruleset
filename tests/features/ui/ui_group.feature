@@ -5,7 +5,7 @@ Feature: Group UI
         Given user groupmanager is logged in
         And module "group_manager" is shown
         When user selects tree view
-        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects group <group> in subcategory <subcategory> and category <category>
         And user adds <member_add> to group
         Then test if member <member_add> is added to the group
 
@@ -20,7 +20,7 @@ Feature: Group UI
         And module "group_manager" is shown
         When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
-        And user selects two members <member1> and <member2>
+        And user selects members <member1> and <member2>
         And user changes roles to <new_role>
         Then role change is successful
 
@@ -36,7 +36,7 @@ Feature: Group UI
         And module "group_manager" is shown
         When user selects tree view
         When user selects group <group> in subcategory <subcategory> and category <category>
-        And user selects two members <member1> and <member2>
+        And user selects members <member1> and <member2>
         And user removes selected members
         And remove members from group is confirmed
         Then members successfully removed
@@ -44,6 +44,42 @@ Feature: Group UI
         Examples:
             | category        | subcategory | group            | member1         | member2         |
             | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test |
+
+
+    Scenario Outline: Group members add with keyboard
+        # Once with a little clicking, once with only keyboard
+        Given user groupmanager is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        And user selects group <group> in subcategory <subcategory> and category <category>
+        And user clicks on add member text box
+        And user fills add member <member_add1>
+        And user selects highlighted option
+        And user presses enter
+        And user fills add member <member_add2>
+        And user presses enter
+        And user presses enter
+        Then test if member <member_add1> is added to the group
+        And test if member <member_add2> is added to the group
+
+        Examples:
+            | category        | subcategory | group            | member_add1     | member_add2     |
+            | test-automation | initial     | research-initial | user3@yoda.test | user4@yoda.test |
+
+
+    Scenario Outline: Group member remove that were added with keyboard
+        Given user groupmanager is logged in
+        And module "group_manager" is shown
+        When user selects tree view
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects members <member1> and <member2>
+        And user removes selected members
+        And remove members from group is confirmed
+        Then members successfully removed
+
+        Examples:
+            | category        | subcategory | group            | member1         | member2         |
+            | test-automation | initial     | research-initial | user3@yoda.test | user4@yoda.test |
 
 
     Scenario Outline: Group member search
