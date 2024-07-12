@@ -63,6 +63,10 @@ def main(rule_args, callback, rei):
                     json_file = metadata_file
                     break
 
+            if json_file is None:
+                callback.writeLine("stdout", "Error: could not find metadata file for {} (schema {})".format(coll, schema))
+                continue
+
             wrote_package_line = False
 
             md = get_metadata_as_dict(callback, coll + '/' + json_file)
