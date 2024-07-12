@@ -112,7 +112,10 @@ get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Ic
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
 stat_vault,       MSIStatVaultError   = make("_stat_vault",    'Could not stat file system object in vault.')
+
+# The file checksum microservice should not be invoked directly. This microservice should be invoked via wrap_file_checksum.r wrapper.
 file_checksum,    FileChecksumError   = make("_file_checksum", 'Could not calculate non-persistent checksum of vault file.')
+
 dir_list,         DirListError        = make("_dir_list",      'Could not list vault directory contents.')
 
 archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
