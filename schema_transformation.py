@@ -180,6 +180,13 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
         coll_name = row[1]
         path_parts = coll_name.split('/')
 
+        # Only process collections that are directly beneath the apex
+        # vault collection, e.g. /zoneName/home/vault-foo/data-package[123],
+        # since metadata in the original part of the data package should not
+        # be processed.
+        if not re.match(r"^\/[^\/]+\/home\/[^\/]+\/[^\/]+$", coll_name):
+            continue
+
         try:
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
