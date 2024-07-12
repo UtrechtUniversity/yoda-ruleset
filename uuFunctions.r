@@ -108,7 +108,7 @@ wrap_msi_file_checksum(*file, *resc, *sum) {
         writeLine("serverLog","Could not find resource location for *resc when invoking file checksum microservice. Resource probably does not exist.");
     } else {
         remote(*host, "null") {
-            *result = errorcode(msi.file_checksum(*file, *resc, *sum));
+            *result = errorcode(msi_file_checksum(*file, *resc, *sum));
         }
     }
     *result;
