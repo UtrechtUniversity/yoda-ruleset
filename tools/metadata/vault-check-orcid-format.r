@@ -53,10 +53,12 @@ def main(rule_args, callback, rei):
             genquery.AS_TUPLE,
             callback)
 
+        metadata_files_list = [ row for row in metadata_files]
+
         for coll in data_packages:
             json_file = None
 
-            for (coll_, metadata_file) in metadata_files:
+            for (coll_, metadata_file) in metadata_files_list:
                 if coll == coll_:
                     json_file = metadata_file
                     break
