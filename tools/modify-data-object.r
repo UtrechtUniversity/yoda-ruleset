@@ -104,7 +104,7 @@ def calculate_chksum(resc_name, data_path, callback):
     :returns: SHA256 checksum
     """
     try:
-        chksum_output = callback.msi_file_checksum(data_path, resc_name, '')
+        chksum_output = wrap_msi_file_checksum(data_path, resc_name, '')
         chksum = chksum_output['arguments'][2]
     except RuntimeError as e:
         callback.writeLine("stdout", "msi_file_checksum failed on path '{}' with error - '{}'".format(data_path, errorcode(e)))
