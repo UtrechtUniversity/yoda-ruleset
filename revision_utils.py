@@ -82,7 +82,7 @@ def get_revision_store_path(zone, trailing_slash=False):
         return os.path.join("/" + zone, constants.UUREVISIONCOLLECTION.lstrip(os.path.sep))
 
 
-def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_time_bound, verbose):
+def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_time_bound, original_exists, verbose):
     """Get revision data objects for a particular versioned data object that should be deleted, as per
        a given revision strategy.
 
@@ -91,10 +91,19 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
     :param revisions:                List of revisions for a particular data object. Each revision is represented by a 3-tuple
                                      (revision ID, modification time in epoch time, original path)
     :param initial_upper_time_bound: Initial upper time bound for first bucket
+    :param original_exists:          Boolean value that indicates whether the original versioned data object still exists
     :param verbose:                  Whether to print additional information for troubleshooting (boolean)
 
     :returns: List of candidates for deletion based on the specified revision strategy
     """
+
+    if not original_exists:
+        if verbose:
+            for revision in revisions:
+                log.write(ctx, 'Scheduling revision <{}> for removal. Original no longer exists.'.format(
+                          revision[2]))
+        return [revision[0] for revision in revisions]
+
     buckets = revision_strategy.get_buckets()
     deletion_candidates = []
 
@@ -173,9 +182,9 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
     return deletion_candidates
 
 
-def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verbose):
+def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, original_exists_dict, verbose):
     """Filters out revisioned data objects from a list if we can easily determine that they don't meet criteria for being removed,
-       for example if the number of revisions is at most one, and the minimum bucket size is at least one.
+       for example if the number of revisions of an existing versioned data object is at most one.
 
        This prefilter is performed in the scan phase. A full check of the remaining versioned data objects will be performed in the
        processing phase.
@@ -190,6 +199,8 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
        :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
                                       https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                                       for an explanation.
+       :param original_exists_dict:   Dictionary where keys are paths of versioned data objects. Values are booleans that indicate whether
+                                      the original data object still exists
        :param verbose:                Whether to print verbose information for troubleshooting (boolean)
 
        :returns:                      List of versioned data objects, after prefiltered versioned data objects / revisions have been
@@ -198,10 +209,27 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
                                       path)
        """
     minimum_bucket_size = get_revision_strategy(revision_strategy_name).get_minimum_bucket_size()
+    results = []
+    for object in revisions_list:
+        if len(object) > 0:
+            if original_exists_dict[object[0][2]]:
+                # If the versioned data object still exists, we can
+                # remove it in the prefilter stage if it has only a single
+                # revision, assuming that the size of the smallest bucket is
+                # at least 1.
+                if len(object) > min(minimum_bucket_size, 1):
+                    results.append(object)
+            else:
+                # Revisions of versioned data objects that do not exist
+                # anymore should never be removed in the prefilter stage,
+                # since revisions should always be removed if their versioned
+                # data object no longer exists.
+                results.append(object)
+
     if verbose:
-        log.write(ctx, "Removing following revisioned data objects in prefiltering for cleanup: "
-                  + str([object for object in revisions_list if len(object) <= minimum_bucket_size]))
-    return [object for object in revisions_list if len(object) > min(minimum_bucket_size, 1)]
+        log.write(ctx, "Remaining revisions for cleanup after prefiltering: " + str(results))
+
+    return results
 
 
 def get_resc(row):
