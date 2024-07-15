@@ -320,7 +320,7 @@ def unregister_replica(repl_num, logical_path, dry_run, callback, scope='replica
         else:
             try:
                 callback.writeLine("serverLog", "Subprocess - iunreg - replica scope - logical_path: " + logical_path)
-                status = subprocess.check_output(['iunreg', '-n', repl_num, '-N', '0', logical_path], stderr=subprocess.STDOUT)
+                status = subprocess.check_output(['iunreg', '-n', repl_num, '-N', '1', logical_path], stderr=subprocess.STDOUT)
             except Exception as e:
                 status = e.output[e.output.find("ERROR:"):].rstrip()
         status = status.strip()
