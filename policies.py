@@ -625,7 +625,7 @@ def rule_check_max_connections_exceeded(ctx):
 
     :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'
     """
-    if user.is_admin(ctx):
+    if user.is_admin(ctx) or user.name(ctx) == 'anonymous':
         return "false"
 
     connections = user.number_of_connections(ctx)

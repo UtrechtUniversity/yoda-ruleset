@@ -112,7 +112,8 @@ def number_of_connections(ctx):
     connections = 0
     try:
         ips = subprocess.check_output(["ips", "-a"])
-        connections = ips.count(session_vars.get_map(ctx.rei)['client_user'])
+        username = session_vars.get_map(ctx.rei)['client_user']['user_name']
+        connections = ips.count(username)
     except Exception:
         return 0
 
