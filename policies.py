@@ -633,7 +633,7 @@ def rule_check_max_connections_exceeded(ctx):
         return "false"
     else:
         connections = user.number_of_connections(ctx)
-        return "false" if connections < config.user_max_connections_number else "true"
+        return "false" if connections <= config.user_max_connections_number else "true"
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
