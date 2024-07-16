@@ -143,3 +143,21 @@ Feature: Resources API
             | user           |
             | technicaladmin |
             | datamanager    |
+
+
+    Scenario Outline: Get group data sorted
+        Given user <user> is authenticated
+        And the Yoda resources browse group data API is queried using sort by <sort_on> in <sort_order> order
+        Then the response status code is "200"
+        And group data are sorted by <sort_on> in <sort_order> order
+
+        Examples:
+            | user        | sort_on | sort_order | 
+            | researcher  | name    | asc        |
+            | researcher  | name    | desc       |
+            | researcher  | size    | asc        |
+            | researcher  | size    | desc       |
+            | datamanager | name    | asc        |
+            | datamanager | name    | desc       |
+            | datamanager | size    | asc        |
+            | datamanager | size    | desc       |

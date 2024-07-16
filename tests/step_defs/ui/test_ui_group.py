@@ -15,6 +15,7 @@ from pytest_bdd import (
     then,
     when,
 )
+from selenium.webdriver.common.keys import Keys
 
 from conftest import api_request, roles
 
@@ -181,10 +182,41 @@ def ui_group_user_add(browser, member_add):
     browser.find_by_css('#f-user-create-submit').click()
 
 
-@when(parsers.parse("user selects two members {member1} and {member2}"))
-def ui_group_select_multiple_users(browser, member1, member2):
-    browser.find_by_id('user-list').links.find_by_partial_text(member1).click()
-    browser.find_by_id('user-list').links.find_by_partial_text(member2).click()
+@when(parsers.parse("user clicks on add member text box"))
+def ui_group_user_clicks_add_member(browser):
+    time.sleep(3)
+    browser.find_by_css('#f-user-create-name').find_by_xpath('..').find_by_css('span .select2-selection').click()
+
+
+@when(parsers.parse("user fills add member {member_add}"))
+def ui_group_user_fills_member(browser, member_add):
+    time.sleep(3)
+    browser.find_by_css('.select2-search__field').fill(member_add)
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+
+@when(parsers.parse("user selects highlighted option"))
+def ui_group_user_selects_highlighted(browser):
+    time.sleep(1)
+    browser.find_by_css('.select2-results__option--highlighted').click()
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+
+@when(parsers.parse("user presses enter"))
+def ui_group_user_enter(browser):
+    time.sleep(1)
+    active_web_el = browser.switch_to.active_element
+    active_web_el.send_keys(Keys.ENTER)
+
+
+def ui_group_select_user(browser, member):
+    browser.find_by_id('user-list').links.find_by_partial_text(member).click()
+
+
+@when(parsers.parse("user selects members {member1} and {member2}"))
+def ui_group_select_two_users(browser, member1, member2):
+    for mem in (member1, member2):
+        ui_group_select_user(browser, mem)
 
 
 @when(parsers.parse("user changes roles to {new_role}"))
@@ -204,6 +236,7 @@ def ui_group_remove_users_from_group(browser):
 
 @when('remove members from group is confirmed')
 def ui_group_remove_members_confirm(browser):
+    time.sleep(1)
     browser.find_by_id('f-user-delete').click()
 
 

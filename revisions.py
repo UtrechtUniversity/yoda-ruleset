@@ -840,7 +840,8 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
         log.write(ctx, "Scanning revisions: " + str(revisions_list))
 
     revision_data = revision_cleanup_scan_revision_objects(ctx, revisions_list)
-    prefiltered_revision_data = revision_cleanup_prefilter(ctx, revision_data, revision_strategy_name, verbose)
+    original_exists_dict = get_original_exists_dict(ctx, revision_data)
+    prefiltered_revision_data = revision_cleanup_prefilter(ctx, revision_data, revision_strategy_name, original_exists_dict, verbose)
     output_data_size = len(prefiltered_revision_data)
     if output_data_size > 0:
         if verbose:
@@ -852,6 +853,59 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
 
     log.write(ctx, 'Revision cleanup scan job finished.')
     return 'Revision store cleanup scan job completed'
+
+
+def get_original_exists_dict(ctx, revision_data):
+    """Returns a dictionary that indicates which original data objects of revision data still exist
+
+     :param ctx:                    Combined type of a callback and rei struct
+     :param revision_data:          List of lists of revision tuples in (data_id, timestamp, revision_path) format
+
+     :returns: dictionary, in which the keys are revision path. The values are booleans, and indicate whether
+               the versioned data object of the revision still exists. If the revision data object does not
+               have AVUs that refer to the versioned data object, assume it still exists.
+    """
+    result = dict()
+    for data_object_data in revision_data:
+        for (data_id, timestamp, revision_path) in data_object_data:
+
+            try:
+                result[revision_path] = versioned_data_object_exists(ctx, revision_path)
+            except KeyError:
+                # If we can't determine the original path, we assume the original data object
+                # still exists, so that it is not automatically cleaned up by the revision cleanup job.
+                # An error is logged by versioned_data_object_exists
+                result[original_path] = True
+
+    return result
+
+
+def versioned_data_object_exists(ctx, revision_path):
+    """Checks whether the version data object of a revision still exists
+
+     :param ctx:                    Combined type of a callback and rei struct
+     :param revision_path:          Logical path of revision data object
+
+     :returns: boolean value that indicates whether the versioned data object still
+               exists.
+
+     :raises KeyError:              If revision data object does not have revision AVUs
+                                    that point to versioned data object.
+    """
+
+    revision_avus = avu.of_data(ctx, revision_path)
+    avu_dict = {a: v for (a, v, u) in revision_avus}
+
+    try:
+        original_path = os.path.join(avu_dict["org_original_coll_name"],
+                                     avu_dict["org_original_data_name"])
+        return data_object.exists(ctx, original_path)
+    except KeyError:
+        # If we can't determine the original path, we assume the original data object
+        # still exists, so that it is not automatically cleaned up by the revision cleanup job.
+        log.write(ctx, "Error: could not find original data object for revision " + revision_path
+                       + " because revision does not have expected revision AVUs.")
+        raise
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[3])
@@ -896,7 +950,8 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
         if verbose:
             log.write(ctx, 'Processing revisions {} ...'.format(str(revisions)))
         # Process the original path conform the bucket settings
-        candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, verbose)
+        original_exists = versioned_data_object_exists(ctx, revisions[0][2]) if len(revisions) > 0 else False
+        candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, original_exists, verbose)
         num_candidates += len(candidates)
 
         # Create lookup table for revision paths if needed

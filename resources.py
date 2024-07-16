@@ -72,13 +72,10 @@ def api_resource_browse_group_data(ctx,
         group_list.append([groupname, data_size])
 
     # Sort the list as requested by user
-    sort_key = 0
-    if sort_on == 'size':
-        sort_key = 1
     sort_reverse = False
     if sort_order == 'desc':
         sort_reverse = True
-    group_list.sort(key=lambda x: x[sort_key], reverse=sort_reverse)
+    group_list.sort(key=lambda x: x[1][-1] if sort_on == 'size' else x[0], reverse=sort_reverse)
 
     # Only at this point we have the list in correct shape/order and can the limit and offset be applied
     # Format for datatables in frontend throughout yoda

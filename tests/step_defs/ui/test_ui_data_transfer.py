@@ -83,7 +83,7 @@ def ui_data_transfer_icommands_configuration_file_downloaded(browser, tmpdir, fo
 
 @when('user clicks on Gocommands tab')
 def ui_data_transfer_gocommands_tab(browser):
-    browser.find_by_text('Gocommands').click()
+    browser.find_by_text('GoCommands').click()
 
 
 @when("user clicks on the Gocommands docs page")
