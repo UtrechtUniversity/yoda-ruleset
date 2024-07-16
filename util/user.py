@@ -113,7 +113,9 @@ def number_of_connections(ctx):
     """Get number of active connections from client user."""
     connections = 0
     try:
-        ips = subprocess.check_output(["ips", "-a"])
+        # We don't use the -a option with the ips command, because this takes
+        # significantly more time, which would significantly reduce performance.
+        ips = subprocess.check_output(["ips"])
         username = session_vars.get_map(ctx.rei)['client_user']['user_name']
         connections = ips.count(username)
     except Exception as e:
