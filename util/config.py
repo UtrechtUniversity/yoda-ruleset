@@ -72,6 +72,7 @@ class Config(object):
 
 # Note: Must name all valid config items.
 config = Config(environment=None,
+                enable_tape_archive=False,  #TODO: Remove later
                 default_yoda_schema=None,
                 resource_primary=[],
                 resource_trigger_pol=[],
