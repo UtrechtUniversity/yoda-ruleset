@@ -623,13 +623,17 @@ def rule_check_max_connections_exceeded(ctx):
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'
+    :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'.
+              Also returns 'false' if the maximum number of connections check has been
+              disabled, or if the maximum number does not apply to the present user.
     """
-    if user.is_admin(ctx) or user.name(ctx) == 'anonymous':
+    if not config.user_max_connections_enabled:
         return "false"
-
-    connections = user.number_of_connections(ctx)
-    return "false" if connections < config.user_max_connections else "true"
+    elif user.name(ctx) in ['anonymous', 'rods']:
+        return "false"
+    else:
+        connections = user.number_of_connections(ctx)
+        return "false" if connections < config.user_max_connections_number else "true"
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])

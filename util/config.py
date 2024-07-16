@@ -145,7 +145,8 @@ config = Config(environment=None,
                 vault_copy_backoff_time=300,
                 vault_copy_max_retries=5,
                 vault_copy_multithread_enabled=True,
-                user_max_connections=4,
+                user_max_connections_enabled=False,
+                user_max_connections_number=4,
                 python3_interpreter='/usr/local/bin/python3')
 
 # }}}
