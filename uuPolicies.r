@@ -119,6 +119,13 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
         }
     }
 
+    *max_connections_exceeded = '';
+    rule_check_max_connections_exceeded(*max_connections_exceeded);
+		if ( *max_connections_exceeded == "true" ) {
+		    writeLine("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
+		    failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
+		}
+
     writeLine("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 
