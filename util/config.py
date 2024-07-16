@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -143,6 +143,8 @@ config = Config(environment=None,
                 arb_min_gb_free=0,
                 arb_min_percent_free=5,
                 text_file_extensions=[],
+                user_max_connections_enabled=False,
+                user_max_connections_number=4,
                 vault_copy_multithread_enabled=True)
 
 # }}}
@@ -163,7 +165,7 @@ try:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
+                raise Exception('Configuration syntax error at {} line {}'.format(cfgpath, i + 1))
 
             # List-type values are separated by whitespace.
             try:
