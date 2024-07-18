@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime

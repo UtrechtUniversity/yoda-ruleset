@@ -143,10 +143,6 @@ def _test_folder_set_get_last_run(ctx):
 
 
 def _test_schema_active_schema_deposit_from_default(ctx):
-    # Need to check if exists first before we remove it because of error caused by iRODS
-    if ("schema_id", "dag-0", '') not in list(avu.of_group(ctx, "deposit-pilot")):
-        return ''
-
     avu.rm_from_group(ctx, "deposit-pilot", "schema_id", "dag-0")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot")
     avu.associate_to_group(ctx, "deposit-pilot", "schema_id", "dag-0")
@@ -154,10 +150,6 @@ def _test_schema_active_schema_deposit_from_default(ctx):
 
 
 def _test_schema_active_schema_research_from_default(ctx):
-    # Need to check if exists first before we remove it because of error caused by iRODS
-    if ("schema_id", "core-2", '') not in list(avu.of_group(ctx, "research-core-2")):
-        return ''
-
     avu.rm_from_group(ctx, "research-core-2", "schema_id", "core-2")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2")
     avu.associate_to_group(ctx, "research-core-2", "schema_id", "core-2")
@@ -167,10 +159,6 @@ def _test_schema_active_schema_research_from_default(ctx):
 def _test_schema_active_schema_vault_research_override(ctx):
     avu.associate_to_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2")
-    # Need to check if exists first before we remove it because of error caused by iRODS
-    if ("schema_id", "integration-test-schema-1", '') not in list(avu.of_group(ctx, "vault-core-2")):
-        return ''
-
     avu.rm_from_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
     return result
 
