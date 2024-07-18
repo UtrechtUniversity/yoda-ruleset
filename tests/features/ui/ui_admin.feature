@@ -64,5 +64,5 @@ Feature: Admin UI
     Examples:
         | user                | theme     | button       | host name       |
         | functionaladminpriv | uu_fsw    | Change Theme | Social Science  |
-        | functionaladminpriv | uu_gw     | Change Theme | Humanities      |
+        | functionaladminpriv | uu_dag    | Change Theme | DAG             |
         | functionaladminpriv | uu        | Change Theme | Yoda            |
