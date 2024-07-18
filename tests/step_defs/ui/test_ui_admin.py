@@ -55,9 +55,11 @@ def ui_admin_control_importance(browser, action):
 def ui_admin_click_button(browser, button):
     browser.find_by_name(button).first.click()
 
+
 @when(parsers.parse("the user change portal theme to {theme}"))
 def ui_admin_change_theme(browser, theme):
     browser.find_by_id("theme").first.select(theme)
+
 
 @then("the text Administration is shown")
 def ui_admin_administration_present(browser):
@@ -92,6 +94,7 @@ def ui_admin_banner_option_prensent(browser):
     assert browser.find_by_id("importance").visible, "Checkbox for 'Mark as Important' not found on the page"
     assert browser.find_by_css("button[name='Set Banner']").visible, "Button to set the banner not found on the page"
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
+
 
 @then("the theme change option should be visible")
 def ui_admin_theme_option_prensent(browser):
