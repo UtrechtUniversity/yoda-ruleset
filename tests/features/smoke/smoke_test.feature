@@ -128,8 +128,8 @@ Feature: Smoke tests
         Then folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-smoke-test   | SECURED  |
+            | folder                               | status   |
+            | /tempZone/home/research-smoke-test   | FOLDER   |
 
 
     Scenario Outline: Vault meta form save in vault
