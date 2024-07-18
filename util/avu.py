@@ -12,6 +12,7 @@ import irods_types
 
 import log
 import msi
+from msi import RemoveKeyValuePairsFromObjError
 import pathutil
 
 Avu = namedtuple('Avu', list('avu'))
