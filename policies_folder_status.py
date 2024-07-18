@@ -196,4 +196,3 @@ def post_status_transition(ctx, path, actor, status):
         submitter = folder.get_submitter(ctx, path)
         message = "Data package rejected for vault"
         notifications.set(ctx, actor, submitter, path, message)
-
