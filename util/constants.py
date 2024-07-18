@@ -166,7 +166,7 @@ folder_transitions = [(research_package_state(x),
                                    ('REJECTED',  'LOCKED'),
                                    ('REJECTED',  ''),
                                    ('REJECTED',  'SUBMITTED'),
-                                   ('ACCEPTED',  'SECURED'),
+                                   ('ACCEPTED',  ''),
                                    ('SECURED',   'LOCKED'),
                                    ('SECURED',   ''),
                                    ('SECURED',   'SUBMITTED')]]
