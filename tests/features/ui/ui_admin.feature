@@ -1,17 +1,17 @@
 @ui
 Feature: Admin UI
-
     Scenario Outline: Admin page view by admin users
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Administration is shown
         And Administration option is available in the menu dropdown
         And the banner setup option should be visible
+        And the theme change option should be visible
 
         Examples:
             | user                |
-            | technicaladmin      | # Role: irodsadmin
-            | functionaladminpriv | # Group: priv-admin
+            | technicaladmin      | # admin user as role: irodsadmin
+            | functionaladminpriv | # admin user in group: priv-admin
 
 
     Scenario Outline: Admin page view by non-admin user
@@ -52,3 +52,17 @@ Feature: Admin UI
     Examples:
         | user                | message             | Remove Banner |
         | functionaladminpriv | Test banner message | Remove Banner |
+
+
+    Scenario Outline: Admin user change portal theme
+        Given user <user> is logged in
+        When the user navigates to the admin page
+        And the user change portal theme to <theme>
+        And the user click button <button>
+        And  the user navigates to the home page
+        Then the new theme should display <host name>
+    Examples:
+        | user                | theme     | button       | host name       |
+        | functionaladminpriv | uu_fsw    | Change Theme | Social Science  |
+        | functionaladminpriv | uu_gw     | Change Theme | Humanities      |
+        | functionaladminpriv | uu        | Change Theme | Yoda            |
