@@ -18,6 +18,10 @@ basic_integration_tests = [
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "policies.check_max_connections_exceeded",
+     "test": lambda ctx: ctx.rule_check_max_connections_exceeded(""),
+     # This rule should always return 'false' for user 'rods'
+     "check": lambda x: x['arguments'][0] == 'false'},
     # Vault metadata schema report: only check return value type, not contents
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
@@ -91,6 +95,9 @@ basic_integration_tests = [
     {"name":   "util.user.is_member_of.no",
      "test": lambda ctx: user.is_member_of(ctx, "research-initial", "datamanager"),
      "check": lambda x: not x},
+    {"name":   "util.user.number_of_connection",
+     "test": lambda ctx: user.number_of_connections(ctx),
+     "check": lambda x: isinstance(x, int) and x > 0},
     {"name":   "util.user.usertype.rodsadmin",
      "test": lambda ctx: user.user_type(ctx, "rods"),
      "check": lambda x: x == "rodsadmin"},
