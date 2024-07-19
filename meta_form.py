@@ -150,7 +150,8 @@ def load(ctx, coll):
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         is_locked = folder.is_locked(ctx, coll, org_metadata)
-        can_edit = is_member and not is_locked
+        # Do not allow editing of files in folders with apostrophes in name
+        can_edit = is_member and not is_locked and '\'' not in subpath
 
         # Analyze a possibly existing metadata JSON file.
         meta_path = meta.get_collection_metadata_path(ctx, coll)
@@ -229,9 +230,10 @@ def load(ctx, coll):
 
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)
         can_edit  = (groups.user_is_datamanager(ctx, category, user_full_name)
-                     and (status == constants.vault_package_state.UNPUBLISHED
-                          or status == constants.vault_package_state.PUBLISHED
-                          or status == constants.vault_package_state.DEPUBLISHED))
+                     and status in (constants.vault_package_state.UNPUBLISHED,
+                     constants.vault_package_state.PUBLISHED,
+                     constants.vault_package_state.DEPUBLISHED)
+                     and '\'' not in subpath)
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
         if meta_path is None:
