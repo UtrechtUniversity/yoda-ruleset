@@ -21,6 +21,29 @@ Feature: Research API
             | /tempZone/home/research-initial | api_test_1234567890         |
 
 
+    Scenario Outline: Research folder with apostrophe add
+        Given user researcher is authenticated
+        And the Yoda research folder add API is queried with <folder> and <collection>
+        Then the response status code is "400"
+        And folder <folder> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder            |
+            | /tempZone/home/research-initial | api_test_folder's |
+
+
+    @deposit
+    Scenario Outline: Deposit folder with apostrophe add
+        Given user researcher is authenticated
+        And the Yoda research folder add API is queried with <folder> and <collection>
+        Then the response status code is "400"
+        And folder <folder> does not exist in <collection>
+
+        Examples:
+            | collection                   | folder            |
+            | /tempZone/home/deposit-pilot | api_test_folder's |
+
+
     Scenario Outline: Research folder copy
         Given user researcher is authenticated
         And the Yoda research folder copy API is queried with <folder>, <copy>, and <collection>
@@ -32,6 +55,18 @@ Feature: Research API
             | collection                      | folder             | copy                    |
             | /tempZone/home/research-initial | api_test_copy      | api_test_copy2          |
             | /tempZone/home/research-initial | api_test_copy      | api_test_move1          |
+
+
+    Scenario Outline: Research folder copy with apostrophe
+        Given user researcher is authenticated
+        And the Yoda research folder copy API is queried with <folder>, <copy>, and <collection>
+        Then the response status code is "400"
+        And folder <folder> exists in <collection>
+        And folder <copy> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder        | copy             |
+            | /tempZone/home/research-initial | api_test_copy | api_test_copy2's |
 
 
     Scenario Outline: Research folder move
@@ -46,6 +81,17 @@ Feature: Research API
             | /tempZone/home/research-initial | api_test_move1     | api_test_move2      |
 
 
+    Scenario Outline: Research folder move with apostrophe
+        Given user researcher is authenticated
+        And the Yoda research folder move API is queried with <folder>, <move>, and <collection>
+        Then the response status code is "400"
+        And folder <move> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder             | move             |
+            | /tempZone/home/research-initial | api_test_move1     | api_test_move2's |
+
+
     Scenario Outline: Research folder rename
         Given user researcher is authenticated
         And the Yoda research folder rename API is queried with <folder_old>, <folder> and <collection>
@@ -56,6 +102,18 @@ Feature: Research API
         Examples:
             | collection                      | folder_old       | folder                  |
             | /tempZone/home/research-initial | api_test_folder  | api_test_folder_renamed |
+
+
+    Scenario Outline: Research folder rename with apostrophe
+        Given user researcher is authenticated
+        And the Yoda research folder rename API is queried with <folder_old>, <folder> and <collection>
+        Then the response status code is "400"
+        And folder <folder_old> exists in <collection>
+        And folder <folder> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder_old              | folder                    |
+            | /tempZone/home/research-initial | api_test_folder_renamed | api_test_folder_renamed's |
 
 
     Scenario Outline: Research file copy
