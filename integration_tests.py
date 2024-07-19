@@ -524,13 +524,17 @@ basic_integration_tests = [
 ]
 
 
-@rule.make(inputs=[], outputs=[0])
-def rule_run_integration_tests(ctx):
+@rule.make(inputs=[0], outputs=[1])
+def rule_run_integration_tests(ctx, tests):
     """This function runs the integration tests. It must be run by
     a rodsadmin user on a development environment. It assumes the standard
     test data is present.
 
     :param ctx:  Combined type of a callback and rei struct
+    :param tests: Indicates which tests to run:
+                  - Empty string means all tests
+                  - String ending with '*' means all tests that start with a prefix, e.g. 'util.user.*'
+                  - Otherwise the string should be the exact name of a test
 
     :returns: string with test results. Each line has one test name and its verdict.
     """
@@ -550,7 +554,13 @@ def rule_run_integration_tests(ctx):
         name = testconfig["name"]
         test = testconfig["test"]
         check = testconfig["check"]
+
         exception = False
+
+        if (tests != ""
+                and tests != name
+                and not (tests.endswith("*") and name.startswith(tests[0:-1]))):
+            continue
 
         try:
             result = test(ctx)
