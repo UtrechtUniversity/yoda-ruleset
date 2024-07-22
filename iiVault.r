@@ -6,24 +6,6 @@
 # \license   GPLv3, see LICENSE.
 
 
-# \brief iiCopyFolderToVault
-#
-# \param[in] folder  folder to copy to the vault
-# \param[in] target  path of the vault package
-#
-iiCopyFolderToVault(*folder, *target) {
-
-	writeLine("serverLog", "iiCopyFolderToVault: Copying *folder to *target")
-	*buffer.source = *folder;
-	*buffer.destination = *target ++ "/original";
-	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	if (*error != 0) {
-		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-		writeLine("stdout", "iiIngestObject: *error: *msg");
-		fail;
-	}
-}
-
 # \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
 #
 # \param[in] itemParent
