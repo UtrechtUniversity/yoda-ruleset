@@ -411,6 +411,10 @@ basic_integration_tests = [
     {"name": "policies.check_anonymous_access_allowed.remote",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("1.2.3.4", ""),
      "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "policies.check_max_connections_exceeded",
+     "test": lambda ctx: ctx.rule_check_max_connections_exceeded(""),
+     # This rule should always return 'false' for user 'rods'
+     "check": lambda x: x['arguments'][0] == 'false'},
     {"name":  "schema.get_active_schema_path.deposit",
      "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot"),
      "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
@@ -508,6 +512,9 @@ basic_integration_tests = [
     {"name":   "util.user.is_member_of.no",
      "test": lambda ctx: user.is_member_of(ctx, "research-initial", "datamanager"),
      "check": lambda x: not x},
+    {"name":   "util.user.number_of_connection",
+     "test": lambda ctx: user.number_of_connections(ctx),
+     "check": lambda x: isinstance(x, int) and x > 0},
     {"name":   "util.user.usertype.rodsadmin",
      "test": lambda ctx: user.user_type(ctx, "rods"),
      "check": lambda x: x == "rodsadmin"},
@@ -517,13 +524,17 @@ basic_integration_tests = [
 ]
 
 
-@rule.make(inputs=[], outputs=[0])
-def rule_run_integration_tests(ctx):
+@rule.make(inputs=[0], outputs=[1])
+def rule_run_integration_tests(ctx, tests):
     """This function runs the integration tests. It must be run by
     a rodsadmin user on a development environment. It assumes the standard
     test data is present.
 
     :param ctx:  Combined type of a callback and rei struct
+    :param tests: Indicates which tests to run:
+                  - Empty string means all tests
+                  - String ending with '*' means all tests that start with a prefix, e.g. 'util.user.*'
+                  - Otherwise the string should be the exact name of a test
 
     :returns: string with test results. Each line has one test name and its verdict.
     """
@@ -543,7 +554,13 @@ def rule_run_integration_tests(ctx):
         name = testconfig["name"]
         test = testconfig["test"]
         check = testconfig["check"]
+
         exception = False
+
+        if (tests != ""
+                and tests != name
+                and not (tests.endswith("*") and name.startswith(tests[0:-1]))):
+            continue
 
         try:
             result = test(ctx)

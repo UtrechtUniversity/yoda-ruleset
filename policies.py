@@ -617,6 +617,25 @@ def rule_check_anonymous_access_allowed(ctx, address):
     return "true" if address in permit_list else "false"
 
 
+@rule.make(inputs=[], outputs=[0])
+def rule_check_max_connections_exceeded(ctx):
+    """Check if user exceeds the maximum number of connections.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'.
+              Also returns 'false' if the maximum number of connections check has been
+              disabled, or if the maximum number does not apply to the present user.
+    """
+    if not config.user_max_connections_enabled:
+        return "false"
+    elif user.name(ctx) in ['anonymous', 'rods']:
+        return "false"
+    else:
+        connections = user.number_of_connections(ctx)
+        return "false" if connections <= config.user_max_connections_number else "true"
+
+
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
 def pep_database_gen_query_pre(ctx, dbtype, _ctx, results, genquery_inp, genquery_out):
     if not is_safe_genquery_inp(genquery_inp):

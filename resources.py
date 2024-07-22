@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -16,7 +16,6 @@ __all__ = ['api_resource_browse_group_data',
            'api_resource_category_stats',
            'api_resource_full_year_differentiated_group_storage',
            'rule_resource_store_storage_statistics',
-           'rule_resource_transform_old_storage_data',
            'rule_resource_research',
            'rule_resource_update_resc_arb_data',
            'rule_resource_update_misc_arb_data',
@@ -87,69 +86,6 @@ def api_resource_browse_group_data(ctx,
         group_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
 
     return {'total': len(group_list), 'items': group_list_sorted}
-
-
-@rule.make()
-def rule_resource_transform_old_storage_data(ctx):
-    """ Transform all old school storage data collection to the new way.
-    Get rid of tiers.
-    Fact: only one tier was used in all yoda instances
-
-    [cat, research, vault, revisions, total]
-
-    :param ctx:           Combined type of a callback and rei struct
-
-    :returns: API status
-    """
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-
-    # Step through all aggregated storage data that was previously recorded monthly
-    # PRECONDITION: only 1 tier is used throughout the entire use of the previously used collection method.
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATASTORAGEMONTH),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        # group - [category, tier, total]
-        # group - [category, research, vault, revisions, total]
-
-        # As only one tier was used, each found total for a group, can directly be set as the total for that group.
-        # No differentation into research / vault / revisions as this information is not present.
-
-        storage_data = jsonutil.parse(row[0])
-        storage_category = storage_data[0]
-        storage_total = int(storage_data[2])
-        storage_month = int(row[1][-2:])
-        storage_group = row[3]
-
-        if storage_month != current_month:
-            # Only do the transformation when NOT in current month itself.
-            storage_year = current_year if storage_month <= current_month else current_year - 1
-
-            # set the measurement date on the 15th of any month
-            storage_attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
-            storage_attr_val = '["{}", 0, 0, 0, {}]'.format(storage_category, storage_total)
-
-            # First test if exists - if so => delete:
-            # First delete possibly previously stored data
-            iter2 = genquery.row_iterator(
-                "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
-                "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_attr_name, storage_attr_val, storage_group),
-                genquery.AS_LIST, ctx
-            )
-            for row2 in iter2:
-                avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-
-            # Add data in new manner without tiers
-            avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-
-            # ?? Do we delete previously stored monthly totals??
-            # avu.rm_from_group(ctx, row[3], row[1], row[0])
-
-    return 'ok'
 
 
 @api.make()
@@ -498,6 +434,8 @@ def rule_resource_store_storage_statistics(ctx):
         genquery.AS_LIST, ctx
     )
     for row in iter:
+        if (md_storage_date, row[0], '') not in list(avu.of_group(ctx, row[1])):
+            continue
         avu.rm_from_group(ctx, row[1], md_storage_date, row[0])
 
     # Get all categories
