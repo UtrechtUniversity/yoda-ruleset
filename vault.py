@@ -206,7 +206,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     if not collection.exists(ctx, coll_target):
         return api.Error('TargetPathNotExists', 'The target you specified does not exist')
 
-    # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
+    # Check if user has READ ACCESS to specific vault package in collection coll_origin.
     user_full_name = user.full_name(ctx)
     category = groups.group_category(ctx, group_name)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
