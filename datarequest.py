@@ -501,6 +501,7 @@ def datarequest_owner_get(ctx, request_id):
     except Exception:
         return None
 
+
 def datarequest_is_reviewer(ctx, request_id, pending=False):
     """Check if a user is assigned as reviewer to a data request
 
