@@ -496,8 +496,10 @@ def datarequest_owner_get(ctx, request_id):
                                       + JSON_EXT)
 
     # Get and return data request owner
-    return jsonutil.read(ctx, file_path)['owner']
-
+    try:
+        return jsonutil.read(ctx, file_path)['owner']
+    except Exception:
+        return None
 
 def datarequest_is_reviewer(ctx, request_id, pending=False):
     """Check if a user is assigned as reviewer to a data request
