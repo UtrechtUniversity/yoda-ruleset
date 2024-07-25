@@ -1049,8 +1049,11 @@ def api_datarequest_get(ctx, request_id):
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
 
     # Get request type
-    datarequest_type = type_get(ctx, request_id).value
-
+    try:
+        datarequest_type = type_get(ctx, request_id).value
+    except Exception:
+        return {'requestStatus': 'forbidden'}
+    
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
 
