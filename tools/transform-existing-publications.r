@@ -15,13 +15,13 @@ def main(rule_args, callback, rei):
     # Changing yoda prefix -> version
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "USER_ZONE = '{}' AND META_COLL_ATTR_NAME LIKE 'org_publication_yoda%'".format(zone),
+        "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME LIKE 'org_publication_yoda%'".format(zone),
         genquery.AS_TUPLE,
         callback) 
 
     iter2 = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "USER_ZONE = '{}' AND META_COLL_ATTR_NAME in ('org_publication_DOIAvailable', 'org_publication_DOIMinted')".format(zone),
+        "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME in ('org_publication_DOIAvailable', 'org_publication_DOIMinted')".format(zone),
         genquery.AS_TUPLE,
         callback) 
 

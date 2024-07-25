@@ -25,15 +25,16 @@ DEPOSIT_GROUP = "deposit-pilot"
 
 
 @api.make()
-def api_deposit_copy_data_package(ctx, reference):
+def api_deposit_copy_data_package(ctx, reference, deposit_group):
     """Create deposit collection and copies selected datapackage into the newly created deposit
 
-    :param ctx:       Combined type of a callback and rei struct
-    :param reference: Data Package Reference (UUID4)
+    :param ctx:           Combined type of a callback and rei struct
+    :param reference:     Data Package Reference (UUID4)
+    :param deposit_group: Deposit group to copy to
 
     :returns: Path to created deposit collection or API error
     """
-    result = deposit_create(ctx)
+    result = deposit_create(ctx, deposit_group)
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
 
