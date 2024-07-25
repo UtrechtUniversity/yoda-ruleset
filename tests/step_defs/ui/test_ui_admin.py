@@ -56,6 +56,11 @@ def ui_admin_click_button(browser, button):
     browser.find_by_name(button).first.click()
 
 
+@when(parsers.parse("the user change portal theme to {theme}"))
+def ui_admin_change_theme(browser, theme):
+    browser.find_by_id("theme").first.select(theme)
+
+
 @then("the text Administration is shown")
 def ui_admin_administration_present(browser):
     h1_tags = browser.find_by_tag("h1")  # Avoid finding the one in dropdown
@@ -83,12 +88,18 @@ def ui_admin_access_forbidden(browser):
 
 
 @then("the banner setup option should be visible")
-def ui_admin_banner_option_prensent(browser):
-    assert browser.is_text_present("Set maintenance banner"), "Banner title not found on the page"
+def ui_admin_banner_option_present(browser):
+    assert browser.is_text_present("Set Maintenance Banner"), "Banner title not found on the page"
     assert browser.find_by_name("banner").visible, "Textarea for banner message not found on the page"
     assert browser.find_by_id("importance").visible, "Checkbox for 'Mark as Important' not found on the page"
     assert browser.find_by_css("button[name='Set Banner']").visible, "Button to set the banner not found on the page"
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
+
+
+@then("the theme change option should be visible")
+def ui_admin_theme_option_present(browser):
+    assert browser.is_text_present("Change Portal Theme"), "Change Theme title not found on the page"
+    assert browser.find_by_name("theme").visible, "Theme Selection not found on the page"
 
 
 @then("the banner does not exist")
@@ -101,3 +112,8 @@ def ui_admin_display_banner_color(browser, color):
     element = browser.find_by_css('div.non-production[role="alert"]').first
     is_color_present = color in element['class'].split()
     assert is_color_present
+
+
+@then(parsers.parse("the new theme should display {host_name}"))
+def ui_admin_display_new_theme(browser, host_name):
+    assert browser.is_text_present(host_name)
