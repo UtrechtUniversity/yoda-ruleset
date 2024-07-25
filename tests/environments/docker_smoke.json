@@ -1,0 +1,10 @@
+{
+    "url": "https://portal.yoda:8443",
+    "zone_name": "tempZone",
+    "roles": {
+        "smoke_account": {
+            "username": "datamanager@yoda.test",
+	    "password": "test"
+        }
+    }
+}
