@@ -26,7 +26,7 @@ Feature: Admin UI
 
         Examples:
             | user                |
-            | researcher          | # Role: non-admin and Group: non-priv-group
+            | researcher          |
 
 
     Scenario Outline: Admin user sets up a default banner message
