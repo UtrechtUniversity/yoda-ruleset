@@ -1053,7 +1053,7 @@ def api_datarequest_get(ctx, request_id):
         datarequest_type = type_get(ctx, request_id).value
     except Exception:
         return {'requestStatus': 'forbidden'}
-    
+
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
 
