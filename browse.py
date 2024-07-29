@@ -265,6 +265,7 @@ def api_search(ctx,
         status_value = status[1]
         if status[0] == "research":
             status_name = constants.IISTATUSATTRNAME
+            # Backwards compatibility for folders that hold deprecated SECURED status.
             status_value = "FOLDER" if status_value == "SECURED" else status_value
         else:
             status_name = constants.IIVAULTSTATUSATTRNAME

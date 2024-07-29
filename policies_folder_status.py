@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
@@ -16,9 +16,9 @@ def pre_status_transition(ctx, coll, current, new):
     if current != constants.research_package_state.LOCKED \
         and new in [constants.research_package_state.LOCKED,
                     constants.research_package_state.SUBMITTED]:
+        # Backwards compatibility for folders that hold deprecated SECURED status.
         # Clear action log coming from SECURED state.
         # SECURED -> LOCKED and SECURED -> SUBMITTED
-        # Backwards compatibility for folders that hold SECURED status
         if current is constants.research_package_state.SECURED:
             ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 
@@ -35,8 +35,9 @@ def pre_status_transition(ctx, coll, current, new):
     if new in [constants.research_package_state.FOLDER,
                constants.research_package_state.REJECTED,
                constants.research_package_state.SECURED]:
+        # Backwards compatibility for folders that hold deprecated SECURED status.
         # Clear action log coming from SECURED state.
-        # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
+        # SECURED -> FOLDER
         if current is constants.research_package_state.SECURED:
             ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 

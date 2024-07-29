@@ -70,7 +70,7 @@ Feature: Search UI
         Then result <result> is found
 
         Examples:
-            | status             | result             |
+            | status          | result             |
             | research:FOLDER | /research-initial1 |
 
 
@@ -80,5 +80,5 @@ Feature: Search UI
         Then result <result> is found
 
         Examples:
-            | status             | result             |
+            | status           | result             |
             | research:FOLDER  | /research-initial1 |
