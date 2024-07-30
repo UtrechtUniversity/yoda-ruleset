@@ -1,7 +1,7 @@
 # coding=utf-8
 """Vault UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -15,9 +15,12 @@ from pytest_bdd import (
 
 scenarios('../../features/ui/ui_vault.feature')
 
+previous_vault_path = ''
+
 
 @when(parsers.parse("user browses to data package in {vault}"))
 def ui_browse_data_package(browser, vault):
+    global previous_vault_path
     link = []
     while len(link) == 0:
         link = browser.links.find_by_partial_text(vault)
@@ -31,6 +34,7 @@ def ui_browse_data_package(browser, vault):
     research = vault.replace("vault-", "research-")
     data_packages = browser.links.find_by_partial_text(research)
     data_packages.click()
+    previous_vault_path = browser.driver.current_url
 
 
 @when('user submits the data package for publication')
@@ -157,34 +161,57 @@ def ui_data_package_provenance_information_is_visible(browser):
     assert browser.find_by_css('.actionlog', wait_time=5).is_visible()
 
 
-@when('user clicks action menu to revoke access')
-def ui_data_package_revoke_vault_access(browser):
+@when('user clicks action menu to change access')
+def ui_data_package_change_vault_access(browser):
     browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-revoke-vault-access').click()
+    browser.find_by_css('a.action-change-vault-access').click()
 
 
-@then('action menu holds option to grant access to research group')
-def ui_data_package_grant_option_present(browser):
-    browser.find_by_id('actionMenu').click()
-    assert browser.is_element_present_by_css('.action-grant-vault-access')
+@then('revoke text is displayed')
+def ui_data_package_revoke_message(browser):
+    time.sleep(3)
+    assert browser.is_text_present('revoke')
 
 
-@when('clicks action menu to grant access')
-def ui_data_package_grant_vault_access(browser):
-    browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-grant-vault-access').click()
+@then('grant text is displayed')
+def ui_data_package_grant_message(browser):
+    time.sleep(3)
+    assert browser.is_text_present('grant')
 
 
-@then('action menu holds option to revoke access from research group')
-def ui_data_package_revoke_option_present(browser):
-    browser.find_by_id('actionMenu').click()
-    assert browser.is_element_present_by_css('.action-revoke-vault-access')
+@when("user confirms revoke read permissions")
+def ui_data_package_revoke_read_permissions_confirm(browser):
+    browser.find_by_css(".action-confirm-revoke-read-permissions").click()
+
+
+@when("user confirms grant read permissions")
+def ui_data_package_grant_read_permissions_confirm(browser):
+    browser.find_by_css(".action-confirm-grant-read-permissions").click()
 
 
 @when('user clicks action menu to copy data package to research')
-def ui_data_package_copy_to_resarch(browser):
+def ui_data_package_copy_to_research(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-copy-vault-package-to-research').click()
+
+
+@when('user browses to previous vault package url')
+def ui_data_package_browses_previous_url(browser):
+    if len(previous_vault_path):
+        browser.visit(previous_vault_path)
+    else:
+        assert False
+
+
+@then('contents of folder are shown')
+def ui_data_package_contents(browser):
+    assert browser.is_text_present('yoda-metadata')
+    assert browser.is_text_present('original')
+
+
+@then('user does not have access to folder')
+def ui_data_package_no_access(browser):
+    assert browser.is_text_present('This vault space path does not exist')
 
 
 @when(parsers.parse("user chooses research folder corresponding to {vault}"))
@@ -207,8 +234,8 @@ def ui_user_presses_copy_package_button(browser):
 
 @then('data package is copied to research area')
 def ui_data_package_is_copied_to_research(browser):
-    browser.find_by_id('actionMenu').click()
-    browser.is_element_present_by_css('.action-revoke-vault-access')
+    # TODO
+    pass
 
 
 @when('user clicks clicks action menu to check compliance')

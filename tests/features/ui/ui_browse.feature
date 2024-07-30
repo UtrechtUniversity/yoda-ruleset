@@ -26,7 +26,7 @@ Feature: Browse UI
           #Then content of sub-folder <folder> is shown
 
           Examples:
-            | user        | folder    |
+            | user        | folder          |
             | researcher  | vault-core-1    |
             | researcher  | vault-default-2 |
             | researcher  | vault-core-2    |

@@ -89,7 +89,7 @@ def getGroupsData(ctx):
         user = row[1]
         zone = row[2]
 
-        if name != user and name != "rodsadmin" and name != "public":
+        if name not in (user, 'rodsadmin', 'public'):
             user = user + "#" + zone
             if name.startswith("read-"):
                 # Match read-* group with research-* or initial-* group.
