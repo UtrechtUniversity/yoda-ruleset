@@ -38,7 +38,7 @@ def collection_is_unlocked(user, collection):
         )
         assert http_status == 200
     else:
-        assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED" or body["data"]["status"] == "FOLDER"
+        assert body["data"]["status"] == "" or body["data"]["status"] == "FOLDER"
 
 
 @given(parsers.parse("{collection} is locked"))
