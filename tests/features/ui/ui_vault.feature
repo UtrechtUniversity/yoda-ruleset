@@ -170,24 +170,48 @@ Feature: Vault UI
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And user clicks action menu to revoke access
-        Then action menu holds option to grant access to research group
+        And user clicks action menu to change access
+        Then revoke text is displayed
+        When user confirms revoke read permissions
 
         Examples:
             | vault          |
             | vault-initial1 |
+
+
+    Scenario Outline: Research group user has had access revoked to vault package
+        Given user <user> is logged in
+        When user browses to previous vault package url
+        Then user does not have access to folder
+
+        Examples:
+            | user       |
+            | researcher |
+            | viewer     |
 
 
     Scenario Outline: Grant read access to research group
         Given user datamanager is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        And clicks action menu to grant access
-        Then action menu holds option to revoke access from research group
+        And user clicks action menu to change access
+        Then grant text is displayed
+        When user confirms grant read permissions
 
         Examples:
             | vault          |
             | vault-initial1 |
+
+
+    Scenario Outline: Research group user has been granted access to vault package
+        Given user <user> is logged in
+        When user browses to previous vault package url
+        Then contents of folder are shown
+
+        Examples:
+            | user       | vault          |
+            | researcher | vault-initial1 |
+            | viewer     | vault-initial1 |
 
 
     Scenario Outline: Copy datapackage to research space

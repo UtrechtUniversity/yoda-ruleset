@@ -295,7 +295,7 @@ def _filter_vault_deposit_index(row):
 
        :param row: row of results data from GenQuery, containing collection name (COLL_NAME)
 
-       :returns: boolean value that indicated whether row should be displayed
+       :returns: boolean value that indicates whether row should be displayed
     """
     # Remove ORDER_BY etc. wrappers from column names.
     x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
