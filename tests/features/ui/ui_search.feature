@@ -70,8 +70,8 @@ Feature: Search UI
         Then result <result> is found
 
         Examples:
-            | status           | result             |
-            | research:SECURED | /research-initial1 |
+            | status          | result             |
+            | research:FOLDER | /research-initial1 |
 
 
     Scenario Outline: Search folder status from top search bar
@@ -81,4 +81,4 @@ Feature: Search UI
 
         Examples:
             | status           | result             |
-            | research:SECURED | /research-initial1 |
+            | research:FOLDER  | /research-initial1 |
