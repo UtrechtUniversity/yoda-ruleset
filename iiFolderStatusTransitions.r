@@ -331,7 +331,8 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 		}
 	}
 
-	if (*transitionTo == SECURED) {
+	# Note: The folders will not transition to SECURED status.
+	if (*transitionFrom == ACCEPTED && *transitionTo == FOLDER) { 
 		*allowed = false;
 		*reason = "Only a rodsadmin is allowed to secure a folder to the vault";
 		succeed;

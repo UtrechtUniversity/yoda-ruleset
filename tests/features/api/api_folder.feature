@@ -152,9 +152,9 @@ Feature: Folder API
 
         Examples:
             | folder                            | status   |
-            | /tempZone/home/research-core-0    | SECURED  |
-            | /tempZone/home/research-default-1 | SECURED  |
-            | /tempZone/home/research-core-1    | SECURED  |
-            | /tempZone/home/research-default-2 | SECURED  |
-            | /tempZone/home/research-core-2    | SECURED  |
-            | /tempZone/home/research-default-3 | SECURED  |
+            | /tempZone/home/research-core-0    | FOLDER   |
+            | /tempZone/home/research-default-1 | FOLDER   |
+            | /tempZone/home/research-core-1    | FOLDER   |
+            | /tempZone/home/research-default-2 | FOLDER   |
+            | /tempZone/home/research-core-2    | FOLDER   |
+            | /tempZone/home/research-default-3 | FOLDER   |

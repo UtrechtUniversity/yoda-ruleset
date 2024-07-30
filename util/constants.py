@@ -166,7 +166,8 @@ folder_transitions = [(research_package_state(x),
                                    ('REJECTED',  'LOCKED'),
                                    ('REJECTED',  ''),
                                    ('REJECTED',  'SUBMITTED'),
-                                   ('ACCEPTED',  'SECURED'),
+                                   ('ACCEPTED',  ''),
+                                   # Backwards compatibility for folders that hold deprecated SECURED status.
                                    ('SECURED',   'LOCKED'),
                                    ('SECURED',   ''),
                                    ('SECURED',   'SUBMITTED')]]
