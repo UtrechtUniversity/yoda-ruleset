@@ -46,7 +46,7 @@ Feature: Search API
 
         Examples:
             | status           | result              |
-            | research:SECURED | /research-core-0    |
-            | research:SECURED | /research-default-1 |
-            | research:SECURED | /research-core-1    |
-            | research:SECURED | /research-default-2 |
+            | research:FOLDER  | /research-core-0    |
+            | research:FOLDER  | /research-default-1 |
+            | research:FOLDER  | /research-core-1    |
+            | research:FOLDER  | /research-default-2 |
