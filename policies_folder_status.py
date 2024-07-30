@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 import folder
 import meta
 import notifications
@@ -127,6 +129,8 @@ def post_status_transition(ctx, path, actor, status):
         if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
             actor = "system"
 
+        # Log action at least one second after previous action, to ensure correct order of provenance log.
+        time.sleep(1)
         provenance.log_action(ctx, actor, path, "accepted for vault")
 
         # Store actor of accepted for vault.
