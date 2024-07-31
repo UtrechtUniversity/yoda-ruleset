@@ -1051,8 +1051,8 @@ def api_datarequest_get(ctx, request_id):
     # Get request type
     try:
         datarequest_type = type_get(ctx, request_id).value
-    except Exception:
-        return {'requestStatus': 'forbidden'}
+    except Exception as e:
+        return api.Error("datarequest_type_fail", "Error: {}".format(e))
 
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
