@@ -182,7 +182,7 @@ Feature: Vault API
             | /tempZone/home/vault-default-3 |
 
 
-    Scenario Outline: Revoke grant access to research group
+    Scenario Outline: Grant read access to research group
         Given user datamanager is authenticated
         And data package exists in <vault>
         And the Yoda vault grant read access research group API is queried on datapackage in <vault>

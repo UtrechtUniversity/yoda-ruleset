@@ -69,7 +69,7 @@ Feature: Admin UI
         Then the new theme should display <host name>
 
     Examples:
-        | user                | theme     | button       | host name       |
-        | functionaladminpriv | uu_fsw    | Change Theme | Social Science  |
-        | functionaladminpriv | uu_dag    | Change Theme | DAG             |
-        | functionaladminpriv | uu        | Change Theme | Yoda            |
+        | user                | theme  | button       | host name      |
+        | functionaladminpriv | uu_fsw | Change Theme | Social Science |
+        | functionaladminpriv | uu_geo | Change Theme | Geo            |
+        | functionaladminpriv | uu     | Change Theme | Yoda           |

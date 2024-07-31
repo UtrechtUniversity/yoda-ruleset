@@ -400,8 +400,8 @@ def folder_secure_succeed_avus(ctx, coll, group_name):
         return False
 
     # Note: this is the status that must always be one of the last to be set
-    # in folder secure, otherwise could be a problem for deposit groups
-    if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED, True):
+    # on folder, otherwise could be a problem for deposit groups
+    if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.FOLDER, True):
         return False
 
     # Remove target AVU on source folder. This should be done after all possibly failing steps
@@ -726,6 +726,7 @@ def get_status(ctx, path, org_metadata=None):
     if constants.IISTATUSATTRNAME in org_metadata:
         x = org_metadata[constants.IISTATUSATTRNAME]
         try:
+            x = "" if x == "FOLDER" else x
             return constants.research_package_state(x)
         except Exception:
             log.write(ctx, 'Invalid folder status <{}>'.format(x))

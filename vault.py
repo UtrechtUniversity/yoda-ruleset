@@ -572,7 +572,7 @@ def api_vault_collection_details(ctx, path):
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is in vault spcae.
+    # Check if collection is in vault space.
     space, _, group, subpath = pathutil.info(path)
     if space is not pathutil.Space.VAULT:
         return {}
@@ -765,6 +765,98 @@ def api_vault_get_publication_terms(ctx):
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
 
 
+def change_read_access_group(ctx, coll, actor, group, grant=True):
+    """Grant/revoke research group read access to vault package.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to grant/remove read rights from
+    :param actor: User changing the permissions
+    :param group: Group to grant/revoke read access to vault package
+    :param grant: Whether to grant or revoke access
+
+    :returns: 2-Tuple of boolean successfully changed, API status if error
+    """
+    try:
+        acl_kv = msi.kvpair(ctx, "actor", actor)
+        if grant:
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
+        else:
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
+    except Exception:
+        policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, group, "1", "read")
+        if bool(policy_error):
+            return False, api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+        else:
+            return False, api.Error('ErrorACLs', str(policy_error))
+
+    return True, ''
+
+
+def check_change_read_access_research_group(ctx, coll, grant=True):
+    """Initial checks when changing read rights of research group for datapackage in vault.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to revoke/grant read rights from
+    :param grant: Whether to grant or revoke read rights
+
+    :returns: 2-Tuple of boolean whether ok to continue and API status if error
+    """
+    verb = "grant" if grant else "revoke"
+
+    if not collection.exists(ctx, coll):
+        return False, api.Error('nonexistent', 'The given path does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+
+    return True, ''
+
+
+def change_read_access_research_group(ctx, coll, grant=True):
+    """Grant/revoke read rights of members of research group to a
+    datapackage in vault. This operation also includes read only members.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to grant/remove read rights from
+    :param grant: Whether to grant or revoke access
+
+    :returns: API status
+    """
+    verb = "granting" if grant else "revoking"
+    response, api_error = check_change_read_access_research_group(ctx, coll, True)
+    if not response:
+        return api_error
+
+    _, _, group, subpath = pathutil.info(coll)
+
+    # Find category
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = groups.group_category(ctx, group)
+    read_group_name = 'read-' + '-'.join(group_parts[1:])
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
+        # Grant/revoke research group read access to vault package.
+        for group_name in (research_group_name, read_group_name):
+            response, api_error = change_read_access_group(ctx, coll, actor, group_name, grant)
+            if not response:
+                return api_error
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for {} access'.format(verb))
+
+    return {'status': 'Success', 'statusInfo': ''}
+
+
 @api.make()
 def api_grant_read_access_research_group(ctx, coll):
     """Grant read rights of research group for datapackage in vault.
@@ -774,42 +866,7 @@ def api_grant_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    if not collection.exists(ctx, coll):
-        return api.Error('nonexistent', 'The given path does not exist')
-
-    coll_parts = coll.split('/')
-    if len(coll_parts) != 5:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    space, zone, group, subpath = pathutil.info(coll)
-    if space is not pathutil.Space.VAULT:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    # Find category
-    group_parts = group.split('-')
-    if subpath.startswith("deposit-"):
-        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
-    else:
-        research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = groups.group_category(ctx, group)
-
-    # Is datamanager?
-    actor = user.full_name(ctx)
-    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
-        # Grant research group read access to vault package.
-        try:
-            acl_kv = msi.kvpair(ctx, "actor", actor)
-            msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
-        except Exception:
-            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
-            if bool(policy_error):
-                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
-            else:
-                return api.Error('ErrorACLs', str(policy_error))
-    else:
-        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
-
-    return {'status': 'Success', 'statusInfo': ''}
+    return change_read_access_research_group(ctx, coll, True)
 
 
 @api.make()
@@ -821,42 +878,7 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    if not collection.exists(ctx, coll):
-        return api.Error('nonexistent', 'The given path does not exist')
-
-    coll_parts = coll.split('/')
-    if len(coll_parts) != 5:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    space, zone, group, subpath = pathutil.info(coll)
-    if space is not pathutil.Space.VAULT:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    # Find category
-    group_parts = group.split('-')
-    if subpath.startswith("deposit-"):
-        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
-    else:
-        research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = groups.group_category(ctx, group)
-
-    # Is datamanager?
-    actor = user.full_name(ctx)
-    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
-        # Grant research group read access to vault package.
-        try:
-            acl_kv = msi.kvpair(ctx, "actor", actor)
-            msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
-        except Exception:
-            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
-            if bool(policy_error):
-                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
-            else:
-                return api.Error('ErrorACLs', str(policy_error))
-    else:
-        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
-
-    return {'status': 'Success', 'statusInfo': ''}
+    return change_read_access_research_group(ctx, coll, False)
 
 
 @rule.make()
@@ -1026,8 +1048,12 @@ def set_vault_permissions(ctx, coll, target):
 
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
+    valid_read_groups = [group_name]
 
     vault_group_name = constants.IIVAULTPREFIX + base_name
+    if parts[0] != 'deposit':
+        read_group_name = "read-" + base_name
+        valid_read_groups.append(read_group_name)
 
     # Check if noinherit is set
     zone = user.zone(ctx)
@@ -1066,11 +1092,12 @@ def set_vault_permissions(ctx, coll, target):
 
         if access_name != "read object":
             # Grant the research group read-only access to the collection to enable browsing through the vault.
-            try:
-                msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
-                log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
-            except msi.Error:
-                log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
+            for name in valid_read_groups:
+                try:
+                    msi.set_acl(ctx, "default", "admin:read", name, vault_path)
+                    log.write(ctx, "Granted " + name + " read access to " + vault_path)
+                except msi.Error:
+                    log.write(ctx, "Failed to grant " + name + " read access to " + vault_path)
 
     # Check if vault group has ownership
     iter = genquery.row_iterator(
@@ -1101,8 +1128,9 @@ def set_vault_permissions(ctx, coll, target):
     if group.exists(ctx, datamanager_group_name):
         msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
 
-    # Grant research group read access to vault package.
-    msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+    # Grant research group, research group readers read access to vault package.
+    for name in valid_read_groups:
+        msi.set_acl(ctx, "recursive", "admin:read", name, target)
 
     return True
 
@@ -1166,7 +1194,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
-                    genquery.AS_LIST, callback
+                    genquery.AS_LIST, ctx
                 )
 
                 for row in iter:
@@ -1177,7 +1205,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
-                    genquery.AS_LIST, callback
+                    genquery.AS_LIST, ctx
                 )
 
                 for row in iter:

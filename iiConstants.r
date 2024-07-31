@@ -4,7 +4,7 @@
 #
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2024, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \constant IIGROUPPREFIX
@@ -59,7 +59,8 @@ IIFOLDERTRANSITIONS = list((FOLDER, LOCKED),
 			   (REJECTED, LOCKED),
 			   (REJECTED, FOLDER),
 			   (REJECTED, SUBMITTED),
-			   (ACCEPTED, SECURED),
+			   (ACCEPTED, FOLDER),
+			   # Backwards compatibility for folders that hold deprecated SECURED status.
 			   (SECURED, LOCKED),
 			   (SECURED, FOLDER),
 			   (SECURED, SUBMITTED))

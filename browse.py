@@ -265,6 +265,8 @@ def api_search(ctx,
         status_value = status[1]
         if status[0] == "research":
             status_name = constants.IISTATUSATTRNAME
+            # Backwards compatibility for folders that hold deprecated SECURED status.
+            status_value = "FOLDER" if status_value == "SECURED" else status_value
         else:
             status_name = constants.IIVAULTSTATUSATTRNAME
 
@@ -295,7 +297,7 @@ def _filter_vault_deposit_index(row):
 
        :param row: row of results data from GenQuery, containing collection name (COLL_NAME)
 
-       :returns: boolean value that indicated whether row should be displayed
+       :returns: boolean value that indicates whether row should be displayed
     """
     # Remove ORDER_BY etc. wrappers from column names.
     x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
