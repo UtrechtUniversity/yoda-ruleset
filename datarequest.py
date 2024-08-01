@@ -889,7 +889,7 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
     # Revoke temporary write permission (unless read permissions were set on the invoking user)
-    if not user.full_name(ctx) in readers:
+    if user.full_name(ctx) not in readers:
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
