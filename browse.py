@@ -249,7 +249,7 @@ def api_search(ctx,
         if sort_on == 'modified':
             cols = ['COLL_NAME', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
         else:
-            cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME' 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+            cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "COLL_PARENT_NAME like '{}%%' AND COLL_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
     elif search_type == 'metadata':
         if sort_on == 'modified':
