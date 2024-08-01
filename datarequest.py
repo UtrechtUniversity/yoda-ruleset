@@ -496,7 +496,10 @@ def datarequest_owner_get(ctx, request_id):
                                       + JSON_EXT)
 
     # Get and return data request owner
-    return jsonutil.read(ctx, file_path)['owner']
+    try:
+        return jsonutil.read(ctx, file_path)['owner']
+    except Exception:
+        return None
 
 
 def datarequest_is_reviewer(ctx, request_id, pending=False):
@@ -1046,7 +1049,10 @@ def api_datarequest_get(ctx, request_id):
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
 
     # Get request type
-    datarequest_type = type_get(ctx, request_id).value
+    try:
+        datarequest_type = type_get(ctx, request_id).value
+    except Exception as e:
+        return api.Error("datarequest_type_fail", "Error: {}".format(e))
 
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
