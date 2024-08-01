@@ -481,7 +481,7 @@ def rule_process_data_access_token_expiry(ctx):
         exp_time = datetime.strptime(token['exp_time'], '%Y-%m-%d %H:%M:%S.%f')
         date_exp_time = exp_time - timedelta(hours=config.token_expiration_notification)
         r = relativedelta.relativedelta(date_exp_time, datetime.now().date())
-        total_hours = r.years * 12 * 30 * 24 + r.months * 30 * 24 + r.days * 24
+        total_hours = r.years * 12 * 30 * 24 + r.months * 30 * 24 + r.days * 24 + r.hours
 
         # Send notification if token expires in less than total hours.
         if total_hours <= config.token_expiration_notification:
