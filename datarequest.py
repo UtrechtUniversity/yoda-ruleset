@@ -846,11 +846,9 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
                 datarequest['status'] = datarequest_status['status']
                 break
 
-    if len(colls) == 0:
-        # No results at all?
-        # Make sure the collection actually exists
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
+    # No results at all? Make sure the collection actually exists.
+    if len(colls) == 0 and not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
