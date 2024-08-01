@@ -81,7 +81,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
             genquery.AS_DICT, ctx)
 
-        for row in iter:
+        for _row in iter:
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
                 # This is a double entry and has to be corrected in the total returned to the frontend
@@ -468,7 +468,7 @@ def remove_revision_error_flag(ctx, data_id, path, errorattr):
         "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
         genquery.AS_LIST, ctx
     )
-    for row in iter2:
+    for _row in iter2:
         # Only try to remove it if we know for sure it exists,
         # otherwise we get useless errors in the log.
         avu.rmw_from_data(ctx, path, errorattr, "%")
@@ -867,7 +867,7 @@ def get_original_exists_dict(ctx, revision_data):
     """
     result = dict()
     for data_object_data in revision_data:
-        for (data_id, timestamp, revision_path) in data_object_data:
+        for (_data_id, _timestamp, revision_path) in data_object_data:
 
             try:
                 result[revision_path] = versioned_data_object_exists(ctx, revision_path)

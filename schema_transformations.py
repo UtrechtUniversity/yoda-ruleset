@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -581,13 +581,13 @@ def _hptlab0_hptlab1(ctx, m):
         try:
             for item_search in m[attribute]:
                 found = False
-                for i, elem in enumerate(reference_list):
+                for _i, elem in enumerate(reference_list):
                     if item_search.lower() in elem.lower():
                         found = True
                         new_list.append(elem)
                         break
                 if not found:
-                    for i, elem in enumerate(reference_list):
+                    for _i, elem in enumerate(reference_list):
                         # Split on ' ' an compare based on the first token
                         if item_search.split(' ')[0].lower() in elem.lower():
                             found = True
@@ -641,13 +641,13 @@ def _teclab0_teclab1(ctx, m):
         try:
             for item_search in m[attribute]:
                 found = False
-                for i, elem in enumerate(reference_list):
+                for _i, elem in enumerate(reference_list):
                     if item_search.lower() in elem.lower():
                         found = True
                         new_list.append(elem)
                         break
                 if not found:
-                    for i, elem in enumerate(reference_list):
+                    for _i, elem in enumerate(reference_list):
                         # Split on ' ' an compare based on the first token
                         if item_search.split(' ')[0].lower() in elem.lower():
                             found = True

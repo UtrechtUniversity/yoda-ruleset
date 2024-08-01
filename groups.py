@@ -519,7 +519,7 @@ def validate_data(ctx, data, allow_update):
     can_add_category = user.is_member_of(ctx, 'priv-category-add')
     is_admin = user.is_admin(ctx)
 
-    for (category, subcategory, groupname, managers, members, viewers, _, _) in data:
+    for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
@@ -739,7 +739,7 @@ def provisionExternalUser(ctx, username, creatorUser, creatorZone):
                                           eus_api_secret},
                                  timeout=10,
                                  verify=eus_api_tls_verify)
-    except requests.ConnectionError or requests.ConnectTimeout:
+    except (requests.ConnectionError, requests.ConnectTimeout):
         return -1
 
     return response.status_code
