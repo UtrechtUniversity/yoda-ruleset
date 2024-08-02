@@ -1136,20 +1136,26 @@ def set_vault_permissions(ctx, coll, target):
     return True
 
 
-def reader_has_access(ctx, coll):
+def reader_needs_access(ctx, group_name, coll):
+    """Return if research group has access to this group but readers do not"""
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
         "COLL_NAME = '" + coll + "'",
         genquery.AS_LIST, ctx
     )
+    reader_found = False
+    research_found = False
+
     for row in iter:
         user_id = row[0]
         user_name = user.name_from_id(ctx, user_id)
         # Check if there are *any* readers
         if user_name.startswith('read-'):
-            return True
+            reader_found = True
+        elif user_name == group_name:
+            research_found = True
 
-    return False
+    return not reader_found and research_found
 
 
 def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
@@ -1174,8 +1180,7 @@ def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
     if collection.empty(ctx, vault_path):
         return True
 
-    # Check if read research group has read-only access
-    if not reader_has_access(ctx, vault_path):
+    if reader_needs_access(ctx, group_name, vault_path):
         # Grant the research group readers read-only access to the collection
         # to enable browsing through the vault.
         try:
@@ -1195,8 +1200,7 @@ def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
     )
     for row in iter:
         target = row[0]
-        # Grant research group readers read access to vault packages.
-        if not reader_has_access(ctx, target):
+        if reader_needs_access(ctx, group_name, target):
             try:
                 if dry_run:
                     log.write(ctx, "Would have granted " + read_group_name + " read access to " + target)
