@@ -95,11 +95,9 @@ def api_browse_folder(ctx,
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
     datas = map(transform, list(qdata))
 
-    if len(colls) + len(datas) == 0:
-        # No results at all?
-        # Make sure the collection actually exists.
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
+    # No results at all? Make sure the collection actually exists.
+    if len(colls) + len(datas) == 0 and not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
@@ -177,11 +175,9 @@ def api_browse_collections(ctx,
 
     colls = map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)])
 
-    if len(colls) == 0:
-        # No results at all?
-        # Make sure the collection actually exists.
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
+    # No results at all? Make sure the collection actually exists.
+    if len(colls) == 0 and not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows()),
@@ -249,7 +245,7 @@ def api_search(ctx,
         if sort_on == 'modified':
             cols = ['COLL_NAME', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
         else:
-            cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME' 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+            cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "COLL_PARENT_NAME like '{}%%' AND COLL_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
     elif search_type == 'metadata':
         if sort_on == 'modified':

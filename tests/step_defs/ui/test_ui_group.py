@@ -261,7 +261,6 @@ def ui_group_user_added(browser, user_add):
 def ui_group_user_removed(browser, user_remove):
     with pytest.raises(splinter.exceptions.ElementDoesNotExist):
         browser.is_text_not_present(user_remove, wait_time=1)
-        browser.find_by_id('user-list').links.find_by_partial_text(user_remove).value
 
 
 @when(parsers.parse("searches for member {member}"))

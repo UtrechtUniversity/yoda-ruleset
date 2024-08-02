@@ -846,11 +846,9 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
                 datarequest['status'] = datarequest_status['status']
                 break
 
-    if len(colls) == 0:
-        # No results at all?
-        # Make sure the collection actually exists
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
+    # No results at all? Make sure the collection actually exists.
+    if len(colls) == 0 and not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
@@ -889,7 +887,7 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
     # Revoke temporary write permission (unless read permissions were set on the invoking user)
-    if not user.full_name(ctx) in readers:
+    if user.full_name(ctx) not in readers:
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
@@ -2230,8 +2228,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     pm_members          = group.members(ctx, GROUP_PM)
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
-    datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
-                           datamanager_review else "")
+    datamanager_remarks = datamanager_review.get('datamanager_remarks', '')
     truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send emails
@@ -2304,8 +2301,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     researcher_email        = datarequest_owner_get(ctx, request_id)
     cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
-    feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
-                               evaluation else "")
+    feedback_for_researcher = evaluation.get('feedback_for_researcher', '')
     pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     truncated_title         = truncated_title_get(ctx, request_id)
 

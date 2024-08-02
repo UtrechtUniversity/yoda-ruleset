@@ -37,6 +37,7 @@ __all__ = ['api_vault_submit',
            'rule_vault_enable_indexing',
            'rule_vault_disable_indexing',
            'rule_vault_process_status_transitions',
+           'rule_vault_grant_readers_vault_access',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_get_package_by_reference',
@@ -225,7 +226,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
+    if groups.user_role(ctx, user_full_name, group_name) not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -1133,6 +1134,139 @@ def set_vault_permissions(ctx, coll, target):
         msi.set_acl(ctx, "recursive", "admin:read", name, target)
 
     return True
+
+
+def reader_needs_access(ctx, group_name, coll):
+    """Return if research group has access to this group but readers do not"""
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_USER_ID",
+        "COLL_NAME = '" + coll + "'",
+        genquery.AS_LIST, ctx
+    )
+    reader_found = False
+    research_found = False
+
+    for row in iter:
+        user_id = row[0]
+        user_name = user.name_from_id(ctx, user_id)
+        # Check if there are *any* readers
+        if user_name.startswith('read-'):
+            reader_found = True
+        elif user_name == group_name:
+            research_found = True
+
+    return not reader_found and research_found
+
+
+def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
+    """Given a research group name, give reader group access to
+    vault packages if they don't have that access already.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Research group name
+    :param zone:       Zone
+    :param dry_run:    Whether to only print which groups would be changed without changing them
+
+    :return: Boolean whether completed successfully or there were errors.
+    """
+    parts = group_name.split('-')
+    base_name = '-'.join(parts[1:])
+    read_group_name = 'read-' + base_name
+    vault_group_name = constants.IIVAULTPREFIX + base_name
+    vault_path = "/" + zone + "/home/" + vault_group_name
+    no_errors = True
+
+    # Do not change the permissions if there aren't any vault packages in this vault.
+    if collection.empty(ctx, vault_path):
+        return True
+
+    if reader_needs_access(ctx, group_name, vault_path):
+        # Grant the research group readers read-only access to the collection
+        # to enable browsing through the vault.
+        try:
+            if dry_run:
+                log.write(ctx, "Would have granted " + read_group_name + " read access to " + vault_path)
+            else:
+                msi.set_acl(ctx, "default", "admin:read", read_group_name, vault_path)
+                log.write(ctx, "Granted " + read_group_name + " read access to " + vault_path)
+        except msi.Error:
+            no_errors = False
+            log.write(ctx, "Failed to grant " + read_group_name + " read access to " + vault_path)
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '{}'".format(vault_path),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        target = row[0]
+        if reader_needs_access(ctx, group_name, target):
+            try:
+                if dry_run:
+                    log.write(ctx, "Would have granted " + read_group_name + " read access to " + target)
+                else:
+                    msi.set_acl(ctx, "recursive", "admin:read", read_group_name, target)
+                    log.write(ctx, "Granted " + read_group_name + " read access to " + target)
+            except Exception:
+                no_errors = False
+                log.write(ctx, "Failed to set read permissions for <{}> on coll <{}>".format(read_group_name, target))
+
+    return no_errors
+
+
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
+    """Rule for granting reader members of research groups access to vault packages in their
+    group if they don't have access already
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param dry_run: Whether to only print which groups would be changed without making changes
+    :param verbose: Whether to be more verbose
+
+    :return: String status of completed successfully ('0') or there were errors ('1')
+    """
+    dry_run = (dry_run == '1')
+    verbose = (verbose == '1')
+    no_errors = True
+
+    log.write(ctx, "grant_readers_vault_access started.")
+
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is not rodsadmin")
+        return '1'
+
+    if dry_run or verbose:
+        modes = []
+        if dry_run:
+            modes.append("dry run")
+        if verbose:
+            modes.append("verbose")
+        log.write(ctx, "Running grant_readers_vault_access in {} mode.".format((" and ").join(modes)))
+
+    zone = user.zone(ctx)
+
+    # Get the group names
+    userIter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_ZONE = '{}' AND USER_GROUP_NAME like 'research-%'".format(zone),
+        genquery.AS_LIST,
+        ctx)
+
+    for row in userIter:
+        name = row[0]
+        if verbose:
+            log.write(ctx, "{}: checking permissions".format(name))
+        if not set_reader_vault_permissions(ctx, name, zone, dry_run):
+            no_errors = False
+
+    message = ""
+    if no_errors:
+        message = "grant_readers_vault_access completed successfully."
+    else:
+        message = "grant_readers_vault_access completed, with errors."
+    log.write(ctx, message)
+
+    return '0' if no_errors else '1'
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))

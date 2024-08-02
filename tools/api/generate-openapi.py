@@ -14,7 +14,7 @@ Do not run it on untrusted codebases.
 """
 from __future__ import print_function
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Chris Smeele')
@@ -112,57 +112,56 @@ except Exception as e:
 
 # Note: for the most part, order matters (e.g. ordering of API function list).
 #       So we use ordered dicts.
-O = lambda *xs: OrderedDict(xs)
+def oDict(*xs):
+    return OrderedDict(xs)
 
 title = 'Yoda API'
-
 if core:
     title = 'Yoda core API'
-
 if module:
     title = 'Yoda {} API'.format(module)
 
-spec = O(('openapi', '3.0.0'),
+spec = oDict(('openapi', '3.0.0'),
          ('info',
-         O(('description', ruleset_mod.__doc__),
+         oDict(('description', ruleset_mod.__doc__),
            ('contact',
-           O(('email', 'l.r.westerhof@uu.nl'))),
+           oDict(('email', 'l.r.westerhof@uu.nl'))),
            ('version', getattr(ruleset_mod, '__version__', '9999')),
            ('title', title))),
          ('servers',
-          [O(('url', 'https://portal.yoda.test/api'), ('description', 'Local Yoda development server'))]),
-         ('security', [ O(('cookieAuth', [])), O(('basicAuth', [])) ]),
+          [oDict(('url', 'https://portal.yoda.test/api'), ('description', 'Local Yoda development server'))]),
+         ('security', [ oDict(('cookieAuth', [])), oDict(('basicAuth', [])) ]),
          ('components',
-         O(('schemas',
-          O(('result_error',
-            O(('type', 'object'),
+         oDict(('schemas',
+          oDict(('result_error',
+            oDict(('type', 'object'),
               ('properties',
-              O(('status',      O(('type', 'string'), ('description', 'Holds an error ID'))),
-                ('status_info', O(('type', 'string'), ('description', 'Holds a human-readable error description'))),
+              oDict(('status',      oDict(('type', 'string'), ('description', 'Holds an error ID'))),
+                ('status_info', oDict(('type', 'string'), ('description', 'Holds a human-readable error description'))),
                 ('data',
-                O(('description', 'empty'),
+                oDict(('description', 'empty'),
                   ('nullable', True),
                   ('type', 'object'))))))))),
             ('securitySchemes',
-            O(('cookieAuth',
-              O(('in', 'cookie'),
+            oDict(('cookieAuth',
+              oDict(('in', 'cookie'),
                 ('type', 'apiKey'),
                 # ('name', 'session'))),
                 ('name', 'yoda_session'))),
-              ('basicAuth', O(('type', 'http'), ('scheme', 'basic'))))),
+              ('basicAuth', oDict(('type', 'http'), ('scheme', 'basic'))))),
             ('responses',
-            O(('status_400',
-              O(('description', 'Bad request'),
+            oDict(('status_400',
+              oDict(('description', 'Bad request'),
                 ('content',
-                O(('application/json',
-                  O(('schema', O(('$ref', '#/components/schemas/result_error'))))))))),
+                oDict(('application/json',
+                  oDict(('schema', oDict(('$ref', '#/components/schemas/result_error'))))))))),
               ('status_500',
-                O(('description', 'Internal error'),
+                oDict(('description', 'Internal error'),
                   ('content',
-                  O(('application/json',
-                    O(('schema', O(('$ref', '#/components/schemas/result_error'))))))))),
+                  oDict(('application/json',
+                    oDict(('schema', oDict(('$ref', '#/components/schemas/result_error'))))))))),
              )))),
-         ('paths', O())
+         ('paths', oDict())
       )
 
 def gen_fn_spec(name, fn):
@@ -192,7 +191,7 @@ def gen_fn_spec(name, fn):
             ,'dict': 'object'
             ,'list': 'array'}
 
-    paramdocs = O(*[(k, (types[(re.findall(r'^\s*:type\s+' +re.escape(k)+r':\s*(.+?)\s*$', doc, re.M) or ['str'])[-1]],
+    paramdocs = oDict(*[(k, (types[(re.findall(r'^\s*:type\s+' +re.escape(k)+r':\s*(.+?)\s*$', doc, re.M) or ['str'])[-1]],
                          (re.findall(r'^\s*:param\s+'+re.escape(k)+r':\s*(.+?)\s*$', doc, re.M) or ['(undocumented)'])[-1],
                          None if i < len(required) else a_defaults[i-len(required)]))
                       for i, k in enumerate(required+optional)])
@@ -205,14 +204,14 @@ def gen_fn_spec(name, fn):
     doc = re.sub(r'^\s*[\r\n].*', '', doc, flags=re.M|re.S)
 
     req = list(required)
-    props = O(*[(name, { 'type':        paramdocs[name][0],
+    props = oDict(*[(name, { 'type':        paramdocs[name][0],
                          'description': paramdocs[name][1],
                          'default':     paramdocs[name][2] })
                 for name in required+optional])
 
     for name in required+optional:
         if props[name]['type'] == 'array':
-            props[name]['items'] = O()
+            props[name]['items'] = oDict()
 
     dataspec = {
         'type': 'object',
@@ -221,7 +220,8 @@ def gen_fn_spec(name, fn):
     }
 
     # Silly.
-    if req == []: del dataspec['required']
+    if req == []:
+        del dataspec['required']
 
     # Currently, arguments are specified as a JSON string in a a
     # multipart/form-data argument. This leads to less-than-ideal presentation
@@ -229,12 +229,12 @@ def gen_fn_spec(name, fn):
     # It seems to be a good idea to move the toplevel attributes of argument
     # data to actual request parameters (e.g. individual form "fields").
 
-    return O(
+    return oDict(
       ('post',
-      O(('tags', [mod]),
+      oDict(('tags', [mod]),
         ('summary', doc),
         ('requestBody',
-        O(('required', True),
+        oDict(('required', True),
           ('content',
           # How do we encode arguments?
           #
@@ -243,36 +243,36 @@ def gen_fn_spec(name, fn):
           # but as a result parameter documentation is unaccessible from swagger,
           # and optional parameters are missing completely.
           #
-          # O(('multipart/form-data',
-          #   O(('schema',
-          #     O(('type', 'object'),
+          # oDict(('multipart/form-data',
+          #   oDict(('schema',
+          #     oDict(('type', 'object'),
           #       ('properties',
-          #       O(('data', dataspec))))))))))),
+          #       oDict(('data', dataspec))))))))))),
           #
           # 2) as a JSON request body. Same result as (1)
           #
-          # O(('application/json',
-          #   O(('schema', dataspec))))))),
+          # oDict(('application/json',
+          #   oDict(('schema', dataspec))))))),
           #
           # 3) Toplevel parameters as form fields.
           # Not in line with the current portal,
           # but provides the best documentation value.
           #
-          O(('application/json',
-            O(('schema', dataspec))))))),
+          oDict(('application/json',
+            oDict(('schema', dataspec))))))),
         ('responses',
-        O(('200',
-          O(('description', 'Success'),
+        oDict(('200',
+          oDict(('description', 'Success'),
             ('content',
-            O(('application/json',
-              O(('schema',
-                O(('type', 'object'),
+            oDict(('application/json',
+              oDict(('schema',
+                oDict(('type', 'object'),
                   ('properties',
-                  O(('status',      O(('type', 'string'))),
-                    ('status_info', O(('type', 'string'), ('nullable', True))),
-                    ('data',        O(('nullable', True))))))))))))),
-          ('400', O(('$ref', '#/components/responses/status_400'))),
-          ('500', O(('$ref', '#/components/responses/status_500'))))))))
+                  oDict(('status',      oDict(('type', 'string'))),
+                    ('status_info', oDict(('type', 'string'), ('nullable', True))),
+                    ('data',        oDict(('nullable', True))))))))))))),
+          ('400', oDict(('$ref', '#/components/responses/status_400'))),
+          ('500', oDict(('$ref', '#/components/responses/status_500'))))))))
 
 for name, fn in api.fns:
     if '<lambda>' in name:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to archive vault data packages."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -87,10 +87,10 @@ def vault_archivable(ctx, coll):
         return True
 
     if not coll.endswith("/original"):
-        for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                         "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
-                                         genquery.AS_LIST,
-                                         ctx):
+        for _row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                          genquery.AS_LIST,
+                                          ctx):
             coll_size = collection.size(ctx, coll)
 
             # Data package size is inside archive limits.

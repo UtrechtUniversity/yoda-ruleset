@@ -16,7 +16,7 @@ import uuid
 import data_access_token
 import folder
 import schema
-from util import avu, collection, config, constants, data_object, log, msi, resource, rule, user
+from util import avu, collection, config, constants, data_object, group, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -470,6 +470,27 @@ basic_integration_tests = [
     {"name":   "util.data_object.get_group_owners",
      "test": lambda ctx: data_object.get_group_owners(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == [['research-initial', 'tempZone']]},
+    {"name":   "util.group.exists.yes",
+     "test": lambda ctx: group.exists(ctx, "research-initial"),
+     "check": lambda x: x},
+    {"name":   "util.group.exists.no",
+     "test": lambda ctx: group.exists(ctx, "research-doesnotexist"),
+     "check": lambda x: not x},
+    {"name":   "util.group.get_category",
+     "test": lambda ctx: group.get_category(ctx, "research-initial"),
+     "check": lambda x: x == "test-automation"},
+    {"name":   "util.group.is_member.yes",
+     "test": lambda ctx: group.is_member(ctx, "research-initial", "researcher"),
+     "check": lambda x: x},
+    {"name":   "util.group.is_member.no",
+     "test": lambda ctx: group.is_member(ctx, "research-initial", "rods"),
+     "check": lambda x: not x},
+    {"name":   "util.group.members.normal",
+     "test": lambda ctx: group.members(ctx, "research-initial"),
+     "check": lambda x: sorted([member for member in x]) == sorted([('functionaladminpriv', 'tempZone'), ('functionaladminpriv@yoda.test', 'tempZone'), ('groupmanager', 'tempZone'), ('groupmanager@yoda.test', 'tempZone'), ('researcher', 'tempZone'), ('researcher@yoda.test', 'tempZone')])},
+    {"name":   "util.group.members.doesnotexist",
+     "test": lambda ctx: user.exists(ctx, "research-doesnotexist"),
+     "check": lambda x: x is False},
     {"name":   "util.resource.exists.yes",
      "test": lambda ctx: resource.exists(ctx, "irodsResc"),
      "check": lambda x: x},

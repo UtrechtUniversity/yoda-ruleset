@@ -137,14 +137,19 @@ def copy_acls_from_parent(ctx, path, recursive_flag):
 
         user_name = user.name_from_id(ctx, user_id)
 
+        # iRODS keeps ACLs for deleted users in the iCAT database (https://github.com/irods/irods/issues/7778),
+        # so we need to skip ACLs referring to users that no longer exist.
+        if user_name == "":
+            continue
+
         if access_name == "own":
             log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             msi.set_acl(ctx, recursive_flag, "own", user_name, path)
         elif access_name == "read object":
-            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            log.write(ctx, "iiCopyACLsFromParent: granting read to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             msi.set_acl(ctx, recursive_flag, "read", user_name, path)
         elif access_name == "modify object":
-            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            log.write(ctx, "iiCopyACLsFromParent: granting write to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             msi.set_acl(ctx, recursive_flag, "write", user_name, path)
 
 
