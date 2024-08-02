@@ -718,7 +718,7 @@ def process_publication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_publication in verbose mode.")
 
@@ -1025,7 +1025,7 @@ def process_depublication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_depublication in verbose mode.")
 
@@ -1172,7 +1172,7 @@ def process_republication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_republication in verbose mode.")
 
@@ -1365,7 +1365,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running update_publication in verbose mode.")
 
