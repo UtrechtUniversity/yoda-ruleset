@@ -406,11 +406,11 @@ def api_group_data(ctx):
         coll_name = "/{}/home/{}".format(user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
-            'description': group['description'] if 'description' in group else '',
+            'description': group.get('description', ''),
             'schema_id': group['schema_id'],
-            'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
-            'data_classification': group['data_classification'] if 'data_classification' in group else '',
-            'creation_date': creation_dates[coll_name] if coll_name in creation_dates else '',
+            'expiration_date': group.get('expiration_date', ''),
+            'data_classification': group.get('data_classification', ''),
+            'creation_date': creation_dates.get(coll_name, ''),
             'members': members
         }
 
@@ -1199,7 +1199,7 @@ def rule_group_sram_sync(ctx):
         group_name = group["name"]
         members = group['members'] + group['read']
         managers = group['managers']
-        description = group['description'] if 'description' in group else ''
+        description = group.get('description', '')
 
         log.write(ctx, "Sync group {} with SRAM".format(group_name))
 

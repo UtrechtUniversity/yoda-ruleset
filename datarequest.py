@@ -2228,8 +2228,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     pm_members          = group.members(ctx, GROUP_PM)
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
-    datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
-                           datamanager_review else "")
+    datamanager_remarks = datamanager_review.get('datamanager_remarks', '')
     truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send emails
@@ -2302,8 +2301,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     researcher_email        = datarequest_owner_get(ctx, request_id)
     cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
-    feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
-                               evaluation else "")
+    feedback_for_researcher = evaluation.get('feedback_for_researcher', '')
     pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     truncated_title         = truncated_title_get(ctx, request_id)
 
