@@ -345,7 +345,6 @@ def set_can_modify(ctx, coll):
     check_access_result = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = check_access_result['arguments'][2]
     if modify_access != b'\x01':
-        # TODO set to a lower read?
         # This allows us permission to copy the files
         if not set_acl_check(ctx, "recursive", "admin:read", coll, "Could not set ACL (admin:read) for collection: {}".format(coll)):
             return False
