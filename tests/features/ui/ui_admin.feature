@@ -9,8 +9,9 @@ Feature: Admin UI
         When the user navigates to the admin page
         Then the text Administration is shown
         And Administration option is available in the menu dropdown
-        And the banner setup option should be visible
-        And the theme change option should be visible
+        And the banner setup option is visible
+        And the theme change option is visible
+        And the publication terms option is visible
 
         Examples:
             | user                |
@@ -73,3 +74,16 @@ Feature: Admin UI
         | functionaladminpriv | uu_fsw | Change Theme | Social Science |
         | functionaladminpriv | uu_geo | Change Theme | Geo            |
         | functionaladminpriv | uu     | Change Theme | Yoda           |
+
+
+    Scenario Outline: Admin user previews updated publication terms
+        Given user <user> is logged in
+        When the user navigates to the admin page
+        And the user changes publication terms
+        And the user clicks Update Terms button
+        And the user clicks Preview Updated Terms button
+        Then the updated terms are displayed
+
+    Examples:
+        | user                |
+        | functionaladminpriv |

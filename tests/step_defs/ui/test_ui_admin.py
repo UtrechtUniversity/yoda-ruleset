@@ -51,9 +51,13 @@ def ui_admin_control_importance(browser, action):
         raise ValueError("Unsupported action.")
 
 
+def user_clicks_button(browser, button):
+    browser.find_by_name(button).first.click()
+
+
 @when(parsers.parse("the user click button {button}"))
 def ui_admin_click_button(browser, button):
-    browser.find_by_name(button).first.click()
+    user_clicks_button(browser, button)
 
 
 @when(parsers.parse("the user change portal theme to {theme}"))
@@ -87,7 +91,7 @@ def ui_admin_access_forbidden(browser):
     assert browser.is_text_present("Access forbidden")
 
 
-@then("the banner setup option should be visible")
+@then("the banner setup option is visible")
 def ui_admin_banner_option_present(browser):
     assert browser.is_text_present("Set Maintenance Banner"), "Banner title not found on the page"
     assert browser.find_by_name("banner").visible, "Textarea for banner message not found on the page"
@@ -96,10 +100,16 @@ def ui_admin_banner_option_present(browser):
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
 
 
-@then("the theme change option should be visible")
+@then("the theme change option is visible")
 def ui_admin_theme_option_present(browser):
     assert browser.is_text_present("Change Portal Theme"), "Change Theme title not found on the page"
     assert browser.find_by_name("theme").visible, "Theme Selection not found on the page"
+
+
+@then("the publication terms option is visible")
+def ui_admin_pub_terms_option_present(browser):
+    assert browser.is_text_present("Update Publication Terms"), "Update Publication Terms title not found on page"
+    assert browser.find_by_name("publicationTerms").visible, "Publication Terms text field not found on the page"
 
 
 @then("the banner does not exist")
@@ -117,3 +127,19 @@ def ui_admin_display_banner_color(browser, color):
 @then(parsers.parse("the new theme should display {host_name}"))
 def ui_admin_display_new_theme(browser, host_name):
     assert browser.is_text_present(host_name)
+
+
+@when("the user clicks Update Terms button")
+def ui_admin_clicks_update_terms(browser):
+    user_clicks_button(browser, 'Update Terms')
+
+
+@when("the user clicks Preview Updated Terms button")
+def ui_admin_clicks_preview(browser):
+    user_clicks_button(browser, 'Preview Updated Terms')
+
+
+@then('the update terms are displayed')
+def ui_admin_updated_terms_display(browser):
+    # TODO assert!!!
+    pass

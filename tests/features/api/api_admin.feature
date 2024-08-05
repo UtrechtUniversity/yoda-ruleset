@@ -9,8 +9,8 @@ Feature: Admin API
 
         Examples:
             | user                |
-            | technicaladmin      | # Role: irodsadmin
-            | functionaladminpriv | # Group: priv-admin
+            | technicaladmin      |
+            | functionaladminpriv |
 
 
     Scenario Outline: User has NO admin access
@@ -21,4 +21,4 @@ Feature: Admin API
 
         Examples:
             | user                |
-            | researcher          | # Role: non-admin and Group: non-priv-group
+            | researcher          |
