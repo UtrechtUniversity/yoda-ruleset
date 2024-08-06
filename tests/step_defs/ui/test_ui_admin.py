@@ -129,15 +129,26 @@ def ui_admin_display_new_theme(browser, host_name):
     assert browser.is_text_present(host_name)
 
 
-@when(parsers.parse("And the user adds text {text} to publication terms"))
-def ui_admin_edits_terms(browser):
-    user_clicks_button(browser, 'Preview Terms')
+@when(parsers.parse("the user adds text {text} to publication terms"))
+def ui_admin_edits_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    print("terms",terms)
+    new_terms = text + terms
+    print("new_terms",new_terms)
+    browser.fill("publicationTerms", new_terms)
 
 
 
 @when("the user clicks Preview Terms button")
 def ui_admin_clicks_preview(browser):
     user_clicks_button(browser, 'Preview Terms')
+
+
+@then(parsers.parse("the added text {text} is shown in the preview window"))
+def ui_admin_edits_terms(browser, text):
+    previewed_terms = browser.find_by_css('div[class="modal-body"]').first.value
+    print("previewed_terms",previewed_terms)
+    assert text in previewed_terms
 
 
 @when("the user clicks Update Terms button")
