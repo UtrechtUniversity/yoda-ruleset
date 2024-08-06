@@ -7,12 +7,14 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_run_integration_tests']
 
 import json
+import os
 import re
 import time
 import traceback
 import uuid
 
 import folder
+import meta
 import schema
 from util import avu, collection, config, constants, data_object, group, log, msi, resource, rule, user
 
@@ -92,6 +94,7 @@ def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
     collection.remove(ctx, tmp_object)
     return result
 
+
 def _test_avu_set_collection(ctx, catch):
     # Test setting avu with catch and without catch
     tmp_object = _create_tmp_collection(ctx)
@@ -137,6 +140,58 @@ def _test_folder_set_get_last_run(ctx):
     found, last_run = folder.get_last_run_time(ctx, tmp_coll)
     collection.remove(ctx, tmp_coll)
     return result, found, last_run
+
+
+def _test_schema_active_schema_deposit_from_default(ctx):
+    avu.rm_from_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot")
+    avu.associate_to_group(ctx, "deposit-pilot", "schema_id", "dag-0")
+    return result
+
+
+def _test_schema_active_schema_research_from_default(ctx):
+    avu.rm_from_group(ctx, "research-core-2", "schema_id", "core-2")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/research-core-2")
+    avu.associate_to_group(ctx, "research-core-2", "schema_id", "core-2")
+    return result
+
+
+def _test_schema_active_schema_vault_research_override(ctx):
+    avu.associate_to_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-core-2")
+    avu.rm_from_group(ctx, "vault-core-2", "schema_id", "integration-test-schema-1")
+    return result
+
+
+def _test_schema_active_schema_vault_without_research(ctx):
+    ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "")
+    result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
+    ctx.uuGroupRemove("vault-without-research", "", "")
+    return result
+
+
+def _test_get_latest_vault_metadata_path_empty(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    collection.remove(ctx, tmp_collection)
+    return latest_file is None
+
+
+def _test_get_latest_vault_metadata_path_normal(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"), "test")
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"))
+    collection.remove(ctx, tmp_collection)
+    return latest_file == os.path.join(tmp_collection, "yoda-metadata[1722869877].json")
 
 
 def _test_folder_secure_func(ctx, func):
@@ -323,6 +378,30 @@ basic_integration_tests = [
     {"name":  "folder.determine_new_vault_target.invalid",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
      "check": lambda x: x == ""},
+    {"name": "groups.rule_group_expiration_date_validate.1",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.2",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate(".", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.rule_group_expiration_date_validate.3",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("abc", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.4",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2020-02-02", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.5",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-01-32", ""),
+     "check": lambda x: x['arguments'][1] == 'false'},
+    {"name": "groups.rule_group_expiration_date_validate.6",
+     "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
+     "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "meta.get_latest_vault_metadata_path.empty",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_empty(ctx),
+     "check": lambda x: x},
+    {"name": "meta.get_latest_vault_metadata_path.normal",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_normal(ctx),
+     "check": lambda x: x},
     {"name": "policies.check_anonymous_access_allowed.local",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
