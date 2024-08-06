@@ -16,6 +16,7 @@ import uuid
 import data_access_token
 import folder
 import groups
+import meta
 import schema
 from util import avu, collection, config, constants, data_object, group, log, msi, resource, rule, user
 
@@ -191,6 +192,30 @@ def _test_schema_active_schema_vault_without_research(ctx):
     result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
     ctx.uuGroupRemove("vault-without-research", "", "")
     return result
+
+
+def _test_get_latest_vault_metadata_path_empty(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    collection.remove(ctx, tmp_collection)
+    return latest_file is None
+
+
+def _test_get_latest_vault_metadata_path_normal(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"), "test")
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"))
+    collection.remove(ctx, tmp_collection)
+    return latest_file == os.path.join(tmp_collection, "yoda-metadata[1722869877].json")
 
 
 def _test_folder_secure_func(ctx, func):
@@ -431,6 +456,12 @@ basic_integration_tests = [
     {"name": "groups.rule_group_expiration_date_validate.6",
      "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "meta.get_latest_vault_metadata_path.empty",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_empty(ctx),
+     "check": lambda x: x},
+    {"name": "meta.get_latest_vault_metadata_path.normal",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_normal(ctx),
+     "check": lambda x: x},
     {"name": "policies.check_anonymous_access_allowed.local",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
