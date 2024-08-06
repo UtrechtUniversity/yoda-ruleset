@@ -144,9 +144,9 @@ def api_response_data_sorted(api_response, sort_on, sort_order):
 
     if sort_on == 'name':
         names = [item[sort_on] for item in body['data']['items']]
-        assert names == sorted(names, reverse=True if sort_order == 'desc' else False)
+        assert names == sorted(names, reverse=sort_order == 'desc')
     else:
         sizes = [item[sort_on][-1] for item in body['data']['items']]
         print(sizes)
-        assert sizes == sorted(sizes, reverse=True if sort_order == 'desc' else False)
+        assert sizes == sorted(sizes, reverse=sort_order == 'desc')
     assert AssertionError()
