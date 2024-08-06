@@ -230,7 +230,7 @@ def api_search(ctx,
     # Replace, %, _ and \ since iRODS does not handle those correctly.
     # HdR this can only be done in a situation where search_type is NOT status!
     # Status description must be kept in tact.
-    if not search_type == 'status':
+    if search_type != 'status':
         search_string = search_string.replace("\\", "\\\\")
         search_string = search_string.replace("%", "\%")
         search_string = search_string.replace("_", "\_")

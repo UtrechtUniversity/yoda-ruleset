@@ -350,7 +350,7 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT] and attr == constants.IISTATUSATTRNAME:
         # Research or deposit folder status change. Validate.
-        if not unit == '':
+        if unit != '':
             return policy.fail('Invalid status attribute')
         if option not in ['set', 'rm', 'rmw']:
             # "add" has no meaning on the status attribute, as there must
