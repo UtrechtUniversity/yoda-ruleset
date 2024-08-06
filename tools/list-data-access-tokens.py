@@ -11,7 +11,7 @@ import sys
 
 try:
     from pysqlcipher3 import dbapi2 as sqlite3
-except ImportError, e:
+except ImportError:
     exit_with_error("Error: pysqlcipher3 not available. It should have been installed by the Yoda playbook.")
 
 
