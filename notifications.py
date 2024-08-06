@@ -481,9 +481,10 @@ def rule_process_data_access_token_expiry(ctx):
         exp_time = datetime.strptime(token['exp_time'], '%Y-%m-%d %H:%M:%S.%f')
         date_exp_time = exp_time - timedelta(hours=config.token_expiration_notification)
         r = relativedelta.relativedelta(date_exp_time, datetime.now().date())
+        total_hours = r.years * 12 * 30 * 24 + r.months * 30 * 24 + r.days * 24 + r.hours
 
-        # Send notification if token expires in less than a day.
-        if r.years == 0 and r.months == 0 and r.days <= 1:
+        # Send notification if token expires in less than configured hours.
+        if total_hours <= config.token_expiration_notification:
             actor = 'system'
             target = str(user.from_str(ctx, token['user']))
             message = "Data access password with label <{}> is expiring".format(token["label"])
