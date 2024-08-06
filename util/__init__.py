@@ -5,7 +5,7 @@ This subpackage does not export any callable rules by itself.
 Rather, it provides utility Python functions to other rules.
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -35,7 +35,6 @@ if 'unittest' not in sys.modules.keys():
     import group
     import avu
     import misc
-    import config
     import resource
     import arb_data_manager
     import cached_data_manager
