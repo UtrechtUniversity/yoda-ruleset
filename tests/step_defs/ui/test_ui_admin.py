@@ -129,17 +129,17 @@ def ui_admin_display_new_theme(browser, host_name):
     assert browser.is_text_present(host_name)
 
 
+@when(parsers.parse("And the user adds text {text} to publication terms"))
+def ui_admin_edits_terms(browser):
+    user_clicks_button(browser, 'Preview Terms')
+
+
+
+@when("the user clicks Preview Terms button")
+def ui_admin_clicks_preview(browser):
+    user_clicks_button(browser, 'Preview Terms')
+
+
 @when("the user clicks Update Terms button")
 def ui_admin_clicks_update_terms(browser):
     user_clicks_button(browser, 'Update Terms')
-
-
-@when("the user clicks Preview Updated Terms button")
-def ui_admin_clicks_preview(browser):
-    user_clicks_button(browser, 'Preview Updated Terms')
-
-
-@then('the update terms are displayed')
-def ui_admin_updated_terms_display(browser):
-    # TODO assert!!!
-    pass

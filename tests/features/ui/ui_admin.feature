@@ -2,9 +2,6 @@
 Feature: Admin UI
 
     Scenario Outline: Admin page view by admin users
-        technicaladmin is an admin user as role: rodsadmin
-        functionaladminpriv is an admin user in group: priv-admin
-
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Administration is shown
@@ -12,7 +9,8 @@ Feature: Admin UI
         And the banner setup option is visible
         And the theme change option is visible
         And the publication terms option is visible
-
+        # Example 1: technicaladmin is an admin user as the role: rodsadmin
+        # Example 2: functionaladminpriv is an admin user in the group: priv-admin
         Examples:
             | user                |
             | technicaladmin      |
@@ -76,14 +74,13 @@ Feature: Admin UI
         | functionaladminpriv | uu     | Change Theme | Yoda           |
 
 
-    Scenario Outline: Admin user previews updated publication terms
+    Scenario Outline: Admin user previews publication terms
         Given user <user> is logged in
         When the user navigates to the admin page
-        And the user changes publication terms
-        And the user clicks Update Terms button
-        And the user clicks Preview Updated Terms button
-        Then the updated terms are displayed
+        And the user adds text <text> to publication terms
+        And the user clicks Preview Terms button
+        Then the text <text> is displayed in the publication terms
 
     Examples:
-        | user                |
-        | functionaladminpriv |
+        | user                | text                        |
+        | functionaladminpriv | Temporary Publication Terms |
