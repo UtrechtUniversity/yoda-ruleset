@@ -1,46 +1,6 @@
 @ui
 Feature: Admin UI
 
-    Scenario Outline: Admin user previews publication terms
-        Given user <user> is logged in
-        When the user navigates to the admin page
-        And the user adds text <text> to publication terms
-        And the user clicks Preview Terms button
-        Then the added text <text> is shown in the preview window
-
-    Examples:
-        | user                | text           |
-        | functionaladminpriv | TemporaryTerms |
-
-
-    Scenario Outline: Admin user updates publication terms
-        Given user <user> is logged in
-        When the user navigates to the admin page
-        And the user adds text <text> to publication terms
-        And the user clicks Update Terms button
-        And the user reloads the page
-        Then the text <text> is displayed in the publication terms textarea
-
-
-    Examples:
-        | user                | text           |
-        | functionaladminpriv | TemporaryTerms |
-
-
-    Scenario Outline: Admin user removes the text from publication terms
-        Given user <user> is logged in
-        When the user navigates to the admin page
-        And the text <text> is displayed in the publication terms textarea
-        And the user removes the <text> from publication terms
-        And the user clicks Update Terms button
-        And the user reloads the page
-        Then the text <text> is not displayed in the publication terms textarea
-
-    Examples:
-        | user                | text           |
-        | functionaladminpriv | TemporaryTerms |
-
-
     Scenario Outline: Admin page view by admin users
         Given user <user> is logged in
         When the user navigates to the admin page
@@ -114,6 +74,7 @@ Feature: Admin UI
         | functionaladminpriv | uu_geo | Change Theme | Geo            |
         | functionaladminpriv | uu     | Change Theme | Yoda           |
 
+
     Scenario Outline: Admin user previews publication terms
         Given user <user> is logged in
         When the user navigates to the admin page
@@ -131,7 +92,7 @@ Feature: Admin UI
         When the user navigates to the admin page
         And the user adds text <text> to publication terms
         And the user clicks Update Terms button
-        And the user navigates to the admin page
+        And the user reloads the page
         Then the text <text> is displayed in the publication terms textarea
 
 
@@ -146,7 +107,7 @@ Feature: Admin UI
         And the text <text> is displayed in the publication terms textarea
         And the user removes the <text> from publication terms
         And the user clicks Update Terms button
-        And the user navigates to the admin page
+        And the user reloads the page
         Then the text <text> is not displayed in the publication terms textarea
 
     Examples:
