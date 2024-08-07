@@ -143,21 +143,30 @@ def ui_admin_displays_terms_in_preview(browser, text):
 
 
 @when("the user clicks Update Terms button")
-@then("the user clicks Update Terms button")
 def ui_admin_clicks_update_terms(browser):
     browser.find_by_id('update-terms').first.click()
 
 
+@when("the user reloads the page")
+def ui_admin_reload(browser):
+    browser.reload()
+
+
+@when(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 @then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 def ui_admin_displays_terms(browser, text):
     terms = browser.find_by_id('publicationTerms').first.value
     assert text in terms
 
 
-@then(parsers.parse("the user removes the {text} from publication terms"))
+@when(parsers.parse("the user removes the {text} from publication terms"))
 def ui_admin_removes_text_from_terms(browser, text):
     terms = browser.find_by_id('publicationTerms').first.value
-    assert text in terms, "Text not found in terms"
     modifeid_terms = terms.replace(text, "", 1)
-    assert text not in modifeid_terms, "Removing text from terms faild"
     browser.fill("publicationTerms", modifeid_terms)
+
+
+@then(parsers.parse("the text {text} is not displayed in the publication terms textarea"))
+def ui_admin_removed_text_not_displayed(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    assert text not in terms
