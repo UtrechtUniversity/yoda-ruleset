@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from dateutil import parser
@@ -218,13 +218,18 @@ def get_funders(combi):
 
 
 def get_creators(combi):
-    """Return creator information in datacite format."""
+    """Return creator information in DataCite format.
+
+    :param combi: Combined JSON file that holds both user and system metadata
+
+    :returns: JSON element with creators in DataCite format
+    """
     all_creators = []
 
     for creator in combi.get('Creator', []):
         affiliations = []
         for aff in creator.get('Affiliation', []):
-            if isinstance(aff, dict):
+            if isinstance(aff, dict) and len(aff) > 0:
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
@@ -255,14 +260,14 @@ def get_contributors(combi):
 
     :param combi: Combined JSON file that holds both user and system metadata
 
-    :returns: XML element with contributors in DataCite format
+    :returns: JSON element with contributors in DataCite format
     """
     all = []
     # 1) Contributor
     for person in combi.get('Contributor', []):
         affiliations = []
         for aff in person.get('Affiliation', []):
-            if isinstance(aff, dict) and len(aff):
+            if isinstance(aff, dict) and len(aff) > 0:
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
                                          "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
