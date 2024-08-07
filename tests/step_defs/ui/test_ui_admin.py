@@ -141,9 +141,8 @@ def ui_admin_clicks_preview(browser):
 
 
 @then(parsers.parse("the added text {text} is shown in the preview window"))
-def ui_admin_edits_terms(browser, text):
+def ui_admin_displays_terms_in_preview(browser, text):
     previewed_terms = browser.find_by_css('div[class="modal-body"]').first.value
-    print("previewed_terms",previewed_terms)
     assert text in previewed_terms
 
 
