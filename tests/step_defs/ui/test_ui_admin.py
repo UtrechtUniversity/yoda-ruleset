@@ -87,7 +87,7 @@ def ui_admin_access_forbidden(browser):
     assert browser.is_text_present("Access forbidden")
 
 
-@then("the banner setup option should be visible")
+@then("the banner setup option is visible")
 def ui_admin_banner_option_present(browser):
     assert browser.is_text_present("Set Maintenance Banner"), "Banner title not found on the page"
     assert browser.find_by_name("banner").visible, "Textarea for banner message not found on the page"
@@ -96,10 +96,16 @@ def ui_admin_banner_option_present(browser):
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
 
 
-@then("the theme change option should be visible")
+@then("the theme change option is visible")
 def ui_admin_theme_option_present(browser):
     assert browser.is_text_present("Change Portal Theme"), "Change Theme title not found on the page"
     assert browser.find_by_name("theme").visible, "Theme Selection not found on the page"
+
+
+@then("the publication terms option is visible")
+def ui_admin_pub_terms_option_present(browser):
+    assert browser.is_text_present("Update Publication Terms"), "Update Publication Terms title not found on page"
+    assert browser.find_by_id("publicationTerms").visible, "Publication Terms text field not found on the page"
 
 
 @then("the banner does not exist")
@@ -117,3 +123,50 @@ def ui_admin_display_banner_color(browser, color):
 @then(parsers.parse("the new theme should display {host_name}"))
 def ui_admin_display_new_theme(browser, host_name):
     assert browser.is_text_present(host_name)
+
+
+@when(parsers.parse("the user adds text {text} to publication terms"))
+def ui_admin_edits_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    browser.fill("publicationTerms", text + terms)
+
+
+@when("the user clicks Preview Terms button")
+def ui_admin_clicks_preview(browser):
+    browser.find_by_id('create-preview').first.click()
+
+
+@then(parsers.parse("the added text {text} is shown in the preview window"))
+def ui_admin_displays_terms_in_preview(browser, text):
+    previewed_terms = browser.find_by_css('div[class="modal-body"]').first.value
+    assert text in previewed_terms
+
+
+@when("the user clicks Update Terms button")
+def ui_admin_clicks_update_terms(browser):
+    browser.find_by_id('update-terms').first.click()
+
+
+@when("the user reloads the page")
+def ui_admin_reload(browser):
+    browser.reload()
+
+
+@when(parsers.parse("the text {text} is displayed in the publication terms textarea"))
+@then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
+def ui_admin_displays_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    assert text in terms
+
+
+@when(parsers.parse("the user removes the {text} from publication terms"))
+def ui_admin_removes_text_from_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    modifeid_terms = terms.replace(text, "", 1)
+    browser.fill("publicationTerms", modifeid_terms)
+
+
+@then(parsers.parse("the text {text} is not displayed in the publication terms textarea"))
+def ui_admin_removed_text_not_displayed(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    assert text not in terms
