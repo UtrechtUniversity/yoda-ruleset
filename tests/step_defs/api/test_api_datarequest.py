@@ -1,7 +1,7 @@
 # coding=utf-8
 """Datarequest API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from io import BytesIO
@@ -456,8 +456,9 @@ def api_datarequest_preregistration_confirm(user, datarequest_id):
 
 @given('DTA is uploaded', target_fixture="api_response")
 def api_datarequest_dta_upload(user, datarequest_id):
-    dta_path = open("files/dta.pdf", "rb")
-    dta      = BytesIO(dta_path.read())
+    with open("files/dta.pdf", "rb") as dta_fd:
+        dta = BytesIO(dta_fd.read())
+
     return post_form_data(
         user,
         "/datarequest/upload_dta/{}".format(datarequest_id),
@@ -467,8 +468,8 @@ def api_datarequest_dta_upload(user, datarequest_id):
 
 @given('signed DTA is uploaded', target_fixture="api_response")
 def api_datarequest_signed_dta_upload(user, datarequest_id):
-    signed_dta_path = open("files/signed_dta.pdf", "rb")
-    signed_dta      = BytesIO(signed_dta_path.read())
+    with open("files/signed_dta.pdf", "rb") as signed_dta_fd:
+        signed_dta = BytesIO(signed_dta_fd.read())
     return post_form_data(
         user,
         "/datarequest/upload_signed_dta/{}".format(datarequest_id),

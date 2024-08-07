@@ -15,6 +15,8 @@ import uuid
 
 import data_access_token
 import folder
+import groups
+import meta
 import schema
 from util import avu, collection, config, constants, data_object, group, log, msi, resource, rule, user
 
@@ -142,6 +144,28 @@ def _test_folder_set_get_last_run(ctx):
     return result, found, last_run
 
 
+def _test_groups_data(ctx):
+    test_vaultgroup = "vault-default-3"
+    ctx.msi_add_avu('-u', test_vaultgroup, "schema_id", "default-3", "")
+    groups_data = groups.internal_api_group_data(ctx)
+    avu.rmw_from_group(ctx, test_vaultgroup, "schema_id", "default-3", "")
+    group_names = [group
+                   for catdata in groups_data['group_hierarchy'].values()
+                   for subcatdata in catdata.values()
+                   for group in subcatdata]
+    # We are checking here that the function still works if we have a
+    # vault group with a group attribute, that the vault group is not
+    # returned (since vault groups are not managed via the group manager
+    # module), and that data is returned for group manager managed groups.
+    return ("research-default-3" in group_names
+            and "datarequests-research-datamanagers" in group_names
+            and "grp-vault-test" in group_names
+            and "intake-test2" in group_names
+            and "deposit-pilot" in group_names
+            and "datamanager-test-automation" in group_names
+            and "vault-default-3" not in group_names)
+
+
 def _test_schema_active_schema_deposit_from_default(ctx):
     avu.rm_from_group(ctx, "deposit-pilot", "schema_id", "dag-0")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot")
@@ -168,6 +192,30 @@ def _test_schema_active_schema_vault_without_research(ctx):
     result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
     ctx.uuGroupRemove("vault-without-research", "", "")
     return result
+
+
+def _test_get_latest_vault_metadata_path_empty(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    collection.remove(ctx, tmp_collection)
+    return latest_file is None
+
+
+def _test_get_latest_vault_metadata_path_normal(ctx):
+    tmp_collection = _create_tmp_collection(ctx)
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"), "test")
+    data_object.write(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"), "test")
+    latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869873].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869875].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869877].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869876].json"))
+    data_object.remove(ctx, os.path.join(tmp_collection, "yoda-metadata[1722869874].json"))
+    collection.remove(ctx, tmp_collection)
+    return latest_file == os.path.join(tmp_collection, "yoda-metadata[1722869877].json")
 
 
 def _test_folder_secure_func(ctx, func):
@@ -387,6 +435,9 @@ basic_integration_tests = [
     {"name":  "folder.determine_new_vault_target.invalid",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
      "check": lambda x: x == ""},
+    {"name":  "groups.getGroupsData",
+     "test": lambda ctx: _test_groups_data(ctx),
+     "check": lambda x: x},
     {"name": "groups.rule_group_expiration_date_validate.1",
      "test": lambda ctx: ctx.rule_group_expiration_date_validate("", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
@@ -405,6 +456,12 @@ basic_integration_tests = [
     {"name": "groups.rule_group_expiration_date_validate.6",
      "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "meta.get_latest_vault_metadata_path.empty",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_empty(ctx),
+     "check": lambda x: x},
+    {"name": "meta.get_latest_vault_metadata_path.normal",
+     "test": lambda ctx: _test_get_latest_vault_metadata_path_normal(ctx),
+     "check": lambda x: x},
     {"name": "policies.check_anonymous_access_allowed.local",
      "test": lambda ctx: ctx.rule_check_anonymous_access_allowed("127.0.0.1", ""),
      "check": lambda x: x['arguments'][1] == 'true'},

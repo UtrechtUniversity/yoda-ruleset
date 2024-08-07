@@ -67,7 +67,7 @@ def ui_statistics_category_storage(browser, categories):
                 break
         if not found:
             # Assert this way so we make visible which category was not found
-            assert 'Could not find category' == category
+            assert category == 'Could not find category'
 
     assert found
 
