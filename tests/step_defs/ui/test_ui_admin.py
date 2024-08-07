@@ -159,4 +159,5 @@ def ui_admin_removes_text_from_terms(browser, text):
     terms = browser.find_by_id('publicationTerms').first.value
     assert text in terms, "Text not found in terms"
     modifeid_terms = terms.replace(text, "", 1)
-    assert text not in modifeid_terms, "Removing text from terms faild"
+    browser.fill("publicationTerms", modifeid_terms)
+    assert text not in modifeid_terms
