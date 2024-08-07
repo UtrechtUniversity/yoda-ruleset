@@ -6,11 +6,12 @@ __license__   = 'GPLv3, see LICENSE'
 
 import sys
 import time
+from collections import OrderedDict
 from unittest import TestCase
 
 sys.path.append('../util')
 
-from misc import human_readable_size, last_run_time_acceptable
+from misc import human_readable_size, last_run_time_acceptable, remove_empty_objects
 
 
 class UtilMiscTest(TestCase):
@@ -50,3 +51,13 @@ class UtilMiscTest(TestCase):
         self.assertEqual(output, "100.0 PiB")
         output = human_readable_size(3931462330709348188)
         self.assertEqual(output, "3.41 EiB")
+
+    def test_remove_empty_objects(self):
+        d = OrderedDict({"key1": None, "key2": "", "key3": {}, "key4": []})
+        self.assertEqual(remove_empty_objects(d), OrderedDict({}))
+        d = OrderedDict({"key1": "value1", "key2": {"key1": None, "key2": "", "key3": {}, "key4": []}})
+        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
+        d = OrderedDict({"key1": "value1", "key2": {"key1": None, "key2": "", "key3": {}, "key4": [], "key5": "value5"}})
+        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1", "key2": {"key5": "value5"}}))
+        d = OrderedDict({"key1": "value1", "key2": [{}]})
+        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
