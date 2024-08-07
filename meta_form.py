@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata form handling."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -296,7 +296,6 @@ def save(ctx, coll, metadata):
     is_vault = space is pathutil.Space.VAULT
     if is_vault:
         # It's a vault path - set up a staging area in the datamanager collection.
-
         ret = ctx.iiDatamanagerGroupFromVaultGroup(group, '')
         datamanager_group = ret['arguments'][1]
         if datamanager_group == '':
@@ -311,6 +310,9 @@ def save(ctx, coll, metadata):
 
         # Use staging area instead of trying to write to the vault directly.
         json_path = '{}/{}'.format(tmp_coll, constants.IIJSONMETADATA)
+
+    # Remove empty objects from metadata.
+    metadata = misc.remove_empty_objects(metadata)
 
     # Add metadata schema id to JSON.
     meta.metadata_set_schema_id(metadata, schema_.get_active_schema_id(ctx, json_path))
