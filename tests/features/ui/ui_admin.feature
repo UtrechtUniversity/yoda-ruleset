@@ -74,7 +74,6 @@ Feature: Admin UI
         | functionaladminpriv | uu_geo | Change Theme | Geo            |
         | functionaladminpriv | uu     | Change Theme | Yoda           |
 
-
     Scenario Outline: Admin user previews publication terms
         Given user <user> is logged in
         When the user navigates to the admin page
@@ -95,6 +94,7 @@ Feature: Admin UI
         And the user navigates to the admin page
         Then the text <text> is displayed in the publication terms textarea
         And the user removes the <text> from publication terms
+        And the user clicks Update Terms button
 
     Examples:
         | user                | text           |

@@ -51,13 +51,9 @@ def ui_admin_control_importance(browser, action):
         raise ValueError("Unsupported action.")
 
 
-def user_clicks_button(browser, button):
-    browser.find_by_name(button).first.click()
-
-
 @when(parsers.parse("the user click button {button}"))
 def ui_admin_click_button(browser, button):
-    user_clicks_button(browser, button)
+    browser.find_by_name(button).first.click()
 
 
 @when(parsers.parse("the user change portal theme to {theme}"))
@@ -109,7 +105,7 @@ def ui_admin_theme_option_present(browser):
 @then("the publication terms option is visible")
 def ui_admin_pub_terms_option_present(browser):
     assert browser.is_text_present("Update Publication Terms"), "Update Publication Terms title not found on page"
-    assert browser.find_by_name("publicationTerms").visible, "Publication Terms text field not found on the page"
+    assert browser.find_by_id("publicationTerms").visible, "Publication Terms text field not found on the page"
 
 
 @then("the banner does not exist")
@@ -137,7 +133,7 @@ def ui_admin_edits_terms(browser, text):
 
 @when("the user clicks Preview Terms button")
 def ui_admin_clicks_preview(browser):
-    user_clicks_button(browser, 'Preview Terms')
+    browser.find_by_id('create-preview').first.click()
 
 
 @then(parsers.parse("the added text {text} is shown in the preview window"))
@@ -147,8 +143,9 @@ def ui_admin_displays_terms_in_preview(browser, text):
 
 
 @when("the user clicks Update Terms button")
+@then("the user clicks Update Terms button")
 def ui_admin_clicks_update_terms(browser):
-    user_clicks_button(browser, 'Update Terms')
+    browser.find_by_id('update-terms').first.click()
 
 
 @then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
