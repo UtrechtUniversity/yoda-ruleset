@@ -11,13 +11,15 @@ Feature: Admin UI
         | user                | text           |
         | functionaladminpriv | TemporaryTerms |
 
+
     Scenario Outline: Admin user updates publication terms
         Given user <user> is logged in
         When the user navigates to the admin page
         And the user adds text <text> to publication terms
-        And the user clicks Updates Terms button
-        # TODO: View the Text from the text area? or create publication case?
-        Then the added text <text> is shown in the preview window
+        And the user clicks Update Terms button
+        And the user navigates to the admin page
+        Then the text <text> is displayed in the publication terms textarea
+        And the user removes the <text> from publication terms
 
     Examples:
         | user                | text           |

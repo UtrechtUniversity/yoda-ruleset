@@ -132,11 +132,7 @@ def ui_admin_display_new_theme(browser, host_name):
 @when(parsers.parse("the user adds text {text} to publication terms"))
 def ui_admin_edits_terms(browser, text):
     terms = browser.find_by_id('publicationTerms').first.value
-    print("terms",terms)
-    new_terms = text + terms
-    print("new_terms",new_terms)
-    browser.fill("publicationTerms", new_terms)
-
+    browser.fill("publicationTerms", text + terms)
 
 
 @when("the user clicks Preview Terms button")
@@ -154,3 +150,17 @@ def ui_admin_edits_terms(browser, text):
 @when("the user clicks Update Terms button")
 def ui_admin_clicks_update_terms(browser):
     user_clicks_button(browser, 'Update Terms')
+
+
+@then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
+def ui_admin_displays_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    assert text in terms
+
+
+@then(parsers.parse("the user removes the {text} from publication terms"))
+def ui_admin_removes_text_from_terms(browser, text):
+    terms = browser.find_by_id('publicationTerms').first.value
+    assert text in terms, "Text not found in terms"
+    modifeid_terms = terms.replace(text, "", 1)
+    assert text not in modifeid_terms, "Removing text from terms faild"
