@@ -485,14 +485,19 @@ def api_vault_system_metadata(ctx, coll):
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
+    # Check for base DOI
+    base_doi = get_doi(ctx, coll, 'base')
+    if base_doi:
+        system_metadata["Base DOI"] = "<a href=\"https://doi.org/{}\">{}</a>".format(base_doi, base_doi)
+
     # Check for previous version.
     previous_version = get_previous_version(ctx, coll)
     if previous_version:
-        previous_version_doi = get_doi(ctx, previous_version)
+        previous_version_doi = get_doi(ctx, previous_version, 'version')
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
 
     # Persistent Identifier DOI.
-    package_doi = get_doi(ctx, coll)
+    package_doi = get_doi(ctx, coll, 'version')
 
     if package_doi:
         if previous_version:
@@ -580,6 +585,43 @@ def api_vault_collection_details(ctx, path):
 
     basename = pathutil.basename(path)
 
+    # If specific data package is selected, retreive all published versions
+    if '[' in path:
+        base_doi = get_doi(ctx, path, 'base')
+        package_doi = get_doi(ctx, path, 'version')
+        coll_parent_name = path.rsplit('/', 1)[0]
+
+        org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, coll_parent_name)
+
+        count = 0
+        all_versions = []
+
+        for data in data_packages:
+            if data[2] == package_doi:
+                count += 1
+
+        if count == 1:  # Base DOI does not exist as it is first version of the publication
+            # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+            data_packages = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                              datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in data_packages]
+
+            for item in data_packages:
+                if item[2] == package_doi:
+                    all_versions.append([item[1], item[2], item[3]])
+        else:  # Base DOI exists
+            # Sort by publication date
+            sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f"), reverse=True) for x in grouped_base_dois]
+
+            sorted_publ = [element for innerList in sorted_publ for element in innerList]
+
+            # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+            sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                            datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in sorted_publ]
+
+            for item in sorted_publ:
+                if item[0] == base_doi:
+                    all_versions.append([item[1], item[2], item[3]])
+
     # Find group name to retrieve member type
     group_parts = group.split('-')
     if subpath.startswith("deposit-"):
@@ -654,7 +696,10 @@ def api_vault_collection_details(ctx, path):
         "has_datamanager": has_datamanager,
         "is_datamanager": is_datamanager,
         "vault_action_pending": vault_action_pending,
-        "research_group_access": research_group_access
+        "research_group_access": research_group_access,
+        "all_versions": all_versions,
+        "base_doi": base_doi,
+        "package_doi": package_doi
     }
     if config.enable_data_package_archive:
         import vault_archive
@@ -1419,7 +1464,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
 
     # Data package is new version of existing data package with a DOI.
     previous_version_path = ""
-    doi = get_doi(ctx, previous_version)
+    doi = get_doi(ctx, previous_version, 'version')
     if previous_version and doi:
         previous_version_path = previous_version
 
@@ -1467,17 +1512,18 @@ def get_approver(ctx, path):
         return None
 
 
-def get_doi(ctx, path):
+def get_doi(ctx, path, doi):
     """Get the DOI of a data package in the vault.
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Vault package to get the DOI of
+    :param doi: 'base' or 'version' to retrieve required DOI
 
     :return: Data package DOI or None
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_{}DOI'".format(path, doi),
         genquery.AS_LIST, ctx
     )
 
@@ -1543,7 +1589,7 @@ def meta_add_new_version(ctx, new_version, previous_version):
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version, 'version'))
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": "{}".format(get_title(ctx, previous_version))
@@ -1561,7 +1607,7 @@ def meta_add_new_version(ctx, new_version, previous_version):
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version, 'version'))
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": "{}".format(get_title(ctx, previous_version))
