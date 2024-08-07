@@ -348,8 +348,14 @@ def api_group_data(ctx):
 
     :param ctx: Combined type of a ctx and rei struct
 
-    :returns: Group hierarchy, user type and user zone
+    :returns: Group hierarchy, user type and user zone. Only group types managed
+              by the group manager are included.
     """
+    return (internal_api_group_data(ctx))
+
+
+def internal_api_group_data(ctx):
+    # This is the entry point for integration tests against api_group_data
     if user.is_admin(ctx):
         groups = getGroupsData(ctx)
     else:
@@ -360,6 +366,10 @@ def api_group_data(ctx):
 
         # Filter groups (only return groups user is part of), convert to json and write to stdout.
         groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
+
+    # Only process group types managed via group manager
+    managed_prefixes = ("deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
+    groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
 
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
