@@ -365,8 +365,14 @@ def api_group_data(ctx):
 
     :param ctx: Combined type of a ctx and rei struct
 
-    :returns: Group hierarchy, user type and user zone
+    :returns: Group hierarchy, user type and user zone. Only group types managed
+              by the group manager are included.
     """
+    return (internal_api_group_data(ctx))
+
+
+def internal_api_group_data(ctx):
+    # This is the entry point for integration tests against api_group_data
     if user.is_admin(ctx):
         groups = getGroupsData(ctx)
     else:
