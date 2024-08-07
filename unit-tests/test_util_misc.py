@@ -54,10 +54,10 @@ class UtilMiscTest(TestCase):
 
     def test_remove_empty_objects(self):
         d = OrderedDict({"key1": None, "key2": "", "key3": {}, "key4": []})
-        self.assertEqual(remove_empty_objects(d), OrderedDict({}))
+        self.assertDictEqual(remove_empty_objects(d), OrderedDict({}))
         d = OrderedDict({"key1": "value1", "key2": {"key1": None, "key2": "", "key3": {}, "key4": []}})
-        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
+        self.assertDictEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
         d = OrderedDict({"key1": "value1", "key2": {"key1": None, "key2": "", "key3": {}, "key4": [], "key5": "value5"}})
-        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1", "key2": {"key5": "value5"}}))
+        self.assertDictEqual(remove_empty_objects(d), OrderedDict({"key1": "value1", "key2": {"key5": "value5"}}))
         d = OrderedDict({"key1": "value1", "key2": [{}]})
-        self.assertEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
+        self.assertDictEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
