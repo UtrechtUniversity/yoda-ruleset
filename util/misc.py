@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import math
 import time
+from collections import OrderedDict
 
 
 def last_run_time_acceptable(coll, found, last_run, config_backoff_time):
@@ -29,3 +30,23 @@ def human_readable_size(size_bytes):
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return '{} {}'.format(s, size_name[i])
+
+
+def remove_empty_objects(d):
+    """Remove empty objects (None, '', {}, []) from OrderedDict."""
+    if isinstance(d, dict):
+        # Create OrderedDict to maintain order.
+        cleaned_dict = OrderedDict()
+        for k, v in d.items():
+            # Recursively remove empty objects.
+            cleaned_value = remove_empty_objects(v)
+            # Only add non-empty values.
+            if cleaned_value not in (None, '', {}, []):
+                cleaned_dict[k] = cleaned_value
+        return cleaned_dict
+    elif isinstance(d, list):
+        # Clean lists by filtering out empty objects.
+        return [remove_empty_objects(item) for item in d if remove_empty_objects(item) not in (None, '', {}, [])]
+    else:
+        # Return the value abecause it is not a dict or list.
+        return d
