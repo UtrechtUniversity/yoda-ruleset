@@ -1079,7 +1079,8 @@ def group_user_add(ctx, username, group_name):
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
-
+                # Mark user as invited.
+                msi.sudo_obj_meta_set(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
