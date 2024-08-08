@@ -639,10 +639,13 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
         } else {
             *reason = "Cannot modify settings of other user.";
         }
+    # User SRAM invitation
+    } else if (*attribute == "org_sram_invited") {
+        *allowed = 1;
     # User notifications
     } else if (trimr(*attribute, "_") == "org_notification") {
         *allowed = 1;
     } else {
-		*reason = "Invalid user attribute name.";
+        *reason = "Invalid user attribute name.";
     }
 }
