@@ -563,7 +563,7 @@ def get_all_published_versions(ctx, path):
     if count == 1:  # Base DOI does not exist as it is first version of the publication
         # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
         data_packages = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
-                            datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in data_packages]
+                          datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in data_packages]
 
         for item in data_packages:
             if item[2] == package_doi:
