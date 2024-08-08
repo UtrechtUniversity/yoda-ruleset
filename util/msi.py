@@ -6,7 +6,7 @@ With this module, we aim to unify microservice error handling by converting
 all errors to unambiguous Python exceptions.
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import irods_types
@@ -142,6 +142,7 @@ add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
 rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
+sudo_obj_meta_set, SudoObjMetaSetError = make('SudoObjMetaSet', 'Could not set metadata as admin')
 
 touch, TouchError = make('_touch', 'Could not update the data object or collection')
 obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object or collection')
