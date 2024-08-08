@@ -64,7 +64,8 @@ def getGroupsData(ctx):
                 "name": name,
                 "managers": [],
                 "members": [],
-                "read": []
+                "read": [],
+                "invited": []
             }
             groups[name] = group
 
@@ -112,6 +113,22 @@ def getGroupsData(ctx):
                     group["members"].append(user)
                 except KeyError:
                     pass
+
+    # Third query: obtain list of invited SRAM users
+    if config.enable_sram:
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE, USER_NAME, USER_ZONE",
+            "USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME = '{}'".format(constants.UUORGMETADATAPREFIX + "sram_invited"),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            name = row[0]
+            user = row[1] + "#" + row[2]
+            try:
+                group = groups[name]
+                group["invited"].append(user)
+            except KeyError:
+                pass
 
     return groups.values()
 
@@ -401,6 +418,10 @@ def internal_api_group_data(ctx):
         # Read users
         for member in group['read']:
             members[member] = {'access': 'reader'}
+
+        # Invited SRAM users
+        for member in group['invited']:
+            members[member]['sram'] = 'invited'
 
         if not group_hierarchy.get(group['category']):
             group_hierarchy[group['category']] = OrderedDict()
