@@ -1505,7 +1505,7 @@ def get_all_versions(ctx, path, doi):
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of the published data package
-    :param doi:  Version DOI of the selected publication
+    :param doi:  Base DOI of the selected publication
 
     :return: Dict of related version DOIs
     """
