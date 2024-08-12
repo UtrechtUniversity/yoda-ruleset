@@ -94,7 +94,7 @@ def ui_admin_access_forbidden(browser):
 @then("the banner setup option is visible")
 def ui_admin_banner_option_present(browser):
     assert browser.is_text_present("Set Maintenance Banner"), "Banner title not found on the page"
-    assert browser.find_by_name("banner").visible, "Textarea for banner message not found on the page"
+    assert browser.find_by_id("admin-banner-message").visible, "Textarea for banner message not found on the page"
     assert browser.find_by_id("importance").visible, "Checkbox for 'Mark as Important' not found on the page"
     assert browser.find_by_css("button[name='Set Banner']").visible, "Button to set the banner not found on the page"
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
@@ -103,7 +103,7 @@ def ui_admin_banner_option_present(browser):
 @then("the theme change option is visible")
 def ui_admin_theme_option_present(browser):
     assert browser.is_text_present("Change Portal Theme"), "Change Theme title not found on the page"
-    assert browser.find_by_name("theme").visible, "Theme Selection not found on the page"
+    assert browser.find_by_name("admin-theme-selection").visible, "Theme Selection not found on the page"
 
 
 @then("the publication terms option is visible")
