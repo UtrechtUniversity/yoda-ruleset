@@ -78,7 +78,7 @@ def ui_admin_administration_dropdown_not_present(browser):
 
 @when(parsers.parse("the user inputs banner message {message}"))
 def ui_admin_inputs_banner_msg(browser, message):
-    browser.fill("admin-set-banner", message)
+    browser.fill("banner", message)
 
 
 @when(parsers.parse("the user {action} the checkbox to mark the banner as important"))
