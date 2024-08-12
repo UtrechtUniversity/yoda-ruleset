@@ -50,10 +50,14 @@ def ui_admin_control_importance(browser, action):
     else:
         raise ValueError("Unsupported action.")
 
+@when("the user clicks the Set Banner button")
+def ui_admin_clicks_set_banner(browser):
+    browser.find_by_id("admin-set-banner").first.click()
 
-@when(parsers.parse("the user click button {button}"))
-def ui_admin_click_button(browser, button):
-    browser.find_by_name(button).first.click()
+
+@when("the user clicks the Remove Banner button")
+def ui_admin_clicks_remove_banner(browser):
+    browser.find_by_id("admin-remove-banner").first.click()
 
 
 @when(parsers.parse("the user change portal theme to {theme}"))
@@ -131,9 +135,9 @@ def ui_admin_edits_terms(browser, text):
     browser.fill("publicationTerms", text + terms)
 
 
-@when("the user clicks Preview Terms button")
+@when("the user clicks the Preview Terms button")
 def ui_admin_clicks_preview(browser):
-    browser.find_by_id('create-preview').first.click()
+    browser.find_by_id('admin-create-preview').first.click()
 
 
 @then(parsers.parse("the added text {text} is shown in the preview window"))
@@ -142,9 +146,9 @@ def ui_admin_displays_terms_in_preview(browser, text):
     assert text in previewed_terms
 
 
-@when("the user clicks Update Terms button")
-def ui_admin_clicks_update_terms(browser):
-    browser.find_by_id('update-terms').first.click()
+@when("the user clicks the Set Terms button")
+def ui_admin_clicks_set_terms(browser):
+    browser.find_by_id('admin-set-terms').first.click()
 
 
 @when("the user reloads the page")
