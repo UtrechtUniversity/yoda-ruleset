@@ -5,10 +5,10 @@ Feature: Admin UI
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Administration is shown
-        And Administration option is available in the menu dropdown
-        And the banner setup option is visible
-        And the theme change option is visible
-        And the publication terms option is visible
+        And the Administration option is available in the menu dropdown
+        And the Maintenance Banner feature is visible
+        And the Portal Theme feature is visible
+        And the Publication Terms feature is visible
         # Example 1: technicaladmin is an admin user as the role: rodsadmin
         # Example 2: functionaladminpriv is an admin user in the group: priv-admin
 
@@ -22,7 +22,7 @@ Feature: Admin UI
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Access forbidden is shown
-        And Administration option is not available in the menu dropdown
+        And the Administration option is not available in the menu dropdown
 
         Examples:
             | user       |
@@ -32,12 +32,12 @@ Feature: Admin UI
     Scenario Outline: Admin user sets up a default banner message
         Given user <user> is logged in
         When the user navigates to the admin page
-        And the user input banner text with message <message>
+        And the user inputs banner message <message>
         And the user <action> the checkbox to mark the banner as important
         And the user clicks the Set Banner button
         And the user navigates to the home page
-        Then the banner display the message <message>
-        And the banner background color should be <color>
+        Then the banner displays the message <message>
+        And the banner background color is <color>
         # Example 1: Set an unimportant banner message
         # Example 2: Set an important banner message
 
@@ -49,7 +49,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user removes an existing banner message
         Given user <user> is logged in
-        And the banner display the message <message>
+        And the banner displays the message <message>
         When the user navigates to the admin page
         And the user clicks the Remove Banner button
         And the user navigates to the home page
@@ -63,10 +63,10 @@ Feature: Admin UI
     Scenario Outline: Admin user sets a new portal theme
         Given user <user> is logged in
         When the user navigates to the admin page
-        And the user change portal theme to <theme>
+        And the user changes the portal theme to <theme>
         And the user clicks the Set Theme button
         And the user navigates to the home page
-        Then the new theme should display <host name>
+        Then the new theme displays <host name>
 
     Examples:
         | user                | theme  | host name      |
