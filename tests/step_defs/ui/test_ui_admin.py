@@ -39,23 +39,23 @@ def ui_admin_administration_dropdown_present(browser):
 
 @then("the Maintenance Banner feature is visible")
 def ui_admin_banner_option_present(browser):
-    assert browser.is_text_present("Maintenance Banner"), "Maintenance Banner title not found on the page"
-    assert browser.find_by_id("admin-banner-message").visible, "Textarea for banner message not found on the page"
-    assert browser.find_by_id("admin-banner-importance").visible, "Checkbox for 'Mark as Important' not found on the page"
-    assert browser.find_by_css("button[name='Set Banner']").visible, "Button to set the banner not found on the page"
-    assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
+    assert browser.is_text_present("Maintenance Banner")
+    assert browser.find_by_id("admin-banner-message").visible
+    assert browser.find_by_id("admin-banner-importance").visible
+    assert browser.find_by_css("button[id='admin-set-banner']").visible
+    assert browser.find_by_css("button[id='admin-remove-banner']").visible
 
 
 @then("the Portal Theme feature is visible")
 def ui_admin_theme_option_present(browser):
-    assert browser.is_text_present("Portal Theme"), "Portal Theme title not found on the page"
-    assert browser.find_by_name("admin-theme-selection").visible, "Theme Selection not found on the page"
+    assert browser.is_text_present("Portal Theme")
+    assert browser.find_by_id("admin-theme-selection").visible
 
 
 @then("the Publication Terms feature is visible")
 def ui_admin_pub_terms_option_present(browser):
-    assert browser.is_text_present("Publication Terms"), "Publication Terms title not found on page"
-    assert browser.find_by_id("admin-publication-terms").visible, "Publication Terms text field not found on the page"
+    assert browser.is_text_present("Publication Terms")
+    assert browser.find_by_id("admin-publication-terms").visible
 
 
 @when("the user navigates to the admin page")
@@ -78,7 +78,7 @@ def ui_admin_administration_dropdown_not_present(browser):
 
 @when(parsers.parse("the user inputs banner message {message}"))
 def ui_admin_inputs_banner_msg(browser, message):
-    browser.fill("banner", message)
+    browser.fill("admin-set-banner", message)
 
 
 @when(parsers.parse("the user {action} the checkbox to mark the banner as important"))
