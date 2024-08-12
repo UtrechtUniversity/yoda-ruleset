@@ -17,52 +17,10 @@ from conftest import portal_url
 scenarios("../../features/ui/ui_admin.feature")
 
 
-@given(parsers.parse("the banner displays the message {message}"))
-@then(parsers.parse("the banner displays the message {message}"))
-def ui_admin_displays_banner(browser, message):
-    assert browser.is_element_present_by_name('banner head')
-    assert browser.is_text_present(message)
-
-
 @when("the user navigates to the home page")
 def ui_admin_navigates_to_home(browser):
     url = "{}/".format(portal_url)
     browser.visit(url)
-
-
-@when("the user navigates to the admin page")
-def ui_admin_navigates_to_admin(browser):
-    url = "{}/admin".format(portal_url)
-    browser.visit(url)
-
-
-@when(parsers.parse("the user inputs banner message {message}"))
-def ui_admin_inputs_banner_msg(browser, message):
-    browser.fill("banner", message)
-
-
-@when(parsers.parse("the user {action} the checkbox to mark the banner as important"))
-def ui_admin_controls_importance(browser, action):
-    if action == "checks":
-        browser.check("importance")
-    elif action == "unchecks":
-        browser.uncheck("importance")
-    else:
-        raise ValueError("Unsupported action.")
-
-@when("the user clicks the Set Banner button")
-def ui_admin_clicks_set_banner(browser):
-    browser.find_by_id("admin-set-banner").first.click()
-
-
-@when("the user clicks the Remove Banner button")
-def ui_admin_clicks_remove_banner(browser):
-    browser.find_by_id("admin-remove-banner").first.click()
-
-
-@when(parsers.parse("the user changes the portal theme to {theme}"))
-def ui_admin_changes_theme(browser, theme):
-    browser.find_by_id("admin-theme-selection").first.select(theme)
 
 
 @then("the text Administration is shown")
@@ -77,18 +35,6 @@ def ui_admin_administration_dropdown_present(browser):
     xpath = "//a[@class='dropdown-item' and @href='/admin/']"
     found = browser.is_element_present_by_xpath(xpath)
     assert found
-
-
-@then("the Administration option is not available in the menu dropdown")
-def ui_admin_administration_dropdown_not_present(browser):
-    xpath = "//a[@class='dropdown-item' and @href='/admin/']"
-    not_found = browser.is_element_not_present_by_xpath(xpath)
-    assert not_found
-
-
-@then("the text Access forbidden is shown")
-def ui_admin_access_forbidden_present(browser):
-    assert browser.is_text_present("Access forbidden")
 
 
 @then("the Maintenance Banner feature is visible")
@@ -112,9 +58,49 @@ def ui_admin_pub_terms_option_present(browser):
     assert browser.find_by_id("admin-publication-terms").visible, "Publication Terms text field not found on the page"
 
 
-@then("the banner does not exist")
-def ui_admin_remove_banner(browser):
-    assert browser.is_element_not_present_by_name('banner head')
+@when("the user navigates to the admin page")
+def ui_admin_navigates_to_admin(browser):
+    url = "{}/admin".format(portal_url)
+    browser.visit(url)
+
+
+@then("the text Access forbidden is shown")
+def ui_admin_access_forbidden_present(browser):
+    assert browser.is_text_present("Access forbidden")
+
+
+@then("the Administration option is not available in the menu dropdown")
+def ui_admin_administration_dropdown_not_present(browser):
+    xpath = "//a[@class='dropdown-item' and @href='/admin/']"
+    not_found = browser.is_element_not_present_by_xpath(xpath)
+    assert not_found
+
+
+@when(parsers.parse("the user inputs banner message {message}"))
+def ui_admin_inputs_banner_msg(browser, message):
+    browser.fill("banner", message)
+
+
+@when(parsers.parse("the user {action} the checkbox to mark the banner as important"))
+def ui_admin_controls_importance(browser, action):
+    if action == "checks":
+        browser.check("importance")
+    elif action == "unchecks":
+        browser.uncheck("importance")
+    else:
+        raise ValueError("Unsupported action.")
+
+
+@when("the user clicks the Set Banner button")
+def ui_admin_clicks_set_banner(browser):
+    browser.find_by_id("admin-set-banner").first.click()
+
+
+@given(parsers.parse("the banner displays the message {message}"))
+@then(parsers.parse("the banner displays the message {message}"))
+def ui_admin_displays_banner(browser, message):
+    assert browser.is_element_present_by_name('banner head')
+    assert browser.is_text_present(message)
 
 
 @then(parsers.parse("the banner background color is {color}"))
@@ -122,6 +108,26 @@ def ui_admin_display_banner_color(browser, color):
     element = browser.find_by_css('div.non-production[role="alert"]').first
     is_color_present = color in element['class'].split()
     assert is_color_present
+
+
+@when("the user clicks the Remove Banner button")
+def ui_admin_clicks_remove_banner(browser):
+    browser.find_by_id("admin-remove-banner").first.click()
+
+
+@then("the banner does not exist")
+def ui_admin_remove_banner(browser):
+    assert browser.is_element_not_present_by_name('banner head')
+
+
+@when(parsers.parse("the user changes the portal theme to {theme}"))
+def ui_admin_changes_theme(browser, theme):
+    browser.find_by_id("admin-theme-selection").first.select(theme)
+
+
+@when("the user clicks the Set Theme button")
+def ui_admin_clicks_set_theme(browser):
+    browser.find_by_id("admin-set-theme").first.click()
 
 
 @then(parsers.parse("the new theme displays {host_name}"))
@@ -152,7 +158,7 @@ def ui_admin_clicks_set_terms(browser):
 
 
 @when("the user reloads the page")
-def ui_admin_reload(browser):
+def ui_admin_reloads(browser):
     browser.reload()
 
 
