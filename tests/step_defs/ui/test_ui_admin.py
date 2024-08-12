@@ -62,7 +62,7 @@ def ui_admin_clicks_remove_banner(browser):
 
 @when(parsers.parse("the user change portal theme to {theme}"))
 def ui_admin_change_theme(browser, theme):
-    browser.find_by_id("theme").first.select(theme)
+    browser.find_by_id("admin-theme-selection").first.select(theme)
 
 
 @then("the text Administration is shown")
@@ -95,7 +95,7 @@ def ui_admin_access_forbidden(browser):
 def ui_admin_banner_option_present(browser):
     assert browser.is_text_present("Set Maintenance Banner"), "Banner title not found on the page"
     assert browser.find_by_id("admin-banner-message").visible, "Textarea for banner message not found on the page"
-    assert browser.find_by_id("importance").visible, "Checkbox for 'Mark as Important' not found on the page"
+    assert browser.find_by_id("admin-banner-importance").visible, "Checkbox for 'Mark as Important' not found on the page"
     assert browser.find_by_css("button[name='Set Banner']").visible, "Button to set the banner not found on the page"
     assert browser.find_by_css("button[name='Remove Banner']").visible, "Button to remove the banner not found on the page"
 
@@ -109,7 +109,7 @@ def ui_admin_theme_option_present(browser):
 @then("the publication terms option is visible")
 def ui_admin_pub_terms_option_present(browser):
     assert browser.is_text_present("Update Publication Terms"), "Update Publication Terms title not found on page"
-    assert browser.find_by_id("publicationTerms").visible, "Publication Terms text field not found on the page"
+    assert browser.find_by_id("admin-publication-terms").visible, "Publication Terms text field not found on the page"
 
 
 @then("the banner does not exist")
@@ -131,7 +131,7 @@ def ui_admin_display_new_theme(browser, host_name):
 
 @when(parsers.parse("the user adds text {text} to publication terms"))
 def ui_admin_edits_terms(browser, text):
-    terms = browser.find_by_id('publicationTerms').first.value
+    terms = browser.find_by_id('admin-publication-terms').first.value
     browser.fill("publicationTerms", text + terms)
 
 
@@ -159,18 +159,18 @@ def ui_admin_reload(browser):
 @when(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 @then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 def ui_admin_displays_terms(browser, text):
-    terms = browser.find_by_id('publicationTerms').first.value
+    terms = browser.find_by_id('admin-publication-terms').first.value
     assert text in terms
 
 
 @when(parsers.parse("the user removes the {text} from publication terms"))
 def ui_admin_removes_text_from_terms(browser, text):
-    terms = browser.find_by_id('publicationTerms').first.value
+    terms = browser.find_by_id('admin-publication-terms').first.value
     modifeid_terms = terms.replace(text, "", 1)
     browser.fill("publicationTerms", modifeid_terms)
 
 
 @then(parsers.parse("the text {text} is not displayed in the publication terms textarea"))
 def ui_admin_removed_text_not_displayed(browser, text):
-    terms = browser.find_by_id('publicationTerms').first.value
+    terms = browser.find_by_id('admin-publication-terms').first.value
     assert text not in terms
