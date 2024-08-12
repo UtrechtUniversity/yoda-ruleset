@@ -1,7 +1,7 @@
 @ui
 Feature: Admin UI
 
-    Scenario Outline: Admin page view by admin users
+    Scenario Outline: Admin user views the admin page
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Administration is shown
@@ -18,7 +18,7 @@ Feature: Admin UI
             | functionaladminpriv |
 
 
-    Scenario Outline: Admin page view by non-admin user
+    Scenario Outline: Non-admin user views the admin page
         Given user <user> is logged in
         When the user navigates to the admin page
         Then the text Access forbidden is shown
@@ -60,7 +60,7 @@ Feature: Admin UI
         | functionaladminpriv | Test banner message |
 
 
-    Scenario Outline: Admin user change portal theme
+    Scenario Outline: Admin user sets a new portal theme
         Given user <user> is logged in
         When the user navigates to the admin page
         And the user change portal theme to <theme>
