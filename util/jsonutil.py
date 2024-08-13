@@ -69,7 +69,7 @@ def _promote_strings(json_data):
     :returns: JSON structure with UTF-8 encoded strings transformed to unicode strings
     """
     return _fold(json_data,
-                 str=lambda x: x.decode('utf-8'),
+                 str=lambda x: x.decode('utf-8', errors='replace'),
                  OrderedDict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]),
                  dict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]))
 
