@@ -95,7 +95,6 @@ Feature: Admin UI
         And the user reloads the page
         Then the text <text> is displayed in the publication terms textarea
 
-
     Examples:
         | user                | text           |
         | functionaladminpriv | TemporaryTerms |
