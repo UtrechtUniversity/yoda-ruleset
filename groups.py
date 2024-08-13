@@ -1269,7 +1269,7 @@ def rule_group_sram_sync(ctx):
                 if member.split('#')[0] in co_members:
                     log.write(ctx, "User {} added to group {}".format(member, group_name))
                     # Remove invitation metadata.
-                    msi.sudo_obj_meta_remove(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                 else:
                     log.write(ctx, "User {} already invited to group {}".format(member, group_name))
                     continue
