@@ -1278,10 +1278,12 @@ def rule_group_sram_sync(ctx):
             if member not in invited and member.split('#')[0] not in co_members:
                 if config.sram_flow == 'join_request':
                     sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
+                    msi.sudo_obj_meta_set(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                     log.write(ctx, "User {} invited to group {}".format(member, group_name))
                     continue
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                    msi.sudo_obj_meta_set(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                     log.write(ctx, "User {} invited to group {}".format(member, group_name))
                     continue
 
