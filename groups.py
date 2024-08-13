@@ -378,6 +378,10 @@ def api_group_data(ctx):
         # Filter groups (only return groups user is part of), convert to json and write to stdout.
         groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
 
+    # Only process group types managed via group manager
+    managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
+    groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
+
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
 
