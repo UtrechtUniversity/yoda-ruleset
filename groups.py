@@ -385,7 +385,7 @@ def internal_api_group_data(ctx):
         groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
 
     # Only process group types managed via group manager
-    managed_prefixes = ("deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
+    managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
     groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
 
     # Sort groups on name.
