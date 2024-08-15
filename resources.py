@@ -151,81 +151,85 @@ def api_resource_category_stats(ctx):
     if len(categories) == 0:
         return {'categories': [], 'external_filter': ''}
 
-    # Continue for admins and datamanagers
+    # Retrieve storage statistics of groups.
+    iter = list(genquery.Query(ctx,
+                ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
+                "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                output=genquery.AS_LIST))
+
+    # Go through storage statistics of groups.
     storage = {}
+    group_counted = []
+    for group_name, _storage_attribute, storage_json in iter:
+        # Check if group is valid and has not been counted yet.
+        if group_name.startswith(('research-', 'deposit-', 'intake-', 'grp-')) and group_name not in group_counted:
+            # Add group to list of groups counted for category statistics.
+            group_counted.append(group_name)
 
-    # Go through current groups of current categories.
-    # This function has no historic value so it is allowed to do so
-    for category in categories:
-        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0, 'internal': 0, 'external': 0}
+            # Add group to category statistics.
+            category, research, vault, revisions, total = jsonutil.parse(storage_json)
+            storage.setdefault(category, {'research': 0, 'vault': 0, 'revision': 0, 'total': 0})
+            storage[category]['research'] += research
+            storage[category]['vault'] += vault
+            storage[category]['revision'] += revisions
+            storage[category]['total'] += total
 
-        # for all groups in category
-        groups = get_groups_on_categories(ctx, [category])
-        for groupname in groups:
-            if groupname.startswith(('research', 'deposit', 'intake', 'grp')):
-                # Only check the most recent storage measurement
-                iter = list(genquery.Query(ctx,
-                            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                            "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, groupname),
-                            offset=0, limit=1, output=genquery.AS_LIST))
+    # Retrieve groups and their members.
+    iter = list(genquery.Query(ctx,
+                ['USER_GROUP_NAME', 'USER_NAME'],
+                "USER_TYPE != 'rodsgroup'",
+                output=genquery.AS_LIST))
 
-                for row in iter:
-                    temp = jsonutil.parse(row[0])
+    # Calculate number of members per type per group.
+    members = {}
+    for group_name, user_name in iter:
+        members.setdefault(group_name, {'internal': set(), 'external': set()})
+        if yoda_names.is_internal_user(user_name):
+            members[group_name]['internal'].add(user_name)
+        else:
+            members[group_name]['external'].add(user_name)
 
-                    storage[category]['total'] += temp[4]
-                    storage[category]['research'] += temp[1]
-                    storage[category]['vault'] += temp[2]
-                    storage[category]['revision'] += temp[3]
-
-    # Now go through all totals
+    # Calculate category members and storage totals.
+    instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0, 'internals': set(), 'externals': set()}
     all_storage = []
-
-    # Totalization for the entire instance.
-    instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
-
-    # Member counts
-    cat_members = {}
-    members_total = []
     for category in categories:
-        members = []
-        # this information is only available for yoda-admins
-        for groupname in get_groups_on_categories(ctx, [category]):
-            group_members = list(group.members(ctx, groupname))
-            for gm in group_members:
-                members.append(gm[0])
-                members_total.append(gm[0])
-        # deduplicate member list
-        cat_members[category] = list(set(members))
+        if category not in storage:
+            continue
 
-    cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
+        # Calculate category members and totals.
+        internals = set()
+        externals = set()
+        for group_name in get_groups_on_categories(ctx, [category]):
+            members.setdefault(group_name, {'internal': set(), 'external': set()})
+            internals.update(members[group_name]['internal'])
+            externals.update(members[group_name]['external'])
 
-    def count_externals(members):
-        return len([member for member in members if not yoda_names.is_internal_user(member)])
+        # Deduplicate group members.
+        users = {'internals': len(internals), 'externals': len(externals)}
 
-    def count_internals(members):
-        return len([member for member in members if yoda_names.is_internal_user(member)])
+        # Count instance totals.
+        instance_totals['internals'].update(internals)
+        instance_totals['externals'].update(externals)
 
-    for category in categories:
+        # Humanize storage sizes for the frontend and calculate instance totals.
         storage_humanized = {}
-        # humanize storage sizes for the frontend
-        for type in ['total', 'research', 'vault', 'revision']:
-            storage_humanized[type] = misc.human_readable_size(1.0 * storage[category][type])
-            instance_totals[type] += 1.0 * storage[category][type]
+        for storage_type in ['research', 'vault', 'revision', 'total']:
+            storage_humanized[storage_type] = misc.human_readable_size(1.0 * storage[category][storage_type])
+            instance_totals[storage_type] += 1.0 * storage[category][storage_type]
 
-        users = {'internals': count_internals(cat_members[category]), 'externals': count_externals(cat_members[category])}
         all_storage.append({'category': category,
                             'storage': storage_humanized,
                             'users': users})
 
-    # Add the yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL
-    # So the frontend can distinguish instance totals from real category totals
-    users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
+    # Add the Yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL.
+    # So the frontend can distinguish instance totals from real category totals.
     all_storage.append({'category': "YODA_INSTANCE_TOTAL",
                         'storage': {'total': misc.human_readable_size(instance_totals['total']),
                                     'research': misc.human_readable_size(instance_totals['research']),
                                     'vault': misc.human_readable_size(instance_totals['vault']),
                                     'revision': misc.human_readable_size(instance_totals['revision'])},
-                        'users': users})
+                        'users': {'internals': len(instance_totals['internals']),
+                                  'externals': len(instance_totals['externals'])}})
 
     return {'categories': sorted(all_storage, key=lambda d: d['category']),
             'external_filter': ', '.join(config.external_users_domain_filter)}
