@@ -60,12 +60,6 @@ def ui_admin_pub_terms_option_present(browser):
     assert browser.find_by_id("admin-publication-terms").visible
 
 
-@when("the user navigates to the admin page")
-def ui_admin_navigates_to_admin(browser):
-    url = "{}/admin".format(portal_url)
-    browser.visit(url)
-
-
 @then("the text Access forbidden is shown")
 def ui_admin_access_forbidden_present(browser):
     assert browser.is_text_present("Access forbidden")
