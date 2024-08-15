@@ -38,15 +38,6 @@ UUMAXREVISIONSIZE = 2000000000
 2GB as in 2 * 1000 * 1000 * 1000
 """
 
-UUDEFAULTRESOURCETIER = 'Standard'
-"""Default name for a tier when none defined yet."""
-
-UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
-"""Metadata attribute for storage tier name."""
-
-UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
-"""Metadata for calculated storage month."""
-
 UUMETADATAGROUPSTORAGETOTALS = UUORGMETADATAPREFIX + 'storage_totals'
 """Metadata key for temporal total group storage (research, vault, revision)"""
 
