@@ -1451,7 +1451,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     try:
         # Determine who is permitted to read
         permitted_to_read = [GROUP_DM, GROUP_PM]
-        if 'assign_to' in data.keys():
+        if 'assign_to' in data:
             permitted_to_read = permitted_to_read + data['assign_to'][:]
 
         # Write form data to disk

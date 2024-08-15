@@ -16,7 +16,7 @@ import sys
 
 import yoda_names
 
-if 'unittest' not in sys.modules.keys():
+if 'unittest' not in sys.modules:
     # We don't import everything when running unit tests, because then we'll have
     # to deal with all the dependencies. Functions that have unit tests should
     # import utils specifically

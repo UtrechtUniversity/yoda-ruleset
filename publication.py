@@ -151,7 +151,7 @@ def get_publication_state(ctx, vault_package):
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
 
     # Take over all actual values as saved earlier.
-    for key in publ_metadata.keys():
+    for key in publ_metadata:
         publication_state[key] = publ_metadata[key]
 
     # Handle access restriction.
@@ -199,7 +199,7 @@ def save_publication_state(ctx, vault_package, publication_state):
     :param publication_state: Dict with state of the publication process
     """
     ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
-    for key in publication_state.keys():
+    for key in publication_state:
         if publication_state[key] != "":
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
