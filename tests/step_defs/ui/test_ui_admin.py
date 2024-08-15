@@ -4,6 +4,8 @@
 __copyright__ = "Copyright (c) 2024, Utrecht University"
 __license__ = "GPLv3, see LICENSE"
 
+import time
+
 from pytest_bdd import (
     given,
     parsers,
@@ -137,6 +139,8 @@ def ui_admin_display_new_theme(browser, host_name):
 
 @when(parsers.parse("the user adds text {text} to publication terms"))
 def ui_admin_edits_terms(browser, text):
+    browser.execute_script("document.getElementById('admin-create-preview').scrollIntoView();")
+    time.sleep(1)
     terms = browser.find_by_id('admin-publication-terms').first.value
     browser.fill("publicationTerms", text + terms)
 
@@ -165,6 +169,8 @@ def ui_admin_reloads(browser):
 @when(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 @then(parsers.parse("the text {text} is displayed in the publication terms textarea"))
 def ui_admin_displays_terms(browser, text):
+    browser.execute_script("document.getElementById('admin-create-preview').scrollIntoView();")
+    time.sleep(1)
     terms = browser.find_by_id('admin-publication-terms').first.value
     assert text in terms
 
@@ -178,5 +184,7 @@ def ui_admin_removes_text_from_terms(browser, text):
 
 @then(parsers.parse("the text {text} is not displayed in the publication terms textarea"))
 def ui_admin_removed_text_not_displayed(browser, text):
+    browser.execute_script("document.getElementById('admin-create-preview').scrollIntoView();")
+    time.sleep(1)
     terms = browser.find_by_id('admin-publication-terms').first.value
     assert text not in terms
