@@ -3,7 +3,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user views the admin page
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         Then the text Administration is shown
         And the Administration option is available in the menu dropdown
         And the Maintenance Banner feature is visible
@@ -20,7 +20,7 @@ Feature: Admin UI
 
     Scenario Outline: Non-admin user views the admin page
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         Then the text Access forbidden is shown
         And the Administration option is not available in the menu dropdown
 
@@ -31,7 +31,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user sets up a default banner message
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the user inputs banner message <message>
         And the user <action> the checkbox to mark the banner as important
         And the user clicks the Set Banner button
@@ -50,7 +50,7 @@ Feature: Admin UI
     Scenario Outline: Admin user removes an existing banner message
         Given user <user> is logged in
         And the banner displays the message <message>
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the user clicks the Remove Banner button
         And the user navigates to the home page
         Then the banner does not exist
@@ -62,7 +62,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user sets a new portal theme
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the user changes the portal theme to <theme>
         And the user clicks the Set Theme button
         And the user navigates to the home page
@@ -77,7 +77,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user previews publication terms
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the user adds text <text> to publication terms
         And the user clicks the Preview Terms button
         Then the added text <text> is shown in the preview window
@@ -89,7 +89,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user updates publication terms
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the user adds text <text> to publication terms
         And the user clicks the Set Terms button
         And the user reloads the page
@@ -102,7 +102,7 @@ Feature: Admin UI
 
     Scenario Outline: Admin user removes the text from publication terms
         Given user <user> is logged in
-        When the user navigates to the admin page
+        When module "admin" is shown
         And the text <text> is displayed in the publication terms textarea
         And the user removes the <text> from publication terms
         And the user clicks the Set Terms button
