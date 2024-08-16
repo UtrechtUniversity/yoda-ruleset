@@ -14,6 +14,7 @@ from pytest_bdd import (
     then,
     when,
 )
+from splinter.exceptions import ElementDoesNotExist
 
 scenarios('../../features/ui/ui_research.feature')
 
@@ -196,7 +197,7 @@ def ui_research_multi_copy_overwrite_all(browser, folder):
     browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
     browser.find_by_css('.dlg-action-button').click()
     time.sleep(1)
-    browser.find_by_css('.dlg-multi-action-button').click()
+    browser.fiynd_by_css('.dlg-multi-action-button').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
@@ -307,3 +308,12 @@ def ui_research_checksum_report_downloaded(browser, tmpdir, format):
             return
 
     raise AssertionError()
+
+
+@then(parsers.parse("user cannot download {format} checksum report"))
+def ui_research_empty_checksum_report_not_downloaded(browser, format): 
+    try:
+        el = "a.download-report-csv" if format == "csv" else "a.download-report-text"
+        browser.find_by_css(el)
+    except ElementDoesNotExist:
+        assert True, "The Download as {format} button is not present as expected."
