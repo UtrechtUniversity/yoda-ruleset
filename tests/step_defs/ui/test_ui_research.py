@@ -311,7 +311,7 @@ def ui_research_checksum_report_downloaded(browser, tmpdir, format):
 
 
 @then(parsers.parse("user cannot download {format} checksum report"))
-def ui_research_empty_checksum_report_not_downloaded(browser, format): 
+def ui_research_empty_checksum_report_not_downloaded(browser, format):
     try:
         el = "a.download-report-csv" if format == "csv" else "a.download-report-text"
         browser.find_by_css(el)
