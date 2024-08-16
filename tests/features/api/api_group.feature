@@ -8,10 +8,13 @@ Feature: Group API
         And group <group> exists
 
         Examples:
-            | user        | group                       |
-            | researcher  | research-initial            |
-            | researcher  | research-initial1           |
-            | datamanager | datamanager-test-automation |
+            | user                | group                       |
+            | researcher          | research-initial            |
+            | groupmanager        | research-initial            |
+            | functionaladminpriv | research-initial            |
+            | datamanager         | datamanager-test-automation |
+            | functionaladminpriv | priv-admin                  |
+            | technicaladmin      | priv-category-add           |
 
 
     Scenario Outline: Group categories
@@ -179,7 +182,7 @@ Feature: Group API
         Given user technicaladmin is authenticated
         And the Yoda API for processing csv group data API is queried for data "<group_name>"
         Then the response status code is "400"
-        
+
         Examples:
             | group_name         |
             | csv-missing-header |

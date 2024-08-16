@@ -143,6 +143,7 @@ rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
 sudo_obj_meta_set, SudoObjMetaSetError = make('SudoObjMetaSet', 'Could not set metadata as admin')
+sudo_obj_meta_remove, SudoObjMetaRemoveError = make('SudoObjMetaRemove', 'Could not remove metadata as admin')
 
 touch, TouchError = make('_touch', 'Could not update the data object or collection')
 obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object or collection')

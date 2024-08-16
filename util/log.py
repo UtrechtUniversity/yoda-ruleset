@@ -10,7 +10,7 @@ import sys
 import rule
 from config import config
 
-if 'unittest' not in sys.modules.keys():
+if 'unittest' not in sys.modules:
     # We don't import the user functions when running unit tests, because then we'll have
     # to deal with their dependencies. When running unit tests we should use a "None" ctx
     # or some mocked object.
