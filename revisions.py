@@ -547,8 +547,8 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     # Retrieve properties of the data object
     data_properties = data_object.get_properties(ctx, data_id, resource)
 
-    # Skip current revision tast if data object is not found
-    if data_properties is None:  
+    # Skip current revision task if data object is not found
+    if data_properties is None:
         log.write(ctx, "ERROR - No data object found for data_id {} on resource {}, move to the next revision creation".format(data_id, resource))
         return False
 
@@ -558,8 +558,6 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     data_owner = data_properties["DATA_OWNER_NAME"]
     basename = data_properties["DATA_NAME"]
     parent = data_properties["COLL_NAME"]
-
-
 
     path = '{}/{}'.format(parent, basename)
 
