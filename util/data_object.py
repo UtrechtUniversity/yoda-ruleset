@@ -23,6 +23,38 @@ def exists(ctx, path):
                "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
                genquery.AS_LIST, ctx))) > 0
 
+def get_properties(ctx, data_id, resource):
+    """ Retrieves specified or default properties of a data object from iRODS.
+
+    :param ctx:                                   Combined type of a callback and rei struct
+    :param data_id:                               data_id of the data object
+    :param resource:                              Name of resource
+
+    :returns: dictionary mapping each requested property to its retrieved value, or None if not found.
+    """
+    # Default properties available for retrieva
+    properties = [
+        "DATA_ID", "DATA_MODIFY_TIME", "DATA_OWNER_NAME", "DATA_SIZE",
+        "COLL_ID", "DATA_RESC_HIER", "DATA_NAME", "COLL_NAME",
+    ]
+
+    # Retrieve data obejct with default properties
+    query_fields = ", ".join(properties)
+    iter = genquery.row_iterator(
+        query_fields,
+        "DATA_ID = '{}' AND DATA_RESC_HIER like '{}%'".format(data_id, resource),
+        genquery.AS_LIST, ctx
+    )
+
+    # Return a None dict when no data object is found
+    prop_dict = {prop: None for prop in properties}
+
+    for row in iter:
+        prop_dict = {prop: value for prop, value in zip(properties, row)}
+        break
+
+    return prop_dict
+
 
 def owner(ctx, path):
     """Find the owner of a data object. Returns (name, zone) or None."""

@@ -433,6 +433,7 @@ def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data
     """
     revision_created = False
     size = data_object.size(ctx, path)
+    print("size",size)
     groups = data_object.get_group_owners(ctx, path)
     if groups:
         revision_store = get_revision_store(ctx, groups[0][0])
@@ -514,26 +515,6 @@ def is_revision_blocked_by_admin(ctx):
     return collection.exists(ctx, path)
 
 
-def get_data_object(ctx, data_id, resource):
-    """Return data on data object necessary to create a revision."""
-    iter = genquery.row_iterator(
-        "DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER, DATA_NAME, COLL_NAME",
-        "DATA_ID = '{}' AND DATA_RESC_HIER like '{}%'".format(data_id, resource),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        data_id = row[0]
-        modify_time = row[1]
-        data_size = row[3]
-        coll_id = row[4]
-        data_owner = row[2]
-        basename = row[6]
-        parent = row[7]
-        break
-
-    return modify_time, data_size, coll_id, data_owner, basename, parent
-
-
 def get_revision_store(ctx, group_name):
     """Get path to revision store for group if the path exists.
 
@@ -563,7 +544,23 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     :returns: True / False as an indication whether a revision was successfully created
     """
     revision_created = False
-    modify_time, data_size, coll_id, data_owner, basename, parent = get_data_object(ctx, data_id, resource)
+    log.write(ctx, "Revision_create")
+
+    # Retrive properties of the data object
+    data_properties = data_object.get_properties(ctx, data_id, resource)
+
+    modify_time = data_properties["DATA_MODIFY_TIME"]
+    data_size = data_properties["DATA_SIZE"]
+    coll_id = data_properties["COLL_ID"]
+    data_owner = data_properties["DATA_OWNER_NAME"]
+    basename = data_properties["DATA_NAME"]
+    parent = data_properties["COLL_NAME"]
+
+    # Return revision_created failed if data object is not found
+    if data_size is None: # data_size cannot be None
+        log.write(ctx, "ERROR - No data object found for data_id {}, move to the next revision creation".format(data_id))
+        return revision_created
+
     path = '{}/{}'.format(parent, basename)
 
     # Allow rodsadmin to create subcollections.
