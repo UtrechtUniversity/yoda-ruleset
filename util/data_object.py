@@ -48,7 +48,7 @@ def get_properties(ctx, data_id, resource):
     )
 
     # Return a None dict when no data object is found
-    prop_dict = {prop: None for prop in properties}
+    prop_dict = None
 
     for row in iter:
         prop_dict = {prop: value for prop, value in zip(properties, row)}

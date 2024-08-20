@@ -547,6 +547,11 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     # Retrieve properties of the data object
     data_properties = data_object.get_properties(ctx, data_id, resource)
 
+    # Skip current revision tast if data object is not found
+    if data_properties is None:  
+        log.write(ctx, "ERROR - No data object found for data_id {} on resource {}, move to the next revision creation".format(data_id, resource))
+        return False
+
     modify_time = data_properties["DATA_MODIFY_TIME"]
     data_size = data_properties["DATA_SIZE"]
     coll_id = data_properties["COLL_ID"]
@@ -554,11 +559,7 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     basename = data_properties["DATA_NAME"]
     parent = data_properties["COLL_NAME"]
 
-    # Skip current revision tast if data object is not found
-    if data_size is None:  # retrieved data_size cannot be None
-        data_properties = data_object.get_properties(ctx, data_id, resource)
-        log.write(ctx, "ERROR - No data object found for data_id {} on resource {}, move to the next revision creation".format(data_id, resource))
-        return False
+
 
     path = '{}/{}'.format(parent, basename)
 
