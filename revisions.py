@@ -433,7 +433,6 @@ def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data
     """
     revision_created = False
     size = data_object.size(ctx, path)
-    print("size",size)
     groups = data_object.get_group_owners(ctx, path)
     if groups:
         revision_store = get_revision_store(ctx, groups[0][0])
@@ -556,8 +555,8 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     basename = data_properties["DATA_NAME"]
     parent = data_properties["COLL_NAME"]
 
-    # Return revision_created failed if data object is not found
-    if data_size is None: # data_size cannot be None
+    # Skip current revision if data object is not found
+    if data_size is None: #  data_size cannot be None
         log.write(ctx, "ERROR - No data object found for data_id {}, move to the next revision creation".format(data_id))
         return revision_created
 

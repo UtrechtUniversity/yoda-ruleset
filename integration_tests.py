@@ -523,7 +523,7 @@ basic_integration_tests = [
      "check": lambda x: x["DATA_NAME"] == "lorem.txt"},
     {"name":   "util.data_object.get_properties.no_data_object",
      "test": lambda ctx: data_object.get_properties(ctx, 1218812188, "irodsResc"),
-     "check": lambda x: x["DATA_SIZE"] == None},
+     "check": lambda x: x["DATA_SIZE"] is None},
     {"name":   "util.data_object.owner",
      "test": lambda ctx: data_object.owner(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == ('rods', 'tempZone')},

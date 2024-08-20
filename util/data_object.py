@@ -23,14 +23,15 @@ def exists(ctx, path):
                "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
                genquery.AS_LIST, ctx))) > 0
 
+
 def get_properties(ctx, data_id, resource):
-    """ Retrieves specified or default properties of a data object from iRODS.
+    """ Retrieves default properties of a data object from iRODS.
 
     :param ctx:                                   Combined type of a callback and rei struct
     :param data_id:                               data_id of the data object
     :param resource:                              Name of resource
 
-    :returns: dictionary mapping each requested property to its retrieved value, or None if not found.
+    :returns: dictionary mapping each requested property to its retrieved value, or None for each value if not found.
     """
     # Default properties available for retrieva
     properties = [
