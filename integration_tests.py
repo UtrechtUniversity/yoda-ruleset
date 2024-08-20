@@ -521,8 +521,9 @@ basic_integration_tests = [
     {"name":   "util.data_object.get_properties.default_properties",
      "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_name(ctx, "lorem.txt"), "irodsResc"),
      "check": lambda x: x["DATA_NAME"] == "lorem.txt"},
+    # Using the resource_id as data_id to ensure no existing data object uses this identifier
     {"name":   "util.data_object.get_properties.no_data_object",
-     "test": lambda ctx: data_object.get_properties(ctx, 1218812188, "irodsResc"),
+     "test": lambda ctx: data_object.get_properties(ctx, resource.id_from_name(ctx, "irodsResc"), "irodsResc"),
      "check": lambda x: x["DATA_SIZE"] is None},
     {"name":   "util.data_object.owner",
      "test": lambda ctx: data_object.owner(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
