@@ -31,7 +31,7 @@ def get_properties(ctx, data_id, resource):
     :param data_id:                               data_id of the data object
     :param resource:                              Name of resource
 
-    :returns: dictionary mapping each requested property to its retrieved value, or a None dict if not found.
+    :returns: dictionary mapping each requested property to its retrieved value, or None if not found.
     """
     # Default properties available for retrieva
     properties = [
@@ -47,7 +47,7 @@ def get_properties(ctx, data_id, resource):
         genquery.AS_LIST, ctx
     )
 
-    # Return a None dict when no data object is found
+    # Return a None when no data object is found
     prop_dict = None
 
     for row in iter:
