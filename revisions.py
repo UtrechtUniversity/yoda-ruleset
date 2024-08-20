@@ -543,9 +543,8 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     :returns: True / False as an indication whether a revision was successfully created
     """
     revision_created = False
-    log.write(ctx, "Revision_create")
 
-    # Retrive properties of the data object
+    # Retrieve properties of the data object
     data_properties = data_object.get_properties(ctx, data_id, resource)
 
     modify_time = data_properties["DATA_MODIFY_TIME"]
