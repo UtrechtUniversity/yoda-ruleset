@@ -31,7 +31,7 @@ def get_properties(ctx, data_id, resource):
     :param data_id:                               data_id of the data object
     :param resource:                              Name of resource
 
-    :returns: dictionary mapping each requested property to its retrieved value, or None for each value if not found.
+    :returns: dictionary mapping each requested property to its retrieved value, or a None dict if not found.
     """
     # Default properties available for retrieva
     properties = [
@@ -229,6 +229,18 @@ def name_from_id(ctx, data_id):
     x = genquery.Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
     if x is not None:
         return '/'.join(x)
+
+
+def id_from_name(ctx, data_name):
+    """Get data object id from data object name at its first appearance.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param data_name: Data object name
+
+    :returns: Data object id
+    """
+    return genquery.Query(ctx, "DATA_ID", "DATA_NAME = '{}'".format(data_name)).first()
+
 
 
 def decode_checksum(checksum):

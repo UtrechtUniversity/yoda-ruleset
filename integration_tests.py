@@ -519,7 +519,7 @@ basic_integration_tests = [
      "test": lambda ctx: data_object.exists(ctx, "/tempZone/home/research-initial/testdata/doesnotexist.txt"),
      "check": lambda x: not x},
     {"name":   "util.data_object.get_properties.default_properties",
-     "test": lambda ctx: data_object.get_properties(ctx, 12188, "irodsResc"),
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_name(ctx, "lorem.txt"), "irodsResc"),
      "check": lambda x: x["DATA_NAME"] == "lorem.txt"},
     {"name":   "util.data_object.get_properties.no_data_object",
      "test": lambda ctx: data_object.get_properties(ctx, 1218812188, "irodsResc"),
