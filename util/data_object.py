@@ -242,7 +242,6 @@ def id_from_name(ctx, data_name):
     return genquery.Query(ctx, "DATA_ID", "DATA_NAME = '{}'".format(data_name)).first()
 
 
-
 def decode_checksum(checksum):
     """Decode data object checksum.
 
