@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
+import json
 from collections import namedtuple
 
 import genquery
@@ -170,3 +171,21 @@ def rmw_from_data(ctx, obj, a, v, u=''):
 def rmw_from_group(ctx, group, a, v, u=''):
     """Remove AVU from group with wildcards."""
     msi.rmw_avu(ctx, '-u', group, a, v, u)
+
+
+def apply_atomic_operations(ctx, operations):
+    """Sequentially executes all operations as a single transaction.
+
+    Operations should be a dict with structure as defined in
+    https://docs.irods.org/4.2.12/doxygen/libmsi__atomic__apply__metadata__operations_8cpp.html
+
+    If an error occurs, all updates are rolled back and an error is returned.
+    Result will contain specific information about the error.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param operations: Dict containing the batch of metadata operations
+
+    :returns: Dict containing the error information on failure
+    """
+    ret = msi.atomic_apply_metadata_operations(ctx, json.dumps(operations), "")
+    return json.loads(ret['arguments'][1])
