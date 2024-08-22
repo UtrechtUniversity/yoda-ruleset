@@ -68,10 +68,10 @@ def _test_msvc_add_avu_object(ctx):
 
 
 def _test_msvc_add_avu_collection(ctx):
-    tmp_object = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
-    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
-    collection.remove(ctx, tmp_object)
+    tmp_coll = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_coll, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
     return result
 
 
@@ -124,6 +124,70 @@ def _test_folder_set_retry_avus(ctx):
     msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
     collection.remove(ctx, tmp_coll)
     return True
+
+
+def _test_msvc_apply_atomic_operations_collection(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    operations = {
+        "entity_name": tmp_coll,
+        "entity_type": "collection",
+        "operations": [
+            {
+                "operation": "add",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            },
+            {
+                "operation": "add",
+                "attribute": "foo",
+                "value": "bar",
+                "units": "baz"
+            },
+            {
+                "operation": "remove",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            }
+        ]
+    }
+    avu.apply_atomic_operations(ctx, operations)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
+def _test_msvc_apply_atomic_operations_object(ctx):
+    tmp_object = _create_tmp_object(ctx)
+    operations = {
+        "entity_name": tmp_object,
+        "entity_type": "data_object",
+        "operations": [
+            {
+                "operation": "add",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            },
+            {
+                "operation": "add",
+                "attribute": "foo",
+                "value": "bar",
+                "units": "baz"
+            },
+            {
+                "operation": "remove",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            }
+        ]
+    }
+    avu.apply_atomic_operations(ctx, operations)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
 
 
 def _test_folder_cronjob_status(ctx):
@@ -400,6 +464,14 @@ basic_integration_tests = [
     {"name": "avu.rmw_from_coll_wildcard.catch.no",
      "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", False, "%")),
      "check": lambda x: (("aap", "noot", "mies") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.apply_atomic_operations.collection",
+     "test": lambda ctx: _test_msvc_apply_atomic_operations_collection(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
+    {"name": "avu.apply_atomic_operations.object",
+     "test": lambda ctx: _test_msvc_apply_atomic_operations_object(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
     {"name": "data_access_token.get_all_tokens",
