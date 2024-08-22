@@ -231,15 +231,16 @@ def name_from_id(ctx, data_id):
         return '/'.join(x)
 
 
-def id_from_name(ctx, data_name):
-    """Get data object id from data object name at its first appearance.
+def id_from_path(ctx, path):
+    """Get data object id from data object path at its first appearance.
 
-    :param ctx:       Combined type of a callback and rei struct
-    :param data_name: Data object name
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to iRODS data object
 
     :returns: Data object id
     """
-    return genquery.Query(ctx, "DATA_ID", "DATA_NAME = '{}'".format(data_name)).first()
+    return genquery.Query(ctx,"DATA_ID",
+                          "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path)).first()
 
 
 def decode_checksum(checksum):
