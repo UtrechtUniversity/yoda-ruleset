@@ -239,7 +239,7 @@ def id_from_path(ctx, path):
 
     :returns: Data object id
     """
-    return genquery.Query(ctx,"DATA_ID",
+    return genquery.Query(ctx, "DATA_ID",
                           "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path)).first()
 
 
