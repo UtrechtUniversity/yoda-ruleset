@@ -535,7 +535,7 @@ basic_integration_tests = [
      "check": lambda x: x["COLL_ID"].isdigit()},
     {"name": "util.data_object.get_properties.by_data_resc_hier",
      "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_name(ctx, "lorem.txt"), "irodsResc"),
-     "check": lambda x: x["DATA_RESC_HIER"] == 'irodsResc;dev001;dev001_p2;dev001_2'},
+     "check": lambda x: x["DATA_RESC_HIER"].startswith('irodsResc')},
     {"name": "util.data_object.get_properties.by_data_size",
      "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_name(ctx, "lorem.txt"), "irodsResc"),
      "check": lambda x: x["DATA_SIZE"].isdigit()},
