@@ -114,16 +114,3 @@ def read(callback, path, **options):
 def write(callback, path, data, **options):
     """Write a JSON object to an iRODS data object."""
     return data_object.write(callback, path, dump(data, **options))
-
-
-def remove_empty(d):
-    """Recursively remove empty lists, empty dicts, or None elements from a dictionary"""
-    def empty(x):
-        return x is None or x == {} or x == []
-
-    if not isinstance(d, (dict, list)):
-        return d
-    elif isinstance(d, list):
-        return [v for v in (remove_empty(v) for v in d) if not empty(v)]
-    else:
-        return {k: v for k, v in ((k, remove_empty(v)) for k, v in d.items()) if not empty(v)}

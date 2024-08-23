@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -62,9 +62,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     #                               UTF-8, as that will trip up jinja2.
     dictJsonData = jsonutil.read(callback, combiJsonPath, want_bytes=False)
 
-    # Remove empty lists, empty dicts, or None elements
-    # to prevent empty fields on landingpage.
-    dictJsonData = jsonutil.remove_empty(dictJsonData)
+    # Remove empty objects to prevent empty fields on landingpage.
+    dictJsonData = misc.remove_empty_objects(dictJsonData)
 
     # Load the Jinja template.
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
@@ -272,7 +271,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     data_access_restriction = dictJsonData['Data_Access_Restriction']
     data_classification = dictJsonData['Data_Classification']
     persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
-    open_access_link = dictJsonData['System']['Open_access_Link']
+    open_access_link = dictJsonData['System'].get("Open_access_Link", "")
     license_uri = dictJsonData['System']['License_URI']
 
     # Format last modified date.
