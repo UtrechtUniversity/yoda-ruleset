@@ -699,7 +699,7 @@ def copy_user_metadata(ctx, source, target):
         # Generate metadata operations.
         for path, item in grouped_user_metadata.items():
             operations = {
-                "entity_name": path.replace(source, target + "/original", 1),
+                "entity_name": path.replace(source, "{}/original".format(target), 1),
                 "entity_type": item["type"],
                 "operations": []
             }
@@ -718,6 +718,6 @@ def copy_user_metadata(ctx, source, target):
             if not avu.apply_atomic_operations(ctx, operations):
                 log.write(ctx, "copy_user_metadata: failed to copy user metadata for <{}>".format(path))
 
-        log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}/original>".format(source, target))
     except Exception:
-        log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
