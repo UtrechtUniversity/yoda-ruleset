@@ -178,14 +178,23 @@ def apply_atomic_operations(ctx, operations):
 
     Operations should be a dict with structure as defined in
     https://docs.irods.org/4.2.12/doxygen/libmsi__atomic__apply__metadata__operations_8cpp.html
-
     If an error occurs, all updates are rolled back and an error is returned.
-    Result will contain specific information about the error.
 
     :param ctx:        Combined type of a callback and rei struct
     :param operations: Dict containing the batch of metadata operations
 
-    :returns: Dict containing the error information on failure
+    :returns: Boolean indicating if all metadata operations were executed
     """
-    ret = msi.atomic_apply_metadata_operations(ctx, json.dumps(operations), "")
-    return json.loads(ret['arguments'][1])
+    try:
+        msi.atomic_apply_metadata_operations(ctx, json.dumps(operations), "")
+        return True
+    except msi.Error as e:
+        # iRODS errorcode -1811000 (INVALID_OPERATION)
+        if str(e).find("-1811000") > -1:
+            log.write(ctx, "apply_atomic_operations: invalid metadata operation")
+        # iRODS errorcode -130000 (SYS_INVALID_INPUT_PARAM)
+        elif str(e).find("-130000") > -1:
+            log.write(ctx, "apply_atomic_operations: invalid entity name or entity type")
+        else:
+            log.write(ctx, "apply_atomic_operations: {}".format(e))
+        return False
