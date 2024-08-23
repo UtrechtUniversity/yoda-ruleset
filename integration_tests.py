@@ -474,6 +474,9 @@ basic_integration_tests = [
      "check": lambda x: (("foo", "bar", "baz") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "avu.apply_atomic_operations.invalid",
+     "test": lambda ctx: avu.apply_atomic_operations(ctx, {"inspector": "gadget"}),
+     "check": lambda x: not x},
     {"name": "data_access_token.get_all_tokens",
      "test": lambda ctx: data_access_token.get_all_tokens(ctx),
      "check": lambda x: isinstance(x, list)},
