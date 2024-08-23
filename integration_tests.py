@@ -18,7 +18,7 @@ import folder
 import groups
 import meta
 import schema
-from util import avu, collection, config, constants, data_object, group, log, msi, resource, rule, user
+from util import avu, collection, config, constants, data_object, group, jsonutil, log, msi, resource, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -185,6 +185,22 @@ def _test_msvc_apply_atomic_operations_object(ctx):
         ]
     }
     avu.apply_atomic_operations(ctx, operations)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
+
+
+def _test_jsonutil_set_on_object_collection(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    jsonutil.set_on_object(ctx, tmp_coll, "collection", "root", "{\"inspector\": \"gadget\"}")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
+def _test_jsonutil_set_on_object_data_object(ctx):
+    tmp_object = _create_tmp_object(ctx)
+    jsonutil.set_on_object(ctx, tmp_object, "data_object", "root", "{\"inspector\": \"gadget\"}")
     result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
     data_object.remove(ctx, tmp_object)
     return result
@@ -469,7 +485,7 @@ basic_integration_tests = [
     {"name": "avu.apply_atomic_operations.collection",
      "test": lambda ctx: _test_msvc_apply_atomic_operations_collection(ctx),
      "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
-    {"name": "avu.apply_atomic_operations.object",
+    {"name": "avu.apply_atomic_operations.data_object",
      "test": lambda ctx: _test_msvc_apply_atomic_operations_object(ctx),
      "check": lambda x: (("foo", "bar", "baz") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
@@ -477,6 +493,14 @@ basic_integration_tests = [
     {"name": "avu.apply_atomic_operations.invalid",
      "test": lambda ctx: avu.apply_atomic_operations(ctx, {"inspector": "gadget"}),
      "check": lambda x: not x},
+    {"name": "jsonutil.set_on_object.collection",
+     "test": lambda ctx: _test_jsonutil_set_on_object_collection(ctx),
+     "check": lambda x: (("inspector", "gadget", "root_0_s") in x and len(x) == 1)},
+    {"name": "jsonutil.set_on_object.data_object",
+     "test": lambda ctx: _test_jsonutil_set_on_object_data_object(ctx),
+     "check": lambda x: (("inspector", "gadget", "root_0_s") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
     {"name": "data_access_token.get_all_tokens",
      "test": lambda ctx: data_access_token.get_all_tokens(ctx),
      "check": lambda x: isinstance(x, list)},

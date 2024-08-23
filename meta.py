@@ -13,7 +13,6 @@ import genquery
 import irods_types
 from deepdiff import DeepDiff
 
-import avu_json
 import provenance
 import publication
 import schema as schema_
@@ -330,9 +329,9 @@ def ingest_metadata_research(ctx, path):
     # properties in the research area.
 
     # Replace all metadata under this namespace.
-    avu_json.set_json_to_obj(ctx, coll, '-C',
-                             constants.UUUSERMETADATAROOT,
-                             jsonutil.dump(metadata))
+    jsonutil.set_on_object(ctx, coll, "collection",
+                           constants.UUUSERMETADATAROOT,
+                           jsonutil.dump(metadata))
 
 
 def ingest_metadata_deposit(ctx, path):
@@ -483,9 +482,9 @@ def ingest_metadata_vault(ctx, path):
         update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
     # Replace all metadata under this namespace.
-    avu_json.set_json_to_obj(ctx, coll, '-C',
-                             constants.UUUSERMETADATAROOT,
-                             jsonutil.dump(metadata))
+    jsonutil.set_on_object(ctx, coll, "collection",
+                           constants.UUUSERMETADATAROOT,
+                           jsonutil.dump(metadata))
 
 # }}}
 

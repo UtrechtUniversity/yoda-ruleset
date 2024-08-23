@@ -15,7 +15,6 @@ from enum import Enum
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
-import avu_json
 import mail
 from util import *
 
@@ -735,7 +734,7 @@ def datarequest_sync_avus(ctx, request_id):
     data = datarequest_get(ctx, request_id)
 
     # Re-set the AVUs
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
+    jsonutil.set_on_object(ctx, file_path, "data_object", "root", data)
 
 
 ###################################################
@@ -995,7 +994,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         return api.Error('write_error', 'Could not write datarequest to disk.')
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
+    jsonutil.set_on_object(ctx, file_path, "data_object", "root", json.dumps(data))
 
     # If draft, set status
     if draft:
