@@ -191,17 +191,17 @@ def gen_fn_spec(name, fn):
             ,'dict': 'object'
             ,'list': 'array'}
 
-    paramdocs = oDict(*[(k, (types[(re.findall(r'^\s*:type\s+' +re.escape(k)+r':\s*(.+?)\s*$', doc, re.M) or ['str'])[-1]],
-                         (re.findall(r'^\s*:param\s+'+re.escape(k)+r':\s*(.+?)\s*$', doc, re.M) or ['(undocumented)'])[-1],
+    paramdocs = oDict(*[(k, (types[(re.findall(r'^\s*:type\s+' +re.escape(k)+r':\s*(.+?)\s*$', doc, re.MULTILINE) or ['str'])[-1]],
+                         (re.findall(r'^\s*:param\s+'+re.escape(k)+r':\s*(.+?)\s*$', doc, re.MULTILINE) or ['(undocumented)'])[-1],
                          None if i < len(required) else a_defaults[i-len(required)]))
                       for i, k in enumerate(required+optional)])
 
     # Sphinx-compatible parameter documentation.
-    doc = re.sub(r'^\s*:param.*?\n', '', doc, flags=re.M|re.S)
-    doc = re.sub(r'^\s*:type.*?\n',  '', doc, flags=re.M|re.S)
+    doc = re.sub(r'^\s*:param.*?\n', '', doc, flags=re.MULTILINE|re.DOTALL)
+    doc = re.sub(r'^\s*:type.*?\n',  '', doc, flags=re.MULTILINE|re.DOTALL)
 
     # Only retrieve summary.
-    doc = re.sub(r'^\s*[\r\n].*', '', doc, flags=re.M|re.S)
+    doc = re.sub(r'^\s*[\r\n].*', '', doc, flags=re.MULTILINE|re.DOTALL)
 
     req = list(required)
     props = oDict(*[(name, { 'type':        paramdocs[name][0],
