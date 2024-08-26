@@ -15,6 +15,8 @@ IIGRPPREFIX = "grp-"
 IIVAULTPREFIX = "vault-"
 
 UUORGMETADATAPREFIX = 'org_'
+"""Prefix for organisational metadata."""
+
 UUSYSTEMCOLLECTION = '/yoda'
 
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
@@ -60,14 +62,8 @@ IIDATA_MAX_SLURP_SIZE = 4 * 1024 * 1024  # 4 MiB
 """The maximum file size that can be read into a string in memory, to prevent
    DOSing / out of control memory consumption."""
 
-UUUSERMETADATAPREFIX = 'usr_'
-"""Prefix of user metadata (applied via legacy XML metadata file changes)."""
-
 UUUSERMETADATAROOT = 'usr'
 """JSONAVU JSON root / namespace of user metadata (applied via JSON metadata file changes)."""
-
-UUORGMETADATAPREFIX = 'org_'
-"""Prefix for organisational metadata."""
 
 UUFLATINDEX = 'FlatIndex'
 """Flat unstructured index fields."""

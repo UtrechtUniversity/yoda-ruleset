@@ -141,6 +141,8 @@ remove_key_value_pairs_from_obj, RemoveKeyValuePairsFromObjError = \
 add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
 rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
+atomic_apply_metadata_operations, AtomicApplyMetadataOperationsError = make('_atomic_apply_metadata_operations', 'Could not apply atomic metadata operations')
+
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
 sudo_obj_meta_set, SudoObjMetaSetError = make('SudoObjMetaSet', 'Could not set metadata as admin')
 sudo_obj_meta_remove, SudoObjMetaRemoveError = make('SudoObjMetaRemove', 'Could not remove metadata as admin')

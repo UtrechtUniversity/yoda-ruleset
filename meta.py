@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -26,8 +26,7 @@ __all__ = ['rule_meta_validate',
            'rule_meta_modified_post',
            'rule_meta_datamanager_vault_ingest',
            'rule_meta_collection_has_cloneable_metadata',
-           'rule_get_latest_vault_metadata_path',
-           'rule_copy_user_metadata']
+           'rule_get_latest_vault_metadata_path']
 
 
 def metadata_get_links(metadata):
@@ -326,9 +325,6 @@ def ingest_metadata_research(ctx, path):
         log.write(ctx, 'ingest_metadata_research failed: {} is invalid'.format(path))
         return
 
-    # Remove any remaining legacy XML-style AVUs.
-    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
-
     # Note: We do not set a $id in research space: this would trigger jsonavu
     # validation, which does not respect our wish to ignore required
     # properties in the research area.
@@ -485,9 +481,6 @@ def ingest_metadata_vault(ctx, path):
     # Update flat index metadata for OpenSearch.
     if config.enable_open_search and group.exists(ctx, coll.split("/")[3].replace("vault-", "deposit-", 1)):
         update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
-
-    # Remove any remaining legacy XML-style AVUs.
-    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
 
     # Replace all metadata under this namespace.
     avu_json.set_json_to_obj(ctx, coll, '-C',
@@ -682,31 +675,49 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     set_result('Success', '')
 
 
-@rule.make()
-def rule_copy_user_metadata(ctx, source, target):
-    copy_user_metadata(ctx, source, target)
-
-
 def copy_user_metadata(ctx, source, target):
     """
-    Copy the user metadata of a collection to another collection.
+    Copy the user metadata (AVUs) of a collection to another collection.
+
+    This only copies user metadata, so it ignores system metadata.
 
     :param ctx:    Combined type of a callback and rei struct
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
     try:
-        # Retrieve all user metadata on source collection.
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}%'".format(source, constants.UUUSERMETADATAPREFIX),
-            genquery.AS_LIST, ctx
-        )
+        # Retrieve all AVUs inside source collection.
+        user_metadata = list(avu.inside_coll(ctx, source, recursive=True))
 
-        # Set user metadata on target collection.
-        for row in iter:
-            avu.associate_to_coll(ctx, target, row[0], row[1])
+        # Group AVUs by entity and filter system metadata.
+        grouped_user_metadata = {}
+        for path, type, attribute, value, unit in user_metadata:
+            if not attribute.startswith(constants.UUORGMETADATAPREFIX) and unit != constants.UUFLATINDEX and not unit.startswith(constants.UUUSERMETADATAROOT + '_'):
+                grouped_user_metadata.setdefault(path, {"type": type, "avus": []})
+                grouped_user_metadata[path]["avus"].append((attribute, value, unit))
 
-        log.write(ctx, "rule_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+        # Generate metadata operations.
+        for path, item in grouped_user_metadata.items():
+            operations = {
+                "entity_name": path.replace(source, "{}/original".format(target), 1),
+                "entity_type": item["type"],
+                "operations": []
+            }
+
+            for attribute, value, unit in item["avus"]:
+                operations["operations"].append(
+                    {
+                        "operation": "add",
+                        "attribute": attribute,
+                        "value": value,
+                        "units": unit
+                    }
+                )
+
+            # Apply metadata operations.
+            if not avu.apply_atomic_operations(ctx, operations):
+                log.write(ctx, "copy_user_metadata: failed to copy user metadata for <{}>".format(path))
+
+        log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}/original>".format(source, target))
     except Exception:
-        log.write(ctx, "rule_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))

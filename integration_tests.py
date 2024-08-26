@@ -68,10 +68,10 @@ def _test_msvc_add_avu_object(ctx):
 
 
 def _test_msvc_add_avu_collection(ctx):
-    tmp_object = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
-    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
-    collection.remove(ctx, tmp_object)
+    tmp_coll = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_coll, "foo", "bar", "baz")
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
     return result
 
 
@@ -124,6 +124,70 @@ def _test_folder_set_retry_avus(ctx):
     msi.set_acl(ctx, "default", "admin:own", user.full_name(ctx), tmp_coll)
     collection.remove(ctx, tmp_coll)
     return True
+
+
+def _test_msvc_apply_atomic_operations_collection(ctx):
+    tmp_coll = _create_tmp_collection(ctx)
+    operations = {
+        "entity_name": tmp_coll,
+        "entity_type": "collection",
+        "operations": [
+            {
+                "operation": "add",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            },
+            {
+                "operation": "add",
+                "attribute": "foo",
+                "value": "bar",
+                "units": "baz"
+            },
+            {
+                "operation": "remove",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            }
+        ]
+    }
+    avu.apply_atomic_operations(ctx, operations)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
+def _test_msvc_apply_atomic_operations_object(ctx):
+    tmp_object = _create_tmp_object(ctx)
+    operations = {
+        "entity_name": tmp_object,
+        "entity_type": "data_object",
+        "operations": [
+            {
+                "operation": "add",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            },
+            {
+                "operation": "add",
+                "attribute": "foo",
+                "value": "bar",
+                "units": "baz"
+            },
+            {
+                "operation": "remove",
+                "attribute": "aap",
+                "value": "noot",
+                "units": "mies"
+            }
+        ]
+    }
+    avu.apply_atomic_operations(ctx, operations)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
+    data_object.remove(ctx, tmp_object)
+    return result
 
 
 def _test_folder_cronjob_status(ctx):
@@ -402,6 +466,17 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "avu.apply_atomic_operations.collection",
+     "test": lambda ctx: _test_msvc_apply_atomic_operations_collection(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
+    {"name": "avu.apply_atomic_operations.object",
+     "test": lambda ctx: _test_msvc_apply_atomic_operations_object(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x
+                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
+                         )},
+    {"name": "avu.apply_atomic_operations.invalid",
+     "test": lambda ctx: avu.apply_atomic_operations(ctx, {"inspector": "gadget"}),
+     "check": lambda x: not x},
     {"name": "data_access_token.get_all_tokens",
      "test": lambda ctx: data_access_token.get_all_tokens(ctx),
      "check": lambda x: isinstance(x, list)},
@@ -518,6 +593,31 @@ basic_integration_tests = [
     {"name":   "util.data_object.exists.no",
      "test": lambda ctx: data_object.exists(ctx, "/tempZone/home/research-initial/testdata/doesnotexist.txt"),
      "check": lambda x: not x},
+    {"name": "util.data_object.get_properties.by_data_name",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["DATA_NAME"] == "lorem.txt"},
+    {"name": "util.data_object.get_properties.by_modify_time",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["DATA_MODIFY_TIME"].isdigit()},
+    {"name": "util.data_object.get_properties.by_owner_name",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["DATA_OWNER_NAME"] == "rods"},
+    {"name": "util.data_object.get_properties.by_coll_name",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["COLL_NAME"] == "/tempZone/home/research-initial/testdata"},
+    {"name": "util.data_object.get_properties.by_coll_id",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["COLL_ID"].isdigit()},
+    {"name": "util.data_object.get_properties.by_data_resc_hier",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["DATA_RESC_HIER"].startswith('irodsResc')},
+    {"name": "util.data_object.get_properties.by_data_size",
+     "test": lambda ctx: data_object.get_properties(ctx, data_object.id_from_path(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"), "irodsResc"),
+     "check": lambda x: x["DATA_SIZE"].isdigit()},
+    # Using the resource_id as data_id to ensure no existing data object uses this occupied identifier
+    {"name":   "util.data_object.get_properties.no_data_object",
+     "test": lambda ctx: data_object.get_properties(ctx, resource.id_from_name(ctx, "irodsResc"), "irodsResc"),
+     "check": lambda x: x is None},
     {"name":   "util.data_object.owner",
      "test": lambda ctx: data_object.owner(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == ('rods', 'tempZone')},

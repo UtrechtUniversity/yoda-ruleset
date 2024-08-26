@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
+import json
 from collections import namedtuple
 
 import genquery
@@ -20,6 +21,13 @@ Avu.value = Avu.v
 Avu.unit  = Avu.u
 
 
+def of_data(ctx, path):
+    """Get (a,v,u) triplets for a given data object."""
+    return itertools.imap(lambda x: Avu(*x),
+                          genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+                                              "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
+
+
 def of_coll(ctx, coll):
     """Get (a,v,u) triplets for a given collection."""
     return itertools.imap(lambda x: Avu(*x),
@@ -27,11 +35,56 @@ def of_coll(ctx, coll):
                                               "COLL_NAME = '{}'".format(coll)))
 
 
-def of_data(ctx, path):
-    """Get (a,v,u) triplets for a given data object."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                              "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
+def inside_coll(ctx, path, recursive=False):
+    """Get a list of all AVUs inside a collection with corresponding paths.
+
+    Note: the returned value is a generator / lazy list, so that large
+          collections can be handled without keeping everything in memory.
+          use list(...) on the result to get an actual list if necessary.
+
+    The returned paths are absolute paths (e.g. '/tempZone/home/x').
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path:      Path of collection
+    :param recursive: List AVUs recursively
+
+    :returns: List of all AVUs inside a collection with corresponding paths
+    """
+    # coll+name -> path
+    def to_absolute(row, type):
+        if type == "collection":
+            return (row[1], type, row[2], row[3], row[4])
+        else:
+            return ('{}/{}'.format(row[0], row[1]), type, row[2], row[3], row[4])
+
+    collection_root = genquery.row_iterator(
+        "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+        "COLL_PARENT_NAME = '{}'".format(path),
+        genquery.AS_LIST, ctx)
+    collection_root = itertools.imap(lambda x: to_absolute(x, "collection"), collection_root)
+
+    data_objects_root = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+        "COLL_NAME = '{}'".format(path),
+        genquery.AS_LIST, ctx)
+    data_objects_root = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_root)
+
+    if not recursive:
+        return itertools.chain(collection_root, data_objects_root)
+
+    collection_sub = genquery.row_iterator(
+        "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+        "COLL_PARENT_NAME like '{}/%'".format(path),
+        genquery.AS_LIST, ctx)
+    collection_sub = itertools.imap(lambda x: to_absolute(x, "collection"), collection_sub)
+
+    data_objects_sub = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+        "COLL_NAME like '{}/%'".format(path),
+        genquery.AS_LIST, ctx)
+    data_objects_sub = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_sub)
+
+    return itertools.chain(collection_root, data_objects_root, collection_sub, data_objects_sub)
 
 
 def of_group(ctx, group):
@@ -170,3 +223,30 @@ def rmw_from_data(ctx, obj, a, v, u=''):
 def rmw_from_group(ctx, group, a, v, u=''):
     """Remove AVU from group with wildcards."""
     msi.rmw_avu(ctx, '-u', group, a, v, u)
+
+
+def apply_atomic_operations(ctx, operations):
+    """Sequentially executes all operations as a single transaction.
+
+    Operations should be a dict with structure as defined in
+    https://docs.irods.org/4.2.12/doxygen/libmsi__atomic__apply__metadata__operations_8cpp.html
+    If an error occurs, all updates are rolled back and an error is returned.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param operations: Dict containing the batch of metadata operations
+
+    :returns: Boolean indicating if all metadata operations were executed
+    """
+    try:
+        msi.atomic_apply_metadata_operations(ctx, json.dumps(operations), "")
+        return True
+    except msi.Error as e:
+        # iRODS errorcode -1811000 (INVALID_OPERATION)
+        if str(e).find("-1811000") > -1:
+            log.write(ctx, "apply_atomic_operations: invalid metadata operation")
+        # iRODS errorcode -130000 (SYS_INVALID_INPUT_PARAM)
+        elif str(e).find("-130000") > -1:
+            log.write(ctx, "apply_atomic_operations: invalid entity name or entity type")
+        else:
+            log.write(ctx, "apply_atomic_operations: {}".format(e))
+        return False
