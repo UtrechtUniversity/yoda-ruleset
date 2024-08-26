@@ -58,8 +58,8 @@
                             <p class="description">{{ description }}</p>
                             <div class="keywords">
                                 <label>Keywords</label>
-                                {% for tag in tags %}
-                                <span class="keyword">{{ tag }}</span>
+                                {% for keyword in keywords %}
+                                <span class="keyword" property="dc:subject">{{ keyword }}</span>
                                 {% endfor %}
                             </div>
                         </section>
@@ -71,7 +71,7 @@
                                 <div>
                                     <table class="table table-sm">
                                         <tbody>
-                                            {% for version in all_versions %}
+                                            {% for version in versions %}
                                                 <tr>
                                                     <td>
                                                         <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
