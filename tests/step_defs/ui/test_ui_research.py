@@ -197,7 +197,7 @@ def ui_research_multi_copy_overwrite_all(browser, folder):
     browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
     browser.find_by_css('.dlg-action-button').click()
     time.sleep(1)
-    browser.fiynd_by_css('.dlg-multi-action-button').click()
+    browser.find_by_css('.dlg-multi-action-button').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
