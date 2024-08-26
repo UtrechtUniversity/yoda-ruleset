@@ -134,7 +134,7 @@ def set_on_object(ctx, path, type, namespace, json_string):
     """
     data = json.loads(json_string)
 
-    # Remove existing metata from object in namespace.
+    # Remove existing metadata from object in namespace.
     msi_type = "-d"
     if type == "collection":
         msi_type = "-C"
