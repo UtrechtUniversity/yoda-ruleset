@@ -175,6 +175,7 @@ Feature: Research UI
             | folder           | folder_old        | folder_new   |
             | research-initial | ui_test_overwrite | ui_test_copy |
 
+
     Scenario Outline: Checksum report of added empty folder
         Given user researcher is logged in
         And module "research" is shown
