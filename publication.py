@@ -1344,6 +1344,16 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     """
     publication_state = {}
 
+    def _check_return_if_publication_status(return_statuses, location):
+        # Used to check whether we need to return early because of an
+        # unexpected publication status, and log a message for troubleshooting
+        # purposes.
+        if publication_state["status"] in return_statuses:
+            log.write("update_publication: returned with error status from location '{}' (status: '{}')".format(location, publication_state["status"]))
+            return True
+        else:
+            return False
+
     log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
@@ -1370,6 +1380,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
     # Publication must be finished.
     if status != "OK":
+        log.write(ctx, "update_publication: Not processing vault package, because initial status is " + status)
         return status
 
     update_base_doi = False
@@ -1397,7 +1408,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
     save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] in ["Unrecoverable", "Retry"]:
+    if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before update DataCite"):
         return publication_state["status"]
 
     if update_datacite:
@@ -1411,7 +1422,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before send DataCite"):
             return publication_state["status"]
 
         # Send DataCite JSON to metadata end point
@@ -1427,12 +1438,12 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before update landing page"):
             return publication_state["status"]
 
     if update_landingpage:
         # Create landing page
-        log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
+        log.write(ctx, 'Update landing page for package {}'.format(vault_package))
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except Exception as e:
@@ -1441,7 +1452,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Unrecoverable":
+        if _check_return_if_publication_status(["Unrecoverable"], "before upload landing page"):
             return publication_state["status"]
 
         # Use secure copy to push landing page to the public host
@@ -1454,7 +1465,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Retry":
+        if _check_return_if_publication_status(["Retry"], "before update MOAI"):
             return publication_state["status"]
 
     if update_moai:
@@ -1467,7 +1478,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Retry":
+        if _check_return_if_publication_status(["Retry"], "before publication OK"):
             return publication_state["status"]
 
     # Updating was a success
