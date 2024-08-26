@@ -1,5 +1,18 @@
+#!/usr/bin/irule -r irods_rule_engine_plugin-irods_rule_language-instance -F
+#
+# Updates publication endpoints (Landing page, MOAI, DataCite) for either all data
+# packages or one selected data package.
+#
+# To update one data package:
+# $ irule -r irods_rule_engine_plugin-irods_rule_language-instance -F /etc/irods/yoda-ruleset/tools/update-publications.r \
+#   '*package="/tempZone/home/vault-mygroup/package[123456789]"'
+#
+# To update all data packages:
+# $ irule -r irods_rule_engine_plugin-irods_rule_language-instance -F /etc/irods/yoda-ruleset/tools/update-publications.r
+#
 updatePublications() {
-    writeLine("stdout", "[UPDATE PUBLICATIONS] Start scan");
+	writeLine("stdout", "[UPDATE PUBLICATIONS] Start for *package");
+	*packagesFound = 0;
 
 	# Scan for published vault packages.
 	*ContInxOld = 1;
@@ -15,8 +28,10 @@ updatePublications() {
 		foreach(*row in *GenQ2Out) {
 			*collName = *row.COLL_NAME;
 
-			# Check if this really is a vault package
-			if (*collName like regex "/[^/]+/home/vault-.*") {
+			# Check if this really is a vault package, or selected vault package
+			if ((*package == '*' && *collName like regex "/[^/]+/home/vault-.*") ||
+			    (*package != '*' && *collName like regex "/[^/]+/home/vault-.*" && *collName == *package ) ) {
+			    *packagesFound = 1;
 			    *status = ''
 			    *statusInfo = '';
 			    rule_update_publication(*collName, *updateDatacite, *updateLandingpage, *updateMOAI, *status, *statusInfo);
@@ -30,7 +45,14 @@ updatePublications() {
 		}
 	}
 	msiCloseGenQuery(*GenQ2Inp, *GenQ2Out);
-    writeLine("stdout", "[UPDATE PUBLICATIONS] Finished scan");
+
+	if (*packagesFound == 0) {
+		writeLine("stdout", "[UPDATE PUBLICATIONS] No packages found for *package")
+	}
+	else {
+		writeLine("stdout", "[UPDATE PUBLICATIONS] Finished for *package");
+	}
 }
-input *updateDatacite="Yes", *updateLandingpage="Yes", *updateMOAI="Yes"
+
+input *updateDatacite="Yes", *updateLandingpage="Yes", *updateMOAI="Yes", *package='*'
 output ruleExecOut
