@@ -1,0 +1,2 @@
+This is a test file.
+The filename contains non UTF-8 characters.
