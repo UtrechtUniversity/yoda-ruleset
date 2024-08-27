@@ -860,17 +860,18 @@ def get_original_exists_dict(ctx, revision_data):
                the versioned data object of the revision still exists. If the revision data object does not
                have AVUs that refer to the versioned data object, assume it still exists.
     """
-    result = dict()
+    result = {}
     for data_object_data in revision_data:
         for (_data_id, _timestamp, revision_path) in data_object_data:
 
             try:
                 result[revision_path] = versioned_data_object_exists(ctx, revision_path)
-            except KeyError:
-                # If we can't determine the original path, we assume the original data object
-                # still exists, so that it is not automatically cleaned up by the revision cleanup job.
+            except (KeyError, UnicodeEncodeError):
+                # If we can't determine the original path (maybe because it doesn't exist
+                # or because of its encoding), we assume the original data object still exists,
+                # so that it is not automatically cleaned up by the revision cleanup job.
                 # An error is logged by versioned_data_object_exists
-                result[original_path] = True
+                result[revision_path] = True
 
     return result
 
@@ -886,7 +887,18 @@ def versioned_data_object_exists(ctx, revision_path):
 
      :raises KeyError:              If revision data object does not have revision AVUs
                                     that point to versioned data object.
+
+     :raises UnicodeEncodeError:    If the revision path cannot be converted to a utf-8 byte string.
     """
+
+    if isinstance(revision_path, unicode):
+        try:
+            # Switch back to bytes for now
+            # TODO change logic in Python 3
+            revision_path = revision_path.encode('utf-8')
+        except UnicodeEncodeError:
+            log.write(ctx, "File path {} is not UTF-8 encoded or is not compatible with UTF-8 encoding".format(revision_path))
+            raise
 
     revision_avus = avu.of_data(ctx, revision_path)
     avu_dict = {a: v for (a, v, u) in revision_avus}
