@@ -340,4 +340,3 @@ def ui_research_upload_utf8_warning(browser):
 def ui_research_upload_no_utf8_warning(browser):
     time.sleep(2)
     assert not browser.find_by_css('nonUTF-8FilenameWarning')
-    
