@@ -204,6 +204,7 @@ def precheck_folder_secure(ctx, coll):
 
     found, last_run = get_last_run_time(ctx, coll)
     if (not correct_copytovault_start_status(ctx, coll)
+            or not correct_copytovault_start_location(coll)
             or not misc.last_run_time_acceptable(coll, found, last_run, config.vault_copy_backoff_time)):
         return False
 
@@ -318,6 +319,18 @@ def correct_copytovault_start_status(ctx, coll):
     return False
 
 
+def correct_copytovault_start_location(coll):
+    """Confirm that the folder to be copied is in the correct location.
+       For example: in a research or deposit folder and not in the trash.
+
+    :param coll:   Source collection (folder being secured)
+
+    :returns: True when a valid start location
+    """
+    space, _, _, _ = pathutil.info(coll)
+    return space in (pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT)
+
+
 def get_last_run_time(ctx, coll):
     """Get the last run time, if found"""
     found = False
@@ -420,9 +433,8 @@ def folder_secure_set_retry(ctx, coll):
     if new_retry_count > config.vault_copy_max_retries:
         folder_secure_fail(ctx, coll)
         send_folder_secure_notification(ctx, coll, "Data package failed to copy to vault after maximum retries")
-    else:
-        if not folder_secure_set_retry_avus(ctx, coll, new_retry_count):
-            send_folder_secure_notification(ctx, coll, "Failed to set retry state on data package")
+    elif not folder_secure_set_retry_avus(ctx, coll, new_retry_count):
+        send_folder_secure_notification(ctx, coll, "Failed to set retry state on data package")
 
 
 def folder_secure_set_retry_avus(ctx, coll, retry_count):
