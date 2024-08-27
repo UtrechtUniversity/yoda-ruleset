@@ -421,6 +421,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if creator.Affiliation is string %}
+                                        {{ creator.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in creator.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -433,6 +436,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -474,6 +478,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if contributor.Affiliation is string %}
+                                        {{ contributor.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in contributor.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -486,6 +493,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -546,6 +554,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if contact.Affiliation is string %}
+                                        {{ contact.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in contact.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -558,6 +569,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
