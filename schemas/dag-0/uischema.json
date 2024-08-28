@@ -49,7 +49,7 @@
     "ui:description": "Free text field to add characteristic words or terms that typify and describe the data, so it becomes better searchable. Please fill in one word or term per field, use the + if you want to add more keywords"
   },
   "Related_Datapackage": {
-    "ui:description": "Reference to other resources which are used to create the data set, such as another data package an online publication. Please fill in the title or citing information of the resource, together with type persistant identifier (select an option) and the identifier itself",
+    "ui:description": "Reference to other resources which are used to create the data set, such as another data package an online publication. Please fill in the title or citing information of the resource, together with type persistent identifier (select an option) and the identifier itself",
     "items": {
       "Relation_Type": {
         "ui:help": "Relation to this data package",
@@ -108,7 +108,7 @@
         }
       },
       "Affiliation": {
-        "ui:help": "Organizational or institutional affliation of the data owner"
+        "ui:help": "Organizational or institutional affiliation of the data owner"
       },
       "Owner_Role": {
         "ui:help": "Which role does the data owner have in the context in which the data package originated?"
