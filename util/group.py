@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Utility / convenience functions for querying user info."""
+"""Utility / convenience functions for querying group info."""
 
 __copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'

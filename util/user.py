@@ -57,11 +57,17 @@ def from_str(ctx, s):
 
 
 def exists(ctx, user):
-    """Check if a user exists."""
+    """Check if a user ('rodsuser' or 'rodsadmin') exists.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param user: Given user
+
+    :returns: Boolean indicating if user exists
+    """
     if type(user) is str:
         user = from_str(ctx, user)
 
-    return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
+    return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() in ["rodsuser", "rodsadmin"]
 
 
 def user_type(ctx, user=None):

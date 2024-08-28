@@ -25,6 +25,7 @@ __all__ = ['api_group_data',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
            'rule_group_expiration_date_validate',
+           'rule_user_exists',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -703,6 +704,18 @@ def group_user_exists(ctx, group_name, username, include_readonly):
             return username in group["read"] or username in group["members"]
     else:
         return False
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_user_exists(ctx, username):
+    """Rule wrapper to check if a user exists.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param username: User to check for existence
+
+    :returns: Indicator if user exists
+    """
+    return "true" if user.exists(ctx, username) else "false"
 
 
 def rule_group_user_exists(rule_args, callback, rei):
