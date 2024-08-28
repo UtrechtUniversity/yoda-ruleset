@@ -43,7 +43,7 @@ def ui_statistics_group_view(browser, group):
 
 @when('export statistics button is clicked')
 def ui_statistics_export(browser):
-    # For now prevent downloading on windows platforn
+    # For now prevent downloading on windows platform
     if os.name == "nt":
         return
     # Only click when not in Windows
