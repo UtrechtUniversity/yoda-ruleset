@@ -46,7 +46,19 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
         if not already_has_avu:
             # Can't use mod_avu/set here (instead of add_avu) because it would be blocked by metadata policies.
-            msi.add_avu(ctx, '-d', path, replication_avu_name, replication_avu_value, "")
+            add_operation = {
+                "entity_name": path,
+                "entity_type": "data_object",
+                "operations": [
+                    {
+                        "operation": "add",
+                        "attribute": replication_avu_name,
+                        "value": replication_avu_value,
+                        "units": ""
+                    }
+                ]
+            }
+            avu.apply_atomic_operations(ctx, add_operation)
     except msi.Error as e:
         if "-817000" in str(e):
             # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to replicate it anymore.
@@ -132,7 +144,19 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 # Not replicable.
                 log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
                 try:
-                    ctx.msi_add_avu('-d', path, errorattr, "Invalid,Invalid", "")
+                    add_operation = {
+                        "entity_name": path,
+                        "entity_type": "data_object",
+                        "operations": [
+                            {
+                                "operation": "add",
+                                "attribute": errorattr,
+                                "value": "Invalid,Invalid",
+                                "units": ""
+                            }
+                        ]
+                    }
+                    avu.apply_atomic_operations(ctx, add_operation)
                 except Exception:
                     pass
 
@@ -184,7 +208,19 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 except msi.Error as e:
                     log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
                     try:
-                        ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                        add_operation = {
+                            "entity_name": path,
+                            "entity_type": "data_object",
+                            "operations": [
+                                {
+                                    "operation": "add",
+                                    "attribute": errorattr,
+                                    "value": "{},{}".format(from_path, to_path),
+                                    "units": ""
+                                }
+                            ]
+                        }
+                        avu.apply_atomic_operations(ctx, add_operation)
                     except Exception:
                         pass
 
