@@ -377,68 +377,138 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
     msi.coll_create(ctx, path, "", irods_types.BytesBuf())
     ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
+    avu_op = "add"
+    avu_unit = constants.UUFLATINDEX
+    metadata_operations = {
+        "entity_name": path,
+        "entity_type": "collection",
+        "operations": []
+    }
 
     for creator in metadata['Creator']:
         name = creator['Name']
         if 'Given_Name' in name and 'Family_Name' in name:
-            ctx.msi_add_avu('-C', path, 'Creator',
-                            name['Given_Name'] + ' ' + name['Family_Name'],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Creator",
+                "value": name['Given_Name'] + ' ' + name['Family_Name'],
+                "units": avu_unit
+            })
         if 'Owner_Role' in creator:
-            ctx.msi_add_avu('-C', path, 'Owner_Role', creator['Owner_Role'],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Owner_Role",
+                "value": creator['Owner_Role'],
+                "units": avu_unit
+            })
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
             if 'Name' in contributor:
                 name = contributor['Name']
                 if 'Given_Name' in name and 'Family_Name' in name:
-                    ctx.msi_add_avu('-C', path, 'Contributor',
-                                    name['Given_Name'] + ' ' + name['Family_Name'],
-                                    constants.UUFLATINDEX)
+                    metadata_operations['operations'].append({
+                        "operation": avu_op,
+                        "attribute": "Contributor",
+                        "value": name['Given_Name'] + ' ' + name['Family_Name'],
+                        "units": avu_unit
+                    })
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
-            ctx.msi_add_avu('-C', path, 'Tag', tag,
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Tag",
+                "value": tag,
+                "units": avu_unit
+            })
 
-    ctx.msi_add_avu('-C', path, 'Title', metadata['Title'],
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path,  'Description', metadata['Description'],
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path, 'Data_Access_Restriction',
-                    metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
+    extend_operations = [
+        {
+            "operation": avu_op,
+            "attribute": "Title",
+            "value": metadata['Title'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Description",
+            "value": metadata['Description'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Data_Access_Restriction",
+            "value": metadata['Data_Access_Restriction'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Creation_Time",
+            "value": creation_time,
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Creation_Year",
+            "value": str(datetime.fromtimestamp(int(creation_time)).year),
+            "units": avu_unit
+        }]
+
+    metadata_operations['operations'].extend(extend_operations)
+
     if 'Research_Group' in metadata:
-        ctx.msi_add_avu('-C', path, 'Research_Group',
-                        metadata['Research_Group'], constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": avu_op,
+            "attribute": "Research_Group",
+            "value": metadata['Research_Group'],
+            "units": avu_unit
+        })
     if 'Collection_Name' in metadata:
-        ctx.msi_add_avu('-C', path, 'Collection_Name',
-                        metadata['Collection_Name'], constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": avu_op,
+            "attribute": "Collection_Name",
+            "value": metadata['Collection_Name'],
+            "units": avu_unit
+        })
     if 'Collected' in metadata:
         if 'Start_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-C', path, 'Collected_Start_Year',
-                            metadata['Collected']['Start_Date'][:4],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Collected_Start_Year",
+                "value": metadata['Collected']['Start_Date'][:4],
+                "units": avu_unit
+            })
         if 'End_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-C', path, 'Collected_End_Year',
-                            metadata['Collected']['End_Date'][:4],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Collected_End_Year",
+                "value": metadata['Collected']['End_Date'][:4],
+                "units": avu_unit
+            })
 
     if 'GeoLocation' in metadata:
         for geoLocation in metadata['GeoLocation']:
             if 'Description_Spatial' in geoLocation:
-                ctx.msi_add_avu('-C', path, 'Description_Spatial', geoLocation['Description_Spatial'],
-                                constants.UUFLATINDEX)
-
-    ctx.msi_add_avu('-C', path, 'Creation_Time', creation_time,
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path, 'Creation_Year',
-                    str(datetime.fromtimestamp(int(creation_time)).year),
-                    constants.UUFLATINDEX)
+                metadata_operations['operations'].append({
+                    "operation": avu_op,
+                    "attribute": "Description_Spatial",
+                    "value": geoLocation['Description_Spatial'],
+                    "units": avu_unit
+                })
 
     if config.enable_data_package_reference:
-        ctx.msi_add_avu('-C', path, 'Data_Package_Reference', data_package,
-                        constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": "add",
+            "attribute": "Data_Package_Reference",
+            "value": data_package,
+            "units": avu_unit
+        })
+
+    if avu.apply_atomic_operations(ctx, metadata_operations):
+        log.write(ctx, 'update_index_metadata: Metadata index update successful on path {}'.format(path))
+    else:
+        log.write(ctx, 'update_index_metadata: Metadata index update unsuccessful on path {}'.format(path))
 
 
 def ingest_metadata_vault(ctx, path):

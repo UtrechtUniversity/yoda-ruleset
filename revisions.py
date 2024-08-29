@@ -288,7 +288,19 @@ def resource_modified_post_revision(ctx, resource, zone, path):
                                                   offset=0, limit=1, output=genquery.AS_LIST))) > 0
 
         if not already_has_avu:
-            msi.add_avu(ctx, '-d', path, revision_avu_name, revision_avu_value, "")
+            add_operation = {
+                "entity_name": path,
+                "entity_type": "data_object",
+                "operations": [
+                    {
+                        "operation": "add",
+                        "attribute": revision_avu_name,
+                        "value": revision_avu_value,
+                        "units": ""
+                    }
+                ]
+            }
+            avu.apply_atomic_operations(ctx, add_operation)
 
     except msi.Error as e:
         if "-817000" in str(e):
