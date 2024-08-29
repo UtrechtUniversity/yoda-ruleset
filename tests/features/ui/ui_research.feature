@@ -116,8 +116,8 @@ Feature: Research UI
         Examples:
             | folder           | subfolder | file              |
             | research-initial | testdata  | lorem_renamed.txt |
+            | research-initial | testdata  | CURA�AO.txt       |
             | research-initial | testdata  | CURAÇAO.txt       |
-            | research-initial | testdata  | CURA�AO.txtn       |
 
 
     Scenario Outline: Adding a folder
