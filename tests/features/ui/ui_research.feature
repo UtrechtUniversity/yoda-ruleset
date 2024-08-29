@@ -88,7 +88,7 @@ Feature: Research UI
 
         Examples:
             | folder           | subfolder | filename    |
-            | research-initial | testdata  | CURAÇAO.txt |
+            | research-initial | testdata  | CURA�AO.txt |
 
 
     Scenario Outline: Upload file with name containing only UTF-8 characters
@@ -101,7 +101,7 @@ Feature: Research UI
 
         Examples:
             | folder           | subfolder | filename    |
-            | research-initial | testdata  | core-0.json |
+            | research-initial | testdata  | CURAÇAO.txt |
     
 
     Scenario Outline: Deleting a file
@@ -117,7 +117,7 @@ Feature: Research UI
             | folder           | subfolder | file              |
             | research-initial | testdata  | lorem_renamed.txt |
             | research-initial | testdata  | CURAÇAO.txt       |
-            | research-initial | testdata  | core-0.json       |
+            | research-initial | testdata  | CURA�AO.txtn       |
 
 
     Scenario Outline: Adding a folder

@@ -332,9 +332,9 @@ def ui_research_upload_file(browser, filename):
 
 @then("non UTF-8 characters in the filename warning is shown")
 def ui_research_upload_utf8_warning(browser):
-    assert browser.find_by_css('#nonUTF-8FilenameWarning').visible
+    assert browser.find_by_css('#unsupportedCharsWarning').visible
 
 
 @then("non UTF-8 characters in the filename warning is not shown")
 def ui_research_upload_no_utf8_warning(browser):
-    assert not browser.find_by_css('#nonUTF-8FilenameWarning').visible
+    assert not browser.find_by_css('#unsupportedCharsWarning').visible
