@@ -11,7 +11,8 @@ __all__ = ['rule_batch_transform_vault_metadata',
            'api_transform_metadata',
            'rule_batch_vault_packages_troubleshoot',
            'rule_batch_vault_packages_troubleshoot3',
-           'rule_batch_vault_packages_troubleshoot4',]
+           'rule_batch_vault_packages_troubleshoot4',
+           'rule_batch_find_published_data_packages',]
 
 import json
 import os
@@ -900,5 +901,26 @@ def rule_batch_vault_packages_troubleshoot4(ctx):
     # print them out
 
 @rule.make(inputs=[], outputs=[0])
-def rule_batch_vault_packages_troubleshoot4(ctx):
-    pass
+def rule_batch_find_published_data_packages(ctx):
+    '''Find data packages with AVUs including org_vault_status = "Published" '''
+    # Find all vault collections
+    user_zone = user.zone(ctx)
+
+   # Query condition to fetch data
+    query_condition = (
+        "COLL_NAME like '/{}/home/vault-%%' AND META_COLL_ATTR_NAME like 'org_vault_status' AND META_COLL_ATTR_VALUE like 'PUBLISHED'".format(user_zone)
+    )
+    # Attributes to fetch
+    query_attributes = "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS"
+    print("query_condition",query_condition)
+    print("find all published data packages")
+    try:
+        iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
+        print("after genquery")
+
+        # Print each row
+        for row in iter:
+            print(row[0],row[1],row[2],row[3])
+            #print("Collection Name: {}, Attribute Name: {}, Attribute Value: {}, Attribute Units: {}".format(*row))
+    except Exception as e:
+        print("An error occurred while executing the query:", e)
