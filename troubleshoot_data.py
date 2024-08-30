@@ -18,31 +18,67 @@ import session_vars
 import meta
 import meta_form
 import schema
-import schema_transformation
+from schema_transformation import verify_package_schema
 import schema_transformations
 from util import *
 from publication import get_collection_metadata, get_publication_config
 import datacite
 
-@rule.make(inputs=[0], outputs=[1]) # FIXME: tAKE ONLY 1 INPUT temporarily
-def rule_batch_troubleshoot_published_data_packages(ctx, data_packages):
-    '''Find files by name or return all files if name is "all_published_packages" is provided.'''
-    print("data_packages", data_packages)
 
-    if data_packages == 'all_published_packages':
-        data_packages = find_published_data_packages(ctx)
-        if len(data_packages) == 0:
-            print("No published packages found")
+def find_full_package_path(data_packages, short_package_name):
+    """
+    Find the full path of a data package based on its short name.
+
+    Parameters:
+    - data_packages (list of str): List of full paths for data packages.
+    - short_package_name (str): The short name of the data package to find.
+
+    Returns:
+    - str: The full path of the data package if found, otherwise None.
+    """
+    for path in data_packages:
+        if short_package_name in path:
+            return path
+    print("Error: The data package '{}' does not exist in the provided list.".format(short_package_name))
+    return None
+
+
+@rule.make(inputs=[0], outputs=[1])  # FIXME: Take only 1 input temporarily
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
+    """
+    Find published data packages based on a specific name or return all if 'all_published_packages' is provided.
+
+    Arguments:
+    - ctx: Context variable, usually containing session and environment data.
+    - requested_package: The short name of the package to find or 'all_published_packages' to list all.
+    """
+    print("Requested package:", requested_package)
+
+    # Retrieve all published data packages
+    all_published_packages = find_published_data_packages(ctx)
+    if not all_published_packages:
+        print("No published packages found.")
+        return
+
+    # Determine which packages to process based on the input
+    if requested_package == 'all_published_packages':
+        data_packages = all_published_packages
     else:
-        data_packages = [data_packages] #TODO: verify if such packge exist as a PUBLISHED data package
-    print("data_packages after find", data_packages)
+        data_package_path = find_full_package_path(all_published_packages, requested_package)
+        if data_package_path:
+            data_packages = [data_package_path]
+        else:
+            print("Error: Requested package '{}' not found among published packages.".format(requested_package))
+            return
 
+    # Output the list of packages to be processed
+    print("Data packages to be processed:", data_packages)
 
     for data_package in data_packages:
         print("checking", data_package)
-
         # Case 1 (maybe outside of the this rule)
-        # ctx.rule_batch_vault_metadata_schema_report("research-core-0[1722267868]")
+        schema_check = verify_package_schema(ctx, data_package, {})['match_schema']
+        #('check_schema results', {'match_schema': True, 'schema': 'core-0'})
         # Case 2
         missing_avus, unexpected_avus = check_data_package_system_avus(ctx, data_package)
 
@@ -90,6 +126,7 @@ def find_published_data_packages(ctx):
     except Exception as e:
         print("An error occurred while executing the query:", e)
         return []
+
 
 # Case 2
 def check_data_package_system_avus(ctx, data_package):
