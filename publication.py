@@ -148,9 +148,8 @@ def get_publication_state(ctx, vault_package):
         "status": "Unknown",
         "accessRestriction": "Closed"
     }
-    print("inside get_publication_state, the func get_collection_metadata with prefix of org_publication_")
+
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
-    print("and the publication metadata is ",publ_metadata)
 
     # Take over all actual values as saved earlier.
     for key, value in publ_metadata.items():
@@ -164,7 +163,7 @@ def get_publication_state(ctx, vault_package):
     )
     for row in iter:
         publication_state["accessRestriction"] = row[0]
-    print("adding accessRestriction as ",publication_state["accessRestriction"])
+
     # Handle license.
     license = ""
     iter = genquery.row_iterator(
@@ -174,7 +173,6 @@ def get_publication_state(ctx, vault_package):
     )
     for row in iter:
         license = row[0]
-    print("adding license as ",license)
 
     if license != "":
         publication_state["license"] = license
@@ -518,10 +516,8 @@ def generate_landing_page(ctx, publication_state, publish):
     combiJsonPath = publication_state["combiJsonPath"]
     randomId = publication_state["randomId"]
     vaultPackage = publication_state["vaultPackage"]
-    print("in generating landing page, the func trys to get json_schema of a vaultpackage.",vaultPackage)
 
     json_schema = schema.get_active_schema(ctx, vaultPackage)
-    print("json_schema",json_schema)
     temp_coll, coll = pathutil.chop(combiJsonPath)
     landing_page_path = temp_coll + "/" + randomId + ".html"
 
@@ -710,7 +706,7 @@ def process_publication(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
-    print("check current vault_status",vault_status)
+
     if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.APPROVED_FOR_PUBLICATION)]:
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
@@ -718,18 +714,11 @@ def process_publication(ctx, vault_package):
     publication_config = get_publication_config(ctx)
 
     # get state of all related to the publication
-    print("To get get_publication_state of a vault package, use func get_publication_state", vault_package)
-
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
-    print("and the initial status of the publication state is ", status)
-    # publication_config.append("verboseMode")
-    print("initial publication_config",publication_config)
 
     # Check if verbose mode is enabled
     verbose = "verboseMode" in publication_config
-    print("Now i enable verbose mode")
-    verbose = True
     if verbose:
         log.write(ctx, "Running process_publication in verbose mode.")
 
@@ -744,11 +733,10 @@ def process_publication(ctx, vault_package):
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
-    print("update base DOI when this data package is the latest version.",)
     if "previous_version" in publication_state and "next_version" not in publication_state:
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
-        print("updating base DOI")
+
         update_base_doi = True
         # Get previous publication state
         previous_vault_package = publication_state["previous_version"]
@@ -808,7 +796,6 @@ def process_publication(ctx, vault_package):
             save_publication_state(ctx, vault_package, publication_state)
 
     # Determine last modification time. Always run, no matter if retry
-    print("Determine last modification time. Always run, no matter if retry")
     if verbose:
         log.write(ctx, "Updating modification date.")
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
@@ -819,13 +806,11 @@ def process_publication(ctx, vault_package):
             log.write(ctx, "Generating combi JSON.")
 
         try:
-            print("Generate Combi Json consisting of user and system metadata")
             generate_combi_json(ctx, publication_config, publication_state)
         except Exception as e:
             log.write(ctx, "Exception while generating combi JSON: " + str(e))
             publication_state["status"] = "Unrecoverable"
-        print('publication_state[combiJsonPath] for the combiJsonPath',publication_state["combiJsonPath"])
-        print('new publication_state, sth may change',publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -837,7 +822,7 @@ def process_publication(ctx, vault_package):
     if verbose:
         log.write(ctx, "Creating landing page.")
     generate_landing_page_url(ctx, publication_config, publication_state)
-    print('created landing page  publication_state["landingPageUrl"]', publication_state["landingPageUrl"])
+
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         if verbose:
@@ -853,7 +838,6 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             log.write(ctx, "Error status after generating Datacite JSON: " + publication_state["status"])
             return publication_state["status"]
-    print("publication_state[dataCiteJsonPath]",publication_state["dataCiteJsonPath"])
 
     # Check if DOI is in use
     if "versionDOIAvailable" not in publication_state:
@@ -990,7 +974,6 @@ def process_publication(ctx, vault_package):
             return publication_state["status"]
 
         # The publication was a success
-        print("The publication was a success for publication_state[status]",publication_state["status"])
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1328,7 +1311,7 @@ def process_republication(ctx, vault_package):
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
     log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
-    print('final publication_state["status"]',publication_state["status"])
+
     return publication_state["status"]
 
 
