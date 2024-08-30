@@ -220,7 +220,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
     file_shortname = file_path.split("/")[-1].replace('-combi', '')
     remote_file_path = "/var/www/{}/{}/{}/{}".format(
         remote_directory, publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    remote_md5 = get_md5_remote_ssh(ctx, "combined.yoda.test", "inbox", remote_file_path)  #TODO: host_name and user_name can be variables
+    remote_md5 = get_md5_remote_ssh(ctx, "combined.yoda.test", "inbox", remote_file_path)  # TODO: host_name and user_name can be variables
 
     if local_md5 == remote_md5:
         return True
