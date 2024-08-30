@@ -21,6 +21,7 @@ def find_full_package_path(ctx, data_packages, short_package_name):
     """
     Find the full path of a data package based on its short name.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param data_packages:      List of full paths for data packages.
     :param short_package_name: The short name of the data package to find.
 
@@ -71,7 +72,7 @@ def check_data_package_system_avus(ctx, data_package):
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
 
-    :returns:             A tuple containing boolean results of checking results
+    :returns:            A tuple containing boolean results of checking results
     """
 
     # Fetch AVUs of the data package and filter those starting with 'org_'
@@ -113,7 +114,7 @@ def check_datacite_doi_registration(ctx, data_package):
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
 
-    :returns:             A tuple of booleans indicating check success or not.
+    :returns:            A tuple of booleans indicating check success or not.
     """
 
     try:
@@ -136,7 +137,13 @@ def check_datacite_doi_registration(ctx, data_package):
 
 
 def calculate_md5(content):
-    """Calculate and return the MD5 checksum for the provided content."""
+    """
+    Computes the MD5 checksum of the provided content.
+
+    :param content:  The content for which to compute the checksum.
+
+    :returns:        The computed MD5 checksum as a hexadecimal string.
+    """
     # Create an MD5 hash object
     hash_md5 = hashlib.md5()
 
@@ -153,11 +160,12 @@ def get_md5_remote_ssh(ctx, host, username, file_path):
     """
     Calculate the MD5 checksum of a file on a remote server via SSH.
 
-    :param host: The hostname the remote server.
-    :param username: The username to log into the remote server.
+    :param ctx:       Combined type of a callback and rei struct
+    :param host:      The hostname the remote server.
+    :param username:  The username to log into the remote server.
     :param file_path: The path to the file on the remote server for which the MD5 checksum is calculated.
 
-    :returns: The MD5 checksum of the file if successful, None otherwise.
+    :returns:         The MD5 checksum of the file if successful, None otherwise.
     """
     try:
         # Build the SSH command to execute md5sum remotely
@@ -185,10 +193,11 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
     """
     Retrieves the value given the suffix of the attribute from a data package.
 
-    :param ctx:          Combined type of a callback and rei struct
-    :param data_package: String representing the data package collection path.
+    :param ctx:              Combined type of a callback and rei struct
+    :param data_package:     String representing the data package collection path.
+    :param attribute_suffix: Suffix of the attribute before adding prefix such as "org_publication_"
 
-    :returns:            Value of the attribute.
+    :returns:                Value of the attribute.
     """
 
     attr = constants.UUORGMETADATAPREFIX + "publication_" + attribute_suffix
@@ -207,7 +216,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
     :param attribute_suffix: Suffix identifying the metadata attribute for the file path.
     :param remote_directory: Base directory on the remote server for the file.
 
-    :returns: True if the MD5 checksums match, False otherwise.
+    :returns:                True if the MD5 checksums match, False otherwise.
     """
 
     # Calculate md5 for the local file
