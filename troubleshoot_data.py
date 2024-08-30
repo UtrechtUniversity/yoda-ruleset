@@ -17,7 +17,7 @@ from schema_transformation import verify_package_schema
 from util import *
 
 
-def find_full_package_path(data_packages, short_package_name):
+def find_full_package_path(ctx, data_packages, short_package_name):
     """
     Find the full path of a data package based on its short name.
 
@@ -35,11 +35,11 @@ def find_full_package_path(data_packages, short_package_name):
 
 def find_published_data_packages(ctx):
     """
-    Find all published data packages by matching AVUs including org_vault_status = "PUBLISHED".
+    Find all published data packages by matching its AVU that org_vault_status = "PUBLISHED".
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns:    A list of collection names that have been published.
+    :returns:   A list of collection names that have been published.
     """
     try:
         user_zone = user.zone(ctx)
@@ -76,7 +76,6 @@ def check_data_package_system_avus(ctx, data_package):
 
     # Fetch AVUs of the data package and filter those starting with 'org_'
     extracted_avus = {m.attr for m in avu.of_coll(ctx, data_package) if m.attr.startswith('org_')}
-    print("Extracted AVUs:", extracted_avus)
 
     # Define the set of ground truth AVUs
     avu_names_suffix = [
@@ -150,7 +149,7 @@ def calculate_md5(content):
     return hash_md5.hexdigest()
 
 
-def get_md5_remote_ssh(host, username, file_path):
+def get_md5_remote_ssh(ctx, host, username, file_path):
     """
     Calculate the MD5 checksum of a file on a remote server via SSH.
 
@@ -167,6 +166,7 @@ def get_md5_remote_ssh(host, username, file_path):
         )
 
         # Run the command using Popen (for python2 version)
+        # TODO: in copy_to_vault package, it may have subprocess methods
         process = subprocess.Popen(ssh_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         stdout, stderr = process.communicate()
 
@@ -184,6 +184,11 @@ def get_md5_remote_ssh(host, username, file_path):
 def get_attribute_value(ctx, data_package, attribute_suffix):
     """
     Retrieves the value given the suffix of the attribute from a data package.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param data_package: String representing the data package collection path.
+
+    :returns:            Value of the attribute.
     """
 
     attr = constants.UUORGMETADATAPREFIX + "publication_" + attribute_suffix
@@ -215,7 +220,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
     file_shortname = file_path.split("/")[-1].replace('-combi', '')
     remote_file_path = "/var/www/{}/{}/{}/{}".format(
         remote_directory, publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    remote_md5 = get_md5_remote_ssh("combined.yoda.test", "inbox", remote_file_path)
+    remote_md5 = get_md5_remote_ssh(ctx, "combined.yoda.test", "inbox", remote_file_path)  #TODO: host_name and user_name can be variables
 
     if local_md5 == remote_md5:
         return True
@@ -228,7 +233,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
 
 def check_integrity_of_publication_files(ctx, data_package):
     """
-    Checks the integrity of landingPage and CombiJson files by verifying their MD5 checksums in local (irods) with public server.
+    Checks the integrity of landingPage and CombiJson files by verifying their MD5 checksums in local aginst thoese in public server.
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
@@ -243,11 +248,14 @@ def check_integrity_of_publication_files(ctx, data_package):
 @rule.make(inputs=[0], outputs=[1])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
     """
-    Troubleshoots published data packages to ensure compliance and integrity.
+    Troubleshoots published data packages.
 
     :param ctx: Context that combines a callback and rei struct.
     :param requested_package: A string representing a specific data package path or "all_published_data" for all packages.
-    :returns: None. Prints results of the following checks:
+
+    :returns: None.
+
+    Prints results of the following checks:
         1. Metadata schema compliance.
         2. Presence and correctness of expected AVUs.
         3. Registration with Data Cite.
@@ -259,14 +267,14 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
     # Retrieve all published data packages
     all_published_packages = find_published_data_packages(ctx)
     if not all_published_packages:
-        print("No published packages found.")
+        log.write(ctx, "No published packages found.")
         return
 
     # Determine which packages to process based on the input
     if requested_package == 'all_published_packages':
         data_packages = all_published_packages
     else:
-        data_package_path = find_full_package_path(all_published_packages, requested_package)
+        data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
         if data_package_path:
             data_packages = [data_package_path]
         else:
@@ -277,7 +285,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
 
     # Toubleshooting
     for data_package in data_packages:
-        print("Troubleshooting ", data_package)
+        log.write(ctx, "Troubleshooting: {}".format(data_package))
         schema_check = verify_package_schema(ctx, data_package, {})['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         versionDOI_check, baseDOI_check = check_datacite_doi_registration(ctx, data_package)
@@ -294,7 +302,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
             'combiJson_check': combiJson_check
         }
 
-    log.write(ctx, "troubleshooting results: {}".format(results_dict))
+    log.write(ctx, "Troubleshooting results: {}".format(results_dict))
 
-    # TODO: return and result of output to the terminal (stdout)
+    # TODO: Return the result of output to the terminal (stdout)
     # return json.dumps(results_dict)
