@@ -317,3 +317,24 @@ def ui_research_empty_checksum_report_not_downloaded(browser, format):
         browser.find_by_css(el)
     except ElementDoesNotExist:
         assert True, "The Download as {format} button is not present as expected."
+
+
+@when(parsers.parse('user uploads file {filename}'))
+def ui_research_upload_file(browser, filename):
+    browser.find_by_css("#uploadMenu").click()
+
+    cwd = os.getcwd()
+    if os.name == 'nt':
+        browser.find_by_css('input[type="file"]')[0].fill("{}\\files\\{}".format(cwd, filename))
+    else:
+        browser.find_by_css('input[type="file"]')[0].fill("{}/files/{}".format(cwd, filename))
+
+
+@then("non UTF-8 characters in the filename warning is shown")
+def ui_research_upload_utf8_warning(browser):
+    assert browser.find_by_css('#unsupportedCharsWarning').visible
+
+
+@then("non UTF-8 characters in the filename warning is not shown")
+def ui_research_upload_no_utf8_warning(browser):
+    assert not browser.find_by_css('#unsupportedCharsWarning').visible
