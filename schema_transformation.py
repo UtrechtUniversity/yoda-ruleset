@@ -385,7 +385,8 @@ def verify_package_schema(ctx, coll_name, schema_cache):
     """Process a single data package to retrieve and validate its metadata schema.
 
     :param ctx:          Combined type of a callback and rei struct
-    :param data_package: String representing the data package collection path.
+    :param coll_name:    String representing the data package collection path.
+    :param schema_cache: Dictionary storign schema blueprints, can be empty.
 
     :returns:            A dictionary result containing if schema matches and the schema short name.
     """
