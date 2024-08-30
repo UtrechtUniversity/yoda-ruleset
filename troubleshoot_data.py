@@ -6,15 +6,15 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
-import genquery
 import hashlib
 import subprocess
 
+import genquery
+
+import datacite
 from publication import get_publication_config
 from schema_transformation import verify_package_schema
 from util import *
-
-import datacite
 
 
 def find_full_package_path(data_packages, short_package_name):
