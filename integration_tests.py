@@ -318,8 +318,12 @@ def _test_folder_secure_func(ctx, func):
         return True
     return result
 
+import schema_transformation
 
 basic_integration_tests = [
+    {"name": "dylan.test.avu_of_coll",
+     "test": lambda ctx: [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx,'/tempZone/home/vault-default-3/research-default-3[1722327809]')],
+     "check": False},
     {"name": "msvc.add_avu_collection",
      "test": lambda ctx: _test_msvc_add_avu_collection(ctx),
      "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},

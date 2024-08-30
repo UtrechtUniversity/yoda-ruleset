@@ -425,13 +425,25 @@ def verify_package_schema(ctx, coll_name, schema_cache):
 
 @rule.make(inputs=[], outputs=[0])
 def rule_batch_vault_metadata_schema_report(ctx):
-    """Show vault metadata schema about each data package in vault."""
+    """Show vault metadata schema about each data package in vault
+
+    :param ctx:      Combined type of a callback and rei struct
+
+    :returns:        JSON-encoded dictionary, where each key is a vault data package path.
+                     Values are dictionaries with keys "schema" (contains the short name of the schema
+                     (e.g. 'default-3', as per the information in the metadata file, or empty if no metadata
+                     schema could be found), and match_schema (contains a boolean value that indicates whether
+                     the metadata matches the JSON schema). match_schema only has a meaning if a metadata schema
+                     could be found.
+    """
     results = dict()
     schema_cache = dict()
 
+    # Find all vault collections
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_NAME like '/{}/home/vault-%%' AND COLL_NAME not like '%%/original' AND COLL_NAME NOT LIKE '%%/original/%%' AND DATA_NAME like 'yoda-metadata%%json'".format(user.zone(ctx)),
+        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND COLL_NAME NOT LIKE '%%/original/%%' AND DATA_NAME like 'yoda-metadata%%json'" %
+        (user.zone(ctx)),
         genquery.AS_LIST, ctx)
 
     for row in iter:

@@ -46,7 +46,8 @@ def metadata_put(ctx, doi, payload):
 
 def metadata_get(ctx, doi):
     """Check with DataCite if DOI is available."""
-    url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
+    url = "{}/doi/{}".format(config.datacite_rest_api_url, doi)
+    print("url",url)
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
@@ -55,7 +56,6 @@ def metadata_get(ctx, doi):
                             headers=headers,
                             timeout=30,
                             verify=config.datacite_tls_verify)
-
     return response.status_code
 
 
