@@ -185,7 +185,7 @@ def get_md5_remote_ssh(ctx, host, username, file_path):
             log.write(ctx, "Error: {}".format(stderr))
             return None
     except Exception as e:
-        log.write("An error occurred: {}".format(str(e)))
+        log.write(ctx, "An error occurred: {}".format(str(e)))
         return None
 
 
@@ -198,12 +198,14 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
     :param attribute_suffix: Suffix of the attribute before adding prefix such as "org_publication_"
 
     :returns:                Value of the attribute.
+
+    :raises ValueError:      If the attribute is not found in the data package's AVU.
     """
 
     attr = constants.UUORGMETADATAPREFIX + "publication_" + attribute_suffix
     try:
         return next(m.value for m in avu.of_coll(ctx, data_package) if m.attr == attr)
-    except StopIteration:
+    except Exception:
         raise ValueError("Attribute {} not found in AVU".format(attr))
 
 
