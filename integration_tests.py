@@ -318,7 +318,6 @@ def _test_folder_secure_func(ctx, func):
         return True
     return result
 
-import schema_transformation
 
 basic_integration_tests = [
     {"name": "msvc.add_avu_collection",

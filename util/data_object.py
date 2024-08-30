@@ -149,6 +149,7 @@ def read(ctx, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
                             handle,
                             sz,
                             irods_types.BytesBuf())
+
     buf = ret['arguments'][2]
 
     msi.data_obj_close(ctx, handle, 0)

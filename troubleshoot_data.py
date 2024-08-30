@@ -7,13 +7,14 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
 import genquery
-
-from schema_transformation import verify_package_schema
-from util import *
-from publication import get_publication_config
-import datacite
 import hashlib
 import subprocess
+
+from publication import get_publication_config
+from schema_transformation import verify_package_schema
+from util import *
+
+import datacite
 
 
 def find_full_package_path(data_packages, short_package_name):
@@ -179,6 +180,7 @@ def get_md5_remote_ssh(host, username, file_path):
         log.write("An error occurred: {}".format(str(e)))
         return None
 
+
 def get_attribute_value(ctx, data_package, attribute_suffix):
     """
     Retrieves the value given the suffix of the attribute from a data package.
@@ -189,6 +191,7 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         return next(m.value for m in avu.of_coll(ctx, data_package) if m.attr == attr)
     except StopIteration:
         raise ValueError("Attribute {} not found in AVU".format(attr))
+
 
 def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory):
     """
@@ -212,7 +215,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
     file_shortname = file_path.split("/")[-1].replace('-combi', '')
     remote_file_path = "/var/www/{}/{}/{}/{}".format(
         remote_directory, publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    remote_md5 = get_md5_remote_ssh("combined.yoda.test", "inbox", remote_file_path) # TODO: update host name?
+    remote_md5 = get_md5_remote_ssh("combined.yoda.test", "inbox", remote_file_path)
 
     if local_md5 == remote_md5:
         return True
@@ -221,6 +224,7 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory)
         log.write(ctx, "Local MD5 ({}): {}".format(attribute_suffix, local_md5))
         log.write(ctx, "Remote MD5 ({}): {}".format(attribute_suffix, remote_md5))
         return False
+
 
 def check_integrity_of_publication_files(ctx, data_package):
     """
@@ -234,7 +238,6 @@ def check_integrity_of_publication_files(ctx, data_package):
     landing_page_verified = verify_file_integrity(ctx, data_package, "landingPagePath", "landingpages")
     combi_json_verified = verify_file_integrity(ctx, data_package, "combiJsonPath", "moai/metadata")
     return (landing_page_verified, combi_json_verified)
-
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -294,4 +297,4 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
     log.write(ctx, "troubleshooting results: {}".format(results_dict))
 
     # TODO: return and result of output to the terminal (stdout)
-    #return json.dumps(results_dict)
+    # return json.dumps(results_dict)
