@@ -41,7 +41,7 @@ def get_publication_config(ctx):
                  "davrods_anonymous_vhost": "davrodsAnonymousVHost",
                  "publication_verbose_mode": "verboseMode"}
     optional_keys = ["publication_verbose_mode"]
-    configKeys = {}
+    config_keys = {}
     found_attrs = []
 
     prefix_length = len(constants.UUORGMETADATAPREFIX)
@@ -58,7 +58,7 @@ def get_publication_config(ctx):
 
         try:
             found_attrs.append(attr)
-            configKeys[attr2keys[attr]] = val
+            config_keys[attr2keys[attr]] = val
         except KeyError:
             continue
 
@@ -67,7 +67,7 @@ def get_publication_config(ctx):
         if key not in found_attrs and key not in optional_keys:
             log.write(ctx, 'Missing config key ' + key)
 
-    return configKeys
+    return config_keys
 
 
 def generate_combi_json(ctx, publication_config, publication_state):
@@ -151,8 +151,8 @@ def get_publication_state(ctx, vault_package):
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
 
     # Take over all actual values as saved earlier.
-    for key in publ_metadata:
-        publication_state[key] = publ_metadata[key]
+    for key, value in publ_metadata.items():
+        publication_state[key] = value
 
     # Handle access restriction.
     iter = genquery.row_iterator(
@@ -300,7 +300,7 @@ def get_last_modified_datetime(ctx, vault_package):
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
-def generate_preliminary_DOI(ctx, publication_config, publication_state):
+def generate_preliminary_doi(ctx, publication_config, publication_state):
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -316,7 +316,7 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
     publication_state["versionDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_base_DOI(ctx, publication_config, publication_state):
+def generate_base_doi(ctx, publication_config, publication_state):
     """Generate a base DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -665,17 +665,17 @@ def check_doi_availability(ctx, publication_state, type_flag):
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
-    DOI = publication_state[type_flag + "DOI"]
+    doi = publication_state[type_flag + "DOI"]
 
     try:
-        httpCode = datacite.metadata_get(ctx, DOI)
+        http_code = datacite.metadata_get(ctx, doi)
 
-        if httpCode == 404:
+        if http_code == 404:
             publication_state[type_flag + "DOIAvailable"] = "yes"
-        elif httpCode in [401, 403, 500, 503, 504]:
+        elif http_code in [401, 403, 500, 503, 504]:
             # request failed, worth a retry
             publication_state["status"] = "Retry"
-        elif httpCode in [200, 204]:
+        elif http_code in [200, 204]:
             # DOI already in use
             publication_state[type_flag + "DOIAvailable"] = "no"
             publication_state["status"] = "Retry"
@@ -744,13 +744,14 @@ def process_publication(ctx, vault_package):
         if "baseDOI" in previous_publication_state:
             # Set the link to previous publication state
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
+            publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
             publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]
 
         # Create base DOI if it does not exist in the previous publication state.
         elif "baseDOI" not in previous_publication_state:
             log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
             try:
-                generate_base_DOI(ctx, publication_config, publication_state)
+                generate_base_doi(ctx, publication_config, publication_state)
                 check_doi_availability(ctx, publication_state, 'base')
                 publication_state["baseDOIMinted"] = 'no'
                 # Set the link to previous publication state
@@ -763,7 +764,7 @@ def process_publication(ctx, vault_package):
             save_publication_state(ctx, previous_vault_package, previous_publication_state)
             save_publication_state(ctx, vault_package, publication_state)
 
-            if status in ["Retry"]:
+            if status == "Retry":
                 if verbose:
                     log.write(ctx, "Error status for creating base DOI: " + status)
                 return status
@@ -778,7 +779,7 @@ def process_publication(ctx, vault_package):
     if "versionDOI" not in publication_state:
         if verbose:
             log.write(ctx, "Generating preliminary DOI.")
-        generate_preliminary_DOI(ctx, publication_config, publication_state)
+        generate_preliminary_doi(ctx, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -787,7 +788,7 @@ def process_publication(ctx, vault_package):
             if verbose:
                 log.write(ctx, "Version DOI available: no")
                 log.write(ctx, "Generating preliminary DOI.")
-            generate_preliminary_DOI(ctx, publication_config, publication_state)
+            generate_preliminary_doi(ctx, publication_config, publication_state)
 
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
@@ -856,11 +857,8 @@ def process_publication(ctx, vault_package):
 
     # Determine whether an update ('put') or create ('post') message has to be sent to datacite
     datacite_action = 'post'
-    try:
-        if publication_state['versionDOIMinted'] == 'yes':
-            datacite_action = 'put'
-    except KeyError:
-        pass
+    if publication_state.get('versionDOIMinted') == 'yes':
+        datacite_action = 'put'
 
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
@@ -873,7 +871,7 @@ def process_publication(ctx, vault_package):
             if update_base_doi:
                 base_doi = None
                 datacite_action = 'post'
-                if publication_state['baseDOIMinted'] == 'yes':
+                if publication_state.get('baseDOIMinted') == 'yes':
                     datacite_action = 'put'
                 if verbose:
                     log.write(ctx, "Updating base DOI.")
