@@ -4,9 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
-
 from datetime import datetime
+import re
 
 import genquery
 from requests.exceptions import ReadTimeout
@@ -18,7 +17,6 @@ import meta
 import provenance
 import schema
 import vault
-
 from util import *
 
 
