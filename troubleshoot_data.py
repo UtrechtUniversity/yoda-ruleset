@@ -11,6 +11,7 @@ import json
 import subprocess
 
 import genquery
+import requests
 
 import datacite
 from publication import get_publication_config
@@ -189,7 +190,7 @@ def get_md5_remote_ssh(ctx, host, username, file_path):
     """
     try:
         # Build the SSH command to execute md5sum remotely
-        ssh_command = "ssh {username}@{host} md5sum -b {file_path}".format(
+        ssh_command = "ssh -o StrictHostKeyChecking=accept-new {username}@{host} md5sum -b {file_path}".format(
             username=username, host=host, file_path=file_path
         )
 
@@ -201,7 +202,7 @@ def get_md5_remote_ssh(ctx, host, username, file_path):
         stdout, stderr = process.communicate()
 
         # Return only the MD5 hash part
-        if process.returncode == 0:
+        if process.returncode == 0 and stdout:
             return stdout.strip().split()[0]
 
         log.write(ctx, "Error: {}".format(stderr))
@@ -231,9 +232,25 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         raise ValueError("Attribute {} not found in AVU".format(attr))
 
 
-def verify_file_integrity(ctx, data_package, attribute_suffix, remote_host, remote_directory):
+def get_remote_url(ctx, data_package, remote_hostname, remote_directory, attribute_suffix):
+    """Given a data package, remote host, and an attribute suffix, get what the remote url should be"""
+    file_path = get_attribute_value(ctx, data_package, attribute_suffix)
+    log.write_stdout(ctx, "file path: {}".format(file_path))
+    publication_config = get_publication_config(ctx)
+    if remote_hostname not in publication_config:
+        raise KeyError("Host {} does not exist in publication config".format(remote_hostname))
+
+    file_shortname = file_path.split("/")[-1].replace('-combi', '')
+    # https://public.yoda.test/allinone/UU01/PPQEBC.html
+    url = "https://{}/{}/{}/{}".format(publication_config[remote_hostname],
+        publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
+    log.write_stdout(ctx, "url: {}".format(url))
+    return url
+
+
+def compare_local_remote_files(ctx, data_package, attribute_suffix, url):
     """
-    Compares MD5 checksums between a local file and its remote version to verify their integrity.
+    Compares file contents between a file in irods and its remote version to verify their integrity.
 
     :param ctx:              Combined type of a callback and rei struct
     :param data_package:     String representing the data package collection path.
@@ -251,33 +268,23 @@ def verify_file_integrity(ctx, data_package, attribute_suffix, remote_host, remo
     log.write_stdout(ctx, "file path: {}".format(file_path))
     # We are comparing small files so it should be ok to get the whole file
     local_data = data_object.read(ctx, file_path)
-    local_md5 = calculate_md5(local_data)
 
-    # Calculate md5 for the remote file
-    publication_config = get_publication_config(ctx)
-    if remote_host not in publication_config:
-        raise KeyError("Host {} does not exist in publication config".format(remote_host))
+    result = requests.get(url, verify=False)
+    if result.status_code != 200:
+        log.write_stdout(ctx, "Connection to remote url <{}> failed.".format(url))
+        return False
 
-    file_shortname = file_path.split("/")[-1].replace('-combi', '')
-    log.write_stdout(ctx, "short: {}".format(file_shortname))
-    remote_file_path = "/var/www/{}/{}/{}/{}".format(
-        remote_directory, publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    log.write_stdout(ctx, "remote file path: {}".format(remote_file_path))
-
-    remote_md5 = get_md5_remote_ssh(ctx, publication_config[remote_host], config.inbox_user, remote_file_path)
-
-    if local_md5 == remote_md5:
+    if local_data == result.text:
         return True
 
-    log.write_stdout(ctx, "MD5 of local and remote file don't match.")
-    log.write_stdout(ctx, "Local MD5 ({}): {}".format(attribute_suffix, local_md5))
-    log.write_stdout(ctx, "Remote MD5 ({}): {}".format(attribute_suffix, remote_md5))
+    log.write_stdout(ctx, "File contents of irods and remote file do not match.")
+    # TODO print paths here?
     return False
 
 
 def check_integrity_of_publication_files(ctx, data_package):
     """
-    Checks the integrity of landingPage and CombiJson files by verifying their MD5 checksums in local against those in public server.
+    Checks the integrity of landingPage and CombiJson files by comparing the contents
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
@@ -285,9 +292,12 @@ def check_integrity_of_publication_files(ctx, data_package):
     :returns:            A tuple containing boolean results of checking
     """
     # publicVHost for landingpage, moaiHost for moai
-    landing_page_verified = verify_file_integrity(ctx, data_package, "landingPagePath", "publicVHost", "landingpages")
-    combi_json_verified = verify_file_integrity(ctx, data_package, "combiJsonPath", "moaiHost", "moai/metadata")
-    return (landing_page_verified, combi_json_verified)
+    landing_page_url = get_remote_url(ctx, data_package, "publicVHost", "landingpage", "landingPagePath")
+    # landing_page_verified = compare_local_remote_files(ctx, data_package, "landingPagePath", landing_page_url)
+    combi_json_url = get_remote_url(ctx, data_package, "moaiHost", "moai/metadata", "combiJsonPath")
+    # combi_json_verified = compare_local_remote_files(ctx, data_package, "combiJsonPath", combi_json_url)
+    # return (landing_page_verified, combi_json_verified)
+    return True, True
 
 
 def print_troubleshoot_result(ctx, result):

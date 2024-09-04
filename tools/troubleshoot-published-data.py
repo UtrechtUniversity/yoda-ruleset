@@ -30,8 +30,6 @@ def parse_args():
 def main():
     args = parse_args()
     rule_name = "/etc/irods/yoda-ruleset/tools/troubleshoot_data.r"
-    # rule_name = "rule_batch_troubleshoot_published_data_packages"
-    # TODO handle packages with spaces in the name
     data_package = f"*data_package={args.package}"
     log_loc = f"*log_loc={args.log_file if args.log_file else ''}"
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F',
