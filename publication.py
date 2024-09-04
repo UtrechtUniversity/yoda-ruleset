@@ -1334,7 +1334,7 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
         "AND META_COLL_ATTR_NAME = '{}vault_status' "
-        "AND META_COLL_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX,str(constants.vault_package_state.PUBLISHED)),
+        "AND META_COLL_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX, str(constants.vault_package_state.PUBLISHED)),
         genquery.AS_LIST,
         ctx
     )
@@ -1342,12 +1342,11 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     packages_found = False
     for collection in collections:
         coll_name = collection[0]
-        if ((vault_package == '*' and re.match(r'/[^/]+/home/vault-.*', coll_name)) or 
-            (vault_package != '*' and re.match(r'/[^/]+/home/vault-.*', coll_name) and coll_name == vault_package)):
+        if ((vault_package == '*' and re.match(r'/[^/]+/home/vault-.*', coll_name)) or (vault_package != '*' and re.match(r'/[^/]+/home/vault-.*', coll_name) and coll_name == vault_package)):
             packages_found = True
             output = update_publication(ctx, coll_name, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
             log.write(ctx, coll_name + ': ', output)
-            
+     
     if not packages_found:
         log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package))
     else:
