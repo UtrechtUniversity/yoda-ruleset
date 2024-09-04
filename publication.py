@@ -1315,7 +1315,7 @@ def process_republication(ctx, vault_package):
     return publication_state["status"]
 
 
-@rule.make(inputs=range(4), outputs=range(4, 6))
+@rule.make(inputs=range(4))
 def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
     """Rule interface for updating the publication of a vault package.
 
