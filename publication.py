@@ -16,9 +16,9 @@ import meta
 import provenance
 import schema
 import vault
+import re
 from util import *
 
-import re
 
 __all__ = ['rule_process_publication',
            'rule_process_depublication',
@@ -1325,8 +1325,6 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     :param update_datacite:    Flag that indicates updating DataCite
     :param update_landingpage: Flag that indicates updating landingpage
     :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
-
-    :returns: "OK" if all went ok
     """
 
     log.write(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package))
@@ -1346,7 +1344,7 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
             packages_found = True
             output = update_publication(ctx, coll_name, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
             log.write(ctx, coll_name + ': ', output)
-     
+
     if not packages_found:
         log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package))
     else:
