@@ -40,6 +40,15 @@ def _write(ctx, message):
         ctx.writeLine('serverLog', message)
 
 
+def write_stdout(ctx, message):
+    """Write a message to stdout. Used for some of our scripts.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param message:  Message to write to log
+    """
+    ctx.writeLine("stdout", message)
+
+
 def debug(ctx, message):
     """"Write a message to the log, if in a development environment.
 
