@@ -1330,8 +1330,8 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
-        "AND META_COLL_ATTR_NAME = '{}vault_status' "
-        "AND META_COLL_ATTR_VALUE = '{}'".format(constants.UUORGMETADATAPREFIX, str(constants.vault_package_state.PUBLISHED)),
+        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
+        "AND META_COLL_ATTR_VALUE = '{}'".format(str(constants.vault_package_state.PUBLISHED)),
         genquery.AS_LIST,
         ctx
     )
