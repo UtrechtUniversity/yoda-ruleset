@@ -14,9 +14,10 @@ import json_datacite
 import json_landing_page
 import meta
 import provenance
+import re
 import schema
 import vault
-import re
+
 from util import *
 
 
