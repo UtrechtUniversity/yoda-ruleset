@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import re
+
 from datetime import datetime
 
 import genquery
@@ -14,7 +16,6 @@ import json_datacite
 import json_landing_page
 import meta
 import provenance
-import re
 import schema
 import vault
 
