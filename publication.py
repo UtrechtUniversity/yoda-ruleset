@@ -1325,6 +1325,9 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     :param update_landingpage: Flag that indicates updating landingpage
     :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
     """
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
 
     log.write_stdout(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package))
     collections = genquery.row_iterator(
