@@ -1324,6 +1324,8 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     :param update_datacite:    Flag that indicates updating DataCite
     :param update_landingpage: Flag that indicates updating landingpage
     :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
+    
+    :returns: "OK" if all went ok
     """
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is no rodsadmin")
@@ -1351,6 +1353,8 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
         log.write_stdout(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package))
     else:
         log.write_stdout(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package))
+
+    return "Ok"
 
 
 def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
