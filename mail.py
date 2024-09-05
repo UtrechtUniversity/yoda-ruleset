@@ -45,9 +45,9 @@ def send(ctx, to, actor, subject, body, cc=None):
                         ('reply_to',  'notifications_reply_to'),
                         ('server',    'smtp_server')]}
 
-    if getattr(config, "smtp_auth"):
-        cfg['username'] = getattr(config, "smtp_username")
-        cfg['password'] = getattr(config, "smtp_password")
+    if config.smtp_auth:
+        cfg['username'] = config.smtp_username
+        cfg['password'] = config.smtp_password
 
     try:
         # e.g. 'smtps://smtp.gmail.com:465' for SMTP over TLS, or
@@ -65,7 +65,7 @@ def send(ctx, to, actor, subject, body, cc=None):
     try:
         smtp = (smtplib.SMTP_SSL if proto == 'smtps' else smtplib.SMTP)(host, port)
 
-        if proto != 'smtps' and getattr(config, "smtp_starttls"):
+        if proto != 'smtps' and config.smtp_starttls:
             # Enforce TLS.
             smtp.starttls()
 
@@ -74,7 +74,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         return api.Error('internal', 'Mail configuration error')
 
     try:
-        if getattr(config, "smtp_auth"):
+        if config.smtp_auth:
             smtp.login(cfg['username'], cfg['password'])
 
     except Exception:

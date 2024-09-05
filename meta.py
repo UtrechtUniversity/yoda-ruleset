@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -13,7 +13,6 @@ import genquery
 import irods_types
 from deepdiff import DeepDiff
 
-import avu_json
 import provenance
 import publication
 import schema as schema_
@@ -26,8 +25,7 @@ __all__ = ['rule_meta_validate',
            'rule_meta_modified_post',
            'rule_meta_datamanager_vault_ingest',
            'rule_meta_collection_has_cloneable_metadata',
-           'rule_get_latest_vault_metadata_path',
-           'rule_copy_user_metadata']
+           'rule_get_latest_vault_metadata_path']
 
 
 def metadata_get_links(metadata):
@@ -305,7 +303,7 @@ def api_meta_clone_file(ctx, target_coll):
         return
 
     try:
-        msi.data_obj_copy(ctx, source_data, target_data, '', irods_types.BytesBuf())
+        data_object.copy(ctx, source_data, target_data)
     except msi.Error as e:
         raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
 
@@ -326,17 +324,14 @@ def ingest_metadata_research(ctx, path):
         log.write(ctx, 'ingest_metadata_research failed: {} is invalid'.format(path))
         return
 
-    # Remove any remaining legacy XML-style AVUs.
-    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
-
     # Note: We do not set a $id in research space: this would trigger jsonavu
     # validation, which does not respect our wish to ignore required
     # properties in the research area.
 
     # Replace all metadata under this namespace.
-    avu_json.set_json_to_obj(ctx, coll, '-C',
-                             constants.UUUSERMETADATAROOT,
-                             jsonutil.dump(metadata))
+    jsonutil.set_on_object(ctx, coll, "collection",
+                           constants.UUUSERMETADATAROOT,
+                           jsonutil.dump(metadata))
 
 
 def ingest_metadata_deposit(ctx, path):
@@ -382,68 +377,138 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
     msi.coll_create(ctx, path, "", irods_types.BytesBuf())
     ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
+    avu_op = "add"
+    avu_unit = constants.UUFLATINDEX
+    metadata_operations = {
+        "entity_name": path,
+        "entity_type": "collection",
+        "operations": []
+    }
 
     for creator in metadata['Creator']:
         name = creator['Name']
         if 'Given_Name' in name and 'Family_Name' in name:
-            ctx.msi_add_avu('-C', path, 'Creator',
-                            name['Given_Name'] + ' ' + name['Family_Name'],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Creator",
+                "value": name['Given_Name'] + ' ' + name['Family_Name'],
+                "units": avu_unit
+            })
         if 'Owner_Role' in creator:
-            ctx.msi_add_avu('-C', path, 'Owner_Role', creator['Owner_Role'],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Owner_Role",
+                "value": creator['Owner_Role'],
+                "units": avu_unit
+            })
 
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
             if 'Name' in contributor:
                 name = contributor['Name']
                 if 'Given_Name' in name and 'Family_Name' in name:
-                    ctx.msi_add_avu('-C', path, 'Contributor',
-                                    name['Given_Name'] + ' ' + name['Family_Name'],
-                                    constants.UUFLATINDEX)
+                    metadata_operations['operations'].append({
+                        "operation": avu_op,
+                        "attribute": "Contributor",
+                        "value": name['Given_Name'] + ' ' + name['Family_Name'],
+                        "units": avu_unit
+                    })
 
     if 'Tag' in metadata:
         for tag in metadata['Tag']:
-            ctx.msi_add_avu('-C', path, 'Tag', tag,
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Tag",
+                "value": tag,
+                "units": avu_unit
+            })
 
-    ctx.msi_add_avu('-C', path, 'Title', metadata['Title'],
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path,  'Description', metadata['Description'],
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path, 'Data_Access_Restriction',
-                    metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
+    extend_operations = [
+        {
+            "operation": avu_op,
+            "attribute": "Title",
+            "value": metadata['Title'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Description",
+            "value": metadata['Description'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Data_Access_Restriction",
+            "value": metadata['Data_Access_Restriction'],
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Creation_Time",
+            "value": creation_time,
+            "units": avu_unit
+        },
+        {
+            "operation": avu_op,
+            "attribute": "Creation_Year",
+            "value": str(datetime.fromtimestamp(int(creation_time)).year),
+            "units": avu_unit
+        }]
+
+    metadata_operations['operations'].extend(extend_operations)
+
     if 'Research_Group' in metadata:
-        ctx.msi_add_avu('-C', path, 'Research_Group',
-                        metadata['Research_Group'], constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": avu_op,
+            "attribute": "Research_Group",
+            "value": metadata['Research_Group'],
+            "units": avu_unit
+        })
     if 'Collection_Name' in metadata:
-        ctx.msi_add_avu('-C', path, 'Collection_Name',
-                        metadata['Collection_Name'], constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": avu_op,
+            "attribute": "Collection_Name",
+            "value": metadata['Collection_Name'],
+            "units": avu_unit
+        })
     if 'Collected' in metadata:
         if 'Start_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-C', path, 'Collected_Start_Year',
-                            metadata['Collected']['Start_Date'][:4],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Collected_Start_Year",
+                "value": metadata['Collected']['Start_Date'][:4],
+                "units": avu_unit
+            })
         if 'End_Date' in metadata['Collected']:
-            ctx.msi_add_avu('-C', path, 'Collected_End_Year',
-                            metadata['Collected']['End_Date'][:4],
-                            constants.UUFLATINDEX)
+            metadata_operations['operations'].append({
+                "operation": avu_op,
+                "attribute": "Collected_End_Year",
+                "value": metadata['Collected']['End_Date'][:4],
+                "units": avu_unit
+            })
 
     if 'GeoLocation' in metadata:
         for geoLocation in metadata['GeoLocation']:
             if 'Description_Spatial' in geoLocation:
-                ctx.msi_add_avu('-C', path, 'Description_Spatial', geoLocation['Description_Spatial'],
-                                constants.UUFLATINDEX)
-
-    ctx.msi_add_avu('-C', path, 'Creation_Time', creation_time,
-                    constants.UUFLATINDEX)
-    ctx.msi_add_avu('-C', path, 'Creation_Year',
-                    str(datetime.fromtimestamp(int(creation_time)).year),
-                    constants.UUFLATINDEX)
+                metadata_operations['operations'].append({
+                    "operation": avu_op,
+                    "attribute": "Description_Spatial",
+                    "value": geoLocation['Description_Spatial'],
+                    "units": avu_unit
+                })
 
     if config.enable_data_package_reference:
-        ctx.msi_add_avu('-C', path, 'Data_Package_Reference', data_package,
-                        constants.UUFLATINDEX)
+        metadata_operations['operations'].append({
+            "operation": "add",
+            "attribute": "Data_Package_Reference",
+            "value": data_package,
+            "units": avu_unit
+        })
+
+    if avu.apply_atomic_operations(ctx, metadata_operations):
+        log.write(ctx, 'update_index_metadata: Metadata index update successful on path {}'.format(path))
+    else:
+        log.write(ctx, 'update_index_metadata: Metadata index update unsuccessful on path {}'.format(path))
 
 
 def ingest_metadata_vault(ctx, path):
@@ -486,13 +551,10 @@ def ingest_metadata_vault(ctx, path):
     if config.enable_open_search and group.exists(ctx, coll.split("/")[3].replace("vault-", "deposit-", 1)):
         update_index_metadata(ctx, coll + "/index", metadata, creation_time, data_package)
 
-    # Remove any remaining legacy XML-style AVUs.
-    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
-
     # Replace all metadata under this namespace.
-    avu_json.set_json_to_obj(ctx, coll, '-C',
-                             constants.UUUSERMETADATAROOT,
-                             jsonutil.dump(metadata))
+    jsonutil.set_on_object(ctx, coll, "collection",
+                           constants.UUUSERMETADATAROOT,
+                           jsonutil.dump(metadata))
 
 # }}}
 
@@ -682,31 +744,49 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     set_result('Success', '')
 
 
-@rule.make()
-def rule_copy_user_metadata(ctx, source, target):
-    copy_user_metadata(ctx, source, target)
-
-
 def copy_user_metadata(ctx, source, target):
     """
-    Copy the user metadata of a collection to another collection.
+    Copy the user metadata (AVUs) of a collection to another collection.
+
+    This only copies user metadata, so it ignores system metadata.
 
     :param ctx:    Combined type of a callback and rei struct
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
     try:
-        # Retrieve all user metadata on source collection.
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}%'".format(source, constants.UUUSERMETADATAPREFIX),
-            genquery.AS_LIST, ctx
-        )
+        # Retrieve all AVUs inside source collection.
+        user_metadata = list(avu.inside_coll(ctx, source, recursive=True))
 
-        # Set user metadata on target collection.
-        for row in iter:
-            avu.associate_to_coll(ctx, target, row[0], row[1])
+        # Group AVUs by entity and filter system metadata.
+        grouped_user_metadata = {}
+        for path, type, attribute, value, unit in user_metadata:
+            if not attribute.startswith(constants.UUORGMETADATAPREFIX) and unit != constants.UUFLATINDEX and not unit.startswith(constants.UUUSERMETADATAROOT + '_'):
+                grouped_user_metadata.setdefault(path, {"type": type, "avus": []})
+                grouped_user_metadata[path]["avus"].append((attribute, value, unit))
 
-        log.write(ctx, "rule_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+        # Generate metadata operations.
+        for path, item in grouped_user_metadata.items():
+            operations = {
+                "entity_name": path.replace(source, "{}/original".format(target), 1),
+                "entity_type": item["type"],
+                "operations": []
+            }
+
+            for attribute, value, unit in item["avus"]:
+                operations["operations"].append(
+                    {
+                        "operation": "add",
+                        "attribute": attribute,
+                        "value": value,
+                        "units": unit
+                    }
+                )
+
+            # Apply metadata operations.
+            if not avu.apply_atomic_operations(ctx, operations):
+                log.write(ctx, "copy_user_metadata: failed to copy user metadata for <{}>".format(path))
+
+        log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}/original>".format(source, target))
     except Exception:
-        log.write(ctx, "rule_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))

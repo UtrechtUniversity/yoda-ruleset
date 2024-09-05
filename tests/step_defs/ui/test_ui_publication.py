@@ -98,7 +98,14 @@ def ui_check_version_provenance_vault(browser):
     action_log_rows = browser.find_by_css('.list-group-item-action')
 
     # Chronological (backward) status changes
-    prov_statuses = ['Published', 'Approved for publication', 'Added metadata: related datapackage', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
+    prov_statuses = ['Published',
+                     'Approved for publication',
+                     'Removed metadata: additional lab',
+                     'Added metadata: related datapackage',
+                     'Submitted for publication',
+                     'Secured in vault',
+                     'Accepted for vault',
+                     'Submitted for vault']
     for index in range(0, len(prov_statuses)):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
 
@@ -243,8 +250,29 @@ def ui_data_package_approve(browser):
 @then(parsers.parse('the data package status is "{status}"'))
 def ui_data_package_status(browser, status):
     for _i in range(30):
-        if browser.is_text_present(status, wait_time=3):
+        if browser.is_text_present(status, wait_time=4):
             return True
         browser.reload()
+
+    raise AssertionError()
+
+
+@then("landingpage contains URL of the downloadable content")
+def ui_landingpage_contains_url_of_the_downloaded_content(browser):
+    time.sleep(1)
+    links = browser.find_by_tag('link')
+
+    for link in links:
+        if link['rel'] == 'item':
+            return True
+
+    raise AssertionError()
+
+
+@then("landingpage contains RDFa terms")
+def ui_landingpage_contains_rdfa_terms(browser):
+    time.sleep(1)
+    if browser.is_element_present_by_xpath('//body[@vocab="http://purl.org/dc/terms/"]'):
+        return True
 
     raise AssertionError()

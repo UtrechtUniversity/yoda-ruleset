@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to download vault data packages."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -18,15 +18,16 @@ __all__ = ['api_vault_download',
 def vault_downloadable(ctx, coll):
     if coll.endswith("/original"):
         return False
-    for row in genquery.row_iterator("DATA_SIZE",
-                                     "COLL_NAME = '{}' AND DATA_NAME = 'download.zip'".format(coll),
-                                     genquery.AS_LIST,
-                                     ctx):
+
+    for _row in genquery.row_iterator("DATA_SIZE",
+                                      "COLL_NAME = '{}' AND DATA_NAME = 'download.zip'".format(coll),
+                                      genquery.AS_LIST,
+                                      ctx):
         return False
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
-                                     genquery.AS_LIST,
-                                     ctx):
+    for _row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                      "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                      genquery.AS_LIST,
+                                      ctx):
         return True
 
     return False

@@ -3,9 +3,9 @@
 # Correct vault data package metadata containing invalid ORCID person identifiers.
 #
 check {
-        writeLine("serverLog", "[METADATA] Start correcting ORCID format in person identifers.");
-        rule_batch_vault_metadata_correct_orcid_format("0", *batch, *pause, *delay);
+        writeLine("serverLog", "[METADATA] Start correcting ORCID format in person identifiers.");
+        rule_batch_vault_metadata_correct_orcid_format("0", *batch, *pause, *delay, *dryrun);
 }
 
-input *batch="256", *pause="0.5", *delay="60"
+input *batch="256", *pause="0.5", *delay="60", *dryrun="false"
 output ruleExecOut

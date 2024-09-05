@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import hashlib
 import random
 import re
 import time
@@ -27,21 +26,49 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
     :param target_resource: Resource to be used as destination
     """
     zone = user.zone(ctx)
+    replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"
+    replication_avu_value = "{},{},{}".format(source_resource, target_resource, random.randint(1, 64))
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
         # Give rods 'own' access so that they can remove the AVU.
         msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
 
-        # Add random identifier for replication balancing purposes.
-        msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{},{}".format(source_resource, target_resource, random.randint(1, 64)), "")
+        # Check whether the object already has an AVU. If we try to add the AVU when it already
+        # exists, we will catch the exception below, however the SQL error would still result in log
+        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
+        # if an AVU is added after this check.
+        already_has_avu = len(list(genquery.Query(ctx,
+                                                  ['DATA_ID'],
+                                                  "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(
+                                                      pathutil.dirname(path), pathutil.basename(path), replication_avu_name),
+                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
+
+        if not already_has_avu:
+            # Can't use mod_avu/set here (instead of add_avu) because it would be blocked by metadata policies.
+            add_operation = {
+                "entity_name": path,
+                "entity_type": "data_object",
+                "operations": [
+                    {
+                        "operation": "add",
+                        "attribute": replication_avu_name,
+                        "value": replication_avu_value,
+                        "units": ""
+                    }
+                ]
+            }
+            avu.apply_atomic_operations(ctx, add_operation)
     except msi.Error as e:
-        # iRODS error for CAT_UNKNOWN_FILE can be ignored.
-        if str(e).find("-817000") == -1:
+        if "-817000" in str(e):
+            # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to replicate it anymore.
+            pass
+        elif "-806000" in str(e):
+            # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
+            pass
+        else:
             error_status = re.search("status \[(.*?)\]", str(e))
             log.write(ctx, "Schedule replication of data object {} failed with error {}".format(path, error_status.group(1)))
-        else:
-            pass
 
 
 @rule.make()
@@ -80,7 +107,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
         minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
         log.write(ctx, "verbose = {}".format(verbose))
-        if verbose:
+        if print_verbose:
             log.write(ctx, "async_replication_delay_time = {} seconds".format(config.async_replication_delay_time))
             log.write(ctx, "max_rss = {} bytes".format(config.async_replication_max_rss))
             log.write(ctx, "dry_run = {}".format(dry_run))
@@ -111,21 +138,25 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             from_path = info[0]
             to_path = info[1]
 
-            # Backwards compatibility with replication metadata created in v1.8 or earlier.
-            backwards_compatibility = False
-
             if len(info) == 3:
                 balance_id = int(info[2])
-            elif len(info) == 2:
-                backwards_compatibility = True
-                # Determine a balance_id for this dataobject based on its path.
-                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
-                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
             else:
                 # Not replicable.
                 log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
                 try:
-                    ctx.msi_add_avu('-d', path, errorattr, "Invalid,Invalid", "")
+                    add_operation = {
+                        "entity_name": path,
+                        "entity_type": "data_object",
+                        "operations": [
+                            {
+                                "operation": "add",
+                                "attribute": errorattr,
+                                "value": "Invalid,Invalid",
+                                "units": ""
+                            }
+                        ]
+                    }
+                    avu.apply_atomic_operations(ctx, add_operation)
                 except Exception:
                     pass
 
@@ -137,7 +168,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 # Skip this one and go to the next data object to be replicated.
                 continue
 
-            # For totalization only count the dataobjects that are within the specified balancing range
+            # For totalization only count the data objects that are within the specified balancing range
             count += 1
             data_resc_name = row[4]
 
@@ -177,7 +208,19 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 except msi.Error as e:
                     log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
                     try:
-                        ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                        add_operation = {
+                            "entity_name": path,
+                            "entity_type": "data_object",
+                            "operations": [
+                                {
+                                    "operation": "add",
+                                    "attribute": errorattr,
+                                    "value": "{},{}".format(from_path, to_path),
+                                    "units": ""
+                                }
+                            ]
+                        }
+                        avu.apply_atomic_operations(ctx, add_operation)
                     except Exception:
                         pass
 
@@ -185,10 +228,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
             # rods should have been given own access via policy to allow AVU changes
             avu_deleted = False
             try:
-                if backwards_compatibility:
-                    avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
-                else:
-                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 avu_deleted = True
             except Exception:
                 avu_deleted = False
@@ -199,10 +239,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                     # The object's ACLs may have changed.
                     # Force the ACL and try one more time.
                     msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    if backwards_compatibility:
-                        avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))
-                    else:
-                        avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
                 except Exception:
                     # error => report it but still continue
                     log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
@@ -215,7 +252,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
 
 
 def is_replication_blocked_by_admin(ctx):
-    """Admin can put the replication process on a hold by adding a file called 'stop_replication' in collection /yoda/flags.
+    """Admin can put the replication process on hold by adding a file called 'stop_replication' in collection /yoda/flags.
 
     :param ctx: Combined type of a callback and rei struct
 

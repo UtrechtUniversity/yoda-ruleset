@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import datetime
-import hashlib
 import os
 import random
 import re
@@ -18,7 +17,7 @@ import psutil
 import folder
 import groups
 from revision_strategies import get_revision_strategy
-from revision_utils import calculate_end_of_calendar_day, get_deletion_candidates, get_revision_store_path, revision_cleanup_prefilter
+from revision_utils import calculate_end_of_calendar_day, get_balance_id, get_deletion_candidates, get_resc, get_revision_store_path, revision_cleanup_prefilter, revision_eligible
 from util import *
 from util.spool import get_spool_data, has_spool_data, put_spool_data
 
@@ -82,7 +81,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
             genquery.AS_DICT, ctx)
 
-        for row in iter:
+        for _row in iter:
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
                 # This is a double entry and has to be corrected in the total returned to the frontend
@@ -239,8 +238,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     # Start actual restoration of the revision
     try:
         # Workaround the PREP deadlock issue: Restrict threads to 1.
-        ofFlags = 'forceFlag=++++numThreads=1'
-        msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
+        data_object.copy(ctx, source_path, coll_target + '/' + new_filename, True)
     except msi.Error as e:
         return api.Error('copy_failed', 'The file could not be copied', str(e))
 
@@ -259,23 +257,61 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     :param zone:     Zone where the original can be found
     :param path:     Path of the original
     """
-    # Only create revisions for research space
-    if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
-        if not pathutil.basename(path) in constants.UUBLOCKLIST:
-            # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
-            try:
-                # Give rods 'own' access so that they can remove the AVU.
-                msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+    size = data_object.size(ctx, path)
+    groups = data_object.get_group_owners(ctx, path)
+    if groups:
+        revision_store = get_revision_store(ctx, groups[0][0])
+        revision_store_exists = revision_store is not None
+    else:
+        revision_store_exists = False
 
-                # Add random identifier for revision balancing purposes.
-                msi.add_avu(ctx, '-d', path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource + ',' + str(random.randint(1, 64)), "")
-            except msi.Error as e:
-                # iRODS error for CAT_UNKNOWN_FILE can be ignored.
-                if str(e).find("-817000") == -1:
-                    error_status = re.search("status \[(.*?)\]", str(e))
-                    log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
-                else:
-                    pass
+    should_create_rev, _ = revision_eligible(constants.UUMAXREVISIONSIZE, size is not None, size, path, groups, revision_store_exists)
+    if not should_create_rev:
+        return
+
+    revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+    revision_avu_value = resource + ',' + str(random.randint(1, 64))
+
+    # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
+    try:
+        # Give rods 'own' access so that they can remove the AVU.
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
+        # Check whether the object already has an AVU. If we try to add the AVU when it already
+        # exists, we will catch the exception below, however the SQL error would still result in log
+        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
+        # if an AVU is added after this check.
+        already_has_avu = len(list(genquery.Query(ctx,
+                                                  ['DATA_ID'],
+                                                  "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(
+                                                      pathutil.dirname(path), pathutil.basename(path), revision_avu_name),
+                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
+
+        if not already_has_avu:
+            add_operation = {
+                "entity_name": path,
+                "entity_type": "data_object",
+                "operations": [
+                    {
+                        "operation": "add",
+                        "attribute": revision_avu_name,
+                        "value": revision_avu_value,
+                        "units": ""
+                    }
+                ]
+            }
+            avu.apply_atomic_operations(ctx, add_operation)
+
+    except msi.Error as e:
+        if "-817000" in str(e):
+            # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to create revision anymore.
+            pass
+        elif "-806000" in str(e):
+            # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
+            pass
+        else:
+            error_status = re.search("status \[(.*?)\]", str(e))
+            log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
 
 
 @rule.make()
@@ -294,6 +330,8 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
     :param balance_id_max:   Maximum balance id for batch jobs (value 1-64)
     :param batch_size_limit: Maximum number of items to be processed within one batch
     :param dry_run:          When '1' do not actually create revisions, only log what would have been created
+
+    :raises Exception:       If one of the parameters is invalid
     """
     count         = 0
     count_ok      = 0
@@ -303,6 +341,17 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
+
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "The revision creation job can only be started by a rodsadmin user.")
+        return
+
+    if not (batch_size_limit.isdigit() and int(batch_size_limit) > 0):
+        raise Exception("Batch size limit is invalid. It needs to be a positive integer.")
+
+    if not ((balance_id_min.isdigit() and int(balance_id_min) >= 1 and int(balance_id_min) <= 64)
+            and (balance_id_max.isdigit() and int(balance_id_max) >= 1 and int(balance_id_max) <= 64)):
+        raise Exception("Balance ID is invalid. The balance IDs need to be integers between 1 and 64.")
 
     # Stop further execution if admin has blocked revision process.
     if is_revision_blocked_by_admin(ctx):
@@ -315,7 +364,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
         # Get list of up to batch size limit of data objects (in research space) scheduled for revision, taking into account
         # modification time.
         log.write(ctx, "verbose = {}".format(verbose))
-        if verbose:
+        if print_verbose:
             log.write(ctx, "async_revision_delay_time = {} seconds".format(config.async_revision_delay_time))
             log.write(ctx, "max_rss = {} bytes".format(config.async_revision_max_rss))
             log.write(ctx, "dry_run = {}".format(dry_run))
@@ -345,24 +394,16 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
             data_id = row[0]
             path    = row[1] + "/" + row[2]
 
-            # Metadata value contains resc and balace id for load balancing purposes.
-            info = row[3].split(',')
-            if len(info) == 2:
-                resc = info[0]
-                balance_id = int(info[1])
-            else:
-                # Backwards compatibility with revision metadata created in v1.8 or earlier.
-                resc = row[3]
-                # Determine a balance_id for this dataobject based on its path.
-                # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
-                balance_id = int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1
+            # Metadata value contains resc and balance id for load balancing purposes.
+            resc = get_resc(row)
+            balance_id = get_balance_id(row, path)
 
             # Check whether balance id is within the range for this job.
             if balance_id < int(balance_id_min) or balance_id > int(balance_id_max):
                 # Skip this one and go to the next data object for revision creation.
                 continue
 
-            # For getting the total count only the data objects within the wanted range
+            # For getting the total count, only count the data objects within the wanted range
             count += 1
 
             # "No action" is meant for easier memory usage debugging.
@@ -374,52 +415,11 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
             if print_verbose:
                 log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
-            revision_created = revision_create(ctx, resc, data_id, constants.UUMAXREVISIONSIZE, verbose)
-
-            # Remove revision_scheduled flag no matter if it succeeded or not.
-            # rods should have been given own access via policy to allow AVU
-            # changes.
-            if print_verbose:
-                log.write(ctx, "Batch revision: removing AVU for {}".format(path))
-
-            # try removing attr/resc meta data
-            avu_deleted = False
-            try:
-                avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-                avu_deleted = True
-            except Exception:
-                avu_deleted = False
-
-            # try removing attr/resc meta data again with other ACL's
-            if not avu_deleted:
-                try:
-                    # The object's ACLs may have changed.
-                    # Force the ACL and try one more time.
-                    msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-                except Exception:
-                    log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
-
-            # now back to the created revision
+            revision_created = check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data_id, resc, path)
             if revision_created:
-                log.write(ctx, "Revision created for {}".format(path))
                 count_ok += 1
-                # Revision creation OK. Remove any existing error indication attribute.
-                iter2 = genquery.row_iterator(
-                    "DATA_NAME",
-                    "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
-                    genquery.AS_LIST, ctx
-                )
-                for row2 in iter2:
-                    # Only try to remove it if we know for sure it exists,
-                    # otherwise we get useless errors in the log.
-                    avu.rmw_from_data(ctx, path, errorattr, "%")
-                    # all items removed in one go -> so break from this loop through each individual item
-                    break
             else:
                 count_ignored += 1
-                log.write(ctx, "ERROR - Scheduled revision creation of <{}> failed".format(path))
-                avu.set_on_data(ctx, path, errorattr, "true")
 
         if print_verbose:
             show_memory_usage(ctx)
@@ -427,6 +427,91 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
         # Total revision process completed
         log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. ".format(count_ok, count))
         log.write(ctx, "Batch revision job ignored {} data objects in research area, excluding data objects postponed because of delay time.".format(count_ignored))
+
+
+def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data_id, resc, path):
+    """ Check that a data object is eligible for a revision, and if so, create a revision.
+        Then remove or add revision flags as appropriate.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param print_verbose: Whether to log verbose messages for troubleshooting (Boolean)
+    :param attr:          revision_scheduled flag name
+    :param errorattr:     revision_failed flag name
+    :param data_id:       data_id of the data object
+    :param resc:          Name of resource
+    :param path:          Path to the data object
+
+    :returns: Whether revision was created
+    """
+    revision_created = False
+    size = data_object.size(ctx, path)
+    groups = data_object.get_group_owners(ctx, path)
+    if groups:
+        revision_store = get_revision_store(ctx, groups[0][0])
+        revision_store_exists = revision_store is not None
+    else:
+        revision_store_exists = False
+
+    should_create_rev, revision_error_msg = revision_eligible(constants.UUMAXREVISIONSIZE, size is not None, size, path, groups, revision_store_exists)
+    if should_create_rev:
+        revision_created = revision_create(ctx, print_verbose, data_id, resc, groups[0][0], revision_store)
+    elif not should_create_rev and len(revision_error_msg):
+        log.write(ctx, revision_error_msg)
+
+    remove_revision_scheduled_flag(ctx, print_verbose, path, attr)
+
+    # now back to the created revision
+    if revision_created:
+        log.write(ctx, "Revision created for {}".format(path))
+        remove_revision_error_flag(ctx, data_id, path, errorattr)
+    elif should_create_rev:
+        # Revision should have been created but it was not
+        log.write(ctx, "ERROR - Scheduled revision creation of <{}> failed".format(path))
+        avu.set_on_data(ctx, path, errorattr, "true")
+
+    return revision_created
+
+
+def remove_revision_error_flag(ctx, data_id, path, errorattr):
+    """Remove revision_error flag"""
+    # Revision creation OK. Remove any existing error indication attribute.
+    iter2 = genquery.row_iterator(
+        "DATA_NAME",
+        "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
+        genquery.AS_LIST, ctx
+    )
+    for _row in iter2:
+        # Only try to remove it if we know for sure it exists,
+        # otherwise we get useless errors in the log.
+        avu.rmw_from_data(ctx, path, errorattr, "%")
+        # all items removed in one go -> so break from this loop through each individual item
+        break
+
+
+def remove_revision_scheduled_flag(ctx, print_verbose, path, attr):
+    """Remove revision_scheduled flag (no matter if it succeeded or not)."""
+    # rods should have been given own access via policy to allow AVU
+    # changes.
+    if print_verbose:
+        log.write(ctx, "Batch revision: removing AVU for {}".format(path))
+
+    # try removing attr/resc meta data
+    avu_deleted = False
+    try:
+        avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+        avu_deleted = True
+    except Exception:
+        avu_deleted = False
+
+    # try removing attr/resc meta data again with other ACL's
+    if not avu_deleted:
+        try:
+            # The object's ACLs may have changed.
+            # Force the ACL and try one more time.
+            msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
+            avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+        except Exception:
+            log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
 
 def is_revision_blocked_by_admin(ctx):
@@ -441,132 +526,115 @@ def is_revision_blocked_by_admin(ctx):
     return collection.exists(ctx, path)
 
 
-def revision_create(ctx, resource, data_id, max_size, verbose):
-    """Create a revision of a dataobject in a revision folder.
+def get_revision_store(ctx, group_name):
+    """Get path to revision store for group if the path exists.
 
-    :param ctx:      Combined type of a callback and rei struct
-    :param resource: Resource to retrieve original from
-    :param data_id:  Data id of data object to create a revision for
-    :param max_size: Max size of files in bytes
-    :param verbose:	 Whether to print messages for troubleshooting to log (1: yes, 0: no)
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Name of group for the revision store
+
+    :returns: path to group's revision store if exists, else None
+    """
+    # All revisions are stored in a group with the same name as the research group in a system collection
+    # When this collection is missing, no revisions will be created. When the group manager is used to
+    # create new research groups, the revision collection will be created as well.
+    revision_store = os.path.join(get_revision_store_path(user.zone(ctx)), group_name)
+    revision_store_exists = collection.exists(ctx, revision_store)
+    return revision_store if revision_store_exists else None
+
+
+def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_store):
+    """Create a revision of a data object in a revision folder.
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param print_verbose:  Whether to print messages for troubleshooting to log (Boolean)
+    :param data_id:        data_id of the data object
+    :param resource:       Name of resource
+    :param group_name:     Group name
+    :param revision_store: Revision store
 
     :returns: True / False as an indication whether a revision was successfully created
     """
     revision_created = False
-    print_verbose = verbose
-    found = False
 
-    iter = genquery.row_iterator(
-        "DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER, DATA_NAME, COLL_NAME",
-        "DATA_ID = '{}' AND DATA_RESC_HIER like '{}%'".format(data_id, resource),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        data_id = row[0]
-        modify_time = row[1]
-        data_size = row[3]
-        coll_id = row[4]
-        data_owner = row[2]
-        basename = row[6]
-        parent = row[7]
-        found = True
-        break
+    # Retrieve properties of the data object
+    data_properties = data_object.get_properties(ctx, data_id, resource)
+
+    # Skip current revision task if data object is not found
+    if data_properties is None:
+        log.write(ctx, "ERROR - No data object found for data_id {} on resource {}, move to the next revision creation".format(data_id, resource))
+        return False
+
+    modify_time = data_properties["DATA_MODIFY_TIME"]
+    data_size = data_properties["DATA_SIZE"]
+    coll_id = data_properties["COLL_ID"]
+    data_owner = data_properties["DATA_OWNER_NAME"]
+    basename = data_properties["DATA_NAME"]
+    parent = data_properties["COLL_NAME"]
 
     path = '{}/{}'.format(parent, basename)
 
-    if not found:
-        log.write(ctx, "Data object <{}> was not found or path was collection".format(path))
-        return False
+    # Allow rodsadmin to create subcollections.
+    msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
 
-    if int(data_size) > max_size:
-        log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
-        return False
+    # generate a timestamp in iso8601 format to append to the filename of the revised file.
+    # 2019-09-07T15:50-04:00
+    iso8601 = datetime.datetime.now().replace(microsecond=0).isoformat()
 
-    groups = list(genquery.row_iterator(
-        "USER_NAME, USER_ZONE",
-        "DATA_ID = '" + data_id + "' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
-        genquery.AS_LIST, ctx
-    ))
+    rev_filename = basename + "_" + iso8601 + data_owner
+    rev_coll = revision_store + "/" + coll_id
 
-    if len(groups) == 1:
-        (group_name, user_zone) = groups[0]
-    elif len(groups) == 0:
-        log.write(ctx, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
-        return False
-    else:
-        log.write(ctx, "Cannot find unique owner of data object <{}>. Skipping.".format(path))
-        return False
-
-    # All revisions are stored in a group with the same name as the research group in a system collection
-    # When this collection is missing, no revisions will be created. When the group manager is used to
-    # create new research groups, the revision collection will be created as well.
-    revision_store = os.path.join(get_revision_store_path(ctx, user.zone(ctx)), group_name)
-
-    if collection.exists(ctx, revision_store):
-        # Allow rodsadmin to create subcollections.
-        msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
-
-        # generate a timestamp in iso8601 format to append to the filename of the revised file.
-        # 2019-09-07T15:50-04:00
-        iso8601 = datetime.datetime.now().replace(microsecond=0).isoformat()
-
-        rev_filename = basename + "_" + iso8601 + data_owner
-        rev_coll = revision_store + "/" + coll_id
-
-        read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
-        if read_access != b'\x01':
-            try:
-                msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
-            except msi.Error:
-                return False
-
-        if collection.exists(ctx, rev_coll):
-            # Rods may not have own access yet.
-            msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), rev_coll)
-        else:
-            # Inheritance is enabled - ACLs are already good.
-            # (rods and the research group both have own)
-            try:
-                msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
-            except error.UUError:
-                log.write(ctx, "ERROR - Failed to create staging area at <{}>".format(rev_coll))
-                return False
-
-        rev_path = rev_coll + "/" + rev_filename
-
-        if print_verbose:
-            log.write(ctx, "Creating revision {} -> {}".format(path, rev_path))
-
-        # actual copying to revision store
+    read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
+    if read_access != b'\x01':
         try:
-            # Workaround the PREP deadlock issue: Restrict threads to 1.
-            ofFlags = 'forceFlag=++++numThreads=1'
-            msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
+            msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
+        except msi.Error:
+            return False
 
-            revision_created = True
+    if collection.exists(ctx, rev_coll):
+        # Rods may not have own access yet.
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), rev_coll)
+    else:
+        # Inheritance is enabled - ACLs are already good.
+        # (rods and the research group both have own)
+        try:
+            msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
+        except error.UUError:
+            log.write(ctx, "ERROR - Failed to create staging area at <{}>".format(rev_coll))
+            return False
 
-            # Add original metadata to revision data object.
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
-        except msi.Error as e:
-            log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
+    rev_path = rev_coll + "/" + rev_filename
+
+    if print_verbose:
+        log.write(ctx, "Creating revision {} -> {}".format(path, rev_path))
+
+    # Actual copying to revision store
+    try:
+        # Workaround the PREP deadlock issue: Restrict threads to 1.
+        data_object.copy(ctx, path, rev_path, True)
+
+        revision_created = True
+
+        # Add original metadata to revision data object.
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
+        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
+    except msi.Error as e:
+        log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
 
     return revision_created
 
 
-def revision_cleanup_scan_revision_objects(ctx, revision_list, verbose_mode):
+def revision_cleanup_scan_revision_objects(ctx, revision_list):
     """Obtain information about all revisions.
 
     :param ctx: Combined type of a callback and rei struct
     :param revision_list: List of revision data object IDs
-    :param verbose_mode: Whether to print additional information for troubleshooting (boolean)
 
     :returns:   Nested list, where the outer list represents revisioned data objects,
                 and the inner list represents revisions for that data object.
@@ -577,7 +645,7 @@ def revision_cleanup_scan_revision_objects(ctx, revision_list, verbose_mode):
     ORIGINAL_PATH_ATTRIBUTE = constants.UUORGMETADATAPREFIX + 'original_path'
     ORIGINAL_MODIFY_TIME_ATTRIBUTE = constants.UUORGMETADATAPREFIX + 'original_modify_time'
 
-    revision_store = get_revision_store_path(ctx, user.zone(ctx))
+    revision_store = get_revision_store_path(user.zone(ctx))
 
     ids = list(revision_list)
     path_dict = {}
@@ -633,9 +701,9 @@ def get_all_revision_data_ids(ctx):
 
         :param ctx:  Combined type of a callback and rei struct
 
-        :yields: iterator of 2-tupels containing collection and data object IDs
+        :yields: iterator of 2-tuples containing collection and data object IDs
     """
-    revision_store = get_revision_store_path(ctx, user.zone(ctx))
+    revision_store = get_revision_store_path(user.zone(ctx))
 
     revision_objects = genquery.row_iterator(
         "order_desc(COLL_ID), DATA_ID",
@@ -654,10 +722,17 @@ def _update_revision_store_acls(ctx):
 
        :raises Exception: if current user is not a rodsadmin
     """
-    revision_store = get_revision_store_path(ctx, user.zone(ctx))
+    revision_store = get_revision_store_path(user.zone(ctx))
     if user.user_type(ctx) == 'rodsadmin':
-        msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
-        msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
+        try:
+            msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
+            msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
+        except msi.Error as e:
+            if "-809000" in str(e):
+                # CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME: AVU is already present. No need to set it anymore.
+                pass
+            else:
+                raise Exception("Cannot update revision store ACLs, an error eccured: error: {}".format(str(e)))
     else:
         raise Exception("Cannot update revision store ACLs, because present user is not rodsadmin.")
 
@@ -771,8 +846,9 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
         log.write(ctx, "Number of revisions to scan: " + str(len(revisions_list)))
         log.write(ctx, "Scanning revisions: " + str(revisions_list))
 
-    revision_data = revision_cleanup_scan_revision_objects(ctx, revisions_list, verbose)
-    prefiltered_revision_data = revision_cleanup_prefilter(ctx, revision_data, revision_strategy_name, verbose)
+    revision_data = revision_cleanup_scan_revision_objects(ctx, revisions_list)
+    original_exists_dict = get_original_exists_dict(ctx, revision_data)
+    prefiltered_revision_data = revision_cleanup_prefilter(ctx, revision_data, revision_strategy_name, original_exists_dict, verbose)
     output_data_size = len(prefiltered_revision_data)
     if output_data_size > 0:
         if verbose:
@@ -784,6 +860,71 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
 
     log.write(ctx, 'Revision cleanup scan job finished.')
     return 'Revision store cleanup scan job completed'
+
+
+def get_original_exists_dict(ctx, revision_data):
+    """Returns a dictionary that indicates which original data objects of revision data still exist
+
+     :param ctx:                    Combined type of a callback and rei struct
+     :param revision_data:          List of lists of revision tuples in (data_id, timestamp, revision_path) format
+
+     :returns: dictionary, in which the keys are revision path. The values are booleans, and indicate whether
+               the versioned data object of the revision still exists. If the revision data object does not
+               have AVUs that refer to the versioned data object, assume it still exists.
+    """
+    result = {}
+    for data_object_data in revision_data:
+        for (_data_id, _timestamp, revision_path) in data_object_data:
+
+            try:
+                result[revision_path] = versioned_data_object_exists(ctx, revision_path)
+            except (KeyError, UnicodeEncodeError):
+                # If we can't determine the original path (maybe because it doesn't exist
+                # or because of its encoding), we assume the original data object still exists,
+                # so that it is not automatically cleaned up by the revision cleanup job.
+                # An error is logged by versioned_data_object_exists
+                result[revision_path] = True
+
+    return result
+
+
+def versioned_data_object_exists(ctx, revision_path):
+    """Checks whether the version data object of a revision still exists
+
+     :param ctx:                    Combined type of a callback and rei struct
+     :param revision_path:          Logical path of revision data object
+
+     :returns: boolean value that indicates whether the versioned data object still
+               exists.
+
+     :raises KeyError:              If revision data object does not have revision AVUs
+                                    that point to versioned data object.
+
+     :raises UnicodeEncodeError:    If the revision path cannot be converted to a utf-8 byte string.
+    """
+
+    if isinstance(revision_path, unicode):
+        try:
+            # Switch back to bytes for now
+            # TODO change logic in Python 3
+            revision_path = revision_path.encode('utf-8')
+        except UnicodeEncodeError:
+            log.write(ctx, "File path {} is not UTF-8 encoded or is not compatible with UTF-8 encoding".format(revision_path))
+            raise
+
+    revision_avus = avu.of_data(ctx, revision_path)
+    avu_dict = {a: v for (a, v, u) in revision_avus}
+
+    try:
+        original_path = os.path.join(avu_dict["org_original_coll_name"],
+                                     avu_dict["org_original_data_name"])
+        return data_object.exists(ctx, original_path)
+    except KeyError:
+        # If we can't determine the original path, we assume the original data object
+        # still exists, so that it is not automatically cleaned up by the revision cleanup job.
+        log.write(ctx, "Error: could not find original data object for revision " + revision_path
+                       + " because revision does not have expected revision AVUs.")
+        raise
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[3])
@@ -816,7 +957,7 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
 
     end_of_calendar_day = int(endOfCalendarDay)
     if end_of_calendar_day == 0:
-        end_of_calendar_day = calculate_end_of_calendar_day(ctx)
+        end_of_calendar_day = calculate_end_of_calendar_day()
 
     revision_strategy = get_revision_strategy(revision_strategy_name)
 
@@ -828,7 +969,8 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
         if verbose:
             log.write(ctx, 'Processing revisions {} ...'.format(str(revisions)))
         # Process the original path conform the bucket settings
-        candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, verbose)
+        original_exists = versioned_data_object_exists(ctx, revisions[0][2]) if len(revisions) > 0 else False
+        candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, original_exists, verbose)
         num_candidates += len(candidates)
 
         # Create lookup table for revision paths if needed
@@ -865,7 +1007,7 @@ def revision_remove(ctx, revision_id, revision_path):
 
     :returns: Boolean indicating if revision was removed
     """
-    revision_prefix = get_revision_store_path(ctx, user.zone(ctx), trailing_slash=True)
+    revision_prefix = get_revision_store_path(user.zone(ctx), trailing_slash=True)
     if not revision_path.startswith(revision_prefix):
         log.write(ctx, "ERROR - sanity check fail when removing revision <{}>: <{}>".format(
             revision_id,

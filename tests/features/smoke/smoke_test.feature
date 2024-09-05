@@ -128,8 +128,8 @@ Feature: Smoke tests
         Then folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-smoke-test   | SECURED  |
+            | folder                               | status   |
+            | /tempZone/home/research-smoke-test   | FOLDER   |
 
 
     Scenario Outline: Vault meta form save in vault
@@ -255,19 +255,19 @@ Feature: Smoke tests
         Then the response status code is "200"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
-    Scenario Outline: Vault revoke grant access to research group
+    Scenario Outline: Vault grant read access to research group
         Given user smoke_account is authenticated
         And data package exists in <vault>
         And the Yoda vault grant read access research group API is queried on datapackage in <vault>
         Then the response status code is "200"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault get publication terms

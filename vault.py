@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -30,11 +30,14 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
+           'rule_vault_retry_copy_to_vault',
+           'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
            'rule_vault_enable_indexing',
            'rule_vault_disable_indexing',
            'rule_vault_process_status_transitions',
+           'rule_vault_grant_readers_vault_access',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_get_package_by_reference',
@@ -56,6 +59,10 @@ def api_vault_submit(ctx, coll, previous_version=None):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, previous_version)
 
     if ret[0] == '':
@@ -75,6 +82,10 @@ def api_vault_approve(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     # Check for previous version.
     previous_version = get_previous_version(ctx, coll)
 
@@ -101,6 +112,10 @@ def api_vault_cancel(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
 
     if ret[0] == '':
@@ -120,6 +135,10 @@ def api_vault_depublish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
 
     if ret[0] == '':
@@ -139,6 +158,10 @@ def api_vault_republish(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
 
     if ret[0] == '':
@@ -184,7 +207,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     if not collection.exists(ctx, coll_target):
         return api.Error('TargetPathNotExists', 'The target you specified does not exist')
 
-    # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
+    # Check if user has READ ACCESS to specific vault package in collection coll_origin.
     user_full_name = user.full_name(ctx)
     category = groups.group_category(ctx, group_name)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
@@ -203,7 +226,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
+    if groups.user_role(ctx, user_full_name, group_name) not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -250,7 +273,9 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 
     :returns: Set of unpreservable file formats
     """
-    zone = pathutil.info(coll)[1]
+    space, zone, _, _ = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     # Retrieve JSON list of preservable file formats.
     list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
@@ -284,6 +309,11 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     vault_copy_original_metadata_to_vault(callback, vault_package)
 
 
+def get_vault_copy_numthreads(ctx):
+    # numThreads should be 0 if want multithreading with no specified amount of threads
+    return 0 if config.vault_copy_multithread_enabled else 1
+
+
 def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     """Copy original metadata to the vault package root.
 
@@ -294,7 +324,7 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++verifyChksum='.format(config.resource_vault), 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++numThreads={}++++verifyChksum='.format(config.resource_vault, get_vault_copy_numthreads(ctx)), 0)
 
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
@@ -347,7 +377,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++verifyChksum='.format(config.resource_vault), 0)
+            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++numThreads={}++++verifyChksum='.format(config.resource_vault, get_vault_copy_numthreads(ctx)), 0)
 
             # Fix ACLs.
             try:
@@ -416,6 +446,10 @@ def api_vault_system_metadata(ctx, coll):
 
     :returns: Dict system metadata of a vault collection
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     system_metadata = {}
 
     # Package size.
@@ -450,22 +484,6 @@ def api_vault_system_metadata(ctx, coll):
     for row in iter:
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
-
-    # Check for previous version.
-    previous_version = get_previous_version(ctx, coll)
-    if previous_version:
-        previous_version_doi = get_doi(ctx, previous_version)
-        system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
-
-    # Persistent Identifier DOI.
-    package_doi = get_doi(ctx, coll)
-
-    if package_doi:
-        if previous_version:
-            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
-        else:
-            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
-        system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
 
     # Data Package Reference.
     data_package_reference = ""
@@ -527,6 +545,46 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
     return constants.vault_package_state.EMPTY
 
 
+def get_all_published_versions(ctx, path):
+    """Get all published versions of a data package."""
+    base_doi = get_doi(ctx, path, 'base')
+    package_doi = get_doi(ctx, path)
+    coll_parent_name = path.rsplit('/', 1)[0]
+
+    org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, coll_parent_name)
+
+    count = 0
+    all_versions = []
+
+    for data in data_packages:
+        if data[2] == package_doi:
+            count += 1
+
+    if count == 1:  # Base DOI does not exist as it is first version of the publication
+        # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+        data_packages = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                          datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in data_packages]
+
+        for item in data_packages:
+            if item[2] == package_doi:
+                all_versions.append([item[1], item[2], item[3]])
+    else:  # Base DOI exists
+        # Sort by publication date
+        sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f"), reverse=True) for x in grouped_base_dois]
+
+        sorted_publ = [element for innerList in sorted_publ for element in innerList]
+
+        # Convert the date into two formats for display and tooltip (Jan 1, 1990 and 1990-01-01 00:00:00)
+        sorted_publ = [[x[0], datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime("%b %d, %Y"), x[2],
+                        datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f").strftime('%Y-%m-%d %H:%M:%S%z'), x[3]] for x in sorted_publ]
+
+        for item in sorted_publ:
+            if item[0] == base_doi:
+                all_versions.append([item[1], item[2], item[3]])
+
+    return base_doi, package_doi, all_versions
+
+
 @api.make()
 def api_vault_collection_details(ctx, path):
     """Return details of a vault collection.
@@ -539,9 +597,9 @@ def api_vault_collection_details(ctx, path):
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is a research group.
+    # Check if collection is in vault space.
     space, _, group, subpath = pathutil.info(path)
-    if space != pathutil.Space.VAULT:
+    if space is not pathutil.Space.VAULT:
         return {}
 
     basename = pathutil.basename(path)
@@ -571,6 +629,8 @@ def api_vault_collection_details(ctx, path):
         return {'member_type': member_type, 'is_datamanager': is_datamanager}
     else:
         metadata = True
+        # Retreive all published versions
+        base_doi, package_doi, all_versions = get_all_published_versions(ctx, path)
 
     # Check if a vault action is pending.
     vault_action_pending = False
@@ -620,7 +680,10 @@ def api_vault_collection_details(ctx, path):
         "has_datamanager": has_datamanager,
         "is_datamanager": is_datamanager,
         "vault_action_pending": vault_action_pending,
-        "research_group_access": research_group_access
+        "research_group_access": research_group_access,
+        "all_versions": all_versions,
+        "base_doi": base_doi,
+        "package_doi": package_doi
     }
     if config.enable_data_package_archive:
         import vault_archive
@@ -670,6 +733,10 @@ def api_vault_get_landingpage_data(ctx, coll):
 
     :returns: API status
     """
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
+
     meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
     # Try to load the metadata file.
@@ -728,6 +795,98 @@ def api_vault_get_publication_terms(ctx):
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
 
 
+def change_read_access_group(ctx, coll, actor, group, grant=True):
+    """Grant/revoke research group read access to vault package.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to grant/remove read rights from
+    :param actor: User changing the permissions
+    :param group: Group to grant/revoke read access to vault package
+    :param grant: Whether to grant or revoke access
+
+    :returns: 2-Tuple of boolean successfully changed, API status if error
+    """
+    try:
+        acl_kv = msi.kvpair(ctx, "actor", actor)
+        if grant:
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
+        else:
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
+    except Exception:
+        policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, group, "1", "read")
+        if bool(policy_error):
+            return False, api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+        else:
+            return False, api.Error('ErrorACLs', str(policy_error))
+
+    return True, ''
+
+
+def check_change_read_access_research_group(ctx, coll, grant=True):
+    """Initial checks when changing read rights of research group for datapackage in vault.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to revoke/grant read rights from
+    :param grant: Whether to grant or revoke read rights
+
+    :returns: 2-Tuple of boolean whether ok to continue and API status if error
+    """
+    verb = "grant" if grant else "revoke"
+
+    if not collection.exists(ctx, coll):
+        return False, api.Error('nonexistent', 'The given path does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.VAULT:
+        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+
+    return True, ''
+
+
+def change_read_access_research_group(ctx, coll, grant=True):
+    """Grant/revoke read rights of members of research group to a
+    datapackage in vault. This operation also includes read only members.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param coll:  Collection of data package to grant/remove read rights from
+    :param grant: Whether to grant or revoke access
+
+    :returns: API status
+    """
+    verb = "granting" if grant else "revoking"
+    response, api_error = check_change_read_access_research_group(ctx, coll, True)
+    if not response:
+        return api_error
+
+    _, _, group, subpath = pathutil.info(coll)
+
+    # Find category
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = groups.group_category(ctx, group)
+    read_group_name = 'read-' + '-'.join(group_parts[1:])
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
+        # Grant/revoke research group read access to vault package.
+        for group_name in (research_group_name, read_group_name):
+            response, api_error = change_read_access_group(ctx, coll, actor, group_name, grant)
+            if not response:
+                return api_error
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for {} access'.format(verb))
+
+    return {'status': 'Success', 'statusInfo': ''}
+
+
 @api.make()
 def api_grant_read_access_research_group(ctx, coll):
     """Grant read rights of research group for datapackage in vault.
@@ -737,42 +896,7 @@ def api_grant_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    if not collection.exists(ctx, coll):
-        return api.Error('nonexistent', 'The given path does not exist')
-
-    coll_parts = coll.split('/')
-    if len(coll_parts) != 5:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    # Find category
-    group_parts = group.split('-')
-    if subpath.startswith("deposit-"):
-        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
-    else:
-        research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = groups.group_category(ctx, group)
-
-    # Is datamanager?
-    actor = user.full_name(ctx)
-    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
-        # Grant research group read access to vault package.
-        try:
-            acl_kv = msi.kvpair(ctx, "actor", actor)
-            msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
-        except Exception:
-            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
-            if bool(policy_error):
-                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
-            else:
-                return api.Error('ErrorACLs', str(policy_error))
-    else:
-        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
-
-    return {'status': 'Success', 'statusInfo': ''}
+    return change_read_access_research_group(ctx, coll, True)
 
 
 @api.make()
@@ -784,62 +908,69 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    if not collection.exists(ctx, coll):
-        return api.Error('nonexistent', 'The given path does not exist')
-
-    coll_parts = coll.split('/')
-    if len(coll_parts) != 5:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    space, zone, group, subpath = pathutil.info(coll)
-    if space != pathutil.Space.VAULT:
-        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
-
-    # Find category
-    group_parts = group.split('-')
-    if subpath.startswith("deposit-"):
-        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
-    else:
-        research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = groups.group_category(ctx, group)
-
-    # Is datamanager?
-    actor = user.full_name(ctx)
-    if groups.user_role(ctx, actor, 'datamanager-' + category) in ['normal', 'manager']:
-        # Grant research group read access to vault package.
-        try:
-            acl_kv = msi.kvpair(ctx, "actor", actor)
-            msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
-        except Exception:
-            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
-            if bool(policy_error):
-                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
-            else:
-                return api.Error('ErrorACLs', str(policy_error))
-    else:
-        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
-
-    return {'status': 'Success', 'statusInfo': ''}
+    return change_read_access_research_group(ctx, coll, False)
 
 
-def copy_folder_to_vault(ctx, folder, target):
-    """Copy folder and all its contents to target in vault.
+@rule.make()
+def rule_vault_retry_copy_to_vault(ctx):
+    copy_to_vault(ctx, constants.CRONJOB_STATE["PENDING"])
+    copy_to_vault(ctx, constants.CRONJOB_STATE["RETRY"])
 
-    The data will reside onder folder '/original' within the vault.
+
+def copy_to_vault(ctx, state):
+    """ Collect all folders with a given cronjob state
+        and try to copy them to the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param state: one of constants.CRONJOB_STATE
+    """
+    iter = get_copy_to_vault_colls(ctx, state)
+    for row in iter:
+        coll = row[0]
+        log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
+        if not folder.precheck_folder_secure(ctx, coll):
+            continue
+
+        # failed copy
+        if not folder.folder_secure(ctx, coll):
+            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            folder.folder_secure_set_retry(ctx, coll)
+
+
+def get_copy_to_vault_colls(ctx, cronjob_state):
+    iter = list(genquery.Query(ctx,
+                ['COLL_NAME'],
+                "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
+                    constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault",
+                    cronjob_state),
+                output=genquery.AS_LIST))
+    return iter
+
+
+def copy_folder_to_vault(ctx, coll, target):
+    """Copy folder and all its contents to target in vault using irsync.
+
+    The data will reside under folder '/original' within the vault.
 
     :param ctx:    Combined type of a callback and rei struct
-    :param folder: Path of a folder in the research space
+    :param coll:   Path of a folder in the research space
     :param target: Path of a package in the vault space
 
-    :raises Exception: Raises exception when treewalk_and_ingest did not finish correctly
+    :returns: True for successful copy
     """
-    destination = target + '/original'
-    origin = folder
+    returncode = 0
+    try:
+        returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
+    except Exception as e:
+        log.write(ctx, "irsync failure: " + e)
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
 
-    # Origin is a never changing value to be able to designate a relative path within ingest_object
-    error = 0  # Initial error state. Should stay 0.
-    if treewalk_and_ingest(ctx, folder, destination, origin, error):
-        raise Exception('copy_folder_to_vault: Error copying folder to vault')
+    if returncode != 0:
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    return True
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
@@ -894,6 +1025,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     source_path = parent + "/" + item
     read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
 
+    # TODO use set_acl_check?
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
@@ -924,7 +1056,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         # CREATE COPY OF DATA OBJECT
         try:
             # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
-            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
+            ctx.msiDataObjCopy(source_path, dest_path, 'numThreads={}++++verifyChksum='.format(get_vault_copy_numthreads(ctx)), 0)
         except msi.Error:
             return 1
 
@@ -937,13 +1069,21 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     return 0
 
 
-def set_vault_permissions(ctx, group_name, folder, target):
+def set_vault_permissions(ctx, coll, target):
     """Set permissions in the vault as such that data can be copied to the vault."""
+    group_name = folder.collection_group_name(ctx, coll)
+    if group_name == '':
+        log.write(ctx, "set_vault_permissions: Cannot determine which deposit or research group <{}> belongs to".format(coll))
+        return False
+
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
+    valid_read_groups = [group_name]
 
-    parts = folder.split('/')
     vault_group_name = constants.IIVAULTPREFIX + base_name
+    if parts[0] != 'deposit':
+        read_group_name = "read-" + base_name
+        valid_read_groups.append(read_group_name)
 
     # Check if noinherit is set
     zone = user.zone(ctx)
@@ -982,11 +1122,12 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
         if access_name != "read object":
             # Grant the research group read-only access to the collection to enable browsing through the vault.
-            try:
-                msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
-                log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
-            except msi.Error:
-                log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
+            for name in valid_read_groups:
+                try:
+                    msi.set_acl(ctx, "default", "admin:read", name, vault_path)
+                    log.write(ctx, "Granted " + name + " read access to " + vault_path)
+                except msi.Error:
+                    log.write(ctx, "Failed to grant " + name + " read access to " + vault_path)
 
     # Check if vault group has ownership
     iter = genquery.row_iterator(
@@ -1017,8 +1158,144 @@ def set_vault_permissions(ctx, group_name, folder, target):
     if group.exists(ctx, datamanager_group_name):
         msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
 
-    # Grant research group read access to vault package.
-    msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+    # Grant research group, research group readers read access to vault package.
+    for name in valid_read_groups:
+        msi.set_acl(ctx, "recursive", "admin:read", name, target)
+
+    return True
+
+
+def reader_needs_access(ctx, group_name, coll):
+    """Return if research group has access to this group but readers do not"""
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_USER_ID",
+        "COLL_NAME = '" + coll + "'",
+        genquery.AS_LIST, ctx
+    )
+    reader_found = False
+    research_found = False
+
+    for row in iter:
+        user_id = row[0]
+        user_name = user.name_from_id(ctx, user_id)
+        # Check if there are *any* readers
+        if user_name.startswith('read-'):
+            reader_found = True
+        elif user_name == group_name:
+            research_found = True
+
+    return not reader_found and research_found
+
+
+def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
+    """Given a research group name, give reader group access to
+    vault packages if they don't have that access already.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Research group name
+    :param zone:       Zone
+    :param dry_run:    Whether to only print which groups would be changed without changing them
+
+    :return: Boolean whether completed successfully or there were errors.
+    """
+    parts = group_name.split('-')
+    base_name = '-'.join(parts[1:])
+    read_group_name = 'read-' + base_name
+    vault_group_name = constants.IIVAULTPREFIX + base_name
+    vault_path = "/" + zone + "/home/" + vault_group_name
+    no_errors = True
+
+    # Do not change the permissions if there aren't any vault packages in this vault.
+    if collection.empty(ctx, vault_path):
+        return True
+
+    if reader_needs_access(ctx, group_name, vault_path):
+        # Grant the research group readers read-only access to the collection
+        # to enable browsing through the vault.
+        try:
+            if dry_run:
+                log.write(ctx, "Would have granted " + read_group_name + " read access to " + vault_path)
+            else:
+                msi.set_acl(ctx, "default", "admin:read", read_group_name, vault_path)
+                log.write(ctx, "Granted " + read_group_name + " read access to " + vault_path)
+        except msi.Error:
+            no_errors = False
+            log.write(ctx, "Failed to grant " + read_group_name + " read access to " + vault_path)
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '{}'".format(vault_path),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        target = row[0]
+        if reader_needs_access(ctx, group_name, target):
+            try:
+                if dry_run:
+                    log.write(ctx, "Would have granted " + read_group_name + " read access to " + target)
+                else:
+                    msi.set_acl(ctx, "recursive", "admin:read", read_group_name, target)
+                    log.write(ctx, "Granted " + read_group_name + " read access to " + target)
+            except Exception:
+                no_errors = False
+                log.write(ctx, "Failed to set read permissions for <{}> on coll <{}>".format(read_group_name, target))
+
+    return no_errors
+
+
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
+    """Rule for granting reader members of research groups access to vault packages in their
+    group if they don't have access already
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param dry_run: Whether to only print which groups would be changed without making changes
+    :param verbose: Whether to be more verbose
+
+    :return: String status of completed successfully ('0') or there were errors ('1')
+    """
+    dry_run = (dry_run == '1')
+    verbose = (verbose == '1')
+    no_errors = True
+
+    log.write(ctx, "grant_readers_vault_access started.")
+
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is not rodsadmin")
+        return '1'
+
+    if dry_run or verbose:
+        modes = []
+        if dry_run:
+            modes.append("dry run")
+        if verbose:
+            modes.append("verbose")
+        log.write(ctx, "Running grant_readers_vault_access in {} mode.".format((" and ").join(modes)))
+
+    zone = user.zone(ctx)
+
+    # Get the group names
+    userIter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_ZONE = '{}' AND USER_GROUP_NAME like 'research-%'".format(zone),
+        genquery.AS_LIST,
+        ctx)
+
+    for row in userIter:
+        name = row[0]
+        if verbose:
+            log.write(ctx, "{}: checking permissions".format(name))
+        if not set_reader_vault_permissions(ctx, name, zone, dry_run):
+            no_errors = False
+
+    message = ""
+    if no_errors:
+        message = "grant_readers_vault_access completed successfully."
+    else:
+        message = "grant_readers_vault_access completed, with errors."
+    log.write(ctx, message)
+
+    return '0' if no_errors else '1'
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
@@ -1080,7 +1357,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
-                    genquery.AS_LIST, callback
+                    genquery.AS_LIST, ctx
                 )
 
                 for row in iter:
@@ -1091,7 +1368,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
-                    genquery.AS_LIST, callback
+                    genquery.AS_LIST, ctx
                 )
 
                 for row in iter:
@@ -1151,7 +1428,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
     # Except for status transition to PUBLISHED/DEPUBLISHED,
     # because it is requested by the system before previous pending
     # transition is removed.
-    if new_vault_status != constants.vault_package_state.PUBLISHED and new_vault_status != constants.vault_package_state.DEPUBLISHED:
+    if new_vault_status not in (constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED):
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",
@@ -1219,17 +1496,21 @@ def get_approver(ctx, path):
         return None
 
 
-def get_doi(ctx, path):
+def get_doi(ctx, path, doi='version'):
     """Get the DOI of a data package in the vault.
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Vault package to get the DOI of
+    :param doi: 'base' or 'version' to retrieve required DOI
 
     :return: Data package DOI or None
     """
+    if doi != 'base':
+        doi = 'version'
+
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_{}DOI'".format(path, doi),
         genquery.AS_LIST, ctx
     )
 
@@ -1269,7 +1550,7 @@ def get_title(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = 'usr_0_s'" % (path),
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = '{}_0_s'".format(constants.UUUSERMETADATAROOT, path),
         genquery.AS_LIST, ctx
     )
 
@@ -1377,12 +1658,14 @@ def api_vault_get_published_packages(ctx, path):
 
     :return: Dict of data packages with DOI
     """
+    space, _, _, _ = pathutil.info(path)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('invalid_path', 'Invalid vault path.')
 
     org_publ_info, data_packages, grouped_base_dois = get_all_doi_versions(ctx, path)
 
     # Sort by publication date
     sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-
     latest_publ = map(lambda x: x[-1], sorted_publ)
 
     # Append to data package
@@ -1408,3 +1691,8 @@ def update_archive(ctx, coll, attr=None):
         import vault_archive
 
         vault_archive.update(ctx, coll, attr)
+
+
+@rule.make(inputs=[], outputs=[0])
+def rule_vault_copy_numthreads(ctx):
+    return get_vault_copy_numthreads(ctx)

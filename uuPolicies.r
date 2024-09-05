@@ -45,7 +45,7 @@ acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
 	if (*type == "rodsuser") {
 		# Do not create home directories for regular users.
-		# but do create trash directories as iRODS always uses the personal trash folder evan when in a group directory
+		# but do create trash directories as iRODS always uses the personal trash folder even when in a group directory
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 	} else if (*type == "rodsgroup" && ($otherUserName like "read-*")) {
 		# Do not create home directories for read- groups.
@@ -109,6 +109,23 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *user_name = *comm.user_user_name;
     *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
+
+    if ( *user_name == "anonymous" ) {
+       *access_allowed = '';
+       rule_check_anonymous_access_allowed(*client_addr, *access_allowed);
+        if ( *access_allowed != "true" ) {
+            writeLine("serverLog", "Refused access to anonymous account from address *client_addr.");
+            failmsg(-1, "Refused access to anonymous account from address *client_addr.");
+        }
+    }
+
+    *max_connections_exceeded = '';
+    rule_check_max_connections_exceeded(*max_connections_exceeded);
+		if ( *max_connections_exceeded == "true" ) {
+		    writeLine("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
+		    failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
+		}
+
     writeLine("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 

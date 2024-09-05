@@ -17,10 +17,10 @@ python2-secrets==1.0.5
 python-dateutil==2.7.0
 python-magic==0.4.27
 certifi==2021.10.8
-pysqlcipher3==1.0.4
 execnet==1.9.0
 deepdiff==3.3.0
 persist-queue==0.8.1
 redis==3.5.3
 psutil==5.9.6
 iteration_utilities==0.8.0
+#pysqlcipher3==1.2.1 (installed by yoda/roles/yoda_rulesets/tasks/main.yml)

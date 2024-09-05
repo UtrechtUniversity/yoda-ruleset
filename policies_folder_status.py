@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import time
 
 import folder
 import meta
@@ -16,9 +18,15 @@ def pre_status_transition(ctx, coll, current, new):
     if current != constants.research_package_state.LOCKED \
         and new in [constants.research_package_state.LOCKED,
                     constants.research_package_state.SUBMITTED]:
+        # Backwards compatibility for folders that hold deprecated SECURED status.
         # Clear action log coming from SECURED state.
         # SECURED -> LOCKED and SECURED -> SUBMITTED
         if current is constants.research_package_state.SECURED:
+            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
+
+        # Clear action log coming from FOLDER state.
+        # FOLDER -> LOCKED and FOLDER -> SUBMITTED
+        if current is constants.research_package_state.FOLDER:
             ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 
         # Add locks to folder, descendants and ancestors
@@ -29,8 +37,9 @@ def pre_status_transition(ctx, coll, current, new):
     if new in [constants.research_package_state.FOLDER,
                constants.research_package_state.REJECTED,
                constants.research_package_state.SECURED]:
+        # Backwards compatibility for folders that hold deprecated SECURED status.
         # Clear action log coming from SECURED state.
-        # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
+        # SECURED -> FOLDER
         if current is constants.research_package_state.SECURED:
             ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 
@@ -68,7 +77,7 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
             if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
                 return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
 
-    elif status_to is constants.research_package_state.SECURED:
+    elif status_from is constants.research_package_state.ACCEPTED and status_to is constants.research_package_state.FOLDER:
         actor = user.user_and_zone(ctx)
         if not user.is_admin(ctx, actor):
             return policy.fail('Only a rodsadmin is allowed to secure a folder to the vault')
@@ -78,6 +87,7 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
 
 def can_set_folder_status_attr(ctx, actor, coll, status):
     try:
+        status = "" if status == "FOLDER" else status
         new = constants.research_package_state(status)
     except ValueError:
         return policy.fail('New folder status attribute is invalid')
@@ -93,6 +103,8 @@ def can_set_folder_status_attr(ctx, actor, coll, status):
 
 def post_status_transition(ctx, path, actor, status):
     """Post folder status transition actions."""
+
+    status = "" if status == "FOLDER" else status
     status = constants.research_package_state(status)
 
     if status is constants.research_package_state.SUBMITTED:
@@ -117,6 +129,8 @@ def post_status_transition(ctx, path, actor, status):
         if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
             actor = "system"
 
+        # Log action at least one second after previous action, to ensure correct order of provenance log.
+        time.sleep(1)
         provenance.log_action(ctx, actor, path, "accepted for vault")
 
         # Store actor of accepted for vault.
@@ -131,13 +145,49 @@ def post_status_transition(ctx, path, actor, status):
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
         avu.set_on_coll(ctx, path, attribute, constants.CRONJOB_STATE['PENDING'])
-        ctx.iiScheduleCopyToVault()
+        ctx.iiScheduleCollCopyToVault(path)
 
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.
         provenance_log = provenance.get_provenance_log(ctx, path)
         if provenance_log[0][1] == "submitted for vault":
             provenance.log_action(ctx, actor, path, "unsubmitted for vault")
+        elif provenance_log[0][1] == "accepted for vault":
+            actor = "system"
+            provenance.log_action(ctx, actor, path, "secured in vault")
+
+            # Send notifications to submitter and accepter
+            data_package = folder.get_vault_data_package(ctx, path)
+            submitter = folder.get_submitter(ctx, path)
+            accepter = folder.get_accepter(ctx, path)
+            message = "Data package secured in vault"
+            notifications.set(ctx, actor, submitter, data_package, message)
+            notifications.set(ctx, actor, accepter, data_package, message)
+
+            # Handle vault packages from deposit module.
+            if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+                # Grant submitter (depositor) read access to vault package.
+                msi.set_acl(ctx, "recursive", "read", submitter, data_package)
+
+                # Retrieve Data Access Restriction of vault package.
+                meta_path = meta.get_collection_metadata_path(ctx, path)
+                open_package = False
+                if meta_path is not None:
+                    metadata = jsonutil.read(ctx, meta_path)
+                    data_access_restriction = metadata.get("Data_Access_Restriction", "")
+                    if data_access_restriction == "Open - freely retrievable":
+                        open_package = True
+
+                # Revoke read access for research group when data package is not open.
+                if not open_package:
+                    _, _, group, _ = pathutil.info(path)
+                    msi.set_acl(ctx, "recursive", "null", group, data_package)
+
+                # Remove deposit folder after secure in vault.
+                parent, _ = pathutil.chop(path)
+                msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
+                msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
+                collection.remove(ctx, path)
         else:
             provenance.log_action(ctx, actor, path, "unlocked")
 
@@ -151,40 +201,3 @@ def post_status_transition(ctx, path, actor, status):
         submitter = folder.get_submitter(ctx, path)
         message = "Data package rejected for vault"
         notifications.set(ctx, actor, submitter, path, message)
-
-    elif status is constants.research_package_state.SECURED:
-        actor = "system"
-        provenance.log_action(ctx, actor, path, "secured in vault")
-
-        # Send notifications to submitter and accepter
-        data_package = folder.get_vault_data_package(ctx, path)
-        submitter = folder.get_submitter(ctx, path)
-        accepter = folder.get_accepter(ctx, path)
-        message = "Data package secured in vault"
-        notifications.set(ctx, actor, submitter, data_package, message)
-        notifications.set(ctx, actor, accepter, data_package, message)
-
-        # Handle vault packages from deposit module.
-        if pathutil.info(path).space is pathutil.Space.DEPOSIT:
-            # Grant submitter (depositor) read access to vault package.
-            msi.set_acl(ctx, "recursive", "read", submitter, data_package)
-
-            # Retrieve Data Access Restriction of vault package.
-            meta_path = meta.get_collection_metadata_path(ctx, path)
-            open_package = False
-            if meta_path is not None:
-                metadata = jsonutil.read(ctx, meta_path)
-                data_access_restriction = metadata.get("Data_Access_Restriction", "")
-                if data_access_restriction == "Open - freely retrievable":
-                    open_package = True
-
-            # Revoke read access for research group when data package is not open.
-            if not open_package:
-                _, _, group, _ = pathutil.info(path)
-                msi.set_acl(ctx, "recursive", "null", group, data_package)
-
-            # Remove deposit folder after secure in vault.
-            parent, _ = pathutil.chop(path)
-            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
-            msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
-            collection.remove(ctx, path)

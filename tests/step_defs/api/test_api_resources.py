@@ -127,3 +127,26 @@ def api_response_full_year_storage(api_response):
     for key in storage_month_data:
         assert 'month=' in key
         break
+
+
+@given(parsers.parse('the Yoda resources browse group data API is queried using sort by {sort_on} in {sort_order} order'), target_fixture="api_response")
+def api_get_group_data_sorted(user, sort_on, sort_order):
+    return api_request(
+        user,
+        "resource_browse_group_data",
+        {"offset": 0, "limit": 200, "sort_on": sort_on, "sort_order": sort_order, "search_groups": ""}
+    )
+
+
+@then(parsers.parse('group data are sorted by {sort_on} in {sort_order} order'))
+def api_response_data_sorted(api_response, sort_on, sort_order):
+    _, body = api_response
+
+    if sort_on == 'name':
+        names = [item[sort_on] for item in body['data']['items']]
+        assert names == sorted(names, reverse=sort_order == 'desc')
+    else:
+        sizes = [item[sort_on][-1] for item in body['data']['items']]
+        print(sizes)
+        assert sizes == sorted(sizes, reverse=sort_order == 'desc')
+    assert AssertionError()

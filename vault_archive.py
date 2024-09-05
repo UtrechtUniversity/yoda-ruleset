@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to archive vault data packages."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -87,10 +87,10 @@ def vault_archivable(ctx, coll):
         return True
 
     if not coll.endswith("/original"):
-        for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                         "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
-                                         genquery.AS_LIST,
-                                         ctx):
+        for _row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                          genquery.AS_LIST,
+                                          ctx):
             coll_size = collection.size(ctx, coll)
 
             # Data package size is inside archive limits.
@@ -134,11 +134,11 @@ def create_archive(ctx, coll):
 def extract_archive(ctx, coll):
     while True:
         state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
-        if state != "UNM" and state != "MIG":
+        if state not in ("UNM", "MIG"):
             break
         time.sleep(10)
 
-    if state != "DUL" and state != "REG" and state != "INV":
+    if state not in ("DUL", "REG", "INV"):
         log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
         raise Exception("Archive is not available")
 
@@ -253,7 +253,7 @@ def vault_extract_archive(ctx, coll):
 
 
 def update(ctx, coll, attr):
-    if pathutil.info(coll).space == pathutil.Space.VAULT and attr != constants.IIARCHIVEATTRNAME and attr != constants.UUPROVENANCELOG and vault_archival_status(ctx, coll) == "archived":
+    if pathutil.info(coll).space == pathutil.Space.VAULT and attr not in (constants.IIARCHIVEATTRNAME, constants.UUPROVENANCELOG) and vault_archival_status(ctx, coll) == "archived":
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
         ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
 

@@ -1,21 +1,63 @@
 # -*- coding: utf-8 -*-
 """Utility functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
 import datetime
+import hashlib
 import os
 
 from revision_strategies import get_revision_strategy
-from util import constants, log
+from util import constants, log, pathutil
 
 
-def calculate_end_of_calendar_day(ctx):
+def revision_eligible(max_size, data_obj_exists, size, path, groups, revision_store_exists):
+    """Determine whether can create a revision of given data object.
+
+    :param max_size:              Max size that file can be to create a revision (in bytes)
+    :param data_obj_exists:       Whether the data object exists
+    :param size:                  Size of the data object
+    :param path:                  Path to the given data object (for logging)
+    :param groups:                List of groups retrieved for this data object
+    :param revision_store_exists: Whether revision store for this group exists
+
+    :returns: 2-tuple containing True / False whether a revision should be created,
+              and the message (if this is a error condition)
+    """
+
+    if not data_obj_exists:
+        return False, "Data object <{}> was not found or path was collection".format(path)
+
+    if len(groups) == 0:
+        return False, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path)
+
+    if len(groups) > 1:
+        return False, "Cannot find unique owner of data object <{}>. Skipping.".format(path)
+
+    if not revision_store_exists:
+        return False, "Revision store collection does not exist for data object <{}>".format(path)
+
+    _, zone, _, _ = pathutil.info(path)
+
+    # A revision should not be created when the data object is too big,
+    # but this is not an error condition
+    if int(size) > max_size:
+        return False, ""
+
+    # Only create revisions for research space
+    if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
+        return False, ""
+
+    if pathutil.basename(path) in constants.UUBLOCKLIST:
+        return False, ""
+
+    return True, ""
+
+
+def calculate_end_of_calendar_day():
     """Calculate the unix timestamp for the end of the current day (Same as start of next day).
-
-    :param ctx: Combined type of a callback and rei struct
 
     :returns: End of calendar day - Timestamp of the end of the current day
     """
@@ -26,10 +68,9 @@ def calculate_end_of_calendar_day(ctx):
     return int(tomorrow.strftime("%s"))
 
 
-def get_revision_store_path(ctx, zone, trailing_slash=False):
+def get_revision_store_path(zone, trailing_slash=False):
     """Produces the logical path of the revision store
 
-       :param ctx: Combined type of a callback and rei struct
        :param zone: zone name
        :param trailing_slash: Add a trailing slash (default: False)
 
@@ -41,19 +82,28 @@ def get_revision_store_path(ctx, zone, trailing_slash=False):
         return os.path.join("/" + zone, constants.UUREVISIONCOLLECTION.lstrip(os.path.sep))
 
 
-def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_time_bound, verbose):
+def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_time_bound, original_exists, verbose):
     """Get revision data objects for a particular versioned data object that should be deleted, as per
        a given revision strategy.
 
     :param ctx:                      Combined type of a callback and rei struct
     :param revision_strategy:        Revision strategy object
-    :param revisions:                List of revisions for a particular data object. Each revision is represented by a 3-tupel
+    :param revisions:                List of revisions for a particular data object. Each revision is represented by a 3-tuple
                                      (revision ID, modification time in epoch time, original path)
     :param initial_upper_time_bound: Initial upper time bound for first bucket
+    :param original_exists:          Boolean value that indicates whether the original versioned data object still exists
     :param verbose:                  Whether to print additional information for troubleshooting (boolean)
 
     :returns: List of candidates for deletion based on the specified revision strategy
     """
+
+    if not original_exists:
+        if verbose:
+            for revision in revisions:
+                log.write(ctx, 'Scheduling revision <{}> for removal. Original no longer exists.'.format(
+                          revision[2]))
+        return [revision[0] for revision in revisions]
+
     buckets = revision_strategy.get_buckets()
     deletion_candidates = []
 
@@ -132,9 +182,9 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
     return deletion_candidates
 
 
-def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verbose):
+def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, original_exists_dict, verbose):
     """Filters out revisioned data objects from a list if we can easily determine that they don't meet criteria for being removed,
-       for example if the number of revisions is at most one, and the minimum bucket size is at least one.
+       for example if the number of revisions of an existing versioned data object is at most one.
 
        This prefilter is performed in the scan phase. A full check of the remaining versioned data objects will be performed in the
        processing phase.
@@ -144,20 +194,72 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, verb
 
        :param ctx:                    Combined type of a callback and rei struct
        :param revisions_list:         List of versioned data objects. Each versioned data object is represented as a list of revisions,
-                                      with each revision represented as a 3-tupel (revision ID, modification time in epoch time, original
+                                      with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
        :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
                                       https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                                       for an explanation.
+       :param original_exists_dict:   Dictionary where keys are paths of versioned data objects. Values are booleans that indicate whether
+                                      the original data object still exists
        :param verbose:                Whether to print verbose information for troubleshooting (boolean)
 
        :returns:                      List of versioned data objects, after prefiltered versioned data objects / revisions have been
                                       removed. Each versioned data object is represented as a list of revisions,
-                                      with each revision represented as a 3-tupel (revision ID, modification time in epoch time, original
+                                      with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
        """
     minimum_bucket_size = get_revision_strategy(revision_strategy_name).get_minimum_bucket_size()
+    results = []
+    for object in revisions_list:
+        if len(object) > 0:
+            if original_exists_dict[object[0][2]]:
+                # If the versioned data object still exists, we can
+                # remove it in the prefilter stage if it has only a single
+                # revision, assuming that the size of the smallest bucket is
+                # at least 1.
+                if len(object) > min(minimum_bucket_size, 1):
+                    results.append(object)
+            else:
+                # Revisions of versioned data objects that do not exist
+                # anymore should never be removed in the prefilter stage,
+                # since revisions should always be removed if their versioned
+                # data object no longer exists.
+                results.append(object)
+
     if verbose:
-        log.write(ctx, "Removing following revisioned data objects in prefiltering for cleanup: "
-                  + str([object for object in revisions_list if len(object) <= minimum_bucket_size]))
-    return [object for object in revisions_list if len(object) > min(minimum_bucket_size, 1)]
+        log.write(ctx, "Remaining revisions for cleanup after prefiltering: " + str(results))
+
+    return results
+
+
+def get_resc(row):
+    """Get the resc id for a data object given the metadata provided (for revision job).
+
+    :param row: metadata for the data object
+
+    :returns: resc
+    """
+    info = row[3].split(',')
+    if len(info) == 2:
+        return info[0]
+
+    # Backwards compatibility with revision metadata created in v1.8 or earlier.
+    return row[3]
+
+
+def get_balance_id(row, path):
+    """Get the balance id for a data object given the metadata provided (for revision job).
+
+    :param row:  metadata for the data object
+    :param path: path to the data object
+
+    :returns: Balance id
+    """
+    info = row[3].split(',')
+    if len(info) == 2:
+        return int(info[1])
+
+    # Backwards compatibility with revision metadata created in v1.8 or earlier.
+    # Determine a balance_id for this dataobject based on its path.
+    # This will determine whether this dataobject will be taken into account in this job/range or another that is running parallel
+    return int(hashlib.md5(path.encode('utf-8')).hexdigest(), 16) % 64 + 1

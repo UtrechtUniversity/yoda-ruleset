@@ -4,7 +4,7 @@
 #
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2024, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \constant IIGROUPPREFIX
@@ -13,29 +13,14 @@ IIGROUPPREFIX = "research-"
 # \constant IIVAULTPREFIX
 IIVAULTPREFIX = "vault-"
 
-# \constant IISCHEMACOLLECTION
-IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
-
 # \constant IIMETADATAJSONNAME Name of metadata JSON file
 IIJSONMETADATA = "yoda-metadata.json"
-
-# \constant IIJSONNAME Name of the metadata JSON
-IIJSONNAME = "metadata.json"
-
-# \constant IIJSONUINAME Name of the JSON UI schema
-IIJSONUINAME = "uischema.json"
-
-# \constant IIPUBLICATIONCOLLECTION
-IIPUBLICATIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/publication"
 
 # \constant IILOCKATTRNAME
 IILOCKATTRNAME = UUORGMETADATAPREFIX ++ "lock"
 
 # \constant IISTATUSATTRNAME
 IISTATUSATTRNAME = UUORGMETADATAPREFIX ++ "status"
-
-# \constant IICOPYPARAMSNAME
-IICOPYPARAMSNAME = UUORGMETADATAPREFIX ++ "copy_to_vault_params"
 
 # \constant IIVAULTSTATUSATTRNAME
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX ++ "vault_status"
@@ -59,7 +44,8 @@ IIFOLDERTRANSITIONS = list((FOLDER, LOCKED),
 			   (REJECTED, LOCKED),
 			   (REJECTED, FOLDER),
 			   (REJECTED, SUBMITTED),
-			   (ACCEPTED, SECURED),
+			   (ACCEPTED, FOLDER),
+			   # Backwards compatibility for folders that hold deprecated SECURED status.
 			   (SECURED, LOCKED),
 			   (SECURED, FOLDER),
 			   (SECURED, SUBMITTED))

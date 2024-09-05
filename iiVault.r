@@ -6,24 +6,6 @@
 # \license   GPLv3, see LICENSE.
 
 
-# \brief iiCopyFolderToVault
-#
-# \param[in] folder  folder to copy to the vault
-# \param[in] target  path of the vault package
-#
-iiCopyFolderToVault(*folder, *target) {
-
-	writeLine("serverLog", "iiCopyFolderToVault: Copying *folder to *target")
-	*buffer.source = *folder;
-	*buffer.destination = *target ++ "/original";
-	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	if (*error != 0) {
-		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-		writeLine("stdout", "iiIngestObject: *error: *msg");
-		fail;
-	}
-}
-
 # \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
 #
 # \param[in] itemParent
@@ -69,8 +51,10 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	} else {
 	    # Copy data object to vault and compute checksum.
 	    *resource = "";
-	    *err = errorcode(rule_resource_vault(*resource));
-	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++verifyChksum=", *status));
+		*numThreads = "";
+	    *err1 = errorcode(rule_resource_vault(*resource));
+		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
 	    if (*error < 0) {
 		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
 	    }
@@ -111,8 +95,10 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 		}
 	} else {
 		*resource = "";
-		*err = errorcode(rule_resource_research(*resource));
-		*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++verifyChksum=", *status));
+		*numThreads = "";
+		*err1 = errorcode(rule_resource_research(*resource));
+		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
 		if (*error < 0) {
 			*buffer.msg = "Failed to copy *sourcePath to *destPath";
 		}

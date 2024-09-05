@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -109,7 +109,6 @@ config = Config(environment=None,
                 data_package_archive_resource=None,
                 enable_data_package_reference=False,
                 enable_tokens=False,
-                enable_tape_archive=False,
                 inactivity_cutoff_months=3,
                 token_database=None,
                 token_database_password=None,
@@ -128,6 +127,7 @@ config = Config(environment=None,
                 epic_certificate=None,
                 temporary_files=[],
                 external_users_domain_filter=[],
+                remote_anonymous_access=[],
                 enable_sram=True,
                 sram_rest_api_url=None,
                 sram_api_key=None,
@@ -135,11 +135,18 @@ config = Config(environment=None,
                 sram_flow=None,
                 sram_verbose_logging=False,
                 sram_tls_verify=True,
+                sram_co_default_label=None,
+                sram_co_logo_url=None,
                 arb_enabled=False,
                 arb_exempt_resources=[],
                 arb_min_gb_free=0,
                 arb_min_percent_free=5,
                 text_file_extensions=[],
+                vault_copy_backoff_time=300,
+                vault_copy_max_retries=5,
+                vault_copy_multithread_enabled=True,
+                user_max_connections_enabled=False,
+                user_max_connections_number=4,
                 python3_interpreter='/usr/local/bin/python3')
 
 # }}}
@@ -160,7 +167,7 @@ try:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
+                raise Exception('Configuration syntax error at {} line {}'.format(cfgpath, i + 1))
 
             # List-type values are separated by whitespace.
             try:

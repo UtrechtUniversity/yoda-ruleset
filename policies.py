@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -17,6 +17,7 @@ import policies_intake
 import replication
 import revisions
 import vault
+from policies_utils import is_safe_genquery_inp
 from util import *
 
 
@@ -349,7 +350,7 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT] and attr == constants.IISTATUSATTRNAME:
         # Research or deposit folder status change. Validate.
-        if not unit == '':
+        if unit != '':
             return policy.fail('Invalid status attribute')
         if option not in ['set', 'rm', 'rmw']:
             # "add" has no meaning on the status attribute, as there must
@@ -444,7 +445,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
     return policy.succeed()
 
 
-# This PEP is called after a AVU is added (option = 'add'), set (option =
+# This PEP is called after an AVU is added (option = 'add'), set (option =
 # 'set') or removed (option = 'rm') in the research area or the vault. Post
 # conditions defined in folder.py and iiVaultTransitions.r
 # are called here.
@@ -497,9 +498,6 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if config.enable_tape_archive and cmd in ['dmattr', 'dmget', 'admin-tape-archive-set-state.sh']:
-        return policy.succeed()
-
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
         return policy.succeed()
 
@@ -548,9 +546,6 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
 
     for resource in config.resource_replica:
         replication.replicate_asynchronously(ctx, path, instance_name, resource)
-
-    if config.enable_tape_archive:
-        ctx.uuTapeArchiveReplicateAsynchronously(path)
 
     try:
         # Import metadata if a metadata JSON file was changed.
@@ -607,5 +602,45 @@ def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host
         return "read=1.0;write=1.0"
 
 
+@rule.make(inputs=[0], outputs=[1])
+def rule_check_anonymous_access_allowed(ctx, address):
+    """Check if access to the anonymous account is allowed from a particular network
+       address. Non-local access to the anonymous account should only be allowed from
+       DavRODS servers, for security reasons.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param address: Network address to check
+
+    :returns: 'true' if access from this network address is allowed; otherwise 'false'
+    """
+    permit_list = ["127.0.0.1"] + config.remote_anonymous_access
+    return "true" if address in permit_list else "false"
+
+
+@rule.make(inputs=[], outputs=[0])
+def rule_check_max_connections_exceeded(ctx):
+    """Check if user exceeds the maximum number of connections.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'.
+              Also returns 'false' if the maximum number of connections check has been
+              disabled, or if the maximum number does not apply to the present user.
+    """
+    if not config.user_max_connections_enabled:
+        return "false"
+    elif user.name(ctx) in ['anonymous', 'rods']:
+        return "false"
+    else:
+        connections = user.number_of_connections(ctx)
+        return "false" if connections <= config.user_max_connections_number else "true"
+
+
+@rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
+def pep_database_gen_query_pre(ctx, dbtype, _ctx, results, genquery_inp, genquery_out):
+    if not is_safe_genquery_inp(genquery_inp):
+        # We can't use log here, because the REI is not (always) available.
+        print("Refused unsafe query: " + str(genquery_inp))
+        ctx.msiOprDisallowed()
 # }}}
 # }}}

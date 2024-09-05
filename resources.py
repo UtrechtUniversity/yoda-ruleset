@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -16,7 +16,6 @@ __all__ = ['api_resource_browse_group_data',
            'api_resource_category_stats',
            'api_resource_full_year_differentiated_group_storage',
            'rule_resource_store_storage_statistics',
-           'rule_resource_transform_old_storage_data',
            'rule_resource_research',
            'rule_resource_update_resc_arb_data',
            'rule_resource_update_misc_arb_data',
@@ -72,13 +71,10 @@ def api_resource_browse_group_data(ctx,
         group_list.append([groupname, data_size])
 
     # Sort the list as requested by user
-    sort_key = 0
-    if sort_on == 'size':
-        sort_key = 1
     sort_reverse = False
     if sort_order == 'desc':
         sort_reverse = True
-    group_list.sort(key=lambda x: x[sort_key], reverse=sort_reverse)
+    group_list.sort(key=lambda x: x[1][-1] if sort_on == 'size' else x[0], reverse=sort_reverse)
 
     # Only at this point we have the list in correct shape/order and can the limit and offset be applied
     # Format for datatables in frontend throughout yoda
@@ -90,69 +86,6 @@ def api_resource_browse_group_data(ctx,
         group_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
 
     return {'total': len(group_list), 'items': group_list_sorted}
-
-
-@rule.make()
-def rule_resource_transform_old_storage_data(ctx):
-    """ Transform all old school storage data collection to the new way.
-    Get rid of tiers.
-    Fact: only one tier was used in all yoda instances
-
-    [cat, research, vault, revisions, total]
-
-    :param ctx:           Combined type of a callback and rei struct
-
-    :returns: API status
-    """
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-
-    # Step through all aggregated storage data that was previously recorded monthly
-    # PRECONDITION: only 1 tier is used throughout the entire use of the previously used collection method.
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATASTORAGEMONTH),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        # group - [category, tier, total]
-        # group - [category, research, vault, revisions, total]
-
-        # As only one tier was used, each found total for a group, can directly be set as the total for that group.
-        # No differentation into research / vault / revisions as this information is not present.
-
-        storage_data = jsonutil.parse(row[0])
-        storage_category = storage_data[0]
-        storage_total = int(storage_data[2])
-        storage_month = int(row[1][-2:])
-        storage_group = row[3]
-
-        if storage_month != current_month:
-            # Only do the transformation when NOT in current month itself.
-            storage_year = current_year if storage_month <= current_month else current_year - 1
-
-            # set the measurement date on the 15th of any month
-            storage_attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + "{}_{}_17".format(storage_year, '%0*d' % (2, storage_month))
-            storage_attr_val = '["{}", 0, 0, 0, {}]'.format(storage_category, storage_total)
-
-            # First test if exists - if so => delete:
-            # First delete possibly previously stored data
-            iter2 = genquery.row_iterator(
-                "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_GROUP_NAME",
-                "META_USER_ATTR_NAME = '{}' AND META_USER_ATTR_VALUE = '{}' AND USER_GROUP_NAME = '{}'".format(storage_attr_name, storage_attr_val, storage_group),
-                genquery.AS_LIST, ctx
-            )
-            for row2 in iter2:
-                avu.rm_from_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-
-            # Add data in new manner without tiers
-            avu.associate_to_group(ctx, storage_group, storage_attr_name, storage_attr_val)
-
-            # ?? Do we delete previously stored monthly totals??
-            # avu.rm_from_group(ctx, row[3], row[1], row[0])
-
-    return 'ok'
 
 
 @api.make()
@@ -218,81 +151,85 @@ def api_resource_category_stats(ctx):
     if len(categories) == 0:
         return {'categories': [], 'external_filter': ''}
 
-    # Continue for admins and datamanagers
+    # Retrieve storage statistics of groups.
+    iter = list(genquery.Query(ctx,
+                ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
+                "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                output=genquery.AS_LIST))
+
+    # Go through storage statistics of groups.
     storage = {}
+    group_counted = []
+    for group_name, _storage_attribute, storage_json in iter:
+        # Check if group is valid and has not been counted yet.
+        if group_name.startswith(('research-', 'deposit-', 'intake-', 'grp-')) and group_name not in group_counted:
+            # Add group to list of groups counted for category statistics.
+            group_counted.append(group_name)
 
-    # Go through current groups of current categories.
-    # This function has no historic value so it is allowed to do so
-    for category in categories:
-        storage[category] = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0, 'internal': 0, 'external': 0}
+            # Add group to category statistics.
+            category, research, vault, revisions, total = jsonutil.parse(storage_json)
+            storage.setdefault(category, {'research': 0, 'vault': 0, 'revision': 0, 'total': 0})
+            storage[category]['research'] += research
+            storage[category]['vault'] += vault
+            storage[category]['revision'] += revisions
+            storage[category]['total'] += total
 
-        # for all groups in category
-        groups = get_groups_on_categories(ctx, [category])
-        for groupname in groups:
-            if groupname.startswith(('research', 'deposit', 'intake', 'grp')):
-                # Only check the most recent storage measurement
-                iter = list(genquery.Query(ctx,
-                            ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                            "META_USER_ATTR_VALUE like '[\"{}\",%%' AND META_USER_ATTR_NAME like '{}%%' AND USER_NAME = '{}'".format(category, constants.UUMETADATAGROUPSTORAGETOTALS, groupname),
-                            offset=0, limit=1, output=genquery.AS_LIST))
+    # Retrieve groups and their members.
+    iter = list(genquery.Query(ctx,
+                ['USER_GROUP_NAME', 'USER_NAME'],
+                "USER_TYPE != 'rodsgroup'",
+                output=genquery.AS_LIST))
 
-                for row in iter:
-                    temp = jsonutil.parse(row[0])
+    # Calculate number of members per type per group.
+    members = {}
+    for group_name, user_name in iter:
+        members.setdefault(group_name, {'internal': set(), 'external': set()})
+        if yoda_names.is_internal_user(user_name):
+            members[group_name]['internal'].add(user_name)
+        else:
+            members[group_name]['external'].add(user_name)
 
-                    storage[category]['total'] += temp[4]
-                    storage[category]['research'] += temp[1]
-                    storage[category]['vault'] += temp[2]
-                    storage[category]['revision'] += temp[3]
-
-    # Now go through all totals
+    # Calculate category members and storage totals.
+    instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0, 'internals': set(), 'externals': set()}
     all_storage = []
-
-    # Totalization for the entire instance.
-    instance_totals = {'total': 0, 'research': 0, 'vault': 0, 'revision': 0}
-
-    # Member counts
-    cat_members = {}
-    members_total = []
     for category in categories:
-        members = []
-        # this information is only available for yoda-admins
-        for groupname in get_groups_on_categories(ctx, [category]):
-            group_members = list(group.members(ctx, groupname))
-            for gm in group_members:
-                members.append(gm[0])
-                members_total.append(gm[0])
-        # deduplicate member list
-        cat_members[category] = list(set(members))
+        if category not in storage:
+            continue
 
-    cat_members['YODA_INSTANCE_TOTAL'] = list(set(members_total))
+        # Calculate category members and totals.
+        internals = set()
+        externals = set()
+        for group_name in get_groups_on_categories(ctx, [category]):
+            members.setdefault(group_name, {'internal': set(), 'external': set()})
+            internals.update(members[group_name]['internal'])
+            externals.update(members[group_name]['external'])
 
-    def count_externals(members):
-        return len([member for member in members if not yoda_names.is_internal_user(member)])
+        # Deduplicate group members.
+        users = {'internals': len(internals), 'externals': len(externals)}
 
-    def count_internals(members):
-        return len([member for member in members if yoda_names.is_internal_user(member)])
+        # Count instance totals.
+        instance_totals['internals'].update(internals)
+        instance_totals['externals'].update(externals)
 
-    for category in categories:
+        # Humanize storage sizes for the frontend and calculate instance totals.
         storage_humanized = {}
-        # humanize storage sizes for the frontend
-        for type in ['total', 'research', 'vault', 'revision']:
-            storage_humanized[type] = misc.human_readable_size(1.0 * storage[category][type])
-            instance_totals[type] += 1.0 * storage[category][type]
+        for storage_type in ['research', 'vault', 'revision', 'total']:
+            storage_humanized[storage_type] = misc.human_readable_size(1.0 * storage[category][storage_type])
+            instance_totals[storage_type] += 1.0 * storage[category][storage_type]
 
-        users = {'internals': count_internals(cat_members[category]), 'externals': count_externals(cat_members[category])}
         all_storage.append({'category': category,
                             'storage': storage_humanized,
                             'users': users})
 
-    # Add the yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL
-    # So the frontend can distinguish instance totals from real category totals
-    users = {'internals': count_internals(cat_members['YODA_INSTANCE_TOTAL']), 'externals': count_externals(cat_members['YODA_INSTANCE_TOTAL'])}
+    # Add the Yoda instance information as an extra row with category name YODA_INSTANCE_TOTAL.
+    # So the frontend can distinguish instance totals from real category totals.
     all_storage.append({'category': "YODA_INSTANCE_TOTAL",
                         'storage': {'total': misc.human_readable_size(instance_totals['total']),
                                     'research': misc.human_readable_size(instance_totals['research']),
                                     'vault': misc.human_readable_size(instance_totals['vault']),
                                     'revision': misc.human_readable_size(instance_totals['revision'])},
-                        'users': users})
+                        'users': {'internals': len(instance_totals['internals']),
+                                  'externals': len(instance_totals['externals'])}})
 
     return {'categories': sorted(all_storage, key=lambda d: d['category']),
             'external_filter': ', '.join(config.external_users_domain_filter)}
@@ -321,7 +258,7 @@ def api_resource_monthly_category_stats(ctx):
 
     # find minimal registered date registered.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
-                               "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                               "META_USER_ATTR_NAME like '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
                                offset=0, limit=1, output=genquery.AS_LIST))
 
     for row in iter:
@@ -501,6 +438,8 @@ def rule_resource_store_storage_statistics(ctx):
         genquery.AS_LIST, ctx
     )
     for row in iter:
+        if (md_storage_date, row[0], '') not in list(avu.of_group(ctx, row[1])):
+            continue
         avu.rm_from_group(ctx, row[1], md_storage_date, row[0])
 
     # Get all categories

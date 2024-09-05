@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -41,7 +41,7 @@ def get_publication_config(ctx):
                  "davrods_anonymous_vhost": "davrodsAnonymousVHost",
                  "publication_verbose_mode": "verboseMode"}
     optional_keys = ["publication_verbose_mode"]
-    configKeys = {}
+    config_keys = {}
     found_attrs = []
 
     prefix_length = len(constants.UUORGMETADATAPREFIX)
@@ -58,7 +58,7 @@ def get_publication_config(ctx):
 
         try:
             found_attrs.append(attr)
-            configKeys[attr2keys[attr]] = val
+            config_keys[attr2keys[attr]] = val
         except KeyError:
             continue
 
@@ -67,7 +67,7 @@ def get_publication_config(ctx):
         if key not in found_attrs and key not in optional_keys:
             log.write(ctx, 'Missing config key ' + key)
 
-    return configKeys
+    return config_keys
 
 
 def generate_combi_json(ctx, publication_config, publication_state):
@@ -151,8 +151,8 @@ def get_publication_state(ctx, vault_package):
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
 
     # Take over all actual values as saved earlier.
-    for key in publ_metadata.keys():
-        publication_state[key] = publ_metadata[key]
+    for key, value in publ_metadata.items():
+        publication_state[key] = value
 
     # Handle access restriction.
     iter = genquery.row_iterator(
@@ -199,7 +199,7 @@ def save_publication_state(ctx, vault_package, publication_state):
     :param publication_state: Dict with state of the publication process
     """
     ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
-    for key in publication_state.keys():
+    for key in publication_state:
         if publication_state[key] != "":
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
@@ -300,7 +300,7 @@ def get_last_modified_datetime(ctx, vault_package):
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
-def generate_preliminary_DOI(ctx, publication_config, publication_state):
+def generate_preliminary_doi(ctx, publication_config, publication_state):
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -316,7 +316,7 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
     publication_state["versionDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_base_DOI(ctx, publication_config, publication_state):
+def generate_base_doi(ctx, publication_config, publication_state):
     """Generate a base DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -353,16 +353,20 @@ def generate_datacite_json(ctx, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_state, doi, send_method):
+def post_metadata_to_datacite(ctx, publication_state, doi, send_method, base_doi=False):
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     :param doi:                DataCite DOI to update metadata
     :param send_method:        http verb (either 'post' or 'put')
+    :param base_doi:           Indicates if we are sending metadata for base DOI
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
+
+    if base_doi:
+        datacite_json = datacite_json.replace(publication_state['versionDOI'], doi)
 
     try:
         if send_method == 'post':
@@ -603,9 +607,8 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     combiJsonPath = publication_state["combiJsonPath"]
     dictJsonData = jsonutil.read(ctx, combiJsonPath, want_bytes=False)
 
-    # Remove empty lists, empty dicts, or None elements
-    # to prevent empty fields on landingpage.
-    dictJsonData = jsonutil.remove_empty(dictJsonData)
+    # Remove empty objects to prevent empty fields on landingpage.
+    dictJsonData = misc.remove_empty_objects(dictJsonData)
 
     active_embargo = False
 
@@ -662,17 +665,17 @@ def check_doi_availability(ctx, publication_state, type_flag):
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
-    DOI = publication_state[type_flag + "DOI"]
+    doi = publication_state[type_flag + "DOI"]
 
     try:
-        httpCode = datacite.metadata_get(ctx, DOI)
+        http_code = datacite.metadata_get(ctx, doi)
 
-        if httpCode == 404:
+        if http_code == 404:
             publication_state[type_flag + "DOIAvailable"] = "yes"
-        elif httpCode in [401, 403, 500, 503, 504]:
+        elif http_code in [401, 403, 500, 503, 504]:
             # request failed, worth a retry
             publication_state["status"] = "Retry"
-        elif httpCode in [200, 204]:
+        elif http_code in [200, 204]:
             # DOI already in use
             publication_state[type_flag + "DOIAvailable"] = "no"
             publication_state["status"] = "Retry"
@@ -714,7 +717,7 @@ def process_publication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_publication in verbose mode.")
 
@@ -741,13 +744,14 @@ def process_publication(ctx, vault_package):
         if "baseDOI" in previous_publication_state:
             # Set the link to previous publication state
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
+            publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
             publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]
 
         # Create base DOI if it does not exist in the previous publication state.
         elif "baseDOI" not in previous_publication_state:
             log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
             try:
-                generate_base_DOI(ctx, publication_config, publication_state)
+                generate_base_doi(ctx, publication_config, publication_state)
                 check_doi_availability(ctx, publication_state, 'base')
                 publication_state["baseDOIMinted"] = 'no'
                 # Set the link to previous publication state
@@ -760,7 +764,7 @@ def process_publication(ctx, vault_package):
             save_publication_state(ctx, previous_vault_package, previous_publication_state)
             save_publication_state(ctx, vault_package, publication_state)
 
-            if status in ["Retry"]:
+            if status == "Retry":
                 if verbose:
                     log.write(ctx, "Error status for creating base DOI: " + status)
                 return status
@@ -775,7 +779,7 @@ def process_publication(ctx, vault_package):
     if "versionDOI" not in publication_state:
         if verbose:
             log.write(ctx, "Generating preliminary DOI.")
-        generate_preliminary_DOI(ctx, publication_config, publication_state)
+        generate_preliminary_doi(ctx, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -784,7 +788,7 @@ def process_publication(ctx, vault_package):
             if verbose:
                 log.write(ctx, "Version DOI available: no")
                 log.write(ctx, "Generating preliminary DOI.")
-            generate_preliminary_DOI(ctx, publication_config, publication_state)
+            generate_preliminary_doi(ctx, publication_config, publication_state)
 
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
@@ -853,11 +857,8 @@ def process_publication(ctx, vault_package):
 
     # Determine whether an update ('put') or create ('post') message has to be sent to datacite
     datacite_action = 'post'
-    try:
-        if publication_state['versionDOIMinted'] == 'yes':
-            datacite_action = 'put'
-    except KeyError:
-        pass
+    if publication_state.get('versionDOIMinted') == 'yes':
+        datacite_action = 'put'
 
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
@@ -870,12 +871,12 @@ def process_publication(ctx, vault_package):
             if update_base_doi:
                 base_doi = None
                 datacite_action = 'post'
-                if publication_state['baseDOIMinted'] == 'yes':
+                if publication_state.get('baseDOIMinted') == 'yes':
                     datacite_action = 'put'
                 if verbose:
                     log.write(ctx, "Updating base DOI.")
                 base_doi = publication_state['baseDOI']
-                post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action)
+                post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action, base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while sending metadata to Datacite: " + str(e))
             publication_state["status"] = "Retry"
@@ -1021,7 +1022,7 @@ def process_depublication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_depublication in verbose mode.")
 
@@ -1168,7 +1169,7 @@ def process_republication(ctx, vault_package):
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_republication in verbose mode.")
 
@@ -1236,7 +1237,7 @@ def process_republication(ctx, vault_package):
             post_metadata_to_datacite(ctx, publication_state, publication_state['versionDOI'], 'put')
 
             if update_base_doi:
-                post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put')
+                post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put', base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while posting metadata to Datacite during republication: " + str(e))
             publication_state["status"] = "Retry"
@@ -1341,6 +1342,16 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     """
     publication_state = {}
 
+    def _check_return_if_publication_status(return_statuses, location):
+        # Used to check whether we need to return early because of an
+        # unexpected publication status, and log a message for troubleshooting
+        # purposes.
+        if publication_state["status"] in return_statuses:
+            log.write("update_publication: returned with error status from location '{}' (status: '{}')".format(location, publication_state["status"]))
+            return True
+        else:
+            return False
+
     log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
@@ -1361,12 +1372,13 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     status = publication_state['status']
 
     # Check if verbose mode is enabled
-    verbose = True if "verboseMode" in publication_config else False
+    verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running update_publication in verbose mode.")
 
     # Publication must be finished.
     if status != "OK":
+        log.write(ctx, "update_publication: Not processing vault package, because initial status is " + status)
         return status
 
     update_base_doi = False
@@ -1394,7 +1406,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
     save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] in ["Unrecoverable", "Retry"]:
+    if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before update DataCite"):
         return publication_state["status"]
 
     if update_datacite:
@@ -1408,7 +1420,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before send DataCite"):
             return publication_state["status"]
 
         # Send DataCite JSON to metadata end point
@@ -1417,19 +1429,19 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         try:
             post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
-                post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put')
+                post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put', base_doi=True)
         except Exception as e:
             log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + str(e))
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        if _check_return_if_publication_status(["Unrecoverable", "Retry"], "before update landing page"):
             return publication_state["status"]
 
     if update_landingpage:
         # Create landing page
-        log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
+        log.write(ctx, 'Update landing page for package {}'.format(vault_package))
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except Exception as e:
@@ -1438,7 +1450,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Unrecoverable":
+        if _check_return_if_publication_status(["Unrecoverable"], "before upload landing page"):
             return publication_state["status"]
 
         # Use secure copy to push landing page to the public host
@@ -1451,7 +1463,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Retry":
+        if _check_return_if_publication_status(["Retry"], "before update MOAI"):
             return publication_state["status"]
 
     if update_moai:
@@ -1464,7 +1476,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == "Retry":
+        if _check_return_if_publication_status(["Retry"], "before publication OK"):
             return publication_state["status"]
 
     # Updating was a success
@@ -1501,7 +1513,7 @@ def get_all_versions(ctx, path, doi):
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of the published data package
-    :param doi:  Version DOI of the selected publication
+    :param doi:  Base DOI of the selected publication
 
     :return: Dict of related version DOIs
     """

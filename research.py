@@ -27,6 +27,26 @@ __all__ = ['api_research_folder_add',
            'api_research_manifest']
 
 
+def folder_new_name_check(folder_name):
+    if len(folder_name) == 0:
+        return False, api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
+
+    # TODO remove when upgrade to GenQuery 2
+    # This check should only be done on new folders, since may have old folders with apostrophes
+    if '\'' in folder_name:
+        return False, api.Error('invalid_foldername', 'It is not allowed to use apostrophes in a folder name')
+
+    # Name should not contain '\\' or '/'
+    if '/' in folder_name or '\\' in folder_name:
+        return False, api.Error('invalid_foldername', 'It is not allowed to use slashes in the new folder name')
+
+    # name should not be '.' or '..'
+    if folder_name in ('.', '..'):
+        return False, api.Error('invalid_foldername', 'it is not allowed to name the folder {}'.format(folder_name))
+
+    return True, ""
+
+
 @api.make()
 def api_research_folder_add(ctx, coll, new_folder_name):
     """Add a new folder to a research folder.
@@ -39,8 +59,9 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     """
     coll_target = coll + '/' + new_folder_name
 
-    if len(new_folder_name) == 0:
-        return api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
+    valid_folder_name, error_response = folder_new_name_check(new_folder_name)
+    if not valid_folder_name:
+        return error_response
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
@@ -50,14 +71,6 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
         return api.Error('invalid_destination', 'It is not possible to add folder ' + new_folder_name + ' at this location')
-
-    # Name should not contain '\\' or '/'
-    if '/' in new_folder_name or '\\' in new_folder_name:
-        return api.Error('invalid_foldername', 'It is not allowed to use slashes in a folder name')
-
-    # Name should not be '.' or '..'
-    if new_folder_name == '.' or new_folder_name == '..':
-        return api.Error('invalid_foldername', 'It is not allowed to name the folder {}'.format(new_folder_name))
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
@@ -90,6 +103,69 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     return api.Result.ok()
 
 
+def folder_copy_check(ctx, folder_path, new_folder_path, overwrite, copy=True):
+    """Check whether can copy (or move) folder to new folder location.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param folder_path:     Path to the folder to copy
+    :param new_folder_path: Path to the new copy of the folder
+    :param overwrite:       Overwrite folder if it already exists
+    :param copy:            Whether a copy operation (True) or move (False) (just for logging purposes)
+
+    :returns: 2-Tuple containing whether can copy/move, and the error if cannot
+    """
+    # Whether copy or move
+    verb = 'copy' if copy else 'move'
+    verb_past = 'copied' if copy else 'moved'
+    if len(new_folder_path) == 0:
+        return False, api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
+
+    # TODO remove when upgrade to GenQuery 2
+    if '\'' in new_folder_path:
+        return False, api.Error('invalid_foldername', 'It is not allowed to use apostrophes in a folder name')
+
+    try:
+        validate_filepath(new_folder_path.decode('utf-8'))
+    except ValidationError:
+        return False, api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
+
+    # Same folder path makes no sense.
+    if folder_path == new_folder_path:
+        return False, api.Error('invalid_folder_path', 'Origin and {} folder paths are equal. Please choose another destination'.format(verb))
+
+    # Inside the same path makes no sense.
+    if "{}/".format(folder_path) in new_folder_path:
+        return False, api.Error('invalid_folder_path', 'Cannot {} folder inside itself. Please choose another destination'.format(verb))
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(new_folder_path.split('/')) > 2:
+        return False, api.Error('invalid_destination', 'It is not possible to {} folder at this location'.format(verb))
+
+    # in vault?
+    target_group_name = new_folder_path.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return False, api.Error('invalid_destination', 'It is not possible to {} folder to the vault'.format(verb))
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
+        return False, api.Error('not_allowed', 'You do not have sufficient permissions to {} the selected folder'.format(verb))
+
+    # Folder not locked?
+    if folder.is_locked(ctx, new_folder_path):
+        return False, api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be {}'.format(verb_past))
+
+    # Does original folder exist?
+    if not collection.exists(ctx, folder_path):
+        return False, api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
+
+    # Collection exists in destination?
+    if not overwrite and collection.exists(ctx, new_folder_path):
+        return False, api.Error('invalid_destination', 'Folder with this name already exists in destination')
+
+    return True, ""
+
+
 @api.make()
 def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False):
     """Copy a folder in a research folder.
@@ -101,47 +177,9 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False)
 
     :returns: Dict with API status result
     """
-    if len(new_folder_path) == 0:
-        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
-
-    try:
-        validate_filepath(new_folder_path.decode('utf-8'))
-    except ValidationError:
-        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
-
-    # Same folder path makes no sense.
-    if folder_path == new_folder_path:
-        return api.Error('invalid_folder_path', 'Origin and copy folder paths are equal. Please choose another destination')
-
-    # Inside the same path makes no sense.
-    if "{}/".format(folder_path) in new_folder_path:
-        return api.Error('invalid_folder_path', 'Cannot copy folder inside itself. Please choose another destination')
-
-    # not in home - a groupname must be present ie at least 2!?
-    if not len(new_folder_path.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to copy folder at this location')
-
-    # in vault?
-    target_group_name = new_folder_path.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('invalid_destination', 'It is not possible to copy folder to the vault')
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected folder')
-
-    # Folder not locked?
-    if folder.is_locked(ctx, new_folder_path):
-        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be copied')
-
-    # Does original folder exist?
-    if not collection.exists(ctx, folder_path):
-        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
-
-    # Collection exists in destination?
-    if not overwrite and collection.exists(ctx, new_folder_path):
-        return api.Error('invalid_destination', 'Folder with this name already exists in destination')
+    valid, errorResponse = folder_copy_check(ctx, folder_path, new_folder_path, overwrite, True)
+    if not valid:
+        return errorResponse
 
     # All requirements OK
     try:
@@ -163,47 +201,9 @@ def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False)
 
     :returns: Dict with API status result
     """
-    if len(new_folder_path) == 0:
-        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
-
-    try:
-        validate_filepath(new_folder_path.decode('utf-8'))
-    except ValidationError:
-        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
-
-    # Same folder path makes no sense.
-    if folder_path == new_folder_path:
-        return api.Error('invalid_folder_path', 'Origin and move folder paths are equal. Please choose another destination')
-
-    # Inside the same path makes no sense.
-    if "{}/".format(folder_path) in new_folder_path:
-        return api.Error('invalid_folder_path', 'Cannot move folder inside itself. Please choose another destination')
-
-    # not in home - a groupname must be present ie at least 2!?
-    if not len(new_folder_path.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to move folder at this location')
-
-    # in vault?
-    target_group_name = new_folder_path.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('invalid_destination', 'It is not possible to move folder to the vault')
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected folder')
-
-    # Folder not locked?
-    if folder.is_locked(ctx, new_folder_path):
-        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be moved')
-
-    # Does original folder exist?
-    if not collection.exists(ctx, folder_path):
-        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
-
-    # Collection exists in destination?
-    if not overwrite and collection.exists(ctx, new_folder_path):
-        return api.Error('invalid_destination', 'Folder with this name already exists in destination')
+    valid, errorResponse = folder_copy_check(ctx, folder_path, new_folder_path, overwrite, False)
+    if not valid:
+        return errorResponse
 
     # All requirements OK
     try:
@@ -227,8 +227,9 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     """
     coll_target = coll + '/' + new_folder_name
 
-    if len(new_folder_name) == 0:
-        return api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
+    valid_folder_name, error_response = folder_new_name_check(new_folder_name)
+    if not valid_folder_name:
+        return error_response
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
@@ -241,15 +242,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to add folder ' + folder_name + ' at this location')
-
-    # Name should not contain '\\' or '/'
-    if '/' in new_folder_name or '\\' in new_folder_name:
-        return api.Error('invalid_foldername', 'It is not allowed to use slashes in the new folder name')
-
-    # Name should not be '.' or '..'
-    if new_folder_name == '.' or new_folder_name == '..':
-        return api.Error('invalid_foldername', 'It is not allowed to name the folder {}'.format(new_folder_name))
+        return api.Error('invalid_destination', 'It is not possible to add folder ' + org_folder_name + ' at this location')
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
@@ -300,7 +293,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # Name should not contain '\\' or '/'.
     if '/' in folder_name or '\\' in folder_name:
-        return api.Error('invalid_foldername', 'It is not allowed to use slashes in folder name to be delete')
+        return api.Error('invalid_foldername', 'It is not allowed to use slashes in folder name that will be deleted')
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
@@ -379,12 +372,18 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     if filepath == new_filepath:
         return api.Error('invalid_filepath', 'Origin and copy file paths are equal. Please choose another destination')
 
-    coll = pathutil.chop(new_filepath)[0]
-    data_name = pathutil.chop(new_filepath)[1]
+    _, org_data_name = pathutil.chop(filepath)
+    # These are of the NEW filepath
+    coll, data_name = pathutil.chop(new_filepath)
     try:
         validate_filename(data_name.decode('utf-8'))
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
+
+    # TODO remove when upgrade to GenQuery 2
+    # This check should only be done on new folders, since may have old folders with apostrophes
+    if '\'' in coll:
+        return api.Error('invalid_filepath', 'It is not allowed to copy a file to a folder with an apostrophe in the name')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
@@ -410,7 +409,7 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
 
     # Does org file exist?
     if not data_object.exists(ctx, filepath):
-        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
+        return api.Error('invalid_source', 'The original file ' + org_data_name + ' can not be found')
 
     # new filename already exists?
     if not overwrite and data_object.exists(ctx, new_filepath):
@@ -513,12 +512,17 @@ def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     if filepath == new_filepath:
         return api.Error('invalid_filepath', 'Origin and move file paths are equal. Please choose another destination')
 
-    coll = pathutil.chop(new_filepath)[0]
-    data_name = pathutil.chop(new_filepath)[1]
+    # These are of the NEW filepath
+    coll, data_name = pathutil.chop(new_filepath)
     try:
         validate_filename(data_name.decode('utf-8'))
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
+
+    # TODO remove when upgrade to GenQuery 2
+    # This check should only be done on new folders, since may have old folders with apostrophes
+    if '\'' in coll:
+        return api.Error('invalid_filepath', 'It is not allowed to move a file to a folder with an apostrophe in the name')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:

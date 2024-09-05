@@ -6,7 +6,7 @@ With this module, we aim to unify microservice error handling by converting
 all errors to unambiguous Python exceptions.
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import irods_types
@@ -111,6 +111,12 @@ set_acl,          SetACLError         = make('SetACL',         'Could not set AC
 get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Icat time')
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
+stat_vault,       MSIStatVaultError   = make("_stat_vault",    'Could not stat file system object in vault.')
+
+# The file checksum microservice should not be invoked directly. This microservice should be invoked via wrap_file_checksum.r wrapper.
+file_checksum,    FileChecksumError   = make("_file_checksum", 'Could not calculate non-persistent checksum of vault file.')
+
+dir_list,         DirListError        = make("_dir_list",      'Could not list vault directory contents.')
 
 archive_create,   ArchiveCreateError  = make('ArchiveCreate',  'Could not create archive')
 archive_index,    ArchiveIndexError   = make('ArchiveIndex',   'Could not index archive')
@@ -135,7 +141,11 @@ remove_key_value_pairs_from_obj, RemoveKeyValuePairsFromObjError = \
 add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
 rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
 
+atomic_apply_metadata_operations, AtomicApplyMetadataOperationsError = make('_atomic_apply_metadata_operations', 'Could not apply atomic metadata operations')
+
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
+sudo_obj_meta_set, SudoObjMetaSetError = make('SudoObjMetaSet', 'Could not set metadata as admin')
+sudo_obj_meta_remove, SudoObjMetaRemoveError = make('SudoObjMetaRemove', 'Could not remove metadata as admin')
 
 touch, TouchError = make('_touch', 'Could not update the data object or collection')
 obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object or collection')

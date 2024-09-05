@@ -78,6 +78,32 @@ Feature: Research UI
             | research-initial | testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
 
 
+    Scenario Outline: Upload file with name containing non UTF-8 characters
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <subfolder>
+        And user uploads file <filename>
+        Then non UTF-8 characters in the filename warning is shown
+
+        Examples:
+            | folder           | subfolder | filename    |
+            | research-initial | testdata  | CURA�AO.txt |
+
+
+    Scenario Outline: Upload file with name containing only UTF-8 characters
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user browses to subfolder <subfolder>
+        And user uploads file <filename>
+        Then non UTF-8 characters in the filename warning is not shown
+
+        Examples:
+            | folder           | subfolder | filename    |
+            | research-initial | testdata  | CURAÇAO.txt |
+    
+
     Scenario Outline: Deleting a file
         Given user researcher is logged in
         And module "research" is shown
@@ -90,6 +116,8 @@ Feature: Research UI
         Examples:
             | folder           | subfolder | file              |
             | research-initial | testdata  | lorem_renamed.txt |
+            | research-initial | testdata  | CURA�AO.txt       |
+            | research-initial | testdata  | CURAÇAO.txt       |
 
 
     Scenario Outline: Adding a folder
@@ -176,6 +204,21 @@ Feature: Research UI
             | research-initial | ui_test_overwrite | ui_test_copy |
 
 
+    Scenario Outline: Checksum report of added empty folder
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user adds a new folder <folder_new>
+        And user browses to subfolder <folder_new>
+        And user open checksum report
+        Then user cannot download <format> checksum report
+
+        Examples:
+            | folder           | folder_new                | format |
+            | research-initial | ui_test_empty_checksum1   | csv    |
+            | research-initial | ui_test_empty_checksum2   | txt    |
+
+
     Scenario Outline: Deleting a folder
         Given user researcher is logged in
         And module "research" is shown
@@ -188,6 +231,8 @@ Feature: Research UI
             | research-initial | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2_renamed |
             | research-initial | ui_test_copy            |
+            | research-initial | ui_test_empty_checksum1 |
+            | research-initial | ui_test_empty_checksum2 |
 
 
     Scenario Outline: Multi-select moving files / folder

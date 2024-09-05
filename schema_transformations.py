@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -127,13 +127,16 @@ def _default2_default3(ctx, m):
             creator['Affiliation'] = affiliations
 
             person_identifiers = []
-            for person_identifier in creator['Person_Identifier']:
+            for person_identifier in creator.get('Person_Identifier', []):
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
                         # Only it an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid != person_identifier['Name_Identifier']:
+                        if corrected_orcid is None:
+                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
@@ -160,13 +163,16 @@ def _default2_default3(ctx, m):
                 contributor['Affiliation'] = affiliations
 
             person_identifiers = []
-            for person_identifier in contributor['Person_Identifier']:
+            for person_identifier in contributor.get('Person_Identifier', []):
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
                         # Only it an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid != person_identifier['Name_Identifier']:
+                        if corrected_orcid is None:
+                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
@@ -575,13 +581,13 @@ def _hptlab0_hptlab1(ctx, m):
         try:
             for item_search in m[attribute]:
                 found = False
-                for i, elem in enumerate(reference_list):
+                for _i, elem in enumerate(reference_list):
                     if item_search.lower() in elem.lower():
                         found = True
                         new_list.append(elem)
                         break
                 if not found:
-                    for i, elem in enumerate(reference_list):
+                    for _i, elem in enumerate(reference_list):
                         # Split on ' ' an compare based on the first token
                         if item_search.split(' ')[0].lower() in elem.lower():
                             found = True
@@ -635,13 +641,13 @@ def _teclab0_teclab1(ctx, m):
         try:
             for item_search in m[attribute]:
                 found = False
-                for i, elem in enumerate(reference_list):
+                for _i, elem in enumerate(reference_list):
                     if item_search.lower() in elem.lower():
                         found = True
                         new_list.append(elem)
                         break
                 if not found:
-                    for i, elem in enumerate(reference_list):
+                    for _i, elem in enumerate(reference_list):
                         # Split on ' ' an compare based on the first token
                         if item_search.split(' ')[0].lower() in elem.lower():
                             found = True

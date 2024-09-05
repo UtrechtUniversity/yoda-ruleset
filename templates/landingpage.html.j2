@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="Data Publication platform of Utrecht University" />
-    <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI"/>
-    <meta name="DC.title" content="{{ title }}"/>
-    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}"/>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Data Publication platform of Utrecht University">
+    <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI">
+    <meta name="DC.title" content="{{ title }}">
+    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}">
     {% endfor %}
-    <meta name="DC.publisher" content="Utrecht University"/>
+    <meta name="DC.publisher" content="Utrecht University">
     <meta name="DC.date" content="{{ publication_date }}" scheme="DCTERMS.W3CDTF">
-    <meta name="DC.type" content="{{ datatype }}"/>
+    <meta name="DC.type" content="{{ datatype }}">
+    {%if no_active_embargo and data_access_restriction.startswith('Open') %}
+        <link rel="item" href="{{ open_access_link }}">
+    {% endif %}
     <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
-    <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet" />
-    <link href="/static/css/uu.css?v=1559637767" rel="stylesheet" />
-    <link href="/static/css/leaflet-1.5.1.css" rel="stylesheet" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="/>
+    <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet">
+    <link href="/static/css/landingpage.css?v=1559637767" rel="stylesheet">
+    <link href="/static/css/leaflet-1.5.1.css" rel="stylesheet" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==">
     <style>
         .map {height: 450px; width: 600px;}
         a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {text-decoration: none ! important;}
@@ -30,14 +33,14 @@
     </script>
 </head>
 
-<body>
+<body vocab="http://purl.org/dc/terms/">
     <div class="container bg-white no-padding">
         <header>
             <div class="logo pt-2">
-                <img src="/static/img/logo.svg"/>
+                <img src="/static/img/logo.svg">
                 </div>
                 <div class="header-title">
-                    <h1>Data publication platform of Utrecht University</h1>
+                    <h1 property="dc:title">Data publication platform of Utrecht University</h1>
                 </div>
         </header>
         <main>
@@ -48,18 +51,18 @@
                             {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
                         </div>
                         <section>
-                            <h2>{{ title }}</h2>
+                            <h2 property="dc:title">{{ title }}</h2>
                             <div class="meta">
                                 <label>Publication Date:</label>
-                                <span class="date">{{ publication_date }}</span>
+                                <span class="date" property="dc:created">{{ publication_date }}</span>
                                 <label>Accessibility:</label>
-                                <span>{{ data_access_restriction }}</span>
+                                <span property="dc:accessRights">{{ data_access_restriction }}</span>
                             </div>
-                            <p class="description">{{ description }}</p>
+                            <p class="description" property="dc:description">{{ description }}</p>
                             <div class="keywords">
                                 <label>Keywords</label>
-                                {% for tag in tags %}
-                                <span class="keyword">{{ tag }}</span>
+                                {% for keyword in keywords %}
+                                <span class="keyword" property="dc:subject">{{ keyword }}</span>
                                 {% endfor %}
                             </div>
                         </section>
@@ -71,7 +74,7 @@
                                 <div>
                                     <table class="table table-sm">
                                         <tbody>
-                                            {% for version in all_versions %}
+                                            {% for version in versions %}
                                                 <tr>
                                                     <td>
                                                         <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
@@ -85,7 +88,7 @@
                                     </table>
                                     <small>
                                         <b>Base DOI:</b>
-                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br/>
+                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br>
                                         This DOI represents all versions of this publication and will resolve to the latest publication.
                                     </small>
                                 </div>
@@ -93,7 +96,7 @@
                         </div>
                     {% endif%}
                 </div>
-                <hr />
+                <hr>
                 {%if no_active_embargo and data_access_restriction.startswith('Open') %}
                 <a class="btn btn-primary access-btn view-contents" target="_blank" href="{{ open_access_link }}">
                     View contents
@@ -147,7 +150,7 @@
                                 <label>Version</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ version }}</span>
+                                <span property="dc:hasVersion">{{ version }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -155,7 +158,7 @@
                                 <label>Language</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ language }}</span>
+                                <span property="dc:language">{{ language }}</span>
                             </div>
                         </div>
                     </div>
@@ -181,7 +184,7 @@
                                 <label>Geolocation</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ loc }}</span>
+                                <span property="dc:coverage">{{ loc }}</span>
                             </div>
                         </div>
 
@@ -313,7 +316,7 @@
                                 <label>Publication Date</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ publication_date }}</span>
+                                <span property="dc:date">{{ publication_date }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -321,7 +324,7 @@
                                 <label>Last Modification</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ last_modified_date }}</span>
+                                <span property="dc:modified">{{ last_modified_date }}</span>
                             </div>
                         </div>
                         {% if embargo_end_date %}
@@ -330,7 +333,7 @@
                                 <label>Embargo End Date</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ embargo_end_date }}</span>
+                                <span property="dc:available">{{ embargo_end_date }}</span>
                             </div>
                         </div>
                         {% endif %}
@@ -347,7 +350,7 @@
                                 <label>Related resource</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ pack.Title }}</span>
+                                <span property="dc:references" content="{{ pack.Title }}">{{ pack.Title }}</span>
                             </div>
                         </div>
 
@@ -389,7 +392,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
+                                <span property="creator">{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
                             </div>
                         </div>
                         {% endif %}
@@ -398,7 +401,7 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in creator.Person_Identifier %}
                                                 {{ id.Name_Identifier_Scheme }}:
                                                 {% if id.Name_Identifier_Scheme not in ('DAI', 'Author identifier (Scopus)') %}
@@ -418,6 +421,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if creator.Affiliation is string %}
+                                        {{ creator.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in creator.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -430,6 +436,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -442,7 +449,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
+                                <span property="contributor">{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
 
@@ -451,9 +458,15 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in contributor.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier }}{{ ", " if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}:
+                                                {% if id.Name_Identifier_Scheme not in ('DAI', 'Author identifier (Scopus)') %}
+                                                    <a href="{{ id.Name_Identifier }}" target="_blank"> {{ id.Name_Identifier }} </a>
+                                                {% else %}
+                                                    {{ id.Name_Identifier }}
+                                                {% endif %}
+                                                {{ ", " if not loop.last }}
                                             {% endfor %}
                                 </span>
                             </div>
@@ -465,6 +478,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if contributor.Affiliation is string %}
+                                        {{ contributor.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in contributor.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -477,6 +493,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -520,7 +537,7 @@
                                 <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:identifier">
                                             {% for id in contact.Person_Identifier %}
                                                 <a href="{{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
                                                 {{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
@@ -537,6 +554,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if contact.Affiliation is string %}
+                                        {{ contact.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in contact.Affiliation %}
                                             {% if affiliation is mapping %}
                                                 {% if affiliation.Affiliation_Identifier | length > 0 %}
@@ -549,6 +569,7 @@
                                             {% endif %}
                                             {{ ", " if not loop.last }}
                                         {% endfor %}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
@@ -560,7 +581,7 @@
                                 <label>License</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>
+                                <span property="dc:license">
                                     {% if license_uri|length>1 %}
                                         <a href="{{ license_uri }}" target="blank">{{ license }}</a>
                                     {% else %}
@@ -575,13 +596,13 @@
                                 <label>Collection name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ collection_name }}</span>
+                                <span property="dc:collection">{{ collection_name }}</span>
                             </div>
                         </div>
                         {% endif %}
                     </div>
                 </div>
-                <br />
+                <br>
             </section>
             <section class="questions">
                 <h2>Questions?</h2>
@@ -594,7 +615,7 @@
         </main>
         <footer>
             <div class="logo">
-                <img src="/static/img/logo_footer.svg"/>
+                <img src="/static/img/logo_footer.svg">
             </div>
         </footer>
     </div>

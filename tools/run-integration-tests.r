@@ -6,9 +6,10 @@ import genquery
 
 
 def main(rule_args, callback, rei):
-    result = callback.rule_run_integration_tests("")
-    callback.writeLine("stdout", result["arguments"][0])
+    tests = global_vars["*tests"].strip('"')
+    result = callback.rule_run_integration_tests(tests, "")
+    callback.writeLine("stdout", result["arguments"][1])
 
 
-INPUT null
+INPUT *tests=""
 OUTPUT ruleExecOut

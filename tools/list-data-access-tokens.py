@@ -9,11 +9,6 @@ import os.path
 import re
 import sys
 
-try:
-    from pysqlcipher3 import dbapi2 as sqlite3
-except ImportError, e:
-    exit_with_error("Error: pysqlcipher3 not available. It should have been installed by the Yoda playbook.")
-
 
 def exit_with_error(message):
     print >> sys.stderr, message
@@ -54,6 +49,11 @@ def read_dap_config():
 def get_tokens(token_database, token_database_password, user=None):
     if not os.path.isfile(token_database):
         exit_with_error("Error: cannot find token database")
+
+    try:
+        from pysqlcipher3 import dbapi2 as sqlite3
+    except ImportError:
+        exit_with_error("Error: pysqlcipher3 not available. It should have been installed by the Yoda playbook.")
 
     conn = sqlite3.connect(token_database)
     result = []

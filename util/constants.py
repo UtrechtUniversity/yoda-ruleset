@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -15,6 +15,8 @@ IIGRPPREFIX = "grp-"
 IIVAULTPREFIX = "vault-"
 
 UUORGMETADATAPREFIX = 'org_'
+"""Prefix for organisational metadata."""
+
 UUSYSTEMCOLLECTION = '/yoda'
 
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
@@ -38,15 +40,6 @@ UUMAXREVISIONSIZE = 2000000000
 2GB as in 2 * 1000 * 1000 * 1000
 """
 
-UUDEFAULTRESOURCETIER = 'Standard'
-"""Default name for a tier when none defined yet."""
-
-UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
-"""Metadata attribute for storage tier name."""
-
-UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
-"""Metadata for calculated storage month."""
-
 UUMETADATAGROUPSTORAGETOTALS = UUORGMETADATAPREFIX + 'storage_totals'
 """Metadata key for temporal total group storage (research, vault, revision)"""
 
@@ -69,14 +62,8 @@ IIDATA_MAX_SLURP_SIZE = 4 * 1024 * 1024  # 4 MiB
 """The maximum file size that can be read into a string in memory, to prevent
    DOSing / out of control memory consumption."""
 
-UUUSERMETADATAPREFIX = 'usr_'
-"""Prefix of user metadata (applied via legacy XML metadata file changes)."""
-
 UUUSERMETADATAROOT = 'usr'
 """JSONAVU JSON root / namespace of user metadata (applied via JSON metadata file changes)."""
-
-UUORGMETADATAPREFIX = 'org_'
-"""Prefix for organisational metadata."""
 
 UUFLATINDEX = 'FlatIndex'
 """Flat unstructured index fields."""
@@ -87,6 +74,8 @@ IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IIARCHIVEATTRNAME     = UUORGMETADATAPREFIX + 'archival_status'
 IIBAGITOR             = UUORGMETADATAPREFIX + 'bagitor'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
+IICOPYRETRYCOUNT      = UUORGMETADATAPREFIX + 'retry_count'
+IICOPYLASTRUN         = UUORGMETADATAPREFIX + 'last_run'
 
 DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
 
@@ -164,7 +153,8 @@ folder_transitions = [(research_package_state(x),
                                    ('REJECTED',  'LOCKED'),
                                    ('REJECTED',  ''),
                                    ('REJECTED',  'SUBMITTED'),
-                                   ('ACCEPTED',  'SECURED'),
+                                   ('ACCEPTED',  ''),
+                                   # Backwards compatibility for folders that hold deprecated SECURED status.
                                    ('SECURED',   'LOCKED'),
                                    ('SECURED',   ''),
                                    ('SECURED',   'SUBMITTED')]]

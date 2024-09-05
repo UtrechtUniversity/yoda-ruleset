@@ -64,13 +64,14 @@ def getGroupsData(ctx):
                 "name": name,
                 "managers": [],
                 "members": [],
-                "read": []
+                "read": [],
+                "invited": []
             }
             groups[name] = group
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
-        elif attr == "description" or attr == "expiration_date":
+        elif attr in ('description', 'expiration_date'):
             # Deal with legacy use of '.' for empty description metadata and expiration date.
             # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
@@ -89,7 +90,7 @@ def getGroupsData(ctx):
         user = row[1]
         zone = row[2]
 
-        if name != user and name != "rodsadmin" and name != "public":
+        if name not in (user, 'rodsadmin', 'public'):
             user = user + "#" + zone
             if name.startswith("read-"):
                 # Match read-* group with research-* or initial-* group.
@@ -112,6 +113,22 @@ def getGroupsData(ctx):
                     group["members"].append(user)
                 except KeyError:
                     pass
+
+    # Third query: obtain list of invited SRAM users
+    if config.enable_sram:
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE, USER_NAME, USER_ZONE",
+            "USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME = '{}'".format(constants.UUORGMETADATAPREFIX + "sram_invited"),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            name = row[0]
+            user = row[1] + "#" + row[2]
+            try:
+                group = groups[name]
+                group["invited"].append(user)
+            except KeyError:
+                pass
 
     return groups.values()
 
@@ -163,7 +180,7 @@ def getGroupData(ctx, name):
         user = row[0]
         zone = row[1]
 
-        if name != user and name != "rodsadmin" and name != "public":
+        if name not in (user, 'rodsadmin', 'public'):
             group["members"].append(user + "#" + zone)
 
     if name.startswith("research-"):
@@ -348,8 +365,14 @@ def api_group_data(ctx):
 
     :param ctx: Combined type of a ctx and rei struct
 
-    :returns: Group hierarchy, user type and user zone
+    :returns: Group hierarchy, user type and user zone. Only group types managed
+              by the group manager are included.
     """
+    return (internal_api_group_data(ctx))
+
+
+def internal_api_group_data(ctx):
+    # This is the entry point for integration tests against api_group_data
     if user.is_admin(ctx):
         groups = getGroupsData(ctx)
     else:
@@ -361,8 +384,23 @@ def api_group_data(ctx):
         # Filter groups (only return groups user is part of), convert to json and write to stdout.
         groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
 
+    # Only process group types managed via group manager
+    managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
+    groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
+
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
+
+    # Gather group creation dates.
+    creation_dates = {}
+    zone = user.zone(ctx)
+    iter = genquery.row_iterator(
+        "COLL_NAME, COLL_CREATE_TIME",
+        "COLL_PARENT_NAME = '/{}/home' and COLL_NAME not like '/{}/home/vault-%' and COLL_NAME not like '/{}/home/grp-%'".format(zone, zone, zone),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        creation_dates[row[0]] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[1])))
 
     group_hierarchy = OrderedDict()
     for group in groups:
@@ -381,6 +419,10 @@ def api_group_data(ctx):
         for member in group['read']:
             members[member] = {'access': 'reader'}
 
+        # Invited SRAM users
+        for member in group['invited']:
+            members[member]['sram'] = 'invited'
+
         if not group_hierarchy.get(group['category']):
             group_hierarchy[group['category']] = OrderedDict()
 
@@ -392,21 +434,14 @@ def api_group_data(ctx):
         if "schema_id" not in group:
             group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
 
-        creation_date = ""
-        iter = genquery.row_iterator(
-            "COLL_CREATE_TIME",
-            "COLL_NAME = '/{}/home/{}'".format(user.zone(ctx), group['name']),
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            creation_date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[0])))
+        coll_name = "/{}/home/{}".format(user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
-            'description': group['description'] if 'description' in group else '',
+            'description': group.get('description', ''),
             'schema_id': group['schema_id'],
-            'expiration_date': group['expiration_date'] if 'expiration_date' in group else '',
-            'data_classification': group['data_classification'] if 'data_classification' in group else '',
-            'creation_date': creation_date,
+            'expiration_date': group.get('expiration_date', ''),
+            'data_classification': group.get('data_classification', ''),
+            'creation_date': creation_dates.get(coll_name, ''),
             'members': members
         }
 
@@ -515,7 +550,7 @@ def validate_data(ctx, data, allow_update):
     can_add_category = user.is_member_of(ctx, 'priv-category-add')
     is_admin = user.is_admin(ctx)
 
-    for (category, subcategory, groupname, managers, members, viewers, _, _) in data:
+    for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
@@ -735,7 +770,7 @@ def provisionExternalUser(ctx, username, creatorUser, creatorZone):
                                           eus_api_secret},
                                  timeout=10,
                                  verify=eus_api_tls_verify)
-    except requests.ConnectionError or requests.ConnectTimeout:
+    except (requests.ConnectionError, requests.ConnectTimeout):
         return -1
 
     return response.status_code
@@ -807,9 +842,28 @@ def removeExternalUser(ctx, username, userzone):
     return str(response.status_code)
 
 
-def rule_group_remove_external_user(rule_args, ctx, rei):
-    """Remove external user."""
-    log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
+@rule.make(inputs=[0, 1], outputs=[])
+def rule_group_remove_external_user(ctx, username, userzone):
+    """Remove external user from EUS
+
+      :param ctx:      Combined type of a ctx and rei struct
+      :param username: Name of user to remove
+      :param userzone: Zone of user to remove
+
+      :returns:        HTTP status code of remove request, or "0"
+                       if insufficient permissions.
+   """
+    if user.is_admin(ctx):
+        ret = removeExternalUser(ctx, username, userzone)
+        ctx.writeLine("serverLog", "Status code for removing external user "
+                                   + username + "#" + userzone
+                                   + " : " + ret)
+        return ret
+    else:
+        ctx.writeLine("serverLog", "Cannot remove external user "
+                                   + username + "#" + userzone
+                                   + " : need admin permissions.")
+        return '0'
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -1046,7 +1100,8 @@ def group_user_add(ctx, username, group_name):
                     sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
-
+                # Mark user as invited.
+                msi.sudo_obj_meta_set(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
         else:
             return api.Error('policy_error', message)
@@ -1174,13 +1229,14 @@ def rule_group_sram_sync(ctx):
 
     for group in groups:
         group_name = group["name"]
-        members = group['members']
+        members = group['members'] + group['read']
         managers = group['managers']
-        description = group['description'] if 'description' in group else ''
+        invited = group['invited']
+        description = group.get('description', '')
 
         log.write(ctx, "Sync group {} with SRAM".format(group_name))
-
         sram_group, co_identifier = sram_enabled(ctx, group_name)
+
         # Post collaboration group is not yet already SRAM enabled.
         if not sram_group:
             response_sram = sram.sram_post_collaboration(ctx, group_name, description)
@@ -1203,27 +1259,43 @@ def rule_group_sram_sync(ctx):
 
         log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
         for member in members:
-            # Validate email
+            # Validate email.
             if not yoda_names.is_email_username(member):
                 log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
                 continue
 
-            if member.split('#')[0] not in co_members:
+            # Check if member is invited.
+            if member in invited:
+                if member.split('#')[0] in co_members:
+                    log.write(ctx, "User {} added to group {}".format(member, group_name))
+                    # Remove invitation metadata.
+                    msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                else:
+                    log.write(ctx, "User {} already invited to group {}".format(member, group_name))
+                    continue
+
+            # Not invited and not yet in the CO.
+            if member not in invited and member.split('#')[0] not in co_members:
                 if config.sram_flow == 'join_request':
                     sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
-                    log.write(ctx, "User {} added to group {}".format(member, group_name))
+                    msi.sudo_obj_meta_set(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
+                    continue
                 elif config.sram_flow == 'invitation':
                     sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
-                    log.write(ctx, "User {} added to group {}".format(member, group_name))
-            else:
-                if member in managers:
-                    uid = sram.sram_get_uid(ctx, co_identifier, member)
-                    if uid == '':
-                        log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                    msi.sudo_obj_meta_set(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
+                    continue
+
+            # Member is group manager and in the CO.
+            if member in managers and member.split('#')[0] in co_members:
+                uid = sram.sram_get_uid(ctx, co_identifier, member)
+                if uid == '':
+                    log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                else:
+                    if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
                     else:
-                        if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
-                            log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
-                        else:
-                            log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
 
     log.write(ctx, "Finished syncing groups with SRAM")

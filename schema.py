@@ -55,18 +55,9 @@ def get_schema_collection(ctx, rods_zone, group_name):
 
     :returns: string -- Category
     """
-    # Find out whether a schema_id has been set on group level.
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE",
-        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        # Return schema id if found on group level.
-        # No further test is required here as the value found here was selected
-        # from /rods_zone/yoda/schemas/ and therefore must be present.
-        return row[0]
+    schema_id = get_schema_id_from_group(ctx, group_name)
+    if schema_id is not None:
+        return schema_id
 
     # Find out category based on current group_name.
     category = '-1'
@@ -84,7 +75,6 @@ def get_schema_collection(ctx, rods_zone, group_name):
         # If not, fall back to default schema collection.
         # /tempZone/yoda/schemas/default/metadata.json
         schema_path = '/' + rods_zone + '/yoda/schemas/' + category
-        schema_coll = config.default_yoda_schema
 
         iter = genquery.row_iterator(
             "COLL_NAME",
@@ -93,9 +83,29 @@ def get_schema_collection(ctx, rods_zone, group_name):
         )
 
         for _row in iter:
-            schema_coll = category  # As collection is present, the schema_collection can be assigned the category.
+            return category
 
-    return schema_coll
+    return config.default_yoda_schema
+
+
+def get_schema_id_from_group(ctx, group_name):
+    """Returns the schema_id value that has been set on an iRODS group
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param group_name: Group name
+
+    :returns:          Schema ID, or None if none is set.
+    """
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
 
 
 def get_active_schema_path(ctx, path):
@@ -119,13 +129,17 @@ def get_active_schema_path(ctx, path):
         group_name = path_parts[4]
 
     if group_name.startswith("vault-"):
-        temp_group_name = group_name.replace("vault-", "deposit-", 1)
-        if group.exists(ctx, temp_group_name):
-            group_name = temp_group_name
-        else:
-            group_name = group_name.replace("vault-", "research-", 1)
-
-    schema_coll = get_schema_collection(ctx, rods_zone, group_name)
+        schema_coll = get_schema_id_from_group(ctx, group_name)
+        if schema_coll is None:
+            deposit_group_name = group_name.replace("vault-", "deposit-", 1)
+            research_group_name = group_name.replace("vault-", "research-", 1)
+            if group.exists(ctx, deposit_group_name):
+                effective_group_name = deposit_group_name
+            else:
+                effective_group_name = research_group_name
+            schema_coll = get_schema_collection(ctx, rods_zone, effective_group_name)
+    else:
+        schema_coll = get_schema_collection(ctx, rods_zone, group_name)
 
     return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
 

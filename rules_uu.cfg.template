@@ -57,8 +57,6 @@ async_replication_max_rss      =
 async_revision_delay_time      =
 async_revision_max_rss         =
 
-enable_tape_archive            =
-
 temporary_files                =
 
 enable_sram                    =

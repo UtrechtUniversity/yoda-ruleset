@@ -139,7 +139,7 @@ def call_rule(session, rulename, params, number_outputs, rule_engine='irods_rule
      """
     body = 'myRule {{\n {}('.format(rulename)
 
-    for input_var in params.keys():
+    for input_var in params:
         body += "'*{}',".format(input_var)
 
     if len(params) > 0:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata form handling."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -150,7 +150,8 @@ def load(ctx, coll):
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         is_locked = folder.is_locked(ctx, coll, org_metadata)
-        can_edit = is_member and not is_locked
+        # Do not allow editing of files in folders with apostrophes in name
+        can_edit = is_member and not is_locked and '\'' not in subpath
 
         # Analyze a possibly existing metadata JSON file.
         meta_path = meta.get_collection_metadata_path(ctx, coll)
@@ -229,9 +230,10 @@ def load(ctx, coll):
 
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)
         can_edit  = (groups.user_is_datamanager(ctx, category, user_full_name)
-                     and (status == constants.vault_package_state.UNPUBLISHED
-                          or status == constants.vault_package_state.PUBLISHED
-                          or status == constants.vault_package_state.DEPUBLISHED))
+                     and status in (constants.vault_package_state.UNPUBLISHED,
+                     constants.vault_package_state.PUBLISHED,
+                     constants.vault_package_state.DEPUBLISHED)
+                     and '\'' not in subpath)
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
         if meta_path is None:
@@ -294,7 +296,6 @@ def save(ctx, coll, metadata):
     is_vault = space is pathutil.Space.VAULT
     if is_vault:
         # It's a vault path - set up a staging area in the datamanager collection.
-
         ret = ctx.iiDatamanagerGroupFromVaultGroup(group, '')
         datamanager_group = ret['arguments'][1]
         if datamanager_group == '':
@@ -309,6 +310,9 @@ def save(ctx, coll, metadata):
 
         # Use staging area instead of trying to write to the vault directly.
         json_path = '{}/{}'.format(tmp_coll, constants.IIJSONMETADATA)
+
+    # Remove empty objects from metadata.
+    metadata = misc.remove_empty_objects(metadata)
 
     # Add metadata schema id to JSON.
     meta.metadata_set_schema_id(metadata, schema_.get_active_schema_id(ctx, json_path))

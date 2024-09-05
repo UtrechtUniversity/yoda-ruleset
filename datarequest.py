@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -15,7 +15,6 @@ from enum import Enum
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
-import avu_json
 import mail
 from util import *
 
@@ -496,7 +495,10 @@ def datarequest_owner_get(ctx, request_id):
                                       + JSON_EXT)
 
     # Get and return data request owner
-    return jsonutil.read(ctx, file_path)['owner']
+    try:
+        return jsonutil.read(ctx, file_path)['owner']
+    except Exception:
+        return None
 
 
 def datarequest_is_reviewer(ctx, request_id, pending=False):
@@ -732,7 +734,7 @@ def datarequest_sync_avus(ctx, request_id):
     data = datarequest_get(ctx, request_id)
 
     # Re-set the AVUs
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
+    jsonutil.set_on_object(ctx, file_path, "data_object", "root", data)
 
 
 ###################################################
@@ -820,45 +822,32 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     # c3) DAC reviewed requests
     elif dac_member and not dacrequests and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
-    #
+    # Execute query
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
-        if sort_on == 'modified':
-            coll_names = [result['COLL_NAME'] for result in list(qcoll)]
-        else:
-            if sort_order == 'desc':
-                coll_names = [result['ORDER_DESC(COLL_NAME)'] for result in list(qcoll)]
-            else:
-                coll_names = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
     else:
         return OrderedDict([('total', 0), ('items', [])])
 
-    # Execute query
+    # Merge datarequest title and status into results.
     colls = map(transform, list(qcoll))
-    #
-    # Merge datarequest title into results
     colls_title = map(transform_title, list(qcoll_title))
-    for datarequest_title in colls_title:
-        for datarequest in colls:
+    colls_status = map(transform_status, list(qcoll_status))
+    for datarequest in colls:
+        for datarequest_title in colls_title:
             if datarequest_title['id'] == datarequest['id']:
                 datarequest['title'] = datarequest_title['title']
                 break
-    #
-    # Merge datarequest status into results
-    colls_status = map(transform_status, list(qcoll_status))
-    for datarequest_status in colls_status:
-        for datarequest in colls:
+
+        for datarequest_status in colls_status:
             if datarequest_status['id'] == datarequest['id']:
                 datarequest['status'] = datarequest_status['status']
                 break
 
-    if len(colls) == 0:
-        # No results at all?
-        # Make sure the collection actually exists
-        if not collection.exists(ctx, coll):
-            return api.Error('nonexistent', 'The given path does not exist')
+    # No results at all? Make sure the collection actually exists.
+    if len(colls) == 0 and not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
@@ -897,7 +886,7 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
     # Revoke temporary write permission (unless read permissions were set on the invoking user)
-    if not user.full_name(ctx) in readers:
+    if user.full_name(ctx) not in readers:
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
@@ -1005,7 +994,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         return api.Error('write_error', 'Could not write datarequest to disk.')
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
+    jsonutil.set_on_object(ctx, file_path, "data_object", "root", json.dumps(data))
 
     # If draft, set status
     if draft:
@@ -1057,7 +1046,10 @@ def api_datarequest_get(ctx, request_id):
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
 
     # Get request type
-    datarequest_type = type_get(ctx, request_id).value
+    try:
+        datarequest_type = type_get(ctx, request_id).value
+    except Exception as e:
+        return api.Error("datarequest_type_fail", "Error: {}".format(e))
 
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
@@ -1458,7 +1450,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     try:
         # Determine who is permitted to read
         permitted_to_read = [GROUP_DM, GROUP_PM]
-        if 'assign_to' in data.keys():
+        if 'assign_to' in data:
             permitted_to_read = permitted_to_read + data['assign_to'][:]
 
         # Write form data to disk
@@ -2235,8 +2227,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     pm_members          = group.members(ctx, GROUP_PM)
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
-    datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
-                           datamanager_review else "")
+    datamanager_remarks = datamanager_review.get('datamanager_remarks', '')
     truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send emails
@@ -2309,8 +2300,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     researcher_email        = datarequest_owner_get(ctx, request_id)
     cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
-    feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
-                               evaluation else "")
+    feedback_for_researcher = evaluation.get('feedback_for_researcher', '')
     pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     truncated_title         = truncated_title_get(ctx, request_id)
 

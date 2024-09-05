@@ -10,7 +10,7 @@ import sys
 import rule
 from config import config
 
-if 'unittest' not in sys.modules.keys():
+if 'unittest' not in sys.modules:
     # We don't import the user functions when running unit tests, because then we'll have
     # to deal with their dependencies. When running unit tests we should use a "None" ctx
     # or some mocked object.
@@ -38,6 +38,15 @@ def _write(ctx, message):
         ctx.writeLine('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
     else:
         ctx.writeLine('serverLog', message)
+
+
+def write_stdout(ctx, message):
+    """Write a message to stdout. Used for some of our scripts.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param message:  Message to write to log
+    """
+    ctx.writeLine("stdout", message)
 
 
 def debug(ctx, message):

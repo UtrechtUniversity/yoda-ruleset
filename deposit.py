@@ -25,15 +25,16 @@ DEPOSIT_GROUP = "deposit-pilot"
 
 
 @api.make()
-def api_deposit_copy_data_package(ctx, reference):
+def api_deposit_copy_data_package(ctx, reference, deposit_group):
     """Create deposit collection and copies selected datapackage into the newly created deposit
 
-    :param ctx:       Combined type of a callback and rei struct
-    :param reference: Data Package Reference (UUID4)
+    :param ctx:           Combined type of a callback and rei struct
+    :param reference:     Data Package Reference (UUID4)
+    :param deposit_group: Deposit group to copy to
 
     :returns: Path to created deposit collection or API error
     """
-    result = deposit_create(ctx)
+    result = deposit_create(ctx, deposit_group)
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
 
@@ -69,7 +70,7 @@ def api_deposit_copy_data_package(ctx, reference):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not groups.user_role(ctx, user_full_name, group_name) in ['normal', 'manager']:
+    if groups.user_role(ctx, user_full_name, group_name) not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -94,6 +95,7 @@ def api_deposit_create(ctx, deposit_group):
 
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
+
     return {"deposit_path": result["deposit_path"]}
 
 
@@ -147,6 +149,11 @@ def api_deposit_status(ctx, path):
     :returns: Deposit status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.DEPOSIT:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'Deposit collection does not exist.')
 
@@ -177,6 +184,11 @@ def api_deposit_submit(ctx, path):
     :returns: API status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+
+    space, _, _, _ = pathutil.info(coll)
+    if space is not pathutil.Space.DEPOSIT:
+        return api.Error('invalid_path', 'Invalid folder path.')
+
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'Deposit collection does not exist.')
 

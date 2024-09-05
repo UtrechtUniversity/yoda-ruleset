@@ -47,6 +47,7 @@ def pytest_addoption(parser):
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
+    parser.addoption("--no-env-csrf", action="store_true", default=False, help="Do not get CSRF token from environment (this is enabled by default for smoke tests)")
     parser.addoption("--smoke", action="store_true", default=False, help="Run Smoke tests")
     parser.addoption("--skip-ui", action="store_true", default=False, help="Skip UI tests")
     parser.addoption("--skip-api", action="store_true", default=False, help="Skip API tests")
@@ -85,7 +86,7 @@ def pytest_configure(config):
     global verbose_test
     verbose_test = config.getoption("--verbose-test")
 
-    global datarequest, deposit, intake, archive, smoke, run_all, skip_api, skip_ui
+    global datarequest, deposit, intake, archive, smoke, run_all, skip_api, skip_ui, no_env_csrf
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
@@ -94,6 +95,7 @@ def pytest_configure(config):
     skip_ui = config.getoption("--skip-ui")
     skip_api = config.getoption("--skip-api")
     run_all = config.getoption("--all")
+    no_env_csrf = config.getoption("--no-env-csrf")
 
     if skip_ui and run_all:
         pytest.exit("Error: arguments --skip-ui and --all are incompatible.")
@@ -112,7 +114,7 @@ def pytest_configure(config):
 
     # Store cookies for each user.
     for role, user in roles.items():
-        if smoke:
+        if smoke and not no_env_csrf:
             csrf = user["csrf"]
             session = user["session"]
         else:

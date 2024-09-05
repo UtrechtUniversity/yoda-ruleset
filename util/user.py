@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import subprocess
 from collections import namedtuple
 
 import genquery
 import session_vars
+
+import log
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])
@@ -104,3 +107,19 @@ def name_from_id(ctx, user_id):
                                      genquery.AS_LIST, ctx):
         return row[0]
     return ''
+
+
+def number_of_connections(ctx):
+    """Get number of active connections from client user."""
+    connections = 0
+    try:
+        # We don't use the -a option with the ips command, because this takes
+        # significantly more time, which would significantly reduce performance.
+        ips = subprocess.check_output(["ips"])
+        username = session_vars.get_map(ctx.rei)['client_user']['user_name']
+        connections = ips.count(username)
+    except Exception as e:
+        log.write(ctx, "Error: unable to determine number of user connections: " + str(e))
+        return 0
+
+    return connections

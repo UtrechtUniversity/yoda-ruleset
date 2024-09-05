@@ -5,7 +5,7 @@ This subpackage does not export any callable rules by itself.
 Rather, it provides utility Python functions to other rules.
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -16,7 +16,7 @@ import sys
 
 import yoda_names
 
-if 'unittest' not in sys.modules.keys():
+if 'unittest' not in sys.modules:
     # We don't import everything when running unit tests, because then we'll have
     # to deal with all the dependencies. Functions that have unit tests should
     # import utils specifically
@@ -35,10 +35,10 @@ if 'unittest' not in sys.modules.keys():
     import group
     import avu
     import misc
-    import config
     import resource
     import arb_data_manager
     import cached_data_manager
+    import irods_type_info
 
     # Config items can be accessed directly as 'config.foo' by any module
     # that imports * from util.
@@ -48,5 +48,4 @@ if 'unittest' not in sys.modules.keys():
         import bagit
 
     if config.environment == 'development':
-        import irods_type_info
         ping = api_ping = api.make()(lambda ctx, x=42: x)
