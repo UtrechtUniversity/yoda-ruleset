@@ -225,6 +225,7 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
     :raises ValueError:      If the attribute is not found in the data package's AVU.
     """
 
+    # TODO extract to avu.py? need this?
     attr = constants.UUORGMETADATAPREFIX + "publication_" + attribute_suffix
     try:
         return next(m.value for m in avu.of_coll(ctx, data_package) if m.attr == attr)
@@ -232,72 +233,99 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         raise ValueError("Attribute {} not found in AVU".format(attr))
 
 
-def get_remote_url(ctx, data_package, remote_hostname, remote_directory, attribute_suffix):
+def get_landingpage_paths(ctx, data_package, remote_hostname, attribute_suffix, publication_config):
     """Given a data package, remote host, and an attribute suffix, get what the remote url should be"""
+    # TODO catch if doesn't exist
     file_path = get_attribute_value(ctx, data_package, attribute_suffix)
-    log.write_stdout(ctx, "file path: {}".format(file_path))
-    publication_config = get_publication_config(ctx)
     if remote_hostname not in publication_config:
         raise KeyError("Host {} does not exist in publication config".format(remote_hostname))
 
-    file_shortname = file_path.split("/")[-1].replace('-combi', '')
-    # https://public.yoda.test/allinone/UU01/PPQEBC.html
-    url = "https://{}/{}/{}/{}".format(publication_config[remote_hostname],
-        publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    log.write_stdout(ctx, "url: {}".format(url))
-    return url
+    file_shortname = file_path.split("/")[-1]
+    # Example url: https://public.yoda.test/allinone/UU01/PPQEBC.html
+    url = "https://{}/{}/{}/{}".format(
+        publication_config[remote_hostname], publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
+    return file_path, url
 
 
-def compare_local_remote_files(ctx, data_package, attribute_suffix, url):
+def compare_local_remote_files(ctx, file_path, url):
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
-    :param ctx:              Combined type of a callback and rei struct
-    :param data_package:     String representing the data package collection path.
-    :param attribute_suffix: Suffix identifying the metadata attribute for the file path.
-    :param remote_host:      Hostname for the remote host to look up in publication config
-    :param remote_directory: Base directory on the remote server for the file.
+    :param ctx:       Combined type of a callback and rei struct
+    :param file_path: Path to file in irods
+    :param url:       URL of file on remote
 
-    :returns:                True if the MD5 checksums match, False otherwise.
-
-    :raises KeyError:        If host cannot be found in publication config
+    :returns:         True if the file contents match, False otherwise
     """
 
-    # Calculate md5 for the local file
-    file_path = get_attribute_value(ctx, data_package, attribute_suffix)
-    log.write_stdout(ctx, "file path: {}".format(file_path))
+    # Get local file
     # We are comparing small files so it should be ok to get the whole file
     local_data = data_object.read(ctx, file_path)
 
-    result = requests.get(url, verify=False)
-    if result.status_code != 200:
-        log.write_stdout(ctx, "Connection to remote url <{}> failed.".format(url))
+    response = requests.get(url, verify=False)
+    if response.status_code != 200:
+        log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
 
-    if local_data == result.text:
+    if local_data == response.text:
         return True
 
-    log.write_stdout(ctx, "File contents of irods and remote file do not match.")
+    log.write_stdout(ctx, "File contents of irods and remote landing page do not match.")
     # TODO print paths here?
     return False
 
 
-def check_integrity_of_publication_files(ctx, data_package):
+def check_landingpage(ctx, data_package, publication_config):
     """
-    Checks the integrity of landingPage and CombiJson files by comparing the contents
+    Checks the integrity of landing page by comparing the contents
 
-    :param ctx:          Combined type of a callback and rei struct
-    :param data_package: String representing the data package collection path.
+    :param ctx:                Combined type of a callback and rei struct
+    :param data_package:       String representing the data package collection path.
+    :param publication_config: Dictionary of publication config
 
-    :returns:            A tuple containing boolean results of checking
+    :returns:                  A tuple containing boolean results of checking
     """
-    # publicVHost for landingpage, moaiHost for moai
-    landing_page_url = get_remote_url(ctx, data_package, "publicVHost", "landingpage", "landingPagePath")
-    # landing_page_verified = compare_local_remote_files(ctx, data_package, "landingPagePath", landing_page_url)
-    combi_json_url = get_remote_url(ctx, data_package, "moaiHost", "moai/metadata", "combiJsonPath")
-    # combi_json_verified = compare_local_remote_files(ctx, data_package, "combiJsonPath", combi_json_url)
-    # return (landing_page_verified, combi_json_verified)
-    return True, True
+    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, "publicVHost", "landingPagePath", publication_config)
+    landing_page_verified = compare_local_remote_files(ctx, irods_file_path, landing_page_url)
+    return landing_page_verified
+
+
+def check_combi_json(ctx, data_package, publication_config):
+    """
+    Checks the integrity of combi JSON by checking URL and existence of file.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param data_package:       String representing the data package collection path.
+    :param publication_config: Dictionary of publication config
+
+    :returns:                  A tuple containing boolean results of checking
+    """
+    remote_hostname = "publicVHost"
+    # Check that the combi json in irods exists
+    attr = constants.UUORGMETADATAPREFIX + "publication_combiJsonPath"
+    # TODO try catch
+    file_path = avu.get_val_of_coll(ctx, data_package, attr)
+    exists = data_object.exists(ctx, file_path)
+    if not exists:
+        log.write_stdout(ctx, "combi JSON file in irods does not exist: {}".format(file_path))
+        return False
+
+    # Get the version doi
+    attr = constants.UUORGMETADATAPREFIX + "publication_versionDOI"
+    # TODO check if this fails
+    version_doi = avu.get_val_of_coll(ctx, data_package, attr)
+    url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config[remote_hostname], version_doi)
+    response = requests.get(url, verify=False)
+    if response.status_code != 200:
+        log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
+        return False
+
+    # Look at the first few parts of the response for signs of error.
+    if "idDoesNotExist" in response.text[:5000]:
+        log.write_stdout(ctx, "combiJson not found in oai for data package <{}>".format(data_package))
+        return False
+
+    return True
 
 
 def print_troubleshoot_result(ctx, result):
@@ -323,6 +351,37 @@ def print_troubleshoot_result(ctx, result):
     log.write_stdout(ctx, "")
 
 
+def collect_troubleshoot_data_packages(ctx, requested_package):
+    data_packages = []
+
+    # Full path given
+    if requested_package.startswith("/"):
+        if not collection.exists(ctx, requested_package) or not published_data_package_exists(ctx, requested_package):
+            log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
+            return None
+
+        data_packages.append(requested_package)
+    else:
+        # Retrieve all published data packages
+        all_published_packages = find_published_data_packages(ctx)
+        if not all_published_packages:
+            log.write_stdout(ctx, "No published packages found.")
+            return None
+
+        # Determine which packages to process based on the input
+        if requested_package == 'all_published_packages':
+            data_packages = all_published_packages
+        else:
+            data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
+            if data_package_path:
+                data_packages.append(data_package_path)
+            else:
+                log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
+                return None
+
+    return data_packages
+
+
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_loc):
     """
@@ -342,32 +401,9 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
 
     Operates on either a single specified package or all published packages, depending on the input.
     """
-    data_packages = []
-
-    # Full path given
-    if requested_package.startswith("/"):
-        if not collection.exists(ctx, requested_package) or not published_data_package_exists(ctx, requested_package):
-            log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
-            return
-
-        data_packages.append(requested_package)
-    else:
-        # Retrieve all published data packages
-        all_published_packages = find_published_data_packages(ctx)
-        if not all_published_packages:
-            log.write_stdout(ctx, "No published packages found.")
-            return
-
-        # Determine which packages to process based on the input
-        if requested_package == 'all_published_packages':
-            data_packages = all_published_packages
-        else:
-            data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
-            if data_package_path:
-                data_packages.append(data_package_path)
-            else:
-                log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
-                return
+    data_packages = collect_troubleshoot_data_packages(ctx, requested_package)
+    if not data_packages:
+        return
 
     # Troubleshooting
     for data_package in data_packages:
@@ -375,7 +411,9 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         schema_check = verify_package_schema(ctx, data_package, {})['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
-        landing_page_check, combi_json_check = check_integrity_of_publication_files(ctx, data_package)
+        publication_config = get_publication_config(ctx)
+        landing_page_check = check_landingpage(ctx, data_package, publication_config)
+        combi_json_check = check_combi_json(ctx, data_package, publication_config)
 
         # Collect results for current data package
         result = {
@@ -390,7 +428,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         }
 
         print_troubleshoot_result(ctx, result)
-        # TODO proper check?
+        # TODO proper check if file exists?
         if len(log_loc):
             with open(log_loc, "a") as writer:
                 json.dump(result, writer)
