@@ -978,7 +978,7 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
         message = response[9]
         if status == '0':
             return api.Result.ok()
-        elif status == '-1089000' or status == '-809000':
+        elif status == '-1089000' or status == '-809000' or status == '-806000':
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
         else:
             return api.Error('policy_error', message)
