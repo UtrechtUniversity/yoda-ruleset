@@ -7,13 +7,13 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
 import json
-import requests
 
 import genquery
+import requests
 
 import datacite
-from publication import get_publication_config
 from meta import vault_metadata_matches_schema
+from publication import get_publication_config
 from util import *
 
 

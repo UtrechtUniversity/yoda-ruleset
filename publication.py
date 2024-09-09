@@ -746,7 +746,7 @@ def process_publication(ctx, vault_package):
             # Set the link to previous publication state
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
             publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
-            publication_state["baseRandomId"] = previous_publication_state["baseRandomId"] #TODO: what is this
+            publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]  # TODO: what is this
 
         # Create base DOI if it does not exist in the previous publication state.
         elif "baseDOI" not in previous_publication_state:
