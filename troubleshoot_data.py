@@ -194,7 +194,7 @@ def get_landingpage_paths(ctx, data_package, remote_hostname, attribute_suffix, 
     return file_path, url
 
 
-def compare_local_remote_files(ctx, file_path, url):
+def compare_local_remote_landingpage(ctx, file_path, url):
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
@@ -209,7 +209,13 @@ def compare_local_remote_files(ctx, file_path, url):
     # We are comparing small files so it should be ok to get the whole file
     local_data = data_object.read(ctx, file_path)
 
-    response = requests.get(url, verify=False)
+    try:
+        response = requests.get(url, verify=False)
+    except requests.exceptions.ConnectionError as e:
+        log.write_stdout(ctx, "Failed to connect to {}".format(url))
+        log.write_stdout(ctx, "Error: {}".format(e))
+        return False
+
     if response.status_code != 200:
         log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
@@ -233,7 +239,7 @@ def check_landingpage(ctx, data_package, publication_config):
     :returns:                  A tuple containing boolean results of checking
     """
     irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, "publicVHost", "landingPagePath", publication_config)
-    landing_page_verified = compare_local_remote_files(ctx, irods_file_path, landing_page_url)
+    landing_page_verified = compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url)
     return landing_page_verified
 
 
@@ -262,7 +268,13 @@ def check_combi_json(ctx, data_package, publication_config):
     # TODO check if this fails
     version_doi = avu.get_val_of_coll(ctx, data_package, attr)
     url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config[remote_hostname], version_doi)
-    response = requests.get(url, verify=False)
+    try:
+        response = requests.get(url, verify=False)
+    except requests.exceptions.ConnectionError as e:
+        log.write_stdout(ctx, "Failed to connect to {}".format(url))
+        log.write_stdout(ctx, "Error: {}".format(e))
+        return False
+
     if response.status_code != 200:
         log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
