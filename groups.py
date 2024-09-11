@@ -682,10 +682,10 @@ def apply_data(ctx, data, allow_update, delete_users):
         if user_added:
             message += ' User(s) added.'
         elif user_removed:
-            messages += ' User(s) removed.'
+            message += ' User(s) removed.'
         elif not new_group:
             message += ' No changes made.'
-            
+   
     return {"status": "ok", "message": message}
 
 
