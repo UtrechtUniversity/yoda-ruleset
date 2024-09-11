@@ -577,7 +577,7 @@ def apply_data(ctx, data, allow_update, delete_users):
 
     :returns: Errors if found any, or message with actions if everything is succesful
     """
-    
+
     for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
         user_added, user_removed = False, False
@@ -685,7 +685,7 @@ def apply_data(ctx, data, allow_update, delete_users):
             message += ' User(s) removed.'
         elif not new_group:
             message += ' No changes made.'
-   
+
     return {"status": "ok", "message": message}
 
 
