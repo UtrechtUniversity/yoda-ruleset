@@ -575,12 +575,12 @@ def apply_data(ctx, data, allow_update, delete_users):
     :param allow_update: Allow updates in groups
     :param delete_users:  Allow for deleting of users from groups
 
-    :returns: Errors if found any, or message with actions if everything is succesful
+    :returns: Errors if found any, or message with actions if everything is successful
     """
 
     for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
-        user_added, user_removed = False, False
+        users_added, users_removed = 0, 0
         message = ''
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
@@ -608,7 +608,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                 if response:
                     currentrole = "normal"
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
-                    user_added = True
+                    users_added += 1
                 else:
                     log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
@@ -674,16 +674,18 @@ def apply_data(ctx, data, allow_update, delete_users):
                     response = group_remove_user_from_group(ctx, username, usergroupname)
                     if response:
                         log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
-                        user_removed = True
+                        users_removed += 1
                     else:
                         log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
                         log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
-        if user_added:
-            message += ' User(s) added.'
-        elif user_removed:
-            message += ' User(s) removed.'
-        elif not new_group:
+        if users_added > 0:
+            message += ' Users added ({}).'.format(users_added)
+        if users_removed > 0:
+            message += ' Users removed ({}).'.format(users_removed)
+
+        # If no users added, no users removed and not new group created.
+        if not users_added and not users_removed and not new_group:
             message += ' No changes made.'
 
     return {"status": "ok", "message": message}
