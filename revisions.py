@@ -1069,7 +1069,7 @@ def rule_remove_revision_creation_avu_from_deleted_data_objects(ctx):
         "COLL_NAME like '%{}/trash/home/%' AND META_DATA_ATTR_NAME = '{}'".format(user.zone(ctx), revision_avu_name),
         genquery.AS_LIST, ctx
     )
-    
+
     for coll_name, data_name in iter:
         path = coll_name + '/' + data_name
         try:
