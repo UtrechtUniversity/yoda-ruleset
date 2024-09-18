@@ -361,7 +361,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
         minimum_timestamp = int(time.time() - config.async_revision_delay_time)
 
-        # Remove revision creation AVUs from deleted data objects. 
+        # Remove revision creation AVUs from deleted data objects.
         # This makes it easier to monitor the number of data objects waiting for revision creation.
         remove_revision_creation_avu_from_deleted_data_objects(ctx)
 
