@@ -27,8 +27,7 @@ __all__ = ['api_revisions_restore',
            'rule_revision_batch',
            'rule_revisions_cleanup_collect',
            'rule_revisions_cleanup_process',
-           'rule_revisions_cleanup_scan',
-           "rule_remove_revision_creation_avu_from_deleted_data_objects"]
+           'rule_revisions_cleanup_scan']
 
 
 @api.make()
@@ -361,6 +360,10 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
         log.write(ctx, "Batch revision job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
 
         minimum_timestamp = int(time.time() - config.async_revision_delay_time)
+
+        # Remove revision creation AVUs from deleted data objects. 
+        # This makes it easier to monitor the number of data objects waiting for revision creation.
+        remove_revision_creation_avu_from_deleted_data_objects(ctx)
 
         # Get list of up to batch size limit of data objects (in research space) scheduled for revision, taking into account
         # modification time.
@@ -1057,8 +1060,7 @@ def memory_limit_exceeded(rss_limit):
     return rss_limit and memory_rss_usage() > rss_limit
 
 
-@rule.make()
-def rule_remove_revision_creation_avu_from_deleted_data_objects(ctx):
+def remove_revision_creation_avu_from_deleted_data_objects(ctx):
     """
     Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
 
