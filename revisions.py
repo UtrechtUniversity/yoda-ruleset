@@ -1062,6 +1062,8 @@ def rule_remove_revision_creation_avu_from_deleted_data_objects(ctx):
     """
     Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
 
+    :param ctx:  Combined type of a callback and rei struct
+
     :raises Exception:       If removal of revision creation AVUs fails
     """
     if user.user_type(ctx) != 'rodsadmin':
