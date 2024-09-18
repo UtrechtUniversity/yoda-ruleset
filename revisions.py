@@ -1057,8 +1057,13 @@ def memory_limit_exceeded(rss_limit):
     return rss_limit and memory_rss_usage() > rss_limit
 
 
-@rule.make(inputs=[], outputs=[])
+@rule.make()
 def rule_remove_revision_creation_avu_from_deleted_data_objects(ctx):
+    """
+    Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
+
+    :raises Exception:       If removal of revision creation AVUs fails
+    """
     if user.user_type(ctx) != 'rodsadmin':
         raise Exception("This rule can only be executed by a rodsadmin user.")
 
