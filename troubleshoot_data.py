@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
 import json
+from datetime import datetime
 
 import genquery
 import requests
@@ -17,62 +18,45 @@ from publication import get_publication_config
 from util import *
 
 
-def find_full_package_path(ctx, data_packages, short_package_name):
+def find_full_package_path(ctx, package_name):
     """
     Find the full path of a data package based on its short name.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param data_packages:      List of full paths for data packages.
-    :param short_package_name: The short name of the data package to find.
+    :param package_name:       The short name of the data package to find.
 
     :returns: The full path of the data package if found, otherwise None.
     """
-    for path in data_packages:
-        if short_package_name in path:
-            return path
-    log.write_stdout(ctx, "Error: The data package '{}' does not exist in the provided list.".format(short_package_name))
-    return None
+    try:
+        query_condition = (
+            "COLL_NAME like '%{}%'".format(package_name)
+        )
+        query_attributes = "COLL_NAME"
+        iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
+
+        # Return full package path if exists
+        for row in iter:
+            return row[0]
+    except Exception as e:
+        log.write_stdout(ctx, "find_full_package_path: An error occurred while executing the query: {}".format(e))
+        return None
 
 
-def published_data_package_exists(ctx, path):
-    """Confirm whether path is to a published data package"""
-    # TODO could this be a utility?
-
-    # Define the query condition and attributes to fetch data
-    # TODO also check for retry and unrecoverable publication_status
-    query_condition = (
-        "COLL_NAME = '{}' AND "
-        "META_COLL_ATTR_NAME = 'org_vault_status' AND "
-        "META_COLL_ATTR_VALUE = 'PUBLISHED'".format(path)
-    )
-    query_attributes = "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS"
-    iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
-
-    for _ in iter:
-        return True
-
-    return False
-
-
-def find_published_data_packages(ctx):
+def find_data_packages(ctx):
     """
-    Find all published data packages by matching its AVU that org_vault_status = "PUBLISHED".
+    Find all data packages in Retry, Unrecoverable and Unknown status by matching its AVU.
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns:   A list of collection names that have been published.
+    :returns:   A list of collection names that have not been processed successfully
     """
-    try:
-        user_zone = user.zone(ctx)
+    user_zone = user.zone(ctx)
 
-        # Define the query condition and attributes to fetch data
-        # TODO we should check for retry and unrecoverable packages too
-        # org_vault_status is correct for normal packages
-        # org_publication_status: for retry and unrecoverable
+    try:
+        # Get all the vault packages that have org_publication_status in metadata
         query_condition = (
             "COLL_NAME like '/{}/home/vault-%' AND "
-            "META_COLL_ATTR_NAME = 'org_vault_status' AND "
-            "META_COLL_ATTR_VALUE = 'PUBLISHED'".format(user_zone)
+            "META_COLL_ATTR_NAME = '{}publication_status'".format(user_zone, constants.UUORGMETADATAPREFIX)
         )
         # TODO make this select shorter?
         query_attributes = "COLL_NAME"
@@ -82,7 +66,7 @@ def find_published_data_packages(ctx):
         return [row[0] for row in iter]
 
     except Exception as e:
-        log.write_stdout(ctx, "An error {} occurred while executing the query:".format(e))
+        log.write_stdout(ctx, "find_data_packages: An error occurred while executing the query: {}".format(e))
         return []
 
 
@@ -99,21 +83,32 @@ def check_data_package_system_avus(ctx, data_package):
     """
 
     # Fetch AVUs of the data package and filter those starting with 'org_'
-    extracted_avus = {m.attr for m in avu.of_coll(ctx, data_package) if m.attr.startswith('org_')}
+    extracted_avus = {m.attr for m in avu.of_coll(ctx, data_package) if m.attr.startswith(constants.UUORGMETADATAPREFIX + 'publication_')}
 
     # Define the set of ground truth AVUs
     avu_names_suffix = [
-        'publication_approval_actor', 'publication_randomId', 'license_uri',
+        'publication_approval_actor', 'publication_randomId',
         'publication_versionDOI', 'publication_dataCiteJsonPath', 'publication_license',
-        'action_log', 'publication_anonymousAccess', 'publication_versionDOIMinted',
-        'publication_accessRestriction', 'vault_status', 'publication_landingPagePath',
-        'data_package_reference', 'publication_licenseUri', 'publication_publicationDate',
+        'publication_anonymousAccess', 'publication_versionDOIMinted',
+        'publication_accessRestriction', 'publication_landingPagePath',
+        'publication_licenseUri', 'publication_publicationDate',
         'publication_vaultPackage', 'publication_submission_actor', 'publication_status',
         'publication_lastModifiedDateTime', 'publication_combiJsonPath',
         'publication_landingPageUploaded', 'publication_oaiUploaded',
         'publication_landingPageUrl', 'publication_dataCiteMetadataPosted'
     ]
-    ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in avu_names_suffix}
+
+    # Define set of AVUs with more than one version of publication
+    avu_names_base_suffix = [
+        'publication_previous_version', 'publication_baseDOI', 'publication_baseRandomId',
+        'publication_baseDOIMinted'
+    ]
+
+    if constants.UUORGMETADATAPREFIX + 'publication_previous_version' in extracted_avus:
+        combined_avu_names_suffix = avu_names_base_suffix + avu_names_suffix
+        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
+    else:
+        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in avu_names_suffix}
 
     # Find missing and unexpected AVUs
     missing_avus = ground_truth_avus - extracted_avus
@@ -125,6 +120,14 @@ def check_data_package_system_avus(ctx, data_package):
         'no_unexpected_avus': not bool(unexpected_avus),
         'unexpected_avus': list(unexpected_avus)
     }
+
+    if missing_avus:
+        log.write_stdout(ctx, "check_data_package_system_avus: There are some missing AVUs in data package <{}> - {}"
+                         .format(data_package, list(missing_avus)))
+
+    if unexpected_avus:
+        log.write_stdout(ctx, "check_data_package_system_avus: There are some unexpected AVUs in data package <{}> - {}"
+                         .format(data_package, list(unexpected_avus)))
 
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
@@ -139,22 +142,29 @@ def check_datacite_doi_registration(ctx, data_package):
 
     :returns:            A tuple of booleans indicating check success or not.
     """
+    version_doi_check = False
+    base_doi_check = False
 
     try:
         version_doi = get_attribute_value(ctx, data_package, "versionDOI")
         status_code = datacite.metadata_get(ctx, version_doi)
         version_doi_check = status_code == 200
     except ValueError as e:
-        log.write_stdout(ctx, "Error: {} while trying to get versionDOI".format(e))
-        version_doi_check = False
+        log.write_stdout(ctx, "check_datacite_doi_registration: Error while trying to get versionDOI - {}".format(e))
 
+    previous_version = ''
     try:
-        base_doi = get_attribute_value(ctx, data_package, "baseDOI")
-        status_code = datacite.metadata_get(ctx, base_doi)
-        base_doi_check = status_code == 200
-    except ValueError as e:
-        log.write_stdout(ctx, "Error: {} while trying to get baseDOI".format(e))
-        base_doi_check = False
+        previous_version = get_attribute_value(ctx, data_package, "previous_version")
+    except Exception:
+        pass
+
+    if previous_version:
+        try:
+            base_doi = get_attribute_value(ctx, data_package, "baseDOI")
+            status_code = datacite.metadata_get(ctx, base_doi)
+            base_doi_check = status_code == 200
+        except ValueError as e:
+            log.write_stdout(ctx, "check_datacite_doi_registration: Error while trying to get baseDOI - {}".format(e))
 
     return (version_doi_check, base_doi_check)
 
@@ -177,21 +187,29 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
     try:
         return next(m.value for m in avu.of_coll(ctx, data_package) if m.attr == attr)
     except Exception:
-        raise ValueError("Attribute {} not found in AVU".format(attr))
+        raise ValueError("get_attribute_value: Attribute {} not found in AVU".format(attr))
 
 
-def get_landingpage_paths(ctx, data_package, remote_hostname, attribute_suffix, publication_config):
+def get_landingpage_paths(ctx, data_package, attribute_suffix, publication_config):
     """Given a data package, remote host, and an attribute suffix, get what the remote url should be"""
     # TODO catch if doesn't exist
-    file_path = get_attribute_value(ctx, data_package, attribute_suffix)
-    if remote_hostname not in publication_config:
-        raise KeyError("Host {} does not exist in publication config".format(remote_hostname))
+    if not publication_config["publicVHost"]:
+        raise KeyError("get_landingpage_paths: Host does not exist in publication config.")
 
-    file_shortname = file_path.split("/")[-1]
-    # Example url: https://public.yoda.test/allinone/UU01/PPQEBC.html
-    url = "https://{}/{}/{}/{}".format(
-        publication_config[remote_hostname], publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    return file_path, url
+    file_path = ''
+    file_shortname = ''
+    try:
+        file_path = get_attribute_value(ctx, data_package, attribute_suffix)
+        file_shortname = file_path.split("/")[-1]
+
+        # Example url: https://public.yoda.test/allinone/UU01/PPQEBC.html
+        url = "https://{}/{}/{}/{}".format(
+            publication_config["publicVHost"], publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
+        return file_path, url
+
+    except Exception:
+        log.write_stdout(ctx, "get_landingpage_paths: Could not find landing page for data package: {}".format(data_package))
+        return '', ''
 
 
 def compare_local_remote_landingpage(ctx, file_path, url):
@@ -207,23 +225,27 @@ def compare_local_remote_landingpage(ctx, file_path, url):
 
     # Get local file
     # We are comparing small files so it should be ok to get the whole file
-    local_data = data_object.read(ctx, file_path)
+    try:
+        local_data = data_object.read(ctx, file_path)
+    except Exception:
+        log.write_stdout(ctx, "compare_local_remote_landingpage: Local file not found at path {}.".format(file_path))
+        return False
 
     try:
         response = requests.get(url, verify=False)
     except requests.exceptions.ConnectionError as e:
-        log.write_stdout(ctx, "Failed to connect to {}".format(url))
-        log.write_stdout(ctx, "Error: {}".format(e))
+        log.write_stdout(ctx, "compare_local_remote_landingpage: Failed to connect to {}".format(url))
+        log.write_stdout(ctx, "compare_local_remote_landingpage: Error: {}".format(e))
         return False
 
     if response.status_code != 200:
-        log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
+        log.write_stdout(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
 
     if local_data == response.text:
         return True
 
-    log.write_stdout(ctx, "File contents of irods and remote landing page do not match.")
+    log.write_stdout(ctx, "compare_local_remote_landingpage: File contents at irods path <{}> and remote landing page <{}> do not match.".format(file_path, url))
     # TODO print paths here?
     return False
 
@@ -238,7 +260,7 @@ def check_landingpage(ctx, data_package, publication_config):
 
     :returns:                  A tuple containing boolean results of checking
     """
-    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, "publicVHost", "landingPagePath", publication_config)
+    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, "landingPagePath", publication_config)
     landing_page_verified = compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url)
     return landing_page_verified
 
@@ -253,35 +275,40 @@ def check_combi_json(ctx, data_package, publication_config):
 
     :returns:                  A tuple containing boolean results of checking
     """
-    remote_hostname = "publicVHost"
     # Check that the combi json in irods exists
-    attr = constants.UUORGMETADATAPREFIX + "publication_combiJsonPath"
     # TODO try catch
-    file_path = avu.get_val_of_coll(ctx, data_package, attr)
+    file_path = ''
+    try:
+        file_path = get_attribute_value(ctx, data_package, "combiJsonPath")
+    except Exception:
+        pass
     exists = data_object.exists(ctx, file_path)
     if not exists:
-        log.write_stdout(ctx, "combi JSON file in irods does not exist: {}".format(file_path))
+        log.write_stdout(ctx, "check_combi_json: combi JSON file in irods does not exist: {}".format(file_path))
         return False
 
     # Get the version doi
-    attr = constants.UUORGMETADATAPREFIX + "publication_versionDOI"
     # TODO check if this fails
-    version_doi = avu.get_val_of_coll(ctx, data_package, attr)
-    url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config[remote_hostname], version_doi)
+    version_doi = ''
+    try:
+        version_doi = get_attribute_value(ctx, data_package, "versionDOI")
+    except Exception:
+        pass
+    url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config["publicVHost"], version_doi)
     try:
         response = requests.get(url, verify=False)
     except requests.exceptions.ConnectionError as e:
-        log.write_stdout(ctx, "Failed to connect to {}".format(url))
-        log.write_stdout(ctx, "Error: {}".format(e))
+        log.write_stdout(ctx, "check_combi_json: Failed to connect to {}".format(url))
+        log.write_stdout(ctx, "check_combi_json: Error: {}".format(e))
         return False
 
     if response.status_code != 200:
-        log.write_stdout(ctx, "Error {} when connecting to <{}>.".format(response.status_code, url))
+        log.write_stdout(ctx, "check_combi_json: Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
 
     # Look at the first few parts of the response for signs of error.
     if "idDoesNotExist" in response.text[:5000]:
-        log.write_stdout(ctx, "combiJson not found in oai for data package <{}>".format(data_package))
+        log.write_stdout(ctx, "check_combi_json: combiJson not found in oai for data package <{}>".format(data_package))
         return False
 
     return True
@@ -313,42 +340,35 @@ def print_troubleshoot_result(ctx, result):
 def collect_troubleshoot_data_packages(ctx, requested_package):
     data_packages = []
 
-    # Full path given
-    if requested_package.startswith("/"):
-        if not collection.exists(ctx, requested_package) or not published_data_package_exists(ctx, requested_package):
-            log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
+    if requested_package == 'None':
+        # Retrieve all data packages
+        all_packages = find_data_packages(ctx)
+        if not all_packages:
+            log.write_stdout(ctx, "collect_troubleshoot_data_packages: No packages found.")
             return None
 
-        data_packages.append(requested_package)
+        data_packages = all_packages
     else:
-        # Retrieve all published data packages
-        all_published_packages = find_published_data_packages(ctx)
-        if not all_published_packages:
-            log.write_stdout(ctx, "No published packages found.")
+        # Get full path of the given package
+        full_package_path = find_full_package_path(ctx, requested_package)
+
+        if not full_package_path:
+            log.write_stdout(ctx, "collect_troubleshoot_data_packages: Data package '{}' cannot be found.".format(requested_package))
             return None
 
-        # Determine which packages to process based on the input
-        if requested_package == 'None':
-            data_packages = all_published_packages
-        else:
-            data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
-            if data_package_path:
-                data_packages.append(data_package_path)
-            else:
-                log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
-                return None
+        data_packages.append(full_package_path)
 
     return data_packages
 
 
-@rule.make(inputs=[0, 1], outputs=[2])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_loc):
+@rule.make(inputs=[0, 1], outputs=[])
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file):
     """
     Troubleshoots published data packages.
 
-    :param ctx:               Context that combines a callback and rei struct.
-    :param requested_package: A string representing a specific data package path or "all_published_data" for all packages.
-    :param log_loc:           A string representing location to write a json log
+    :param ctx:                Context that combines a callback and rei struct.
+    :param requested_package:  A string representing a specific data package path or all packages with failed publications.
+    :param log_file:           A string representing to write json results in log.
 
     :returns: None.
 
@@ -360,6 +380,11 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
 
     Operates on either a single specified package or all published packages, depending on the input.
     """
+    # Check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write_stdout(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
+
     data_packages = collect_troubleshoot_data_packages(ctx, requested_package)
     if not data_packages:
         return
@@ -367,8 +392,8 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
 
     # Troubleshooting
     for data_package in data_packages:
-        log.write_stdout(ctx, "Troubleshooting: {}".format(data_package))
-        schema_check = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-published-packages")['match_schema']
+        log.write_stdout(ctx, "Troubleshooting data package: {}".format(data_package))
+        schema_check = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications")['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
         publication_config = get_publication_config(ctx)
@@ -389,7 +414,13 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
 
         print_troubleshoot_result(ctx, result)
         # TODO proper check if file exists?
-        if len(log_loc):
+        # If user is admin -> create log if log_loc is true
+        if log_file == 'true':
+            log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
             with open(log_loc, "a") as writer:
+                writer.writelines("Batch run date and time: {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                writer.writelines('\n')
+                writer.writelines("Troubleshooting data package: {}".format(data_package))
+                writer.writelines('\n')
                 json.dump(result, writer)
                 writer.writelines('\n')

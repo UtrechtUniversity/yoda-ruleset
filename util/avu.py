@@ -35,18 +35,6 @@ def of_coll(ctx, coll):
                                               "COLL_NAME = '{}'".format(coll)))
 
 
-def get_val_of_coll(ctx, coll, attr):
-    """Get single value for a given collection given attribute name"""
-    # TODO integration tests?
-    iter = genquery.Query(ctx, "META_COLL_ATTR_VALUE",
-                          "COLL_NAME = '{}' and META_COLL_ATTR_NAME = '{}'".format(coll, attr))
-
-    for row in iter:
-        return row
-
-    return None
-
-
 def inside_coll(ctx, path, recursive=False):
     """Get a list of all AVUs inside a collection with corresponding paths.
 

@@ -9,7 +9,7 @@ To check one specific package by name:
 python3 troubleshoot-published-data.py -p research-initial[1725262507]
 
 To put results into a json lines log file:
-python3 troubleshoot-published-data.py -l /etc/irods/yoda-ruleset/troubleshoot-pub-log.jsonl
+python3 troubleshoot-published-data.py -f true
 """
 import argparse
 import subprocess
@@ -20,8 +20,8 @@ def parse_args():
         prog="troubleshoot-published-data.py",
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-l", "--log-file", type=str, required=False,
-                        help="If write to json lines log file, location to write to")
+    parser.add_argument("-f", "--log-file", type=str, required=False,
+                        help="If log file parameter is true then write to log at: /var/lib/irods/log/troubleshoot_publications.log")
     parser.add_argument("-p", "--package", type=str, required=False,
                         help="Troubleshoot a specific data package by name (default: troubleshoot all packages)")
     # TODO argument to optionally add an avu with json status info: time of check and was it a success

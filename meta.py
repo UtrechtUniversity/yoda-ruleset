@@ -812,8 +812,8 @@ def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name):
     try:
         metadata = jsonutil.read(ctx, metadata_path)
     except Exception as exc:
-        # TODO write_stdout?
         log.write(ctx, "{} skips {}, because of exception while reading metadata file {}: {}".format(report_name, coll_name, metadata_path, str(exc)))
+        log.write_stdout(ctx, "vault_metadata_matches_schema: Error while reading metadata file {} of data package {}: {}".format(metadata_path, coll_name, str(exc)))
         return None
 
     # Determine schema
@@ -834,5 +834,6 @@ def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name):
     if not match_schema:
         errors_formatted = [meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list]
         log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)))
+        log.write_stdout(ctx, "vault_metadata_matches_schema: Metadata {} of data package {} did not match the schema {}. Error list: {}".format(metadata_path, coll_name, schema_shortname, str(errors_formatted)))
 
     return {"schema": schema_shortname, "match_schema": match_schema}
