@@ -128,6 +128,7 @@ def _default2_default3(ctx, m):
 
             person_identifiers = []
             for person_identifier in creator.get('Person_Identifier', []):
+                # Check ORCID
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
@@ -138,6 +139,28 @@ def _default2_default3(ctx, m):
                                       % (person_identifier['Name_Identifier']))
                         elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
+                # Check Scopus
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
+                    # Check for incorrect Scopus format.
+                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_scopus is None:
+                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_scopus != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_scopus
+                # Check ISNI
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
+                    # Check for incorrect ISNI format.
+                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_isni is None:
+                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_isni != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_isni
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
                     if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
@@ -164,6 +187,7 @@ def _default2_default3(ctx, m):
 
             person_identifiers = []
             for person_identifier in contributor.get('Person_Identifier', []):
+                # Check ORCID
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
@@ -174,6 +198,28 @@ def _default2_default3(ctx, m):
                                       % (person_identifier['Name_Identifier']))
                         elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
+                # Check Scopus
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
+                    # Check for incorrect Scopus format.
+                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_scopus is None:
+                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_scopus != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_scopus
+                # Check ISNI
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
+                    # Check for incorrect ISNI format.
+                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
+                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_isni is None:
+                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_isni != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_isni
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
                     if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
@@ -720,6 +766,36 @@ def correctify_orcid(org_orcid):
         return org_orcid
 
     return "https://orcid.org/{}".format(orcs[-1])
+
+
+def correctify_scopus(org_scopus):
+    """Correct illformatted Scopus."""
+    # Get rid of all spaces.
+    new_scopus = org_scopus.replace(' ', '')
+
+    if not re.search("^\d{1,11}$", new_scopus):
+        # Return original value.
+        return org_scopus
+
+    return new_scopus
+
+
+def correctify_isni(org_isni):
+    """Correct ill-formatted ISNI."""
+    # Remove all spaces.
+    new_isni = org_isni.replace(' ', '')
+
+    # Upper-case X.
+    new_isni = new_isni.replace('x', 'X')
+
+    # The last part should hold a valid id like eg: 123412341234123X.
+    # If not, it is impossible to correct it to the valid isni format
+    new_isni = new_isni.split('/')
+    if not re.search("^[0-9]{15}[0-9X]$", new_isni[-1]):
+        # Return original value.
+        return org_isni
+
+    return "https://isni.org/isni/{}".format(new_isni)
 
 
 def correctify_researcher_id(org_researcher_id):
