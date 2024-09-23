@@ -795,7 +795,7 @@ def correctify_isni(org_isni):
         # Return original value.
         return org_isni
 
-    return "https://isni.org/isni/{}".format(new_isni)
+    return "https://isni.org/isni/{}".format(new_isni[-1])
 
 
 def correctify_researcher_id(org_researcher_id):
