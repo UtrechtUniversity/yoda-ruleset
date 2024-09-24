@@ -363,7 +363,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
 
         # Remove revision creation AVUs from deleted data objects.
         # This makes it easier to monitor the number of data objects waiting for revision creation.
-        remove_revision_creation_avu_from_deleted_data_objects(ctx)
+        remove_revision_creation_avu_from_deleted_data_objects(ctx, print_verbose)
 
         # Get list of up to batch size limit of data objects (in research space) scheduled for revision, taking into account
         # modification time.
@@ -1060,17 +1060,15 @@ def memory_limit_exceeded(rss_limit):
     return rss_limit and memory_rss_usage() > rss_limit
 
 
-def remove_revision_creation_avu_from_deleted_data_objects(ctx):
+def remove_revision_creation_avu_from_deleted_data_objects(ctx, print_verbose):
     """
     Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
 
     :param ctx:  Combined type of a callback and rei struct
+    :param print_verbose: Whether to log verbose messages for troubleshooting (Boolean)
 
     :raises Exception:       If removal of revision creation AVUs fails
     """
-    if user.user_type(ctx) != 'rodsadmin':
-        raise Exception("This rule can only be executed by a rodsadmin user.")
-
     revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
 
     iter = genquery.row_iterator(
@@ -1083,6 +1081,7 @@ def remove_revision_creation_avu_from_deleted_data_objects(ctx):
         path = coll_name + '/' + data_name
         try:
             avu.rmw_from_data(ctx, path, revision_avu_name, "%")  # use wildcard cause rm_from_data causes problems
-            log.write(ctx, 'Removed revision creation AVUs from data object: {}'.format(path))
+            if print_verbose:
+                log.write(ctx, 'Removed revision creation AVUs from data object: {}'.format(path))
         except Exception as e:
             log.write(ctx, "Error processing data object {}: {}".format(path, str(e)))
