@@ -1066,8 +1066,6 @@ def remove_revision_creation_avu_from_deleted_data_objects(ctx, print_verbose):
 
     :param ctx:  Combined type of a callback and rei struct
     :param print_verbose: Whether to log verbose messages for troubleshooting (Boolean)
-
-    :raises Exception:       If removal of revision creation AVUs fails
     """
     revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
 
