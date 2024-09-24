@@ -5,11 +5,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 from unittest import makeSuite, TestSuite
 
-from test_schema_transformations import CorrectifyIsniTest, CorrectifyOrcidTest, CorrectifyScopusTest
 from test_group_import import GroupImportTest
 from test_intake import IntakeTest
 from test_policies import PoliciesTest
 from test_revisions import RevisionTest
+from test_schema_transformations import CorrectifyIsniTest, CorrectifyOrcidTest, CorrectifyScopusTest
 from test_util_misc import UtilMiscTest
 from test_util_pathutil import UtilPathutilTest
 from test_util_yoda_names import UtilYodaNamesTest

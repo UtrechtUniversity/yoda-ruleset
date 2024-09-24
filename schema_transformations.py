@@ -6,8 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
-import meta
 from schema_transformations_utils import correctify_isni, correctify_orcid, correctify_researcher_id, correctify_scopus
+
+import meta
 from util import *
 
 
