@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+from schema_transformations_utils import correctify_isni, correctify_orcid, correctify_researcher_id, correctify_scopus
+
 import meta
 from util import *
 
@@ -128,21 +130,44 @@ def _default2_default3(ctx, m):
 
             person_identifiers = []
             for person_identifier in creator.get('Person_Identifier', []):
+                # Check ORCID
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
-                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_orcid is None:
                             log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
                                       % (person_identifier['Name_Identifier']))
                         elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
+                # Check Scopus
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
+                    # Check for incorrect Scopus format.
+                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_scopus is None:
+                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_scopus != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_scopus
+                # Check ISNI
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
+                    # Check for incorrect ISNI format.
+                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_isni is None:
+                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_isni != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_isni
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
                     if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
                         corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
-                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_researcher_id != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_researcher_id
                 elif 'Name_Identifier_Scheme' not in person_identifier:
@@ -164,21 +189,44 @@ def _default2_default3(ctx, m):
 
             person_identifiers = []
             for person_identifier in contributor.get('Person_Identifier', []):
+                # Check ORCID
                 if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
                     # Check for incorrect ORCID format.
                     if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
                         corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
-                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_orcid is None:
                             log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
                                       % (person_identifier['Name_Identifier']))
                         elif corrected_orcid != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_orcid
+                # Check Scopus
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
+                    # Check for incorrect Scopus format.
+                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_scopus is None:
+                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_scopus != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_scopus
+                # Check ISNI
+                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
+                    # Check for incorrect ISNI format.
+                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
+                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
+                        if corrected_isni is None:
+                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
+                                      % (person_identifier['Name_Identifier']))
+                        elif corrected_isni != person_identifier['Name_Identifier']:
+                            person_identifier['Name_Identifier'] = corrected_isni
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
                     # Check for incorrect ResearcherID format.
                     if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
                         corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
-                        # Only it an actual correction took place change the value and mark this data as 'changed'.
+                        # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_researcher_id != person_identifier['Name_Identifier']:
                             person_identifier['Name_Identifier'] = corrected_researcher_id
                 elif 'Name_Identifier_Scheme' not in person_identifier:
@@ -702,36 +750,3 @@ def get(src_id, dst_id):
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)
-
-
-def correctify_orcid(org_orcid):
-    """Correct illformatted ORCID."""
-    # Get rid of all spaces.
-    orcid = org_orcid.replace(' ', '')
-
-    # Upper-case X.
-    orcid = org_orcid.replace('x', 'X')
-
-    # The last part should hold a valid id like eg: 1234-1234-1234-123X.
-    # If not, it is impossible to correct it to the valid orcid format
-    orcs = orcid.split('/')
-    if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
-        # Return original value.
-        return org_orcid
-
-    return "https://orcid.org/{}".format(orcs[-1])
-
-
-def correctify_researcher_id(org_researcher_id):
-    """Correct illformatted ResearcherID."""
-    # Get rid of all spaces.
-    researcher_id = org_researcher_id.replace(' ', '')
-
-    # The last part should hold a valid id like eg: A-1234-1234
-    # If not, it is impossible to correct it to the valid ResearcherID format
-    orcs = researcher_id.split('/')
-    if not re.search("^[A-Z]-[0-9]{4}-[0-9]{4}$", orcs[-1]):
-        # Return original value.
-        return org_researcher_id
-
-    return "https://www.researcherid.com/rid/{}".format(orcs[-1])
