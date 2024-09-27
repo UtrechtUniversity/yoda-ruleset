@@ -990,7 +990,7 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
 
         if ctx.uuGroupExists(group_name):
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
-        
+
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
         message = response[9]
