@@ -32,7 +32,7 @@ class Result(object):
     @staticmethod
     def ok(**xs):
         """Create a successful result with an optional success message."""
-        return Result(status='ok', **xs)
+        return Result(**xs)
 
     def as_dict(self):
         if config.environment == 'development':
