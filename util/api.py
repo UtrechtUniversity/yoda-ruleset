@@ -30,9 +30,9 @@ class Result(object):
         self.debug_info  = debug_info
 
     @staticmethod
-    def ok(info=None, **xs):
+    def ok(**xs):
         """Create a successful result with an optional success message."""
-        return Result(status='ok', info=info, **xs)
+        return Result(status='ok', **xs)
 
     def as_dict(self):
         if config.environment == 'development':
