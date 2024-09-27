@@ -776,7 +776,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *d
 	*kv."co_identifier"		  = *co_identifier;
 
 	# Shoot first, ask questions later.
-    *status = str(errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv)));
+        *status = str(errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv)));
 
 	if (*status == '0') {
 		*message = "";
