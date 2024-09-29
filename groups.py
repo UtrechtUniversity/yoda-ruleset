@@ -988,7 +988,7 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
             if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
-        if group.exists(ctx, group_name):
+        if group.exists(ctx, group_name) and not allow_update:
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
