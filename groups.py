@@ -553,7 +553,7 @@ def validate_data(ctx, data, allow_update):
     for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
-            errors.append('Group "{}" already exists'.format(groupname))
+            errors.append('Group "{}" already exists.'.format(groupname))
 
         # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
@@ -596,6 +596,9 @@ def apply_data(ctx, data, allow_update, delete_users):
         elif response.status == "error_group_exists" and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
             message += "Group '{}' already exists.".format(group_name)
+        elif response.status == "error_group_exists" and not allow_update:
+            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
+            return {status: 'error', message:"Group '{}' already exists.".format(group_name)}
         else:
             return {status: 'error', message: "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
 
@@ -987,9 +990,6 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
 
             if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
-
-        if group.exists(ctx, group_name) and not allow_update:
-            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
