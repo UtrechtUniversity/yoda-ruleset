@@ -553,7 +553,7 @@ def validate_data(ctx, data, allow_update):
     for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
-            errors.append('Group "{}" already exists.'.format(groupname))
+            errors.append('Group "{}" already exists. It has not been updated.'.format(groupname))
 
         # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
