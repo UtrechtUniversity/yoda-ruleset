@@ -596,9 +596,6 @@ def apply_data(ctx, data, allow_update, delete_users):
         elif response.status == "error_group_exists" and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
             message += "Group '{}' already exists.".format(group_name)
-        elif response.status == "error_group_exists" and not allow_update:
-            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
-            return {status: 'error', message:"Group '{}' already exists.".format(group_name)}
         else:
             return {status: 'error', message: "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
 
