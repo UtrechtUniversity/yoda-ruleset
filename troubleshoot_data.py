@@ -190,20 +190,12 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         raise ValueError("get_attribute_value: Attribute {} not found in AVU".format(attr))
 
 
-def get_landingpage_paths(ctx, data_package, publication_config):
-    """Given a data package, and publication config, get what the remote url should be"""
-    if not publication_config["publicVHost"]:
-        raise KeyError("get_landingpage_paths: Host does not exist in publication config.")
-
+def get_landingpage_paths(ctx, data_package):
+    """Given a data package get what the path and remote url should be"""
     file_path = ''
-    file_shortname = ''
     try:
         file_path = get_attribute_value(ctx, data_package, "landingPagePath")
-        file_shortname = file_path.split("/")[-1]
-
-        # Example url: https://public.yoda.test/allinone/UU01/PPQEBC.html
-        url = "https://{}/{}/{}/{}".format(
-            publication_config["publicVHost"], publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
+        url = get_attribute_value(ctx, data_package, "landingPageUrl")
         return file_path, url
 
     except Exception:
@@ -262,7 +254,7 @@ def check_landingpage(ctx, data_package, publication_config, offline):
 
     :returns:                  A tuple containing boolean results of checking
     """
-    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, publication_config)
+    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package)
     if len(irods_file_path) == 0 or len(landing_page_url) == 0:
         return False
 
