@@ -190,16 +190,15 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         raise ValueError("get_attribute_value: Attribute {} not found in AVU".format(attr))
 
 
-def get_landingpage_paths(ctx, data_package, attribute_suffix, publication_config):
-    """Given a data package, remote host, and an attribute suffix, get what the remote url should be"""
-    # TODO catch if doesn't exist
+def get_landingpage_paths(ctx, data_package, publication_config):
+    """Given a data package, and publication config, get what the remote url should be"""
     if not publication_config["publicVHost"]:
         raise KeyError("get_landingpage_paths: Host does not exist in publication config.")
 
     file_path = ''
     file_shortname = ''
     try:
-        file_path = get_attribute_value(ctx, data_package, attribute_suffix)
+        file_path = get_attribute_value(ctx, data_package, "landingPagePath")
         file_shortname = file_path.split("/")[-1]
 
         # Example url: https://public.yoda.test/allinone/UU01/PPQEBC.html
@@ -212,17 +211,17 @@ def get_landingpage_paths(ctx, data_package, attribute_suffix, publication_confi
         return '', ''
 
 
-def compare_local_remote_landingpage(ctx, file_path, url):
+def compare_local_remote_landingpage(ctx, file_path, url, offline):
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
     :param ctx:       Combined type of a callback and rei struct
     :param file_path: Path to file in irods
     :param url:       URL of file on remote
+    :param offline:   Whether to skip requests.get call
 
     :returns:         True if the file contents match, False otherwise
     """
-
     # Get local file
     # We are comparing small files so it should be ok to get the whole file
     try:
@@ -230,6 +229,9 @@ def compare_local_remote_landingpage(ctx, file_path, url):
     except Exception:
         log.write_stdout(ctx, "compare_local_remote_landingpage: Local file not found at path {}.".format(file_path))
         return False
+
+    if offline:
+        return len(local_data) > 0
 
     try:
         response = requests.get(url, verify=False)
@@ -246,37 +248,39 @@ def compare_local_remote_landingpage(ctx, file_path, url):
         return True
 
     log.write_stdout(ctx, "compare_local_remote_landingpage: File contents at irods path <{}> and remote landing page <{}> do not match.".format(file_path, url))
-    # TODO print paths here?
     return False
 
 
-def check_landingpage(ctx, data_package, publication_config):
+def check_landingpage(ctx, data_package, publication_config, offline):
     """
     Checks the integrity of landing page by comparing the contents
 
     :param ctx:                Combined type of a callback and rei struct
     :param data_package:       String representing the data package collection path.
     :param publication_config: Dictionary of publication config
+    :param offline:            Whether to skip any checks that require external server access
 
     :returns:                  A tuple containing boolean results of checking
     """
-    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, "landingPagePath", publication_config)
-    landing_page_verified = compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url)
-    return landing_page_verified
+    irods_file_path, landing_page_url = get_landingpage_paths(ctx, data_package, publication_config)
+    if len(irods_file_path) == 0 or len(landing_page_url) == 0:
+        return False
+
+    return compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url, offline)
 
 
-def check_combi_json(ctx, data_package, publication_config):
+def check_combi_json(ctx, data_package, publication_config, offline):
     """
     Checks the integrity of combi JSON by checking URL and existence of file.
 
     :param ctx:                Combined type of a callback and rei struct
     :param data_package:       String representing the data package collection path.
     :param publication_config: Dictionary of publication config
+    :param offline:            Whether to skip any checks that require external server access
 
     :returns:                  A tuple containing boolean results of checking
     """
     # Check that the combi json in irods exists
-    # TODO try catch
     file_path = ''
     try:
         file_path = get_attribute_value(ctx, data_package, "combiJsonPath")
@@ -287,8 +291,10 @@ def check_combi_json(ctx, data_package, publication_config):
         log.write_stdout(ctx, "check_combi_json: combi JSON file in irods does not exist: {}".format(file_path))
         return False
 
+    if offline:
+        return True
+
     # Get the version doi
-    # TODO check if this fails
     version_doi = ''
     try:
         version_doi = get_attribute_value(ctx, data_package, "versionDOI")
@@ -323,7 +329,7 @@ def print_troubleshoot_result(ctx, result):
     log.write_stdout(ctx, "Results for: {}".format(result['data_package_path']))
     # TODO check these prompt messages
     if pass_all_tests:
-        log.write_stdout(ctx, "Package passes all tests.")
+        log.write_stdout(ctx, "Package passed all tests.")
     else:
         log.write_stdout(ctx, "Package FAILED one or more tests:")
         log.write_stdout(ctx, "Schema matches: {}".format(result['schema_check']))
@@ -332,7 +338,7 @@ def print_troubleshoot_result(ctx, result):
         log.write_stdout(ctx, "Version DOI matches: {}".format(result['versionDOI_check']))
         log.write_stdout(ctx, "Base DOI matches: {}".format(result['baseDOI_check']))
         log.write_stdout(ctx, "Landing page matches: {}".format(result['landingPage_check']))
-        log.write_stdout(ctx, "combined JSON matches: {}".format(result['combiJson_check']))
+        log.write_stdout(ctx, "Combined JSON matches: {}".format(result['combiJson_check']))
 
     log.write_stdout(ctx, "")
 
@@ -361,14 +367,15 @@ def collect_troubleshoot_data_packages(ctx, requested_package):
     return data_packages
 
 
-@rule.make(inputs=[0, 1], outputs=[])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file):
+@rule.make(inputs=[0, 1, 2], outputs=[])
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
     """
     Troubleshoots published data packages.
 
-    :param ctx:                Context that combines a callback and rei struct.
-    :param requested_package:  A string representing a specific data package path or all packages with failed publications.
-    :param log_file:           A string representing to write json results in log.
+    :param ctx:               Context that combines a callback and rei struct.
+    :param requested_package: A string representing a specific data package path or all packages with failed publications.
+    :param log_file:          A string representing to write json results in log.
+    :param offline:           A string representing whether to perform all checks without connecting to external servers.
 
     :returns: None.
 
@@ -380,10 +387,13 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
 
     Operates on either a single specified package or all published packages, depending on the input.
     """
+    offline = offline == "True"
+    write_log_file = log_file == "True"
+
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write_stdout(ctx, "User is no rodsadmin")
-        return 'Insufficient permissions - should only be called by rodsadmin'
+        return
 
     data_packages = collect_troubleshoot_data_packages(ctx, requested_package)
     if not data_packages:
@@ -397,8 +407,8 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
         publication_config = get_publication_config(ctx)
-        landing_page_check = check_landingpage(ctx, data_package, publication_config)
-        combi_json_check = check_combi_json(ctx, data_package, publication_config)
+        landing_page_check = check_landingpage(ctx, data_package, publication_config, offline)
+        combi_json_check = check_combi_json(ctx, data_package, publication_config, offline)
 
         # Collect results for current data package
         result = {
@@ -413,9 +423,8 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         }
 
         print_troubleshoot_result(ctx, result)
-        # TODO proper check if file exists?
-        # If user is admin -> create log if log_loc is true
-        if log_file == 'true':
+        # If user is admin -> create log if log_file is true
+        if write_log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
             with open(log_loc, "a") as writer:
                 writer.writelines("Batch run date and time: {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
