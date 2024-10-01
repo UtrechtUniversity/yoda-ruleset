@@ -529,11 +529,11 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
         return api.Error('errors', validation_errors)
 
     # Step 3: Create / update groups.
-    error = apply_data(ctx, data, allow_update, delete_users)
-    if len(error):
-        return api.Error('errors', [error])
+    status_msg = apply_data(ctx, data, allow_update, delete_users)
+    if status_msg['status'] == 'error':
+        return api.Error('errors', [status_msg['message']])
 
-    return api.Result.ok()
+    return api.Result.ok(info=[status_msg['message']])
 
 
 def validate_data(ctx, data, allow_update):
@@ -553,7 +553,7 @@ def validate_data(ctx, data, allow_update):
     for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
-            errors.append('Group "{}" already exists'.format(groupname))
+            errors.append('Group "{}" already exists. It has not been updated.'.format(groupname))
 
         # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
@@ -575,11 +575,13 @@ def apply_data(ctx, data, allow_update, delete_users):
     :param allow_update: Allow updates in groups
     :param delete_users:  Allow for deleting of users from groups
 
-    :returns: Errors if found any
+    :returns: Errors if found any, or message with actions if everything is successful
     """
 
     for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
+        users_added, users_removed = 0, 0
+        message = ''
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
 
@@ -590,10 +592,12 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         if response:
             new_group = True
+            message += "Group '{}' created.".format(group_name)
         elif response.status == "error_group_exists" and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
+            message += "Group '{}' already exists.".format(group_name)
         else:
-            return "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)
+            return {status: 'error', message: "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
@@ -604,6 +608,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                 if response:
                     currentrole = "normal"
                     log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
+                    users_added += 1
                 else:
                     log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
                     log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
@@ -669,11 +674,21 @@ def apply_data(ctx, data, allow_update, delete_users):
                     response = group_remove_user_from_group(ctx, username, usergroupname)
                     if response:
                         log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
+                        users_removed += 1
                     else:
                         log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
                         log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
 
-    return ''
+        if users_added > 0:
+            message += ' Users added ({}).'.format(users_added)
+        if users_removed > 0:
+            message += ' Users removed ({}).'.format(users_removed)
+
+        # If no users added, no users removed and not new group created.
+        if not users_added and not users_removed and not new_group:
+            message += ' No changes made.'
+
+    return {"status": "ok", "message": message}
 
 
 def _are_roles_equivalent(a, b):
@@ -973,12 +988,15 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
             if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
+        if group.exists(ctx, group_name):
+            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
+
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
         message = response[9]
         if status == '0':
             return api.Result.ok()
-        elif status == '-1089000' or status == '-809000':
+        elif status == '-1089000' or status == '-809000' or status == '-806000':
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
         else:
             return api.Error('policy_error', message)
