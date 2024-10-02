@@ -793,13 +793,14 @@ def copy_user_metadata(ctx, source, target):
         log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
 
 
-def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name):
+def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name, write_stdout):
     """Process a single data package to retrieve and validate that its metadata conforms to the schema.
 
     :param ctx:          Combined type of a callback and rei struct
     :param coll_name:    String representing the data package collection path.
     :param schema_cache: Dictionary storing schema blueprints, can be empty.
     :param report_name:  Name of report script (for logging)
+    :param write_stdout: A boolean representing whether to write to stdout or rodsLog
 
     :returns:            A dictionary result containing if schema matches and the schema short name.
     """
