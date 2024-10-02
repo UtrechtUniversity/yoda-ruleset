@@ -59,7 +59,6 @@ def find_data_packages(ctx):
             "COLL_NAME like '/{}/home/vault-%' AND "
             "META_COLL_ATTR_NAME = '{}publication_status'".format(user_zone, constants.UUORGMETADATAPREFIX)
         )
-        # TODO make this select shorter?
         query_attributes = "COLL_NAME"
         iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
 
@@ -133,16 +132,20 @@ def check_data_package_system_avus(ctx, data_package):
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
 
-def check_datacite_doi_registration(ctx, data_package):
+def check_datacite_doi_registration(ctx, data_package, offline):
     """
     Check the registration status of both versionDOI and baseDOI with the DataCite API,
     ensuring that both DOIs return a 200 status code, which indicates successful registration.
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
+    :param offline:      Whether to not connect to datacite
 
     :returns:            A tuple of booleans indicating check success or not.
     """
+    if offline:
+        return True, True
+
     version_doi_check = False
     base_doi_check = False
 
@@ -404,7 +407,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         log.write_stdout(ctx, "Troubleshooting data package: {}".format(data_package))
         schema_check = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications")['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
-        version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
+        version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package, offline)
         publication_config = get_publication_config(ctx)
         landing_page_check = check_landingpage(ctx, data_package, offline)
         combi_json_check = check_combi_json(ctx, data_package, publication_config, offline)
