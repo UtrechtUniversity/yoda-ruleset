@@ -406,7 +406,7 @@ def rule_batch_vault_metadata_schema_report(ctx):
     for row in iter:
         try:
             coll_name = row[0]
-            result = meta.vault_metadata_matches_schema(ctx, coll_name, schema_cache, "Vault metadata schema report")
+            result = meta.vault_metadata_matches_schema(ctx, coll_name, schema_cache, "Vault metadata schema report", True)
             if result:
                 results[coll_name] = result
         except Exception as e:
