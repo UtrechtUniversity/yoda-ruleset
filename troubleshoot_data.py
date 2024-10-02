@@ -324,7 +324,7 @@ def check_combi_json(ctx, data_package, publication_config, offline):
 
 def print_troubleshoot_result(ctx, result):
     """Print the result of troubleshooting of one package in human-friendly format"""
-    pass_all_tests = False
+    pass_all_tests = True
     for value in result.values():
         pass_all_tests = pass_all_tests and value
 
