@@ -49,7 +49,7 @@ Feature: Deposit API (restricted)
         And deposit exists
         And deposit is archived
         And user viewer is authenticated
-        And as viewer the Yoda browse collections API is queried with <collection>  # Workaround for https://github.com/pytest-dev/pytest-bdd/issues/689
+        And the Yoda browse collections API is queried with <collection>
         Then the response status code is "200"
         And the browse result does not contain deposit
 
