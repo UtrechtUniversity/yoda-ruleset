@@ -56,18 +56,13 @@ def getGroupsData(ctx):
         attr = row[1]
         value = row[2]
 
-        # Create/update group with this information.
-        try:
-            group = groups[name]
-        except Exception:
-            group = {
-                "name": name,
-                "managers": [],
-                "members": [],
-                "read": [],
-                "invited": []
-            }
-            groups[name] = group
+        group = groups.setdefault(name, {
+            "name": name,
+            "managers": [],
+            "members": [],
+            "read": [],
+            "invited": []
+        })
 
         if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
@@ -95,26 +90,17 @@ def getGroupsData(ctx):
             if name.startswith("read-"):
                 # Match read-* group with research-* or initial-* group.
                 name = name[5:]
-                try:
-                    # Attempt to add to read list of research group.
-                    group = groups["research-" + name]
-                    group["read"].append(user)
-                except Exception:
-                    try:
-                        # Attempt to add to read list of initial group.
-                        group = groups["initial-" + name]
+                for prefix in ("research-", "initial-"):
+                    group = groups.get(prefix + name)
+                    if group:
                         group["read"].append(user)
-                    except Exception:
-                        pass
+                        break
             elif not name.startswith("vault-"):
-                try:
-                    # Ordinary group.
-                    group = groups[name]
+                group = groups.get(name)
+                if group:
                     group["members"].append(user)
-                except KeyError:
-                    pass
 
-    # Third query: obtain list of invited SRAM users
+    # Third query: obtain list of invited SRAM users.
     if config.enable_sram:
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, USER_NAME, USER_ZONE",
@@ -124,11 +110,9 @@ def getGroupsData(ctx):
         for row in iter:
             name = row[0]
             user = row[1] + "#" + row[2]
-            try:
-                group = groups[name]
+            group = groups.get(name)
+            if group:
                 group["invited"].append(user)
-            except KeyError:
-                pass
 
     return groups.values()
 
