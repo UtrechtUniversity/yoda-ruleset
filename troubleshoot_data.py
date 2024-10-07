@@ -412,7 +412,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
         result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_data_package_system_avus(ctx, data_package, write_stdout)
         result['versionDOI_check'], result['baseDOI_check'] = check_datacite_doi_registration(ctx, data_package, offline, write_stdout)
-        result['landingPage_check'] = check_landingpage(ctx, data_package, offline, write_stdout, api_call)
+        result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)
         result['combiJson_check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
