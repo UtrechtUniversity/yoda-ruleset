@@ -119,7 +119,7 @@ def check_datacite_doi_registration(ctx, data_package, offline, write_stdout):
     base_doi_check = False
 
     try:
-        version_doi = get_attribute_value(ctx, data_package, "versionDOI")
+        version_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "versionDOI")
         status_code = datacite.metadata_get(ctx, version_doi)
         version_doi_check = status_code == 200
     except ValueError as e:
@@ -127,13 +127,13 @@ def check_datacite_doi_registration(ctx, data_package, offline, write_stdout):
 
     previous_version = ''
     try:
-        previous_version = get_attribute_value(ctx, data_package, "previous_version")
+        previous_version = get_val_for_attr_with_pub_prefix(ctx, data_package, "previous_version")
     except Exception:
         pass
 
     if previous_version:
         try:
-            base_doi = get_attribute_value(ctx, data_package, "baseDOI")
+            base_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "baseDOI")
             status_code = datacite.metadata_get(ctx, base_doi)
             base_doi_check = status_code == 200
         except ValueError as e:
@@ -142,7 +142,7 @@ def check_datacite_doi_registration(ctx, data_package, offline, write_stdout):
     return (version_doi_check, base_doi_check)
 
 
-def get_attribute_value(ctx, data_package, attribute_suffix):
+def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
     """
     Retrieves the value given the suffix of the attribute from a data package.
 
@@ -151,24 +151,17 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
     :param attribute_suffix: Suffix of the attribute before adding prefix such as "org_publication_"
 
     :returns:                Value of the attribute.
-
-    :raises ValueError:      If the attribute is not found in the data package's AVU.
     """
-
-    # TODO extract to avu.py? need this?
     attr = constants.UUORGMETADATAPREFIX + "publication_" + attribute_suffix
-    try:
-        return next(m.value for m in avu.of_coll(ctx, data_package) if m.attr == attr)
-    except Exception:
-        raise ValueError("get_attribute_value: Attribute {} not found in AVU".format(attr))
+    return avu.get_attr_val_of_coll(ctx, data_package, attr)
 
 
 def get_landingpage_paths(ctx, data_package, write_stdout):
     """Given a data package get what the path and remote url should be"""
     file_path = ''
     try:
-        file_path = get_attribute_value(ctx, data_package, "landingPagePath")
-        url = get_attribute_value(ctx, data_package, "landingPageUrl")
+        file_path = get_val_for_attr_with_pub_prefix(ctx, data_package, "landingPagePath")
+        url = get_val_for_attr_with_pub_prefix(ctx, data_package, "landingPageUrl")
         return file_path, url
 
     except Exception:
@@ -259,7 +252,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     # Check that the combi json in irods exists
     file_path = ''
     try:
-        file_path = get_attribute_value(ctx, data_package, "combiJsonPath")
+        file_path = get_val_for_attr_with_pub_prefix(ctx, data_package, "combiJsonPath")
     except Exception:
         pass
     exists = data_object.exists(ctx, file_path)
@@ -275,7 +268,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     # Get the version doi
     version_doi = ''
     try:
-        version_doi = get_attribute_value(ctx, data_package, "versionDOI")
+        version_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "versionDOI")
     except Exception:
         pass
     url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config["publicVHost"], version_doi)
