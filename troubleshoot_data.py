@@ -100,30 +100,30 @@ def check_print_data_package_system_avus(ctx, data_package, write_stdout):
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
 
-def check_datacite_doi_registration(ctx, data_package, offline, write_stdout):
+def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
+    try:
+        doi = get_val_for_attr_with_pub_prefix(ctx, data_package, doi_name)
+    except ValueError as e:
+        log.write(ctx, "check_datacite_doi_registration: Error while trying to get {} - {}".format(doi_name, e), write_stdout)
+        return False
+
+    status_code = datacite.metadata_get(ctx, doi)
+    return status_code == 200
+
+
+def check_datacite_doi_registration(ctx, data_package, write_stdout):
     """
     Check the registration status of both versionDOI and baseDOI with the DataCite API,
     ensuring that both DOIs return a 200 status code, which indicates successful registration.
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
-    :param offline:      Whether to not connect to datacite
     :param write_stdout: A boolean representing whether to write to stdout or rodsLog
 
     :returns:            A tuple of booleans indicating check success or not.
     """
-    if offline:
-        return True, True
-
-    version_doi_check = False
     base_doi_check = False
-
-    try:
-        version_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "versionDOI")
-        status_code = datacite.metadata_get(ctx, version_doi)
-        version_doi_check = status_code == 200
-    except ValueError as e:
-        log.write(ctx, "check_datacite_doi_registration: Error while trying to get versionDOI - {}".format(e), write_stdout)
+    version_doi_check = check_one_datacite_doi_reg(ctx, data_package, "versionDOI", write_stdout)
 
     previous_version = ''
     try:
@@ -132,12 +132,7 @@ def check_datacite_doi_registration(ctx, data_package, offline, write_stdout):
         pass
 
     if previous_version:
-        try:
-            base_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "baseDOI")
-            status_code = datacite.metadata_get(ctx, base_doi)
-            base_doi_check = status_code == 200
-        except ValueError as e:
-            log.write(ctx, "check_datacite_doi_registration: Error while trying to get baseDOI - {}".format(e), write_stdout)
+        base_doi_check = check_one_datacite_doi_reg(ctx, data_package, "baseDOI", write_stdout)
 
     return (version_doi_check, base_doi_check)
 
@@ -291,7 +286,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     return True
 
 
-def print_troubleshoot_result(ctx, data_package, result):
+def print_troubleshoot_result(ctx, data_package, result, offline):
     """Print the result of troubleshooting one package in human-friendly format"""
     pass_all_tests = all(result.values())
 
@@ -303,8 +298,11 @@ def print_troubleshoot_result(ctx, data_package, result):
         log.write(ctx, "Schema matches: {}".format(result['schema_check']), True)
         log.write(ctx, "All expected AVUs exist: {}".format(result['no_missing_AVUs_check']), True)
         log.write(ctx, "No unexpected AVUs: {}".format(result['no_unexpected_AVUs_check']), True)
-        log.write(ctx, "Version DOI matches: {}".format(result['versionDOI_check']), True)
-        log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
+
+        if not offline:
+            log.write(ctx, "Version DOI matches: {}".format(result['versionDOI_check']), True)
+            log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
+
         log.write(ctx, "Landing page matches: {}".format(result['landingPage_check']), True)
         log.write(ctx, "Combined JSON matches: {}".format(result['combiJson_check']), True)
 
@@ -369,7 +367,11 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
             result['schema_check'] = schema_check_dict['match_schema'] if schema_check_dict else False
 
         result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
-        result['versionDOI_check'], result['baseDOI_check'] = check_datacite_doi_registration(ctx, data_package, offline, write_stdout)
+
+        # Do not check datacite in offline mode
+        if not offline:
+            result['versionDOI_check'], result['baseDOI_check'] = check_datacite_doi_registration(ctx, data_package, write_stdout)
+
         result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)
         result['combiJson_check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
@@ -377,7 +379,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
         results[data_package] = result
 
         if not api_call:
-            print_troubleshoot_result(ctx, data_package, result)
+            print_troubleshoot_result(ctx, data_package, result, offline)
 
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
