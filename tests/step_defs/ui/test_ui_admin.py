@@ -187,6 +187,7 @@ def ui_admin_removed_text_not_displayed(browser, text):
 
 @when(parsers.parse('the user clicks the Upload file format list {filename}'))
 def ui_admin_clicks_upload_file_format_button(browser, filename):
+    browser.execute_script("document.getElementById('upload-button').scrollIntoView();")
     browser.find_by_css("#upload-button")
 
     cwd = os.getcwd()
@@ -203,6 +204,7 @@ def ui_admin_upload_file_format_success(browser, filename):
 
 @when(parsers.parse('the user selects the file format list {filename} to delete'))
 def ui_admin_select_file_format(browser, filename):
+    browser.execute_script("document.getElementById('file-formats-list').scrollIntoView();")
     browser.find_by_css('#file-formats-list').click()
     options = browser.find_by_css('#file-formats-list option')
     for option in options:
