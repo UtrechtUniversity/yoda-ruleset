@@ -4,6 +4,7 @@
 __copyright__ = "Copyright (c) 2024, Utrecht University"
 __license__ = "GPLv3, see LICENSE"
 
+import os
 import time
 
 from pytest_bdd import (
@@ -182,3 +183,39 @@ def ui_admin_removed_text_not_displayed(browser, text):
     time.sleep(1)
     terms = browser.find_by_id('admin-publication-terms').first.value
     assert text not in terms
+
+
+@when(parsers.parse('the user clicks the Upload file format list {filename}'))
+def ui_admin_clicks_upload_file_format_button(browser, filename):
+    browser.find_by_css("#upload-button")
+
+    cwd = os.getcwd()
+    if os.name == 'nt':
+        browser.find_by_css('input[type="file"]')[0].fill("{}\\files\\file_formats\\{}".format(cwd, filename))
+    else:
+        browser.find_by_css('input[type="file"]')[0].fill("{}/files/file_formats/{}".format(cwd, filename))
+
+
+@then(parsers.parse('the success message of uploading a file format list {filename} is shown'))
+def ui_admin_upload_file_format_success(browser, filename):
+    assert browser.is_text_present(f"File format list '{filename}' uploaded successfully.")
+
+
+@when(parsers.parse('the user selects the file format list {filename} to delete'))
+def ui_admin_select_file_format(browser, filename):
+    browser.find_by_css('#file-formats-list').click()
+    options = browser.find_by_css('#file-formats-list option')
+    for option in options:
+        if option.value == filename.split('.')[0]:
+            option.click()
+            break
+
+
+@when('the user clicks the Delete file format list button')
+def ui_admin_click_delete_button(browser):
+    browser.find_by_css("#delete-format-button").click()
+
+
+@then(parsers.parse('the success message for deleting the file format list {filename} is shown'))
+def ui_admin_delete_file_format_success(browser, filename):
+    assert browser.is_text_present(f"File format list '{filename}' deleted successfully.")
