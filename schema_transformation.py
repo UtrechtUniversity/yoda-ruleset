@@ -66,6 +66,7 @@ def api_transform_metadata(ctx, coll, keep_metadata_backup=True):
         execute_transformation(ctx, metadata_path, transform, keep_metadata_backup)
     else:
         return api.Error('no_metadata', 'No metadata file found')
+    return None
 
 
 def get(ctx, metadata_path, metadata=None):
@@ -197,7 +198,7 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
             vault_package = '/'.join(path_parts[:5])
             metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
             log.write(callback, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
-            if metadata_path  != '':
+            if metadata_path != '':
                 transform = get(callback, metadata_path)
                 if transform is not None:
                     log.write(callback, "[METADATA] Executing transformation for: " + metadata_path)
@@ -376,9 +377,7 @@ def html(f):
                                 re.split('\n{2,}', f.__doc__)))
 
     # Remove docstring.
-    description = re.sub('((:param).*)|((:returns:).*)', ' ', description)
-
-    return description
+    return re.sub('((:param).*)|((:returns:).*)', ' ', description)
 
 
 @rule.make(inputs=[], outputs=[0])
@@ -394,8 +393,8 @@ def rule_batch_vault_metadata_schema_report(ctx):
                      the metadata matches the JSON schema). match_schema only has a meaning if a metadata schema
                      could be found.
     """
-    results = dict()
-    schema_cache = dict()
+    results = {}
+    schema_cache = {}
 
     # Find all vault collections
     iter = genquery.row_iterator(
