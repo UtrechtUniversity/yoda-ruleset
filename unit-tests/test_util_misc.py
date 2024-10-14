@@ -18,7 +18,7 @@ class UtilMiscTest(TestCase):
 
     def test_last_run_time_acceptable(self):
         """Test the last run time for copy to vault"""
-        # No last run time (job hasn't be tried before)
+        # No last run time (job hasn't been tried before)
         found = False
         last_run = 1
         self.assertEqual(last_run_time_acceptable(found, last_run, 300), True)

@@ -48,5 +48,5 @@ def remove_empty_objects(d):
         # Clean lists by filtering out empty objects.
         return [remove_empty_objects(item) for item in d if remove_empty_objects(item) not in (None, '', {}, [])]
     else:
-        # Return the value abecause it is not a dict or list.
+        # Return the value because it is not a dict or list.
         return d
