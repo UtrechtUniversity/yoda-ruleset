@@ -7,12 +7,14 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
 import hashlib
+import json
 import subprocess
 
 import genquery
 
 import datacite
 from publication import get_publication_config
+import session_vars
 from schema_transformation import verify_package_schema
 from util import *
 
@@ -30,8 +32,27 @@ def find_full_package_path(ctx, data_packages, short_package_name):
     for path in data_packages:
         if short_package_name in path:
             return path
-    log.write(ctx, "Error: The data package '{}' does not exist in the provided list.".format(short_package_name))
+    log.write_stdout(ctx, "Error: The data package '{}' does not exist in the provided list.".format(short_package_name))
     return None
+
+
+def published_data_package_exists(ctx, path):
+    """Confirm whether path is to a published data package"""
+    # TODO could this be a utility?
+
+    # Define the query condition and attributes to fetch data
+    query_condition = (
+        "COLL_NAME = '{}' AND "
+        "META_COLL_ATTR_NAME = 'org_vault_status' AND "
+        "META_COLL_ATTR_VALUE = 'PUBLISHED'".format(path)
+    )
+    query_attributes = "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS"
+    iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
+
+    for _ in iter:
+        return True
+
+    return False
 
 
 def find_published_data_packages(ctx):
@@ -55,11 +76,10 @@ def find_published_data_packages(ctx):
         iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
 
         # Collecting only the collection names
-        data_packages = [row[0] for row in iter]
+        return [row[0] for row in iter]
 
-        return data_packages
     except Exception as e:
-        log.write(ctx, "An error {} occurred while executing the query:".format(e))
+        log.write_stdout(ctx, "An error {} occurred while executing the query:".format(e))
         return []
 
 
@@ -118,22 +138,22 @@ def check_datacite_doi_registration(ctx, data_package):
     """
 
     try:
-        versionDOI = get_attribute_value(ctx, data_package, "versionDOI")
-        status_code = datacite.metadata_get(ctx, versionDOI)
-        versionDOI_check = (status_code == 200)
+        version_doi = get_attribute_value(ctx, data_package, "versionDOI")
+        status_code = datacite.metadata_get(ctx, version_doi)
+        version_doi_check = status_code == 200
     except ValueError as e:
-        log.write(ctx, "Error: {} while trying to get versionDOI".format(e))
-        versionDOI_check = False
+        log.write_stdout(ctx, "Error: {} while trying to get versionDOI".format(e))
+        version_doi_check = False
 
     try:
-        baseDOI = get_attribute_value(ctx, data_package, "baseDOI")
-        status_code = datacite.metadata_get(ctx, baseDOI)
-        baseDOI_check = (status_code == 200)
+        base_doi = get_attribute_value(ctx, data_package, "baseDOI")
+        status_code = datacite.metadata_get(ctx, base_doi)
+        base_doi_check = status_code == 200
     except ValueError as e:
-        log.write(ctx, "Error: {} while trying to get baseDOI".format(e))
-        baseDOI_check = False
+        log.write_stdout(ctx, "Error: {} while trying to get baseDOI".format(e))
+        base_doi_check = False
 
-    return (versionDOI_check, baseDOI_check)
+    return (version_doi_check, base_doi_check)
 
 
 def calculate_md5(content):
@@ -174,16 +194,18 @@ def get_md5_remote_ssh(ctx, host, username, file_path):
         )
 
         # Run the command using Popen (for python2 version)
-        # TODO: in copy_to_vault package, it may have subprocess methods
+        # TODO: in copy_to_vault package, it may have subprocess method that we can copy here
+        # TODO: convert to .run() in Python3
         process = subprocess.Popen(ssh_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        # returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
         stdout, stderr = process.communicate()
 
         # Return only the MD5 hash part
         if process.returncode == 0:
             return stdout.strip().split()[0]
-        else:
-            log.write(ctx, "Error: {}".format(stderr))
-            return None
+
+        log.write(ctx, "Error: {}".format(stderr))
+        return None
     except Exception as e:
         log.write(ctx, "An error occurred: {}".format(str(e)))
         return None
@@ -209,60 +231,96 @@ def get_attribute_value(ctx, data_package, attribute_suffix):
         raise ValueError("Attribute {} not found in AVU".format(attr))
 
 
-def verify_file_integrity(ctx, data_package, attribute_suffix, remote_directory):
+def verify_file_integrity(ctx, data_package, attribute_suffix, remote_host, remote_directory):
     """
     Compares MD5 checksums between a local file and its remote version to verify their integrity.
 
     :param ctx:              Combined type of a callback and rei struct
     :param data_package:     String representing the data package collection path.
     :param attribute_suffix: Suffix identifying the metadata attribute for the file path.
+    :param remote_host:      Hostname for the remote host to look up in publication config
     :param remote_directory: Base directory on the remote server for the file.
 
     :returns:                True if the MD5 checksums match, False otherwise.
+
+    :raises KeyError:        If host cannot be found in publication config
     """
 
     # Calculate md5 for the local file
     file_path = get_attribute_value(ctx, data_package, attribute_suffix)
+    log.write_stdout(ctx, "file path: {}".format(file_path))
+    # We are comparing small files so it should be ok to get the whole file
     local_data = data_object.read(ctx, file_path)
     local_md5 = calculate_md5(local_data)
 
     # Calculate md5 for the remote file
     publication_config = get_publication_config(ctx)
+    if remote_host not in publication_config:
+        raise KeyError("Host {} does not exist in publication config".format(remote_host))
+
     file_shortname = file_path.split("/")[-1].replace('-combi', '')
+    log.write_stdout(ctx, "short: {}".format(file_shortname))
     remote_file_path = "/var/www/{}/{}/{}/{}".format(
         remote_directory, publication_config['yodaInstance'], publication_config['yodaPrefix'], file_shortname)
-    remote_md5 = get_md5_remote_ssh(ctx, "combined.yoda.test", "inbox", remote_file_path)  # TODO: host_name and user_name can be variables
+    log.write_stdout(ctx, "remote file path: {}".format(remote_file_path))
+
+    remote_md5 = get_md5_remote_ssh(ctx, publication_config[remote_host], config.inbox_user, remote_file_path)
 
     if local_md5 == remote_md5:
         return True
-    else:
-        log.write(ctx, " MD5 of local and remote file don't match.")
-        log.write(ctx, "Local MD5 ({}): {}".format(attribute_suffix, local_md5))
-        log.write(ctx, "Remote MD5 ({}): {}".format(attribute_suffix, remote_md5))
-        return False
+
+    log.write_stdout(ctx, "MD5 of local and remote file don't match.")
+    log.write_stdout(ctx, "Local MD5 ({}): {}".format(attribute_suffix, local_md5))
+    log.write_stdout(ctx, "Remote MD5 ({}): {}".format(attribute_suffix, remote_md5))
+    return False
 
 
 def check_integrity_of_publication_files(ctx, data_package):
     """
-    Checks the integrity of landingPage and CombiJson files by verifying their MD5 checksums in local aginst thoese in public server.
+    Checks the integrity of landingPage and CombiJson files by verifying their MD5 checksums in local against those in public server.
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
 
     :returns:            A tuple containing boolean results of checking
     """
-    landing_page_verified = verify_file_integrity(ctx, data_package, "landingPagePath", "landingpages")
-    combi_json_verified = verify_file_integrity(ctx, data_package, "combiJsonPath", "moai/metadata")
+    # publicVHost for landingpage, moaiHost for moai
+    landing_page_verified = verify_file_integrity(ctx, data_package, "landingPagePath", "publicVHost", "landingpages")
+    combi_json_verified = verify_file_integrity(ctx, data_package, "combiJsonPath", "moaiHost", "moai/metadata")
     return (landing_page_verified, combi_json_verified)
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
+def print_troubleshoot_result(ctx, result):
+    """Print the result of troubleshooting of one package in human-friendly format"""
+    pass_all_tests = False
+    for value in result.values():
+        pass_all_tests = pass_all_tests and value
+
+    log.write_stdout(ctx, "Results for: {}".format(result['data_package_path']))
+    # TODO check these prompt messages
+    if pass_all_tests:
+        log.write_stdout(ctx, "Package passes all tests.")
+    else:
+        log.write_stdout(ctx, "Package FAILED one or more tests:")
+        log.write_stdout(ctx, "Schema matches: {}".format(result['schema_check']))
+        log.write_stdout(ctx, "All expected AVUs exist: {}".format(result['no_missing_avus_check']))
+        log.write_stdout(ctx, "No unexpected AVUs: {}".format(result['no_unexpected_avus_check']))
+        log.write_stdout(ctx, "Version DOI matches: {}".format(result['versionDOI_check']))
+        log.write_stdout(ctx, "Base DOI matches: {}".format(result['baseDOI_check']))
+        log.write_stdout(ctx, "Landing page matches: {}".format(result['landingPage_check']))
+        log.write_stdout(ctx, "combiJson matches: {}".format(result['combiJson_check']))
+
+    log.write_stdout(ctx, "")
+
+
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_loc):
     """
     Troubleshoots published data packages.
 
-    :param ctx: Context that combines a callback and rei struct.
+    :param ctx:               Context that combines a callback and rei struct.
     :param requested_package: A string representing a specific data package path or "all_published_data" for all packages.
+    :param log_loc:           A string representing location to write a json log
 
     :returns: None.
 
@@ -274,46 +332,56 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package):
 
     Operates on either a single specified package or all published packages, depending on the input.
     """
+    data_packages = []
 
-    # Retrieve all published data packages
-    all_published_packages = find_published_data_packages(ctx)
-    if not all_published_packages:
-        log.write(ctx, "No published packages found.")
-        return
-
-    # Determine which packages to process based on the input
-    if requested_package == 'all_published_packages':
-        data_packages = all_published_packages
-    else:
-        data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
-        if data_package_path:
-            data_packages = [data_package_path]
-        else:
-            log.write(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
+    # Full path given
+    if requested_package.startswith("/"):
+        if not collection.exists(ctx, requested_package) or not published_data_package_exists(ctx, requested_package):
+            log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
             return
 
-    results_dict = {}
+        data_packages.append(requested_package)
+    else:
+        # Retrieve all published data packages
+        all_published_packages = find_published_data_packages(ctx)
+        if not all_published_packages:
+            log.write_stdout(ctx, "No published packages found.")
+            return
 
-    # Toubleshooting
+        # Determine which packages to process based on the input
+        if requested_package == 'all_published_packages':
+            data_packages = all_published_packages
+        else:
+            data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
+            if data_package_path:
+                data_packages.append(data_package_path)
+            else:
+                log.write_stdout(ctx, "Error: Requested package '{}' not found among published packages.".format(requested_package))
+                return
+
+    # Troubleshooting
     for data_package in data_packages:
-        log.write(ctx, "Troubleshooting: {}".format(data_package))
+        log.write_stdout(ctx, "Troubleshooting: {}".format(data_package))
         schema_check = verify_package_schema(ctx, data_package, {})['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
-        versionDOI_check, baseDOI_check = check_datacite_doi_registration(ctx, data_package)
-        landingPage_check, combiJson_check = check_integrity_of_publication_files(ctx, data_package)
+        version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
+        landing_page_check, combi_json_check = check_integrity_of_publication_files(ctx, data_package)
 
         # Collect results for current data package
-        results_dict[data_package] = {
+        result = {
+            'data_package_path': data_package,
             'schema_check': schema_check,
             'no_missing_avus_check': no_missing_avus_check,
             'no_unexpected_avus_check': no_unexpected_avus_check,
-            'versionDOI_check': versionDOI_check,
-            'baseDOI_check': baseDOI_check,
-            'landingPage_check': landingPage_check,
-            'combiJson_check': combiJson_check
+            'versionDOI_check': version_doi_check,
+            'baseDOI_check': base_doi_check,
+            'landingPage_check': landing_page_check,
+            'combiJson_check': combi_json_check
         }
 
-    log.write(ctx, "Troubleshooting results: {}".format(results_dict))
-
-    # TODO: Return the result of output to the terminal (stdout)
-    # return json.dumps(results_dict)
+        print_troubleshoot_result(ctx, result)
+        # TODO proper check?
+        if len(log_loc):
+            with open(log_loc, "a") as writer:
+                json.dump(result, writer)
+                writer.writelines('\n')
