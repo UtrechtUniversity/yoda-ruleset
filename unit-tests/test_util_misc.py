@@ -13,6 +13,7 @@ sys.path.append('../util')
 
 from misc import check_data_package_system_avus, human_readable_size, last_run_time_acceptable, remove_empty_objects
 
+# AVs of a successfully published data package, that is the first version of the package
 avs_success_data_package = {
     "org_publication_accessRestriction": "Open - freely retrievable",
     "org_publication_anonymousAccess": "yes",
@@ -35,6 +36,60 @@ avs_success_data_package = {
     "org_publication_versionDOI": "10.00012/UU01-ICGVFV",
     "org_publication_versionDOIMinted": "yes",
 }
+
+avs_success_data_package_multiversion = {
+    "org_publication_accessRestriction": "Open - freely retrievable",
+    "org_publication_anonymousAccess": "yes",
+    "org_publication_approval_actor": "datamanager#tempZone",
+    "org_publication_baseDOI": "10.00012/UU01-X0GU3S",
+    "org_publication_baseDOIMinted": "yes",
+    "org_publication_baseRandomId": "X0GU3S",
+    "org_publication_combiJsonPath": "/tempZone/yoda/publication/YU0JDH-combi.json",
+    "org_publication_dataCiteJsonPath": "/tempZone/yoda/publication/YU0JDH-dataCite.json",
+    "org_publication_dataCiteMetadataPosted": "yes",
+    "org_publication_landingPagePath": "/tempZone/yoda/publication/YU0JDH.html",
+    "org_publication_landingPageUploaded": "yes",
+    "org_publication_landingPageUrl": "https://public.yoda.test/allinone/UU01/YU0JDH.html",
+    "org_publication_lastModifiedDateTime": "2024-10-11T08:49:17.000000",
+    "org_publication_license": "Custom",
+    "org_publication_oaiUploaded": "yes",
+    "org_publication_previous_version": "/tempZone/home/vault-initial1/new-group01[1728550839]",
+    "org_publication_publicationDate": "2024-10-11T08:50:01.812220",
+    "org_publication_randomId": "YU0JDH",
+    "org_publication_status": "OK",
+    "org_publication_submission_actor": "datamanager#tempZone",
+    "org_publication_vaultPackage": "/tempZone/home/vault-initial1/new-group01[1728629336]",
+    "org_publication_versionDOI": "10.00012/UU01-YU0JDH",
+    "org_publication_versionDOIMinted": "yes"
+}
+
+avs_success_data_package_multiversion_first = {
+    "org_publication_accessRestriction": "Open - freely retrievable",
+    "org_publication_anonymousAccess": "yes",
+    "org_publication_approval_actor": "datamanager#tempZone",
+    "org_publication_baseDOI": "10.00012/UU01-X0GU3S",
+    "org_publication_baseRandomId": "X0GU3S",
+    "org_publication_combiJsonPath": "/tempZone/yoda/publication/T8D8QU-combi.json",
+    "org_publication_dataCiteJsonPath": "/tempZone/yoda/publication/T8D8QU-dataCite.json",
+    "org_publication_dataCiteMetadataPosted": "yes",
+    "org_publication_landingPagePath": "/tempZone/yoda/publication/T8D8QU.html",
+    "org_publication_landingPageUploaded": "yes",
+    "org_publication_landingPageUrl": "https://public.yoda.test/allinone/UU01/T8D8QU.html",
+    "org_publication_lastModifiedDateTime": "2024-10-10T09:06:05.000000",
+    "org_publication_license": "Creative Commons Attribution 4.0 International Public License",
+    "org_publication_licenseUri": "https://creativecommons.org/licenses/by/4.0/legalcode",
+    "org_publication_next_version": "/tempZone/home/vault-initial1/new-group01[1728545387]",
+    "org_publication_oaiUploaded": "yes",
+    "org_publication_publicationDate": "2024-10-10T09:06:02.177810",
+    "org_publication_randomId": "T8D8QU",
+    "org_publication_status": "OK",
+    "org_publication_submission_actor": "datamanager#tempZone",
+    "org_publication_vaultPackage": "/tempZone/home/vault-initial1/new-group01[1728543897]",
+    "org_publication_versionDOI": "10.00012/UU01-T8D8QU",
+    "org_publication_versionDOIMinted": "yes",
+}
+
+# From avu.py
 Avu = namedtuple('Avu', list('avu'))
 Avu.attr  = Avu.a
 Avu.value = Avu.v
@@ -48,6 +103,24 @@ class UtilMiscTest(TestCase):
         avs = avs_success_data_package
         avus_success = [Avu(attr, val, "") for attr, val in avs.items()]
         result = check_data_package_system_avus(avus_success)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+
+        # Missing license Uri for non-custom license
+        del avs['org_publication_licenseUri']
+        avus_missing_license_uri = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_missing_license_uri)
+        self.assertFalse(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 1)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+
+        # Custom license, no license Uri (happy flow)
+        avs['org_publication_license'] = "Custom"
+        avus_custom_license = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_custom_license)
         self.assertTrue(result['no_missing_avus'])
         self.assertTrue(result['no_unexpected_avus'])
         self.assertTrue(len(result['missing_avus']) == 0)
@@ -78,6 +151,24 @@ class UtilMiscTest(TestCase):
         self.assertFalse(result['no_missing_avus'])
         self.assertTrue(result['no_unexpected_avus'])
         self.assertTrue(len(result['missing_avus']) == 1)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+
+        # Success, latest version of a publication
+        avs = avs_success_data_package_multiversion
+        avus_success = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_success)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+
+        # Success, first version of a publication that has had other versions
+        avs = avs_success_data_package_multiversion_first
+        avus_success = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_success)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
         self.assertTrue(len(result['unexpected_avus']) == 0)
 
     def test_last_run_time_acceptable(self):

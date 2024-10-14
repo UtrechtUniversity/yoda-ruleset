@@ -17,41 +17,62 @@ def check_data_package_system_avus(extracted_avus):
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
     a successfully published data package.
 
-    :param extracted_avus: AVUs of the data package
+    :param extracted_avus: AVUs of the data package in AVU form
 
     :returns:            Dictionary of the results of the check
     """
-    # Filter those starting with 'org_'
-    extracted_avus = {m.attr for m in extracted_avus if m.attr.startswith(constants.UUORGMETADATAPREFIX + 'publication_')}
+    # Filter those starting with 'org_publication'
+    extracted_avs = {}
+    for m in extracted_avus:
+        if m.attr.startswith(constants.UUORGMETADATAPREFIX + 'publication_'):
+            extracted_avs[m.attr] = m.value
+    extracted_attrs = set(extracted_avs.keys())
 
     # Define the set of ground truth AVUs
-    avu_names_suffix = [
+    avu_names_suffix = {
         'publication_approval_actor', 'publication_randomId',
         'publication_versionDOI', 'publication_dataCiteJsonPath', 'publication_license',
         'publication_anonymousAccess', 'publication_versionDOIMinted',
         'publication_accessRestriction', 'publication_landingPagePath',
-        'publication_licenseUri', 'publication_publicationDate',
+        'publication_publicationDate',
         'publication_vaultPackage', 'publication_submission_actor', 'publication_status',
         'publication_lastModifiedDateTime', 'publication_combiJsonPath',
         'publication_landingPageUploaded', 'publication_oaiUploaded',
         'publication_landingPageUrl', 'publication_dataCiteMetadataPosted'
-    ]
+    }
 
-    # Define set of AVUs with more than one version of publication
-    avu_names_base_suffix = [
+    # If the license is not Custom, it must have a licenseUri
+    if constants.UUORGMETADATAPREFIX + 'publication_license' in extracted_attrs:
+        if extracted_avs[constants.UUORGMETADATAPREFIX + 'publication_license'] != "Custom":
+            avu_names_suffix.add('publication_licenseUri')
+
+    # Define additional set of AVUs with more than one version of publication
+    avu_names_version_suffix = {
         'publication_previous_version', 'publication_baseDOI', 'publication_baseRandomId',
         'publication_baseDOIMinted'
-    ]
+    }
 
-    if constants.UUORGMETADATAPREFIX + 'publication_previous_version' in extracted_avus:
-        combined_avu_names_suffix = avu_names_base_suffix + avu_names_suffix
-        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
-    else:
-        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in avu_names_suffix}
+    # Define additional set of AVUs expected for the first version of a publication, when there are multiple versions
+    avu_names_first_version_suffix = {
+        'publication_baseRandomId', 'publication_baseDOI', 'publication_next_version'
+    }
 
+    # for the second version, all we need is next_version in addition to avu_names_version_suffix
+    avu_names_previous_version_suffix = {'publication_next_version'}
+
+    combined_avu_names_suffix = avu_names_suffix
+
+    if constants.UUORGMETADATAPREFIX + 'publication_previous_version' in extracted_attrs:
+        combined_avu_names_suffix.update(avu_names_version_suffix)
+        if constants.UUORGMETADATAPREFIX + 'publication_next_version' in extracted_attrs:
+            combined_avu_names_suffix.update(avu_names_previous_version_suffix)
+    elif constants.UUORGMETADATAPREFIX + 'publication_next_version' in extracted_attrs:
+        combined_avu_names_suffix.update(avu_names_first_version_suffix)
+
+    ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
     # Find missing and unexpected AVUs
-    missing_avus = ground_truth_avus - extracted_avus
-    unexpected_avus = extracted_avus - ground_truth_avus
+    missing_avus = ground_truth_avus - extracted_attrs
+    unexpected_avus = extracted_attrs - ground_truth_avus
 
     results = {
         'no_missing_avus': not bool(missing_avus),
