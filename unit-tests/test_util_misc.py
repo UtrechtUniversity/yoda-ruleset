@@ -21,20 +21,20 @@ class UtilMiscTest(TestCase):
         # No last run time (job hasn't be tried before)
         found = False
         last_run = 1
-        self.assertEqual(last_run_time_acceptable("b", found, last_run, 300), True)
+        self.assertEqual(last_run_time_acceptable(found, last_run, 300), True)
 
         # Last run time greater than the backoff, so can run
         now = int(time.time())
         found = True
         copy_backoff_time = 300
         last_run = now - copy_backoff_time - 1
-        self.assertEqual(last_run_time_acceptable("b", found, last_run, copy_backoff_time), True)
+        self.assertEqual(last_run_time_acceptable(found, last_run, copy_backoff_time), True)
 
         # Last run time more recent than the backoff, so should not run
         found = True
         copy_backoff_time = 300
         last_run = now
-        self.assertEqual(last_run_time_acceptable("b", found, int(time.time()), copy_backoff_time), False)
+        self.assertEqual(last_run_time_acceptable(found, int(time.time()), copy_backoff_time), False)
 
     def test_human_readable_size(self):
         output = human_readable_size(0)
