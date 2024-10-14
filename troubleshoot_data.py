@@ -6,17 +6,14 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_troubleshoot_published_data_packages']
 
-import hashlib
 import json
-import subprocess
+import requests
 
 import genquery
-import requests
 
 import datacite
 from publication import get_publication_config
-import session_vars
-from schema_transformation import verify_package_schema
+from meta import verify_vault_metadata_matches_schema
 from util import *
 
 
@@ -42,6 +39,7 @@ def published_data_package_exists(ctx, path):
     # TODO could this be a utility?
 
     # Define the query condition and attributes to fetch data
+    # TODO also check for retry and unrecoverable publication_status
     query_condition = (
         "COLL_NAME = '{}' AND "
         "META_COLL_ATTR_NAME = 'org_vault_status' AND "
@@ -68,12 +66,16 @@ def find_published_data_packages(ctx):
         user_zone = user.zone(ctx)
 
         # Define the query condition and attributes to fetch data
+        # TODO we should check for retry and unrecoverable packages too
+        # org_vault_status is correct for normal packages
+        # org_publication_status: for retry and unrecoverable
         query_condition = (
             "COLL_NAME like '/{}/home/vault-%' AND "
             "META_COLL_ATTR_NAME = 'org_vault_status' AND "
             "META_COLL_ATTR_VALUE = 'PUBLISHED'".format(user_zone)
         )
-        query_attributes = "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS"
+        # TODO make this select shorter?
+        query_attributes = "COLL_NAME"
         iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
 
         # Collecting only the collection names
@@ -155,61 +157,6 @@ def check_datacite_doi_registration(ctx, data_package):
         base_doi_check = False
 
     return (version_doi_check, base_doi_check)
-
-
-def calculate_md5(content):
-    """
-    Computes the MD5 checksum of the provided content.
-
-    :param content:  The content for which to compute the checksum.
-
-    :returns:        The computed MD5 checksum as a hexadecimal string.
-    """
-    # Create an MD5 hash object
-    hash_md5 = hashlib.md5()
-
-    # Check if the content is a byte string
-    if isinstance(content, bytes):
-        hash_md5.update(content)
-    else:
-        hash_md5.update(content.encode('utf-8'))
-
-    return hash_md5.hexdigest()
-
-
-def get_md5_remote_ssh(ctx, host, username, file_path):
-    """
-    Calculate the MD5 checksum of a file on a remote server via SSH.
-
-    :param ctx:       Combined type of a callback and rei struct
-    :param host:      The hostname the remote server.
-    :param username:  The username to log into the remote server.
-    :param file_path: The path to the file on the remote server for which the MD5 checksum is calculated.
-
-    :returns:         The MD5 checksum of the file if successful, None otherwise.
-    """
-    try:
-        # Build the SSH command to execute md5sum remotely
-        ssh_command = "ssh -o StrictHostKeyChecking=accept-new {username}@{host} md5sum -b {file_path}".format(
-            username=username, host=host, file_path=file_path
-        )
-
-        # Run the command using Popen (for python2 version)
-        # TODO: in copy_to_vault package, it may have subprocess method that we can copy here
-        # TODO: convert to .run() in Python3
-        process = subprocess.Popen(ssh_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        # returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
-        stdout, stderr = process.communicate()
-
-        # Return only the MD5 hash part
-        if process.returncode == 0 and stdout:
-            return stdout.strip().split()[0]
-
-        log.write(ctx, "Error: {}".format(stderr))
-        return None
-    except Exception as e:
-        log.write(ctx, "An error occurred: {}".format(str(e)))
-        return None
 
 
 def get_attribute_value(ctx, data_package, attribute_suffix):
@@ -346,7 +293,7 @@ def print_troubleshoot_result(ctx, result):
         log.write_stdout(ctx, "Version DOI matches: {}".format(result['versionDOI_check']))
         log.write_stdout(ctx, "Base DOI matches: {}".format(result['baseDOI_check']))
         log.write_stdout(ctx, "Landing page matches: {}".format(result['landingPage_check']))
-        log.write_stdout(ctx, "combiJson matches: {}".format(result['combiJson_check']))
+        log.write_stdout(ctx, "combined JSON matches: {}".format(result['combiJson_check']))
 
     log.write_stdout(ctx, "")
 
@@ -369,7 +316,7 @@ def collect_troubleshoot_data_packages(ctx, requested_package):
             return None
 
         # Determine which packages to process based on the input
-        if requested_package == 'all_published_packages':
+        if requested_package == 'None':
             data_packages = all_published_packages
         else:
             data_package_path = find_full_package_path(ctx, all_published_packages, requested_package)
@@ -404,11 +351,12 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
     data_packages = collect_troubleshoot_data_packages(ctx, requested_package)
     if not data_packages:
         return
+    schema_cache = {}
 
     # Troubleshooting
     for data_package in data_packages:
         log.write_stdout(ctx, "Troubleshooting: {}".format(data_package))
-        schema_check = verify_package_schema(ctx, data_package, {})['match_schema']
+        schema_check = verify_vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-published-packages")['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
         publication_config = get_publication_config(ctx)

@@ -381,25 +381,27 @@ def html(f):
     return description
 
 
-def verify_package_schema(ctx, coll_name, schema_cache):
-    """Process a single data package to retrieve and validate its metadata schema.
+def verify_package_schema(ctx, coll_name, schema_cache, report_name):
+    """Process a single data package to retrieve and validate that its metadata conforms to the schema.
 
     :param ctx:          Combined type of a callback and rei struct
     :param coll_name:    String representing the data package collection path.
-    :param schema_cache: Dictionary storign schema blueprints, can be empty.
+    :param schema_cache: Dictionary storing schema blueprints, can be empty.
+    :param report_name:  Name of report script (for logging)
 
     :returns:            A dictionary result containing if schema matches and the schema short name.
     """
     metadata_path = meta.get_latest_vault_metadata_path(ctx, coll_name)
 
     if not metadata_path:
-        log.write(ctx, "Vault metadata schema report skips {}, because metadata could not be found.".format(coll_name))
+        log.write(ctx, "{} skips {}, because metadata could not be found.".format(report_name, coll_name))
         return None
 
     try:
         metadata = jsonutil.read(ctx, metadata_path)
     except Exception as exc:
-        log.write(ctx, "Vault metadata report skips {}, because of exception while reading metadata file {}: {}".format(coll_name, metadata_path, str(exc)))
+        # TODO write_stdout?
+        log.write(ctx, "{} skips {}, because of exception while reading metadata file {}: {}".format(report_name, coll_name, metadata_path, str(exc)))
         return None
 
     # Determine schema
@@ -419,7 +421,7 @@ def verify_package_schema(ctx, coll_name, schema_cache):
     match_schema = len(error_list) == 0
     if not match_schema:
         errors_formatted = [meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list]
-        log.write(ctx, "Vault metadata schema report: metadata {} did not match schema {}: {}".format(metadata_path, schema_shortname, str(errors_formatted)))
+        log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)))
 
     return {"schema": schema_shortname, "match_schema": match_schema}
 
@@ -450,7 +452,7 @@ def rule_batch_vault_metadata_schema_report(ctx):
     for row in iter:
         try:
             coll_name = row[0]
-            result = verify_package_schema(ctx, coll_name, schema_cache)
+            result = verify_package_schema(ctx, coll_name, schema_cache, "Vault metadata schema report")
             if result:
                 results[coll_name] = result
         except Exception as e:
