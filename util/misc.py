@@ -8,6 +8,60 @@ import math
 import time
 from collections import OrderedDict
 
+import constants
+
+
+def check_data_package_system_avus(extracted_avus):
+    """
+    Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
+    This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
+    a successfully published data package.
+
+    :param extracted_avus: AVUs of the data package
+
+    :returns:            Dictionary of the results of the check
+    """
+    # Filter those starting with 'org_'
+    extracted_avus = {m.attr for m in extracted_avus if m.attr.startswith(constants.UUORGMETADATAPREFIX + 'publication_')}
+
+    # Define the set of ground truth AVUs
+    avu_names_suffix = [
+        'publication_approval_actor', 'publication_randomId',
+        'publication_versionDOI', 'publication_dataCiteJsonPath', 'publication_license',
+        'publication_anonymousAccess', 'publication_versionDOIMinted',
+        'publication_accessRestriction', 'publication_landingPagePath',
+        'publication_licenseUri', 'publication_publicationDate',
+        'publication_vaultPackage', 'publication_submission_actor', 'publication_status',
+        'publication_lastModifiedDateTime', 'publication_combiJsonPath',
+        'publication_landingPageUploaded', 'publication_oaiUploaded',
+        'publication_landingPageUrl', 'publication_dataCiteMetadataPosted'
+    ]
+
+    # Define set of AVUs with more than one version of publication
+    avu_names_base_suffix = [
+        'publication_previous_version', 'publication_baseDOI', 'publication_baseRandomId',
+        'publication_baseDOIMinted'
+    ]
+
+    if constants.UUORGMETADATAPREFIX + 'publication_previous_version' in extracted_avus:
+        combined_avu_names_suffix = avu_names_base_suffix + avu_names_suffix
+        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
+    else:
+        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in avu_names_suffix}
+
+    # Find missing and unexpected AVUs
+    missing_avus = ground_truth_avus - extracted_avus
+    unexpected_avus = extracted_avus - ground_truth_avus
+
+    results = {
+        'no_missing_avus': not bool(missing_avus),
+        'missing_avus': list(missing_avus),
+        'no_unexpected_avus': not bool(unexpected_avus),
+        'unexpected_avus': list(unexpected_avus)
+    }
+
+    return results
+
 
 def last_run_time_acceptable(coll, found, last_run, config_backoff_time):
     """Return whether the last run time is acceptable to continue with task."""

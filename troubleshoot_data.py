@@ -75,63 +75,27 @@ def find_data_packages(ctx, write_stdout):
         return []
 
 
-def check_data_package_system_avus(ctx, data_package, write_stdout):
+def check_print_data_package_system_avus(ctx, data_package, write_stdout):
     """
     Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
     a successfully published data package.
+    This also prints if there are any missing or unexpected results.
 
     :param ctx:          Combined type of a callback and rei struct
     :param data_package: String representing the data package collection path.
     :param write_stdout: A boolean representing whether to write to stdout or rodsLog
 
-    :returns:            A tuple containing boolean results of checking results
+    :returns:            A 2-tuple containing boolean results of checking results
     """
+    extracted_avus = avu.of_coll(ctx, data_package)
+    results = misc.check_data_package_system_avus(extracted_avus)
 
-    # Fetch AVUs of the data package and filter those starting with 'org_'
-    extracted_avus = {m.attr for m in avu.of_coll(ctx, data_package) if m.attr.startswith(constants.UUORGMETADATAPREFIX + 'publication_')}
+    if not results["no_missing_avus"]:
+        log.write(ctx, "check_data_package_system_avus: There are some missing AVUs in data package <{}> - {}".format(data_package, list(results["missing_avus"])), write_stdout)
 
-    # Define the set of ground truth AVUs
-    avu_names_suffix = [
-        'publication_approval_actor', 'publication_randomId',
-        'publication_versionDOI', 'publication_dataCiteJsonPath', 'publication_license',
-        'publication_anonymousAccess', 'publication_versionDOIMinted',
-        'publication_accessRestriction', 'publication_landingPagePath',
-        'publication_licenseUri', 'publication_publicationDate',
-        'publication_vaultPackage', 'publication_submission_actor', 'publication_status',
-        'publication_lastModifiedDateTime', 'publication_combiJsonPath',
-        'publication_landingPageUploaded', 'publication_oaiUploaded',
-        'publication_landingPageUrl', 'publication_dataCiteMetadataPosted'
-    ]
-
-    # Define set of AVUs with more than one version of publication
-    avu_names_base_suffix = [
-        'publication_previous_version', 'publication_baseDOI', 'publication_baseRandomId',
-        'publication_baseDOIMinted'
-    ]
-
-    if constants.UUORGMETADATAPREFIX + 'publication_previous_version' in extracted_avus:
-        combined_avu_names_suffix = avu_names_base_suffix + avu_names_suffix
-        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
-    else:
-        ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in avu_names_suffix}
-
-    # Find missing and unexpected AVUs
-    missing_avus = ground_truth_avus - extracted_avus
-    unexpected_avus = extracted_avus - ground_truth_avus
-
-    results = {
-        'no_missing_avus': not bool(missing_avus),
-        'missing_avus': list(missing_avus),
-        'no_unexpected_avus': not bool(unexpected_avus),
-        'unexpected_avus': list(unexpected_avus)
-    }
-
-    if missing_avus:
-        log.write(ctx, "check_data_package_system_avus: There are some missing AVUs in data package <{}> - {}".format(data_package, list(missing_avus)), write_stdout)
-
-    if unexpected_avus:
-        log.write(ctx, "check_data_package_system_avus: There are some unexpected AVUs in data package <{}> - {}".format(data_package, list(unexpected_avus)), write_stdout)
+    if not results["no_unexpected_avus"]:
+        log.write(ctx, "check_data_package_system_avus: There are some unexpected AVUs in data package <{}> - {}".format(data_package, list(results["unexpected_avus"])), write_stdout)
 
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
@@ -406,11 +370,12 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     for data_package in data_packages:
         log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout)
         result = {}
+        # Cannot check the metadata as technicaladmin
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['schema_check'] = schema_check_dict['match_schema'] if schema_check_dict else False
 
-        result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_data_package_system_avus(ctx, data_package, write_stdout)
+        result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
         result['versionDOI_check'], result['baseDOI_check'] = check_datacite_doi_registration(ctx, data_package, offline, write_stdout)
         result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)

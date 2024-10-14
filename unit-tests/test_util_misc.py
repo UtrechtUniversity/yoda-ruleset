@@ -6,15 +6,79 @@ __license__   = 'GPLv3, see LICENSE'
 
 import sys
 import time
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 from unittest import TestCase
 
 sys.path.append('../util')
 
-from misc import human_readable_size, last_run_time_acceptable, remove_empty_objects
+from misc import check_data_package_system_avus, human_readable_size, last_run_time_acceptable, remove_empty_objects
+
+avs_success_data_package = {
+    "org_publication_accessRestriction": "Open - freely retrievable",
+    "org_publication_anonymousAccess": "yes",
+    "org_publication_approval_actor": "datamanager#tempZone",
+    "org_publication_combiJsonPath": "/tempZone/yoda/publication/ICGVFV-combi.json",
+    "org_publication_dataCiteJsonPath": "/tempZone/yoda/publication/ICGVFV-dataCite.json",
+    "org_publication_dataCiteMetadataPosted": "yes",
+    "org_publication_landingPagePath": "/tempZone/yoda/publication/ICGVFV.html",
+    "org_publication_landingPageUploaded": "yes",
+    "org_publication_landingPageUrl": "https://public.yoda.test/allinone/UU01/ICGVFV.html",
+    "org_publication_lastModifiedDateTime": "2024-10-04T15:32:46.000000",
+    "org_publication_license": "Creative Commons Attribution 4.0 International Public License",
+    "org_publication_licenseUri": "https://creativecommons.org/licenses/by/4.0/legalcode",
+    "org_publication_oaiUploaded": "yes",
+    "org_publication_publicationDate": "2024-10-04T15:33:17.853806",
+    "org_publication_randomId": "ICGVFV",
+    "org_publication_status": "OK",
+    "org_publication_submission_actor": "researcher#tempZone",
+    "org_publication_vaultPackage": "/tempZone/home/vault-default-3/research-default-3[1728048679]",
+    "org_publication_versionDOI": "10.00012/UU01-ICGVFV",
+    "org_publication_versionDOIMinted": "yes",
+}
+Avu = namedtuple('Avu', list('avu'))
+Avu.attr  = Avu.a
+Avu.value = Avu.v
+Avu.unit  = Avu.u
 
 
 class UtilMiscTest(TestCase):
+
+    def test_check_data_package_system_avus(self):
+        # Success
+        avs = avs_success_data_package
+        avus_success = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_success)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+
+        # Unexpected
+        avs['org_publication_userAddedSomethingWeird'] = "yodayoda:)"
+        avus_unexpected = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_unexpected)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertFalse(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
+        self.assertTrue(len(result['unexpected_avus']) == 1)
+
+        # Missing and unexpected
+        del avs['org_publication_landingPagePath']
+        avus_missing_unexpected = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_missing_unexpected)
+        self.assertFalse(result['no_missing_avus'])
+        self.assertFalse(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 1)
+        self.assertTrue(len(result['unexpected_avus']) == 1)
+
+        # Missing
+        del avs['org_publication_userAddedSomethingWeird']
+        avus_missing = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_missing)
+        self.assertFalse(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 1)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
 
     def test_last_run_time_acceptable(self):
         """Test the last run time for copy to vault"""

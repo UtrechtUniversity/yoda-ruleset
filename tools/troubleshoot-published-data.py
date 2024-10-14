@@ -26,7 +26,6 @@ def parse_args():
                         help="If actions should be performed without connecting to external servers (needed for the Yoda team's development setup).")
     parser.add_argument("-p", "--package", type=str, required=False,
                         help="Troubleshoot a specific data package by name (default: troubleshoot all packages)")
-    # TODO argument to optionally add an avu with json status info: time of check and was it a success
     return parser.parse_args()
 
 
