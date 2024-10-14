@@ -11,6 +11,7 @@ from datetime import datetime
 
 import genquery
 import requests
+import urllib3
 
 import datacite
 from meta import vault_metadata_matches_schema
@@ -225,6 +226,8 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline):
     if offline:
         return len(local_data) > 0
 
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     try:
         response = requests.get(url, verify=False)
     except requests.exceptions.ConnectionError as e:
@@ -236,6 +239,9 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline):
         log.write_stdout(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url))
         return False
 
+    # Set encoding to utf-8 for the response text (otherwise will not match local_data)
+    response.encoding = 'utf-8'
+
     if local_data == response.text:
         return True
 
@@ -243,13 +249,12 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline):
     return False
 
 
-def check_landingpage(ctx, data_package, publication_config, offline):
+def check_landingpage(ctx, data_package, offline):
     """
     Checks the integrity of landing page by comparing the contents
 
     :param ctx:                Combined type of a callback and rei struct
     :param data_package:       String representing the data package collection path.
-    :param publication_config: Dictionary of publication config
     :param offline:            Whether to skip any checks that require external server access
 
     :returns:                  A tuple containing boolean results of checking
@@ -285,6 +290,8 @@ def check_combi_json(ctx, data_package, publication_config, offline):
 
     if offline:
         return True
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Get the version doi
     version_doi = ''
@@ -399,7 +406,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
         publication_config = get_publication_config(ctx)
-        landing_page_check = check_landingpage(ctx, data_package, publication_config, offline)
+        landing_page_check = check_landingpage(ctx, data_package, offline)
         combi_json_check = check_combi_json(ctx, data_package, publication_config, offline)
 
         # Collect results for current data package
