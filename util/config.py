@@ -147,7 +147,6 @@ config = Config(environment=None,
                 vault_copy_multithread_enabled=True,
                 user_max_connections_enabled=False,
                 user_max_connections_number=4,
-                inbox_user='inbox',
                 python3_interpreter='/usr/local/bin/python3')
 
 # }}}
