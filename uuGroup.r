@@ -118,26 +118,6 @@ uuGroupVaultPathExists(*vaultName, *exists) {
     }
 }
 
-# \brief Check if a rodsuser or rodsadmin with the given name exists.
-#
-# \param[in]  userName	 username(#zone)
-# \param[out] exists
-#
-uuUserExists(*user, *exists) {
-	*exists = false;
-	uuGetUserAndZone(*user, *userName, *userZone);
-	foreach (
-		*row in
-		SELECT USER_NAME, USER_TYPE
-		WHERE  USER_NAME = '*userName'
-		  AND  USER_ZONE = '*userZone'
-	) {
-		if (*row."USER_TYPE" == "rodsuser" || *row."USER_TYPE" == "rodsadmin") {
-			*exists = true;
-			break;
-		}
-	}
-}
 
 # \brief Check if a user is a member of the given group.
 #
@@ -159,6 +139,7 @@ uuGroupUserExists(*group, *user, *includeRo, *membership) {
 	        *membership = false;
 	}
 }
+
 
 # \brief Check if the home collection belonging to a group is empty.
 #
@@ -958,19 +939,20 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
 	# Check that the creator user exists
 	*fullNameCreator = "*creatorUser#*creatorZone";
 
-	uuUserExists(*fullNameCreator, *exists);
+  *exists = ""
+	rule_user_exists(*fullNameCreator, *exists);
 	# If creator does not exist, exit
-	if (!*exists) {
-    	succeed; # Return here (fail would ruin the status and error message).
+	if (*exists != "true") {
+		succeed; # Return here (fail would ruin the status and error message).
 	}
 
 	uuGetUserAndZone(*user, *userName, *userZone);
 	*fullName = "*userName#*userZone";
 
-	uuUserExists(*fullName, *exists);
+	rule_user_exists(*fullName, *exists);
 
 	# User does not exist, add user to iRODS first.
-	if (!*exists) {
+	if (*exists != "true") {
 		*kv."forGroup" = *groupName;
 		*status = str(errorcode(msiSudoUserAdd(*fullName, "", "", "", *kv)));
 		if (*status != '0') {
@@ -1028,7 +1010,7 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
 uuGroupUserAdd(*groupName, *user, *status, *message) {
 	*status  = '1';
 	*message = "An internal error occurred.";
-	
+
 	uuGroupUserAdd(*groupName, *user, $userNameClient, $rodsZoneClient, *status, *message)
 }
 
