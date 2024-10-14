@@ -271,7 +271,7 @@ rule_meta_collection_has_cloneable_metadata = (
 
 @api.make()
 def api_meta_remove(ctx, coll):
-    """Remove a collection's metadata JSON, if it exist."""
+    """Remove a collection's metadata JSON, if it exists."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
     try:
