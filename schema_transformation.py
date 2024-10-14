@@ -19,7 +19,6 @@ import genquery
 import session_vars
 
 import meta
-import meta_form
 import schema
 import schema_transformations
 from util import *
@@ -381,51 +380,6 @@ def html(f):
     return description
 
 
-def verify_package_schema(ctx, coll_name, schema_cache, report_name):
-    """Process a single data package to retrieve and validate that its metadata conforms to the schema.
-
-    :param ctx:          Combined type of a callback and rei struct
-    :param coll_name:    String representing the data package collection path.
-    :param schema_cache: Dictionary storing schema blueprints, can be empty.
-    :param report_name:  Name of report script (for logging)
-
-    :returns:            A dictionary result containing if schema matches and the schema short name.
-    """
-    metadata_path = meta.get_latest_vault_metadata_path(ctx, coll_name)
-
-    if not metadata_path:
-        log.write(ctx, "{} skips {}, because metadata could not be found.".format(report_name, coll_name))
-        return None
-
-    try:
-        metadata = jsonutil.read(ctx, metadata_path)
-    except Exception as exc:
-        # TODO write_stdout?
-        log.write(ctx, "{} skips {}, because of exception while reading metadata file {}: {}".format(report_name, coll_name, metadata_path, str(exc)))
-        return None
-
-    # Determine schema
-    schema_id = schema.get_schema_id(ctx, metadata_path)
-    schema_shortname = schema_id.split("/")[-2]
-
-    # Retrieve schema and cache it for future use
-    schema_path = schema.get_schema_path_by_id(ctx, metadata_path, schema_id)
-    if schema_shortname in schema_cache:
-        schema_contents = schema_cache[schema_shortname]
-    else:
-        schema_contents = jsonutil.read(ctx, schema_path)
-        schema_cache[schema_shortname] = schema_contents
-
-    # Check whether metadata matches schema and log any errors
-    error_list = meta.get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
-    match_schema = len(error_list) == 0
-    if not match_schema:
-        errors_formatted = [meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list]
-        log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)))
-
-    return {"schema": schema_shortname, "match_schema": match_schema}
-
-
 @rule.make(inputs=[], outputs=[0])
 def rule_batch_vault_metadata_schema_report(ctx):
     """Show vault metadata schema about each data package in vault
@@ -452,7 +406,7 @@ def rule_batch_vault_metadata_schema_report(ctx):
     for row in iter:
         try:
             coll_name = row[0]
-            result = verify_package_schema(ctx, coll_name, schema_cache, "Vault metadata schema report")
+            result = meta.vault_metadata_matches_schema(ctx, coll_name, schema_cache, "Vault metadata schema report")
             if result:
                 results[coll_name] = result
         except Exception as e:

@@ -13,7 +13,7 @@ import genquery
 
 import datacite
 from publication import get_publication_config
-from meta import verify_vault_metadata_matches_schema
+from meta import vault_metadata_matches_schema
 from util import *
 
 
@@ -356,7 +356,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
     # Troubleshooting
     for data_package in data_packages:
         log.write_stdout(ctx, "Troubleshooting: {}".format(data_package))
-        schema_check = verify_vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-published-packages")['match_schema']
+        schema_check = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-published-packages")['match_schema']
         no_missing_avus_check, no_unexpected_avus_check = check_data_package_system_avus(ctx, data_package)
         version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package)
         publication_config = get_publication_config(ctx)

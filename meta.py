@@ -13,6 +13,7 @@ import genquery
 import irods_types
 from deepdiff import DeepDiff
 
+import meta_form
 import provenance
 import publication
 import schema as schema_
@@ -790,3 +791,48 @@ def copy_user_metadata(ctx, source, target):
         log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}/original>".format(source, target))
     except Exception:
         log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
+
+
+def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name):
+    """Process a single data package to retrieve and validate that its metadata conforms to the schema.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param coll_name:    String representing the data package collection path.
+    :param schema_cache: Dictionary storing schema blueprints, can be empty.
+    :param report_name:  Name of report script (for logging)
+
+    :returns:            A dictionary result containing if schema matches and the schema short name.
+    """
+    metadata_path = get_latest_vault_metadata_path(ctx, coll_name)
+
+    if not metadata_path:
+        log.write(ctx, "{} skips {}, because metadata could not be found.".format(report_name, coll_name))
+        return None
+
+    try:
+        metadata = jsonutil.read(ctx, metadata_path)
+    except Exception as exc:
+        # TODO write_stdout?
+        log.write(ctx, "{} skips {}, because of exception while reading metadata file {}: {}".format(report_name, coll_name, metadata_path, str(exc)))
+        return None
+
+    # Determine schema
+    schema_id = schema_.get_schema_id(ctx, metadata_path)
+    schema_shortname = schema_id.split("/")[-2]
+
+    # Retrieve schema and cache it for future use
+    schema_path = schema_.get_schema_path_by_id(ctx, metadata_path, schema_id)
+    if schema_shortname in schema_cache:
+        schema_contents = schema_cache[schema_shortname]
+    else:
+        schema_contents = jsonutil.read(ctx, schema_path)
+        schema_cache[schema_shortname] = schema_contents
+
+    # Check whether metadata matches schema and log any errors
+    error_list = get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
+    match_schema = len(error_list) == 0
+    if not match_schema:
+        errors_formatted = [meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list]
+        log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)))
+
+    return {"schema": schema_shortname, "match_schema": match_schema}
