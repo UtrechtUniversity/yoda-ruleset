@@ -53,7 +53,7 @@ def parse_args():
 
 def parse_cs_values(input):
     """Parses a comma-separated list of key:value pairs as a dict."""
-    result = dict()
+    result = {}
     for kv_pair in input.split(","):
         if kv_pair == "":
             continue
@@ -96,7 +96,7 @@ def setup_session(irods_environment_config, ca_file="/etc/pki/tls/certs/chain.cr
                     'encryption_num_hash_rounds': 16,
                     'encryption_salt_size': 8,
                     'ssl_context': ssl_context}
-    settings = dict()
+    settings = {}
     settings.update(irods_environment_config)
     settings.update(ssl_settings)
     settings["password"] = password
@@ -160,8 +160,8 @@ def call_rule(session, rulename, params, number_outputs, rule_engine='irods_rule
         output=output_params,
         **re_config)
 
-    outArray = myrule.execute()
-    buf = outArray.MsParam_PI[0].inOutStruct.stdoutBuf.buf.decode(
+    out_array = myrule.execute()
+    buf = out_array.MsParam_PI[0].inOutStruct.stdoutBuf.buf.decode(
         'utf-8').splitlines()
 
     return buf[:number_outputs]
@@ -208,7 +208,7 @@ def main():
                 print("Updating misc resources ...")
             call_rule_update_misc(session)
     except NetworkException:
-        print("Could not connect to iRODS sever ...")
+        print("Could not connect to iRODS server ...")
 
 
 if __name__ == '__main__':
