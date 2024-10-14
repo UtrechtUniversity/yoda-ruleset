@@ -164,7 +164,7 @@ def is_json_metadata_valid(callback,
     :param metadata:        Pre-parsed JSON object
     :param ignore_required: Ignore required fields
 
-    :returns: Boolean indicating if JSON metadata us valid
+    :returns: Boolean indicating if JSON metadata is valid
     """
     try:
         return len(get_json_metadata_errors(callback,
