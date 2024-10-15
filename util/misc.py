@@ -30,35 +30,40 @@ def check_data_package_system_avus(extracted_avus):
 
     # Define the set of ground truth AVUs
     avu_names_suffix = {
-        'publication_approval_actor', 'publication_randomId',
-        'publication_versionDOI', 'publication_dataCiteJsonPath', 'publication_license',
-        'publication_anonymousAccess', 'publication_versionDOIMinted',
-        'publication_accessRestriction', 'publication_landingPagePath',
-        'publication_publicationDate',
-        'publication_vaultPackage', 'publication_submission_actor', 'publication_status',
-        'publication_lastModifiedDateTime', 'publication_combiJsonPath',
-        'publication_landingPageUploaded', 'publication_oaiUploaded',
-        'publication_landingPageUrl', 'publication_dataCiteMetadataPosted'
+        'approval_actor', 'randomId',
+        'versionDOI', 'dataCiteJsonPath', 'license',
+        'anonymousAccess', 'versionDOIMinted',
+        'accessRestriction', 'landingPagePath',
+        'publicationDate',
+        'vaultPackage', 'submission_actor', 'status',
+        'lastModifiedDateTime', 'combiJsonPath',
+        'landingPageUploaded', 'oaiUploaded',
+        'landingPageUrl', 'dataCiteMetadataPosted'
     }
 
     # If the license is not Custom, it must have a licenseUri
     if constants.UUORGMETADATAPREFIX + 'publication_license' in extracted_attrs:
         if extracted_avs[constants.UUORGMETADATAPREFIX + 'publication_license'] != "Custom":
-            avu_names_suffix.add('publication_licenseUri')
+            avu_names_suffix.add('licenseUri')
 
     # Define additional set of AVUs with more than one version of publication
     avu_names_version_suffix = {
-        'publication_previous_version', 'publication_baseDOI', 'publication_baseRandomId',
-        'publication_baseDOIMinted'
+        'previous_version', 'baseDOI', 'baseRandomId',
+        'baseDOIMinted'
     }
 
     # Define additional set of AVUs expected for the first version of a publication, when there are multiple versions
     avu_names_first_version_suffix = {
-        'publication_baseRandomId', 'publication_baseDOI', 'publication_next_version'
+        'baseRandomId', 'baseDOI', 'next_version'
     }
 
     # for the second version, all we need is next_version in addition to avu_names_version_suffix
-    avu_names_previous_version_suffix = {'publication_next_version'}
+    avu_names_previous_version_suffix = {'next_version'}
+
+    # optional avus
+    avu_names_optional_suffix = {
+        'versionDOIAvailable', 'baseDOIAvailable'
+    }
 
     combined_avu_names_suffix = avu_names_suffix
 
@@ -69,10 +74,12 @@ def check_data_package_system_avus(extracted_avus):
     elif constants.UUORGMETADATAPREFIX + 'publication_next_version' in extracted_attrs:
         combined_avu_names_suffix.update(avu_names_first_version_suffix)
 
-    ground_truth_avus = {constants.UUORGMETADATAPREFIX + name for name in combined_avu_names_suffix}
+    ground_truth_avus = {"{}publication_{}".format(constants.UUORGMETADATAPREFIX, name) for name in combined_avu_names_suffix}
+    combined_avu_names_suffix.update(avu_names_optional_suffix)
+    ground_truth_avus_with_optional = {"{}publication_{}".format(constants.UUORGMETADATAPREFIX, name) for name in combined_avu_names_suffix}
     # Find missing and unexpected AVUs
     missing_avus = ground_truth_avus - extracted_attrs
-    unexpected_avus = extracted_attrs - ground_truth_avus
+    unexpected_avus = extracted_attrs - ground_truth_avus_with_optional
 
     results = {
         'no_missing_avus': not bool(missing_avus),

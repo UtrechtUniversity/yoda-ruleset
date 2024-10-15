@@ -108,6 +108,16 @@ class UtilMiscTest(TestCase):
         self.assertTrue(len(result['missing_avus']) == 0)
         self.assertTrue(len(result['unexpected_avus']) == 0)
 
+        # Success, extra optional avu
+        avs['org_publication_baseDOIAvailable'] = 'yes'
+        avus_success = [Avu(attr, val, "") for attr, val in avs.items()]
+        result = check_data_package_system_avus(avus_success)
+        self.assertTrue(result['no_missing_avus'])
+        self.assertTrue(result['no_unexpected_avus'])
+        self.assertTrue(len(result['missing_avus']) == 0)
+        self.assertTrue(len(result['unexpected_avus']) == 0)
+        del avs['org_publication_baseDOIAvailable']
+
         # Missing license Uri for non-custom license
         del avs['org_publication_licenseUri']
         avus_missing_license_uri = [Avu(attr, val, "") for attr, val in avs.items()]
