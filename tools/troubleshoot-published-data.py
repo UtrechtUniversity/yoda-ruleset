@@ -24,6 +24,8 @@ def parse_args():
                         help="If log file parameter is true then write to log at: /var/lib/irods/log/troubleshoot_publications.log")
     parser.add_argument("-o", "--offline", action='store_true',
                         help="If actions should be performed without connecting to external servers (needed for the Yoda team's development setup).")
+    parser.add_argument("-n", "--no-datacite", action='store_true',
+                        help="If datacite check should be skipped (needed for the Yoda team's development environment in some cases).")
     parser.add_argument("-p", "--package", type=str, required=False,
                         help="Troubleshoot a specific data package by name (default: troubleshoot all packages)")
     return parser.parse_args()
@@ -35,8 +37,9 @@ def main():
     data_package = f"*data_package={args.package}"
     log_loc = f"*log_loc={args.log_file if args.log_file else ''}"
     offline = f"*offline={args.offline}"
+    no_datacite = f"*no_datacite={args.no_datacite}"
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F',
-                    rule_name, data_package, log_loc, offline])
+                    rule_name, data_package, log_loc, offline, no_datacite])
 
 
 if __name__ == '__main__':

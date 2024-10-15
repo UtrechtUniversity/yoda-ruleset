@@ -120,9 +120,8 @@ def check_datacite_doi_registration(ctx, data_package, write_stdout):
     :param data_package: String representing the data package collection path.
     :param write_stdout: A boolean representing whether to write to stdout or rodsLog
 
-    :returns:            A tuple of booleans indicating check success or not.
+    :returns:            A tuple of booleans indicating check success or not (base doi check may be None if not relevant).
     """
-    base_doi_check = False
     version_doi_check = check_one_datacite_doi_reg(ctx, data_package, "versionDOI", write_stdout)
 
     previous_version = ''
@@ -133,8 +132,9 @@ def check_datacite_doi_registration(ctx, data_package, write_stdout):
 
     if previous_version:
         base_doi_check = check_one_datacite_doi_reg(ctx, data_package, "baseDOI", write_stdout)
+        return version_doi_check, base_doi_check
 
-    return (version_doi_check, base_doi_check)
+    return (version_doi_check, None)
 
 
 def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
@@ -286,7 +286,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     return True
 
 
-def print_troubleshoot_result(ctx, data_package, result, offline):
+def print_troubleshoot_result(ctx, data_package, result, datacite_check):
     """Print the result of troubleshooting one package in human-friendly format"""
     pass_all_tests = all(result.values())
 
@@ -299,9 +299,10 @@ def print_troubleshoot_result(ctx, data_package, result, offline):
         log.write(ctx, "All expected AVUs exist: {}".format(result['no_missing_AVUs_check']), True)
         log.write(ctx, "No unexpected AVUs: {}".format(result['no_unexpected_AVUs_check']), True)
 
-        if not offline:
+        if datacite_check:
             log.write(ctx, "Version DOI matches: {}".format(result['versionDOI_check']), True)
-            log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
+            if 'baseDOI_check' in result:
+                log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
 
         log.write(ctx, "Landing page matches: {}".format(result['landingPage_check']), True)
         log.write(ctx, "Combined JSON matches: {}".format(result['combiJson_check']), True)
@@ -333,7 +334,7 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call):
+def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite):
     """
     Troubleshoots published data packages.
 
@@ -342,6 +343,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :param log_file:          A boolean representing to write results in log.
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
     :param api_call:          Boolean of whether this is run by a script or api test.
+    :param check_datacite:    Boolean representing whether to do the datacite checks
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
@@ -368,9 +370,11 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
         result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
 
-        # Do not check datacite in offline mode
-        if not offline:
-            result['versionDOI_check'], result['baseDOI_check'] = check_datacite_doi_registration(ctx, data_package, write_stdout)
+        # Only check datacite if enabled
+        if check_datacite:
+            result['versionDOI_check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
+            if base_doi_check is not None:
+                result['baseDOI_check'] = base_doi_check
 
         result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)
@@ -379,7 +383,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
         results[data_package] = result
 
         if not api_call:
-            print_troubleshoot_result(ctx, data_package, result, offline)
+            print_troubleshoot_result(ctx, data_package, result, check_datacite)
 
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
@@ -407,11 +411,11 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True)
+    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
 
-@rule.make(inputs=[0, 1, 2], outputs=[])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
+@rule.make(inputs=[0, 1, 2, 3], outputs=[])
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite):
     """
     Troubleshoots published data packages.
 
@@ -427,8 +431,10 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
     :param requested_package: A string representing a specific data package path or all packages with failed publications.
     :param log_file:          A string boolean representing to write results in log.
     :param offline:           A string boolean representing whether to perform all checks without connecting to external servers.
+    :param no_datacite:       A string boolean representing whether to skip the datacite checks
     """
     offline = offline == "True"
     log_file = log_file == "True"
+    check_datacite = no_datacite == "False"
 
-    batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False)
+    batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False, check_datacite)
