@@ -41,6 +41,7 @@ from resources              import *
 from schema                 import *
 from schema_transformation  import *
 from schema_transformations import *
+from troubleshoot_data      import *
 from vault                  import *
 from datacite               import *
 from epic                   import *

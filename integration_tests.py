@@ -117,6 +117,27 @@ def _test_avu_rmw_collection(ctx, rmw_attributes):
     return result
 
 
+def _test_avu_get_attr_val_of_coll(ctx, attr, value):
+    # Test getting the value of an attribute on a collection
+    tmp_coll = _create_tmp_collection(ctx)
+    ctx.msi_add_avu('-c', tmp_coll, attr, value, "baz")
+    result = avu.get_attr_val_of_coll(ctx, tmp_coll, attr)
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
+def _test_avu_get_attr_val_of_coll_exception(ctx):
+    # Test that getting a non existing attribute on a collection raises an exception (True for exception raised)
+    tmp_coll = _create_tmp_collection(ctx)
+    result = False
+    try:
+        result = avu.get_attr_val_of_coll(ctx, tmp_coll, "foo")
+    except Exception:
+        result = True
+    collection.remove(ctx, tmp_coll)
+    return result
+
+
 def _test_folder_set_retry_avus(ctx):
     tmp_coll = _create_tmp_collection(ctx)
     folder.folder_secure_set_retry_avus(ctx, tmp_coll, 2)
@@ -482,6 +503,12 @@ basic_integration_tests = [
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
+    {"name": "avu.get_attr_val_of_coll.exists.yes",
+     "test": lambda ctx: _test_avu_get_attr_val_of_coll(ctx, "foo", "bar"),
+     "check": lambda x: x == "bar"},
+    {"name": "avu.get_attr_val_of_coll.exists.no",
+     "test": lambda ctx: _test_avu_get_attr_val_of_coll_exception(ctx),
+     "check": lambda x: x},
     {"name": "avu.apply_atomic_operations.collection",
      "test": lambda ctx: _test_msvc_apply_atomic_operations_collection(ctx),
      "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},

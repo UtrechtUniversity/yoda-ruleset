@@ -35,6 +35,18 @@ def of_coll(ctx, coll):
                                               "COLL_NAME = '{}'".format(coll)))
 
 
+def get_attr_val_of_coll(ctx, coll, attr):
+    """Get the value corresponding to an attr for a given collection."""
+    iter = genquery.Query(
+        ctx,
+        "META_COLL_ATTR_VALUE",
+        "META_COLL_ATTR_NAME = '{}' AND COLL_NAME = '{}'".format(attr, coll))
+
+    for row in iter:
+        return row
+    raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
+
+
 def inside_coll(ctx, path, recursive=False):
     """Get a list of all AVUs inside a collection with corresponding paths.
 
