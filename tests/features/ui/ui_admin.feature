@@ -112,3 +112,28 @@ Feature: Admin UI
     Examples:
         | user                | text           |
         | functionaladminpriv | TemporaryTerms |
+
+
+    Scenario Outline: Admin user deletes file format
+        Given user <user> is logged in
+        When module "admin" is shown
+        And the user selects the file format list <filename> to delete
+        And the user clicks the Delete file format list button
+        Then the success message for deleting the file format list <filename> is shown
+
+    Examples:
+        | user                | filename  |
+        | functionaladminpriv | 4TU.json  |
+        | functionaladminpriv | DANS.json |
+
+
+    Scenario Outline: Admin user uploads new file format
+        Given user <user> is logged in
+        When module "admin" is shown
+        And the user clicks the Upload file format list <filename>
+        Then the success message of uploading a file format list <filename> is shown
+
+    Examples:
+        | user                | filename  |
+        | functionaladminpriv | 4TU.json  |
+        | functionaladminpriv | DANS.json |
