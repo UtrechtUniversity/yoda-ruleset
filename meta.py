@@ -164,7 +164,7 @@ def is_json_metadata_valid(callback,
     :param metadata:        Pre-parsed JSON object
     :param ignore_required: Ignore required fields
 
-    :returns: Boolean indicating if JSON metadata us valid
+    :returns: Boolean indicating if JSON metadata is valid
     """
     try:
         return len(get_json_metadata_errors(callback,
@@ -271,7 +271,7 @@ rule_meta_collection_has_cloneable_metadata = (
 
 @api.make()
 def api_meta_remove(ctx, coll):
-    """Remove a collection's metadata JSON, if it exist."""
+    """Remove a collection's metadata JSON, if it exists."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
     try:

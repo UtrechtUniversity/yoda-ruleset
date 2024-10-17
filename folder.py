@@ -205,7 +205,7 @@ def precheck_folder_secure(ctx, coll):
     found, last_run = get_last_run_time(ctx, coll)
     if (not correct_copytovault_start_status(ctx, coll)
             or not correct_copytovault_start_location(coll)
-            or not misc.last_run_time_acceptable(coll, found, last_run, config.vault_copy_backoff_time)):
+            or not misc.last_run_time_acceptable(found, last_run, config.vault_copy_backoff_time)):
         return False
 
     return True

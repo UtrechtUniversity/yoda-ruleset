@@ -142,7 +142,7 @@ def parse_csv_file(ctx):
     # Start processing the actual group data rows
     for line in lines:
         row_number += 1
-        rowdata, error = process_csv_line(line)
+        rowdata, error = process_csv_line(ctx, line)
 
         if error is None:
             extracted_data.append(rowdata)

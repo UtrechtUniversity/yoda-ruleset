@@ -228,7 +228,7 @@ def api_request(user, request, data, timeout=10):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
-    # Disable unsecure connection warning.
+    # Disable insecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Replace zone name with zone name from environment configuration.
@@ -286,7 +286,7 @@ def post_form_data(user, request, files):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
-    # Disable unsecure connection warning.
+    # Disable insecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Make POST request.

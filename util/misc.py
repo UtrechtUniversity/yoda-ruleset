@@ -9,7 +9,7 @@ import time
 from collections import OrderedDict
 
 
-def last_run_time_acceptable(coll, found, last_run, config_backoff_time):
+def last_run_time_acceptable(found, last_run, config_backoff_time):
     """Return whether the last run time is acceptable to continue with task."""
     now = int(time.time())
 
@@ -48,5 +48,5 @@ def remove_empty_objects(d):
         # Clean lists by filtering out empty objects.
         return [remove_empty_objects(item) for item in d if remove_empty_objects(item) not in (None, '', {}, [])]
     else:
-        # Return the value abecause it is not a dict or list.
+        # Return the value because it is not a dict or list.
         return d
