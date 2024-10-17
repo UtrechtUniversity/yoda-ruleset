@@ -199,7 +199,7 @@ def ui_admin_clicks_upload_file_format_button(browser, filename):
 
 @then(parsers.parse('the success message of uploading a file format list {filename} is shown'))
 def ui_admin_upload_file_format_success(browser, filename):
-    assert browser.is_text_present(f"File format list '{filename}' uploaded successfully.")
+    assert browser.is_text_present("File format list '{}' uploaded successfully.".format(filename))
 
 
 @when(parsers.parse('the user selects the file format list {filename} to delete'))
