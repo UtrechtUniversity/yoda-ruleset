@@ -26,31 +26,32 @@ __author__    =  ('Felix Croes'
 # Import all modules containing rules into the package namespace,
 # so that they become visible to iRODS.
 
-from admin                  import *
-from browse                 import *
-from folder                 import *
-from groups                 import *
-from json_datacite          import *
-from json_landing_page      import *
-from mail                   import *
-from meta                   import *
-from meta_form              import *
-from provenance             import *
-from research               import *
-from resources              import *
-from schema                 import *
-from schema_transformation  import *
-from schema_transformations import *
-from vault                  import *
-from datacite               import *
-from epic                   import *
-from publication            import *
-from policies               import *
-from replication            import *
-from revisions              import *
-from settings               import *
-from notifications          import *
-from integration_tests      import *
+from admin                    import *
+from browse                   import *
+from folder                   import *
+from groups                   import *
+from json_datacite            import *
+from json_landing_page        import *
+from mail                     import *
+from meta                     import *
+from meta_form                import *
+from provenance               import *
+from research                 import *
+from resources                import *
+from schema                   import *
+from schema_transformation    import *
+from schema_transformations   import *
+from publication_troubleshoot import *
+from vault                    import *
+from datacite                 import *
+from epic                     import *
+from publication              import *
+from policies                 import *
+from replication              import *
+from revisions                import *
+from settings                 import *
+from notifications            import *
+from integration_tests        import *
 
 # Import certain modules only when enabled.
 from .util.config import config

@@ -1326,10 +1326,10 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
     """
     if user.user_type(ctx) != 'rodsadmin':
-        log.write_stdout(ctx, "User is no rodsadmin")
+        log.write(ctx, "User is no rodsadmin", True)
         return
 
-    log.write_stdout(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package))
+    log.write(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package), True)
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
@@ -1345,12 +1345,12 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
         if ((vault_package == '*' and re.match(r'/[^/]+/home/vault-.*', coll_name)) or (vault_package != '*' and re.match(r'/[^/]+/home/vault-.*', coll_name) and coll_name == vault_package)):
             packages_found = True
             output = update_publication(ctx, coll_name, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
-            log.write_stdout(ctx, coll_name + ': ' + output)
+            log.write(ctx, coll_name + ': ' + output, True)
 
     if not packages_found:
-        log.write_stdout(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package))
+        log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package), True)
     else:
-        log.write_stdout(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package))
+        log.write(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package), True)
 
 
 def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
