@@ -18,7 +18,8 @@ if 'unittest' not in sys.modules:
 
 
 def write(ctx, message, write_stdout=False):
-    """Write a message to the log, including client name and originating module.
+    """Write a message to the log or stdout.
+    Includes client name and originating module if writing to log.
 
     :param ctx:          Combined type of a callback and rei struct
     :param message:      Message to write to log
