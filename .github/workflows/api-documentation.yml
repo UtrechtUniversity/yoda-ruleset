@@ -24,7 +24,7 @@ jobs:
 
       - name: Set up Python
         # setup-python stopped supporting Python 2.7, use https://github.com/MatteoH2O1999/setup-python
-        uses: MatteoH2O1999/setup-python@v3.2.1
+        uses: MatteoH2O1999/setup-python@v4.1.1
         with:
           python-version: ${{ matrix.python-version }}
           allow-build: info
