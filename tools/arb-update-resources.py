@@ -13,6 +13,7 @@ import json
 import os
 import socket
 import ssl
+import sys
 from collections import OrderedDict
 from io import StringIO
 
@@ -192,8 +193,18 @@ def main():
     args = parse_args()
     env = get_irods_environment()
 
+    for ca_file_option in ["/etc/pki/tls/certs/chain.pem",
+                           "/etc/ssl/certs/chain.crt",
+                           "/etc/ssl/certs/localhost.crt"]:
+        if os.path.isfile(ca_file_option):
+            ca_file = ca_file_option
+            break
+    else:
+        print("Error: could not find CA chain file.", file=sys.stderr)
+        sys.exit(1)
+
     try:
-        session = setup_session(env)
+        session = setup_session(env, ca_file=ca_file)
         override_free_dict = parse_cs_values(args.override_free)
         override_total_dict = parse_cs_values(args.override_total)
         local_ufs_resources = get_local_ufs_resources(session)
