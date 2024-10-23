@@ -1327,7 +1327,32 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
 
     :returns: "OK" if all went ok
     """
-    return update_publication(ctx, vault_package, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin", True)
+        return
+
+    log.write(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package), True)
+    collections = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_NAME like '%%/home/vault-%%' "
+        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
+        "AND META_COLL_ATTR_VALUE = '{}'".format(str(constants.vault_package_state.PUBLISHED)),
+        genquery.AS_LIST,
+        ctx
+    )
+
+    packages_found = False
+    for collection in collections:
+        coll_name = collection[0]
+        if ((vault_package == '*' and re.match(r'/[^/]+/home/vault-.*', coll_name)) or (vault_package != '*' and re.match(r'/[^/]+/home/vault-.*', coll_name) and coll_name == vault_package)):
+            packages_found = True
+            output = update_publication(ctx, coll_name, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
+            log.write(ctx, coll_name + ': ' + output, True)
+
+    if not packages_found:
+        log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package), True)
+    else:
+        log.write(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package), True)
 
 
 def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):

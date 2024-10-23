@@ -98,6 +98,17 @@ Feature: Vault API
             | /tempZone/home/vault-default-2 |
             | /tempZone/home/vault-core-2    |
             | /tempZone/home/vault-default-3 |
+    
+
+    Scenario Outline: Published vault package passes troubleshooting script checks
+        Given user technicaladmin is authenticated
+        And data package exists in <vault>
+        Then data package in <vault> passes troubleshooting script checks
+
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-default-2 |
+            | /tempZone/home/vault-default-3 |
 
 
     Scenario Outline: Vault preservable formats lists
