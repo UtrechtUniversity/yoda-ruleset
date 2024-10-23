@@ -174,6 +174,21 @@ def data_package_status(user, vault, data_package, status):
     raise AssertionError()
 
 
+@then(parsers.parse('data package in {vault} passes troubleshooting script checks'))
+def api_vault_batch_troubleshoot(user, vault, data_package):
+    http_status, result = api_request(
+        user,
+        "batch_troubleshoot_published_data_packages",
+        {"requested_package": data_package, "log_file": True, "offline": True}
+    )
+    assert http_status == 200
+    data = result['data']
+    assert len(data) == 1
+    # Confirm that all checks passed for this data package
+    for checks in data.values():
+        assert all(checks.values())
+
+
 @then('preservable formats lists are returned')
 def preservable_formats_lists(api_response):
     http_status, body = api_response

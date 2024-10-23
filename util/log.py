@@ -17,15 +17,20 @@ if 'unittest' not in sys.modules:
     import user
 
 
-def write(ctx, message):
-    """Write a message to the log, including client name and originating module.
+def write(ctx, message, write_stdout=False):
+    """Write a message to the log or stdout.
+    Includes client name and originating module if writing to log.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param message: Message to write to log
+    :param ctx:          Combined type of a callback and rei struct
+    :param message:      Message to write to log
+    :param write_stdout: Whether to write to stdout (used for a few of our scripts)
     """
-    stack = inspect.stack()[1]
-    module = inspect.getmodule(stack[0])
-    _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
+    if write_stdout:
+        ctx.writeLine("stdout", message)
+    else:
+        stack = inspect.stack()[1]
+        module = inspect.getmodule(stack[0])
+        _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
 
 
 def _write(ctx, message):
@@ -38,15 +43,6 @@ def _write(ctx, message):
         ctx.writeLine('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
     else:
         ctx.writeLine('serverLog', message)
-
-
-def write_stdout(ctx, message):
-    """Write a message to stdout. Used for some of our scripts.
-
-    :param ctx:      Combined type of a callback and rei struct
-    :param message:  Message to write to log
-    """
-    ctx.writeLine("stdout", message)
 
 
 def debug(ctx, message):

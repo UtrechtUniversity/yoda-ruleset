@@ -19,7 +19,6 @@ import genquery
 import session_vars
 
 import meta
-import meta_form
 import schema
 import schema_transformations
 from util import *
@@ -404,41 +403,13 @@ def rule_batch_vault_metadata_schema_report(ctx):
         genquery.AS_LIST, ctx)
 
     for row in iter:
-        coll_name = row[0]
-        metadata_path = meta.get_latest_vault_metadata_path(ctx, coll_name)
-
-        if metadata_path == '' or metadata_path is None:
-            log.write(ctx, "Vault metadata schema report skips %s, because metadata could not be found."
-                           % (coll_name))
-            continue
-
         try:
-            metadata = jsonutil.read(ctx, metadata_path)
-        except Exception as exc:
-            log.write(ctx, "Vault metadata report skips %s, because of exception while reading metadata file %s: %s."
-                           % (coll_name, metadata_path, str(exc)))
+            coll_name = row[0]
+            result = meta.vault_metadata_matches_schema(ctx, coll_name, schema_cache, "Vault metadata schema report", True)
+            if result:
+                results[coll_name] = result
+        except Exception as e:
+            log.write(ctx, "Error processing collection {}: {}".format(coll_name, str(e)))
             continue
-
-        # Determine schema
-        schema_id = schema.get_schema_id(ctx, metadata_path)
-        schema_shortname = schema_id.split("/")[-2]
-
-        # Retrieve schema and cache it for future use
-        schema_path = schema.get_schema_path_by_id(ctx, metadata_path, schema_id)
-        if schema_shortname in schema_cache:
-            schema_contents = schema_cache[schema_shortname]
-        else:
-            schema_contents = jsonutil.read(ctx, schema_path)
-            schema_cache[schema_shortname] = schema_contents
-
-        # Check whether metadata matches schema and log any errors
-        error_list = meta.get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
-        match_schema = len(error_list) == 0
-        if not match_schema:
-            log.write(ctx, "Vault metadata schema report: metadata %s did not match schema %s: %s" %
-                           (metadata_path, schema_shortname, str([meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list])))
-
-        # Update results
-        results[coll_name] = {"schema": schema_shortname, "match_schema": match_schema}
 
     return json.dumps(results)
