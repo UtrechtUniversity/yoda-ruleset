@@ -35,6 +35,71 @@ def of_data(ctx, path):
                                               "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
+def get_attr_val_of_coll(ctx, coll, attr):
+    """Get the value corresponding to an attr for a given collection."""
+    iter = genquery.Query(
+        ctx,
+        "META_COLL_ATTR_VALUE",
+        "META_COLL_ATTR_NAME = '{}' AND COLL_NAME = '{}'".format(attr, coll))
+
+    for row in iter:
+        return row
+    raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
+
+
+def inside_coll(ctx, path, recursive=False):
+    """Get a list of all AVUs inside a collection with corresponding paths.
+
+    Note: the returned value is a generator / lazy list, so that large
+          collections can be handled without keeping everything in memory.
+          use list(...) on the result to get an actual list if necessary.
+
+    The returned paths are absolute paths (e.g. '/tempZone/home/x').
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path:      Path of collection
+    :param recursive: List AVUs recursively
+
+    :returns: List of all AVUs inside a collection with corresponding paths
+    """
+    # coll+name -> path
+    def to_absolute(row, type):
+        if type == "collection":
+            return (row[1], type, row[2], row[3], row[4])
+        else:
+            return ('{}/{}'.format(row[0], row[1]), type, row[2], row[3], row[4])
+
+    collection_root = genquery.row_iterator(
+        "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+        "COLL_PARENT_NAME = '{}'".format(path),
+        genquery.AS_LIST, ctx)
+    collection_root = itertools.imap(lambda x: to_absolute(x, "collection"), collection_root)
+
+    data_objects_root = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+        "COLL_NAME = '{}'".format(path),
+        genquery.AS_LIST, ctx)
+    data_objects_root = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_root)
+
+    if not recursive:
+        return itertools.chain(collection_root, data_objects_root)
+
+    collection_sub = genquery.row_iterator(
+        "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+        "COLL_PARENT_NAME like '{}/%'".format(path),
+        genquery.AS_LIST, ctx)
+    collection_sub = itertools.imap(lambda x: to_absolute(x, "collection"), collection_sub)
+
+    data_objects_sub = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+        "COLL_NAME like '{}/%'".format(path),
+        genquery.AS_LIST, ctx)
+    data_objects_sub = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_sub)
+
+    return itertools.chain(collection_root, data_objects_root, collection_sub, data_objects_sub)
+>>>>>>> 076ca8f0 (YDA-5829: troubleshooting tool for published data packages)
+
+
 def of_group(ctx, group):
     """Get (a,v,u) triplets for a given group."""
     return itertools.imap(lambda x: Avu(*x),
