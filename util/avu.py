@@ -97,7 +97,6 @@ def inside_coll(ctx, path, recursive=False):
     data_objects_sub = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_sub)
 
     return itertools.chain(collection_root, data_objects_root, collection_sub, data_objects_sub)
->>>>>>> 076ca8f0 (YDA-5829: troubleshooting tool for published data packages)
 
 
 def of_group(ctx, group):
