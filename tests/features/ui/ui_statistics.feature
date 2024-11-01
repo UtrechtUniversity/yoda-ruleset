@@ -28,7 +28,6 @@ Feature: Statistics UI
             | datamanager | deposit-pilot |
 
 
-    @intake
     Scenario Outline: Viewing storage details of a intake / grp group
         Given user <user> is logged in
         And module "stats" is shown
@@ -55,7 +54,6 @@ Feature: Statistics UI
             | datamanager    | test-automation |
 
 
-    @intake
     Scenario Outline: Viewing intake category storage details as a technicaladmin or datamanager
         Given user <user> is logged in
         When module "stats" is shown

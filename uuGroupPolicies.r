@@ -59,14 +59,14 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 		uuGetBaseGroup(*groupName, *baseName);
 		if (*baseName == *groupName) {
 			# Do not allow creating a standalone "read-" or "vault-" group.
-			# There must always be a corresponding "intake-" or "research-" group.
+			# There must always be a corresponding "research-" group.
 			fail;
 		}
 
 		uuGroupUserIsManager(*baseName, uuClientFullName, *isManagerInBaseGroup);
 		if (!*isManagerInBaseGroup) {
 			# Only allow creation of a read or vault group if the creator is a
-			# manager in the base group. (research or intake).
+			# manager in the research group.
 			fail;
 		}
 
@@ -469,14 +469,14 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		# taken after automatic creation of vault groups.
 
 	} else {
-		# This is a group manager managed group (i.e. 'research-', 'deposit-','grp-', 'intake-', 'priv-', 'datamanager-').
+		# This is a group manager managed group (i.e. 'research-', 'deposit-', 'priv-', 'datamanager-').
 		# Add the creator as a member.
 
 		errorcode(msiSudoGroupMemberAdd(*groupName, uuClientFullName, ""));
 
-		# Perform group prefix-dependent actions (e.g. create vaults for intake/research groups).
+		# Perform group prefix-dependent actions (e.g. create vaults for research groups).
 
-		if (*groupName like regex "(intake|research)-.*") {
+		if (*groupName like regex "research-.*") {
 			# Create a corresponding RO group.
 			uuChop(*groupName, *_, *baseName, "-", true);
 			*roGroupName = "read-*baseName";
@@ -502,7 +502,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 
 		} else if (*groupName like "datamanager-*") {
 			# Give the newly created datamanager group read access to all
-			# existing intake/research home dirs and vaults in its category.
+			# existing research home dirs and vaults in its category.
 			*category = *policyKv."category";
 
 			foreach (
@@ -513,9 +513,9 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 				  AND  META_USER_ATTR_NAME  = 'category'
 				  AND  META_USER_ATTR_VALUE = '*category'
 			) {
-				# Filter down to intake/research groups and get their vault groups.
+				# Filter down to research groups and get their vault groups.
 				*catGroup = *row."USER_GROUP_NAME";
-				if (*catGroup like regex "(intake|research)-.*") {
+				if (*catGroup like regex "research-.*") {
 
 					*aclKv."forGroup" = *catGroup;
 					msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
@@ -548,7 +548,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 
 		# Set group manager-managed group metadata.
 		#
-		# Note: Setting the category of an intake/research group will trigger
+		# Note: Setting the category of an research group will trigger
 		# an ACL change: The datamanager group in the category, if it exists
 		# will get read access to this group an its accompanying vault.
 		# See uuPostSudoObjMetaSet.

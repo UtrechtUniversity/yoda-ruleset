@@ -1,13 +1,52 @@
 # -*- coding: utf-8 -*-
-"""iRODS policy implementations."""
+"""Policies for intake."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
 
-import intake_scan
 from util import *
+
+
+def object_is_locked(ctx, path, is_collection):
+    """Returns whether given object in path (collection or dataobject) is locked or frozen
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param path:          Path to object or collection
+    :param is_collection: Whether path contains a collection or data object
+
+    :returns: Returns locked state
+    """
+    locked_state = {"locked": False,
+                    "frozen": False}
+
+    if is_collection:
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_NAME",
+            "COLL_NAME = '" + path + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            if row[0] in ['to_vault_lock', 'to_vault_freeze']:
+                locked_state['locked'] = True
+                if row[0] == 'to_vault_freeze':
+                    locked_state['frozen'] = True
+    else:
+        parent_coll = pathutil.dirname(path)
+        iter = genquery.row_iterator(
+            "META_DATA_ATTR_NAME",
+            "COLL_NAME = '" + parent_coll + "' AND DATA_NAME = '" + pathutil.basename(path) + "'",
+            genquery.AS_LIST, ctx
+        )
+        # return locked_state
+        for row in iter:
+            if row[0] in ['to_vault_lock', 'to_vault_freeze']:
+                locked_state['locked'] = True
+                if row[0] == 'to_vault_freeze':
+                    locked_state['frozen'] = True
+
+    return locked_state
 
 
 def is_data_in_locked_dataset(ctx, actor, path):
@@ -64,7 +103,7 @@ def is_data_in_locked_dataset(ctx, actor, path):
                 toplevel_is_collection = False
 
         if toplevel_collection:
-            locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
+            locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
@@ -117,7 +156,7 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
                 toplevel_is_collection = False
 
         if toplevel_collection:
-            locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
+            locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
@@ -169,7 +208,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
                 toplevel_is_collection = False
 
         if toplevel_collection:
-            locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
+            locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:

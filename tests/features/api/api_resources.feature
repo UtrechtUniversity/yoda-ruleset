@@ -21,7 +21,7 @@ Feature: Resources API
         And only 1 group is found
 
         Examples:
-            | user        | group           |        
+            | user        | group           |
             | researcher  | research-core-1 |
             | datamanager | research-core-1 |
 
@@ -40,7 +40,6 @@ Feature: Resources API
             | datamanager | deposit-pilot1 |
 
 
-    @intake
     Scenario Outline: Get paginated result when searching for one specific intake / grp group
         Given user <user> is authenticated
         And the Yoda resources API is queried for a paginated range of research groups filtered on group <group>
@@ -82,36 +81,35 @@ Feature: Resources API
             | datamanager | deposit-pilot |
 
 
-    @intake
     Scenario Outline: Get a full year of storage data for intake group
         Given user <user> is authenticated
         And the Yoda resources full year differentiated group data API is queried with <group>
-	    Then the response status code is "200"
-	    And storage data for group is found
+	      Then the response status code is "200"
+	      And storage data for group is found
 
         Examples:
             | user        | group             |
             | researcher  | research-initial  |
             | datamanager | research-initial  |
-    
+
     @deposit
     Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
         Given user <user> is authenticated
         And the Yoda resources full year differentiated group data API is queried with <group>
-	    Then the response status code is "200"
-	    And storage data for group is found
+	      Then the response status code is "200"
+	      And storage data for group is found
 
         Examples:
             | user        | group                  |
             | researcher  | research-deposit-test  |
             | datamanager | research-deposit-test  |
 
-    @intake
+
     Scenario Outline: Get a full year of differentiated storage data starting from current month and look back one year
         Given user <user> is authenticated
         And the Yoda resources full year differentiated group data API is queried with <group>
-	    Then the response status code is "200"
-	    And storage data for group is found
+	      Then the response status code is "200"
+	      And storage data for group is found
 
         Examples:
             | user        | group              |
@@ -136,8 +134,8 @@ Feature: Resources API
    Scenario Outline: Collect storage stats for all twelve months based upon categories a user is datamanager of
         Given user <user> is authenticated
         And the Yoda resources monthly category stats API is queried
-	    Then the response status code is "200"
-	    And storage data for export is found
+	      Then the response status code is "200"
+	      And storage data for export is found
 
         Examples:
             | user           |
@@ -152,7 +150,7 @@ Feature: Resources API
         And group data are sorted by <sort_on> in <sort_order> order
 
         Examples:
-            | user        | sort_on | sort_order | 
+            | user        | sort_on | sort_order |
             | researcher  | name    | asc        |
             | researcher  | name    | desc       |
             | researcher  | size    | asc        |
