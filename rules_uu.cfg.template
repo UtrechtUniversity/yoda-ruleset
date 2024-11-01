@@ -36,7 +36,6 @@ eus_api_tls_verify             =
 
 enable_deposit                 =
 enable_open_search             =
-enable_intake                  =
 enable_datarequest             =
 yoda_portal_fqdn               =
 

@@ -38,7 +38,7 @@ uuUserNameIsValid(*name)
 #
 # Group names must:
 #
-# - be prefixed with 'intake-' or 'research-' or 'deposit-'
+# - be prefixed with 'research-' or 'deposit-'
 # - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
@@ -49,7 +49,7 @@ uuUserNameIsValid(*name)
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 uuGroupNameIsDatamanager(*name)
 	= *name like regex ``(datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
@@ -198,7 +198,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 
 					uuChop(*groupName, *prefix, *base, "-", true);
 
-					# For research and intake groups: Make sure their ro and
+					# For research groups: Make sure their ro and
 					# vault groups do not exist yet.
 					*roName = "read-*base";
 					uuGroupExists(*roName, *roExists);
@@ -274,7 +274,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 				*reason = "You must have priv-group-add and priv-cat-add to add a datamanger group"
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-', 'research-', 'deposit-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'research-', 'deposit-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";

@@ -282,7 +282,7 @@ for name, fn in api.fns:
     name = re.sub('^api_', '', name)
 
     if core:
-        modules = ['datarequest', 'deposit', 'intake']
+        modules = ['datarequest', 'deposit']
         if name.startswith(tuple(modules)):
             continue
 

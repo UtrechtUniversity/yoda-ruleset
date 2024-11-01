@@ -25,7 +25,6 @@ user_cookies = {}
 
 datarequest = False
 deposit = False
-intake = False
 archive = False
 smoke = False
 skip_api = False
@@ -45,7 +44,6 @@ pytest_plugins = [
 def pytest_addoption(parser):
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
-    parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
     parser.addoption("--no-env-csrf", action="store_true", default=False, help="Do not get CSRF token from environment (this is enabled by default for smoke tests)")
     parser.addoption("--smoke", action="store_true", default=False, help="Run Smoke tests")
@@ -59,7 +57,6 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
-    config.addinivalue_line("markers", "intake: Run intake tests")
     config.addinivalue_line("markers", "archive: Run vault archive tests")
     config.addinivalue_line("markers", "all: Run all tests")
     config.addinivalue_line("markers", "ui: UI test")
@@ -86,10 +83,9 @@ def pytest_configure(config):
     global verbose_test
     verbose_test = config.getoption("--verbose-test")
 
-    global datarequest, deposit, intake, archive, smoke, run_all, skip_api, skip_ui, no_env_csrf
+    global datarequest, deposit, archive, smoke, run_all, skip_api, skip_ui, no_env_csrf
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
-    intake = config.getoption("--intake")
     archive = config.getoption("--archive")
     smoke = config.getoption("--smoke")
     skip_ui = config.getoption("--skip-ui")
@@ -109,7 +105,6 @@ def pytest_configure(config):
     if run_all:
         datarequest = True
         deposit = True
-        intake = True
         archive = True
 
     # Store cookies for each user.
@@ -129,10 +124,6 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'deposit' and not deposit:
         marker = pytest.mark.skip(reason="Skip deposit")
-        marker(function)
-        return True
-    elif tag == 'intake' and not intake:
-        marker = pytest.mark.skip(reason="Skip intake")
         marker(function)
         return True
     elif tag == 'archive' and not archive:
