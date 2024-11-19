@@ -4,7 +4,7 @@
 For example usage, see make().
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import base64
@@ -127,7 +127,7 @@ def _api(f):
         try:
             base64_decoded = base64.b64decode(inp)
             decompressed_data = zlib.decompress(base64_decoded)
-            data = jsonutil.parse(decompressed_data.decode('utf-8'))
+            data = jsonutil.parse(decompressed_data)
             if type(data) is not OrderedDict:
                 raise jsonutil.ParseError('Argument is not a JSON object')
         except base64.binascii.Error:

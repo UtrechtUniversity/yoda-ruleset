@@ -57,9 +57,7 @@ def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_j
     """
     # Landing page creation is part of the publication process
     # Read user & system metadata from corresponding combi JSON file
-    # (Python2) 'want_bytes=False': Do not encode embedded unicode strings as
-    #                               UTF-8, as that will trip up jinja2.
-    json_data = jsonutil.read(ctx, combi_json_path, want_bytes=False)
+    json_data = jsonutil.read(ctx, combi_json_path)
 
     # Remove empty objects to prevent empty fields on landingpage.
     json_data = misc.remove_empty_objects(json_data)

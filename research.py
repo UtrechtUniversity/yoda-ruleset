@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -64,7 +64,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
         return error_response
 
     try:
-        validate_filepath(coll_target.decode('utf-8'))
+        validate_filepath(coll_target)
     except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
@@ -125,7 +125,7 @@ def folder_copy_check(ctx, folder_path, new_folder_path, overwrite, copy=True):
         return False, api.Error('invalid_foldername', 'It is not allowed to use apostrophes in a folder name')
 
     try:
-        validate_filepath(new_folder_path.decode('utf-8'))
+        validate_filepath(new_folder_path)
     except ValidationError:
         return False, api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
@@ -232,7 +232,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
         return error_response
 
     try:
-        validate_filepath(coll_target.decode('utf-8'))
+        validate_filepath(coll_target)
     except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
@@ -376,7 +376,7 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     # These are of the NEW filepath
     coll, data_name = pathutil.chop(new_filepath)
     try:
-        validate_filename(data_name.decode('utf-8'))
+        validate_filename(data_name)
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
 
@@ -439,7 +439,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
         return api.Error('missing_filename', 'Missing filename. Please add a file name')
 
     try:
-        validate_filename(new_file_name.decode('utf-8'))
+        validate_filename(new_file_name)
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
 
@@ -515,7 +515,7 @@ def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     # These are of the NEW filepath
     coll, data_name = pathutil.chop(new_filepath)
     try:
-        validate_filename(data_name.decode('utf-8'))
+        validate_filename(data_name)
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
 
