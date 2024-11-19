@@ -101,9 +101,16 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     data_access_restriction = json_data["Data_Access_Restriction"]
     data_classification = json_data["Data_Classification"]
 
-    keywords = json_data.get("Tag", [])
+    keywords = []
+    for keyword in json_data.get("Tag", []):
+        keywords.append({'subject': keyword, 'subjectScheme': 'Keyword'})
+
     # From core-2 and default-3 Tag is renamed to Keyword
-    keywords.extend(json_data.get("Keyword", []))
+    if "TreeKeyword" in json_data:
+        keywords.extend(json_data.get("TreeKeyword"))
+    else:
+        for keyword in json_data.get('Keyword', []):
+            keywords.append({'subject': keyword, 'subjectScheme': 'Keyword'})
 
     try:
         disciplines = []

@@ -12,6 +12,7 @@ from pytest_bdd import (
     then,
     when,
 )
+from selenium.webdriver.common.keys import Keys
 
 scenarios('../../features/ui/ui_meta.feature')
 
@@ -29,6 +30,19 @@ def ui_metadata_fill(browser):
             # Leaving out the sleep the scrolling into view does not work and 'uniteractable element' messages occur
             time.sleep(1)
             input.fill('The quick brown fox jumps over the lazy dog')
+
+
+@when(parsers.parse('user selects keyword "{keyword}"'))
+def ui_metadata_select_keyword(browser, keyword):
+    browser.find_by_css('.ant-select').click()
+    active_web_el = browser.switch_to.active_element
+    active_web_el.send_keys(keyword)
+    active_web_el.send_keys(Keys.ENTER)
+
+
+@when('user clears keyword selector')
+def ui_metadata_clear_hierarchal_keywords(browser):
+    browser.find_by_css('.ant-select-clear').click()
 
 
 @when('users checks person identifier field in metadata form')
