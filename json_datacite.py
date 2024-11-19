@@ -163,7 +163,7 @@ def get_publication_year(combi):
 def get_subjects(combi):
     """Get list in DataCite format containing:
 
-       1) standard objects like tags/disciplne
+       1) standard objects like tags/discipline
        2) free items, for now specifically for GEO schemas
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -175,8 +175,13 @@ def get_subjects(combi):
     for discipline in combi.get('Discipline', []):
         subjects.append({'subjectScheme': 'OECD FOS 2007', 'subject': discipline})
 
-    for keyword in combi.get('Keyword', []):
-        subjects.append({'subject': keyword, 'subjectScheme': 'Keyword'})
+    # Assume that there is only one keyword field,
+    # either called TreeKeyword or Keyword
+    if "TreeKeyword" in combi:
+        subjects.extend(combi["TreeKeyword"])
+    else:
+        for keyword in combi.get('Keyword', []):
+            subjects.append({'subject': keyword, 'subjectScheme': 'Keyword'})
 
     # for backward compatibility. Tag will become obsolete
     for tag in combi.get('Tag', []):

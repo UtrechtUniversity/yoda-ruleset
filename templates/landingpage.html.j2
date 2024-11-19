@@ -59,7 +59,13 @@
                             <div class="keywords">
                                 <label>Keywords</label>
                                 {% for keyword in keywords %}
-                                <span class="keyword" property="dc:subject">{{ keyword }}</span>
+                                    {% if "valueUri" in keyword %}
+                                        <span class="keyword" property="dc:subject">
+                                            <a href="{{keyword.valueUri}}">{{ keyword.subject }}</a>
+                                        </span>
+                                    {% else %}
+                                        <span class="keyword" property="dc:subject">{{ keyword.subject }}</span>
+                                    {% endif %}
                                 {% endfor %}
                             </div>
                         </section>
