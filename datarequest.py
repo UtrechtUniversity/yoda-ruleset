@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

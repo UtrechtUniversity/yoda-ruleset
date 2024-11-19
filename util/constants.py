@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
 __copyright__ = 'Copyright (c) 2016-2024, Utrecht University'

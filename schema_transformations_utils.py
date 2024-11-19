@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """JSON schema transformation utility functions."""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'

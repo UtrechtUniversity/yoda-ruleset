@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Functions for provenance handling."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json

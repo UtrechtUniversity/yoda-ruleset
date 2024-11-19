@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions related to importing group data."""
 
 __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'

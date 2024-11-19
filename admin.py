@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for admin module."""
 
 __copyright__ = 'Copyright 2024, Utrecht University'

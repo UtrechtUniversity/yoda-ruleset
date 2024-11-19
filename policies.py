@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
 __copyright__ = 'Copyright (c) 2020-2024, Utrecht University'

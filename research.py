@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for the research space."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
 __version__   = '1.10.0'

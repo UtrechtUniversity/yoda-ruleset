@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """iRODS microservice wrappers that provide primitive error handling.
 
 Microservices may fail and indicate failure in a number of different ways.

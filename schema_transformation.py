@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Functions for handling schema updates within any yoda-metadata file."""
 
-__copyright__ = 'Copyright (c) 2018-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',

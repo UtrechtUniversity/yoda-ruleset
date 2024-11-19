@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to download vault data packages."""
 
 __copyright__ = 'Copyright (c) 2023-2024, Utrecht University'

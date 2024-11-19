@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

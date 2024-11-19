@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from util import policy
 
 # Use below prototypes as a basis for PEP rule implementations in policies.py

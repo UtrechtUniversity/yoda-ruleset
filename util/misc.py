@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Miscellaneous util functions."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

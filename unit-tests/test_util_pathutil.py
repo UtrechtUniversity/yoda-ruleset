@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Unit tests for the pathutil utils module"""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys

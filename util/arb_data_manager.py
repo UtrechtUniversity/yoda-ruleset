@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """This file contain functions that implement cached data storage for automatic resource
    balancing, which takes care of ensuring that new data objects are put on resources that
    have enough space available.
 """
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery

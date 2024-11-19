@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Unit tests for the yoda_names utils functions"""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys

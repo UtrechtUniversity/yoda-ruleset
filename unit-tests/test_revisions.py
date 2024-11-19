@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unit tests for the revision functions"""
 
 __copyright__ = 'Copyright (c) 2023-2024, Utrecht University'

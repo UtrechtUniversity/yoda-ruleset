@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Experimental Python/Rule interface code."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json

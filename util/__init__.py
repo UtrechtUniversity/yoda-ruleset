@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Generic UU ruleset utility functions and types.
 
 This subpackage does not export any callable rules by itself.

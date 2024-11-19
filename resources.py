@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
 __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'

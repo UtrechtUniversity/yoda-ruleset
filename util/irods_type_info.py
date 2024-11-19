@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Allows converting certain irods types to string representation for debugging purposes.
 
 Importing this module (anywhere) adds stringifyability to some frequently-used

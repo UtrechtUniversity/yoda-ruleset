@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions and rules for troubleshooting published data packages."""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

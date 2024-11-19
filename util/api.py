@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for creating API rules.
 
 For example usage, see make().

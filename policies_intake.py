@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Policies for intake."""
 
 __copyright__ = 'Copyright (c) 2021-2024, Utrecht University'

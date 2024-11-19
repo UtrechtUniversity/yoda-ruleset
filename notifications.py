@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Functions for user notifications."""
 
-__copyright__ = 'Copyright (c) 2021-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with JSON."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

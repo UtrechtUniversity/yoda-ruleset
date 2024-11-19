@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """JSON metadata form handling."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

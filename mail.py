@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Rules for sending e-mails."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import email

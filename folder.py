@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

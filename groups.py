@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
 __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'

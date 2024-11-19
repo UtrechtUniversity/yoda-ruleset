@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'

@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """Functions for revision strategies, which control which revisions are kept and which ones are to
    be discarded."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 

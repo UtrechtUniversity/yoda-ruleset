@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
