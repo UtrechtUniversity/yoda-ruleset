@@ -44,12 +44,11 @@
       }
     }
   },
-  "Keywords": {
-    "ui:description": "Adding (searchable) key words to your data package.",
-    "ui:field": "keyword_selector"
-  },
-  "Keyword": {
-    "ui:description": "Free text field for adding (searchable) keywords to your data package"
+  "TreeKeyword": {
+    "ui:description": "Adding (searchable) keywords to your data package.",
+    "ui:field": "tree_keyword_selector",
+    "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/msl_vocabularies/refs/heads/main/vocabularies/combined/editor/1.3/editor_1-3.json",
+    "ui:subjectScheme": "EPOS MSL"
   },
   "Related_Resource": {
     "items": {
@@ -91,7 +90,7 @@
     "ui:help": "How is your data classified with regard to information security policy"
   },
   "Creator": {
-    "ui:description": "The main researchers involved in producing the data or model, and/or the authors of the publication, in priority order. To supply multiple creators/authors (adviced), please repeat this property (plus sign top-richt corner).",
+    "ui:description": "The main researchers involved in producing the data or model, and/or the authors of the publication, in priority order. To supply multiple creators/authors (advised), please repeat this property (plus sign top-right corner).",
     "items": {
       "Name": {
         "Given_Name": {

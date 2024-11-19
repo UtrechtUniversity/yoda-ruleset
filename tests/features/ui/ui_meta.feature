@@ -5,7 +5,9 @@ Feature: Meta UI
         Given user researcher is authenticated
         And collection /tempZone/home/research-initial exists
         And collection /tempZone/home/research-initial/folder space exists
+        And collection /tempZone/home/research-epos-msl-0 exists
         And /tempZone/home/research-initial is unlocked
+        And /tempZone/home/research-epos-msl-0 is unlocked
 
 
     Scenario Outline: Save metadata
@@ -36,6 +38,25 @@ Feature: Meta UI
             | research-initial/folder space | research-initial | folder space |
 
 
+    Scenario Outline: Save hierarchical keywords
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user opens metadata form
+        # EPOS keyword
+        And user selects keyword "decane"
+        # user-defined keyword
+        And user selects keyword "totally custom keyword!42"
+        And user clicks save button
+        Then metadata form is saved as yoda-metadata.json for folder <folder>
+        When user clears keyword selector
+        And user clicks save button
+
+        Examples:
+            | folder              |
+            | research-epos-msl-0 |
+
+
     Scenario Outline: Delete metadata
         Given user researcher is logged in
         And module "research" is shown
@@ -45,8 +66,9 @@ Feature: Meta UI
         Then metadata is deleted from folder
 
         Examples:
-            | folder           |
-            | research-initial |
+            | folder              |
+            | research-initial    |
+            | research-epos-msl-0 |
 
 
     Scenario Outline: Check person identifier functionality in metadata form

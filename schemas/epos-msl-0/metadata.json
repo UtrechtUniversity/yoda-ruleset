@@ -841,7 +841,7 @@
     "Version",
     "Language",
     "Collected",
-    "Keyword",
+    "TreeKeyword",
     "Retention_Period",
     "Data_Type",
     "Data_Classification",
@@ -997,34 +997,33 @@
         }
       }
     },
-    "Keywords": {
+    "TreeKeyword": {
       "type": "array",
       "additionalProperties": false,
       "title": "Keywords",
-      "yoda:structure": "EposKeywords",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "Keyword": {
+          "subject": {
             "$ref": "#/definitions/stringNormal",
             "title": "Keyword name"
           },
-          "Uri": {
+          "subjectScheme": {
             "$ref": "#/definitions/stringNormal",
-            "title": "Keyword uri"
+            "title": "Name of the subject scheme"
+          },
+          "schemeUri": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "URI of the subject identifier scheme"
+          },
+          "valueUri": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "URI of the subject term"
           }
-        }
-      }
-    },
-    "Keyword": {
-      "title": "Keywords",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/definitions/stringNormal",
-        "title": "Keyword",
-        "default": null
+        },
+        "required": ["subject"]
       }
     },
     "Related_Resource": {
