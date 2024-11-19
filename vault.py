@@ -1022,7 +1022,7 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
 
 def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     source_path = parent + "/" + item
-    read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
+    read_access = msi.check_access(ctx, source_path, 'read_object', irods_types.BytesBuf())['arguments'][2]
 
     # TODO use set_acl_check?
     if read_access != b'\x01':
@@ -1119,7 +1119,7 @@ def set_vault_permissions(ctx, coll, target):
         for row in iter:
             access_name = row[0]
 
-        if access_name != "read object":
+        if access_name != "read_object":
             # Grant the research group read-only access to the collection to enable browsing through the vault.
             for name in valid_read_groups:
                 try:

@@ -354,7 +354,7 @@ def set_last_run_time(ctx, coll):
 
 def set_can_modify(ctx, coll):
     """Check if have permission to modify, set if necessary"""
-    check_access_result = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
+    check_access_result = msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())
     modify_access = check_access_result['arguments'][2]
     if modify_access != b'\x01':
         # This allows us permission to copy the files
