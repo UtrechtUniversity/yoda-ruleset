@@ -19,7 +19,7 @@ from config import config
 from error import *
 
 
-class Result(object):
+class Result:
     """API result."""
 
     def __init__(self, data=None, status='ok', info=None, debug_info=None):

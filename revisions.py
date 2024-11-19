@@ -309,7 +309,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
             pass
         else:
-            error_status = re.search("status \[(.*?)\]", str(e))
+            error_status = re.search(r"status \[(.*?)\]", str(e))
             log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
 
 

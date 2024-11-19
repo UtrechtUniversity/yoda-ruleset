@@ -143,7 +143,7 @@ def _default2_default3(ctx, m):
                 # Check Scopus
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
                     # Check for incorrect Scopus format.
-                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
                         corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
                         # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_scopus is None:
@@ -202,7 +202,7 @@ def _default2_default3(ctx, m):
                 # Check Scopus
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
                     # Check for incorrect Scopus format.
-                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
                         corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
                         # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_scopus is None:

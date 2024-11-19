@@ -75,7 +75,7 @@ def api_deposit_copy_data_package(ctx, reference, deposit_group):
     # Register to delayed rule queue.
     ctx.delayExec(
         "<PLUSET>1s</PLUSET>",
-        "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
+        "iiCopyFolderToResearch('{}', '{}')".format(coll_data_package, coll_target),
         "")
 
     return {"data": new_deposit_path}
@@ -217,7 +217,7 @@ def api_deposit_overview(ctx,
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         deposit_size = collection.size(ctx, x['COLL_NAME'])
 

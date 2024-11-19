@@ -88,7 +88,7 @@ def humanize_validation_error(e):
 
     # Get the names of disallowed extra fields.
     # (the jsonschema library isn't of much help here - we must extract it from the message)
-    if e['validator'] == u'additionalProperties' and len(path_out) == 0:
+    if e['validator'] == 'additionalProperties' and len(path_out) == 0:
         m = re.search('[\'\"]([^\"\']+)[\'\"] was unexpected', e['message'])
         if m:
             return 'This extra field is not allowed: ' + m.group(1)

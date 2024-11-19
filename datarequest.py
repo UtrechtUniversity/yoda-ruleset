@@ -615,7 +615,7 @@ def datarequest_provenance_write(ctx, request_id, request_status):
     :returns:              Nothing
     """
     # Check if request ID is valid
-    if re.search("^\d+$", request_id) is None:
+    if re.search(r"^\d+$", request_id) is None:
         return api.Error("input_error", "Invalid request ID supplied: {}.".format(request_id))
 
     # Check if status parameter is valid
@@ -766,7 +766,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'name':        x['COLL_OWNER_NAME'],
@@ -775,14 +775,14 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     def transform_title(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'title':       x['META_DATA_ATTR_VALUE']}
 
     def transform_status(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'status':      x['META_DATA_ATTR_VALUE']}
@@ -2393,14 +2393,14 @@ def data_ready_emails(ctx, request_id):
 
 def mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
                                 researcher_name, request_id, cc, dao):
-    subject = u"YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted") if dao else u"YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
+    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
 
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
                      subject=subject,
-                     body=u"""Dear {},
+                     body="""Dear {},
 
 Your data request has been submitted.
 
@@ -2419,8 +2419,8 @@ def mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
+                     body="""Dear project manager,
 
 A new data request has been submitted.
 
@@ -2444,8 +2444,8 @@ def mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, reques
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
+                     body="""Dear project manager,
 
 A new data request (for the purpose of data assessment only) has been submitted.
 
@@ -2467,8 +2467,8 @@ def mail_preliminary_review_accepted(ctx, truncated_title, datamanager_email, re
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): accepted for data manager review".format(request_id, truncated_title),
-                     body=u"""Dear data manager,
+                     subject="YOUth data request {} (\"{}\"): accepted for data manager review".format(request_id, truncated_title),
+                     body="""Dear data manager,
 
 Data request {} has been approved for review by the YOUth project manager.
 
@@ -2485,8 +2485,8 @@ def mail_datamanager_review_accepted(ctx, truncated_title, pm_email, request_id)
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): accepted by data manager".format(request_id, truncated_title),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): accepted by data manager".format(request_id, truncated_title),
+                     body="""Dear project manager,
 
 Data request {} has been accepted by the data manager.
 
@@ -2501,8 +2501,8 @@ def mail_datamanager_review_resubmit(ctx, truncated_title, pm_email, datamanager
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): rejected (resubmit) by data manager".format(request_id, truncated_title),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): rejected (resubmit) by data manager".format(request_id, truncated_title),
+                     body="""Dear project manager,
 
 Data request {} has been rejected (resubmission allowed) by the data manager for the following reason(s):
 
@@ -2519,8 +2519,8 @@ def mail_datamanager_review_rejected(ctx, truncated_title, pm_email, datamanager
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): rejected by data manager".format(request_id, truncated_title),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): rejected by data manager".format(request_id, truncated_title),
+                     body="""Dear project manager,
 
 Data request {} has been rejected by the data manager for the following reason(s):
 
@@ -2538,8 +2538,8 @@ def mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email, 
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): under review".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): under review".format(request_id, truncated_title),
+                     body="""Dear {},
 
 Your data request has passed a preliminary assessment and is now under review.
 
@@ -2555,8 +2555,8 @@ def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, prop
     return mail.send(ctx,
                      to=assignee_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
-                     body=u"""Dear DAC member,
+                     subject="YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
+                     body="""Dear DAC member,
 
 Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review within {} days.
 
@@ -2572,8 +2572,8 @@ def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_na
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
+                     body="""Dear {},
 
 Your data request been reviewed by the YOUth Data Access Committee and is awaiting final evaluation by the YOUth project manager.
 
@@ -2588,8 +2588,8 @@ def mail_review_pm(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
+                     body="""Dear project manager,
 
 Data request {} has been reviewed by the YOUth Data Access Committee and is awaiting your final evaluation.
 
@@ -2606,8 +2606,8 @@ def mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email, 
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
+                     body="""Dear {},
 
 Congratulations! Your data request has been approved. You are now asked to preregister your study in the YOUth Open Science Framework preregistry. To do so, please navigate to the preregistration form using this link: https://{}/datarequest/preregister/{}.
 
@@ -2620,8 +2620,8 @@ def mail_preregistration_submit(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): preregistration submitted".format(request_id, truncated_title),
-                     body=u"""Dear project manager,
+                     subject="YOUth data request {} (\"{}\"): preregistration submitted".format(request_id, truncated_title),
+                     body="""Dear project manager,
 
 Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the data request, where you may confirm the preregistration: https://{}/datarequest/view/{}.
 
@@ -2634,8 +2634,8 @@ def mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
-                     body=u"""Dear data manager,
+                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
+                     body="""Dear data manager,
 
 Data request {} has been approved by the YOUth project manager (and has passed the data manager review of {}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
 
@@ -2650,8 +2650,8 @@ def mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, re
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title),
-                     body=u"""Dear data manager,
+                     subject="YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title),
+                     body="""Dear data manager,
 
 Data request {} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
 
@@ -2667,8 +2667,8 @@ def mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=(u"YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): preregistration approved".format(request_id, truncated_title)),
-                     body=u"""Dear {},
+                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): preregistration approved".format(request_id, truncated_title)),
+                     body="""Dear {},
 
 The preregistration of your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
 
@@ -2685,8 +2685,8 @@ def mail_resubmit(ctx, truncated_title, researcher_email, researcher_name, feedb
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): rejected (resubmit)".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): rejected (resubmit)".format(request_id, truncated_title),
+                     body="""Dear {},
 
 Your data request has been rejected for the following reason(s):
 
@@ -2710,8 +2710,8 @@ def mail_rejected(ctx, truncated_title, researcher_email, researcher_name, feedb
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): rejected".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): rejected".format(request_id, truncated_title),
+                     body="""Dear {},
 
 Your data request has been rejected for the following reason(s):
 
@@ -2731,8 +2731,8 @@ def mail_dta(ctx, truncated_title, researcher_email, researcher_name, request_id
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): DTA ready".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): DTA ready".format(request_id, truncated_title),
+                     body="""Dear {},
 
 The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
 
@@ -2750,8 +2750,8 @@ def mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, reque
                      to=datamanager_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): DTA signed".format(request_id, truncated_title),
-                     body=u"""Dear data manager,
+                     subject="YOUth data request {} (\"{}\"): DTA signed".format(request_id, truncated_title),
+                     body="""Dear data manager,
 
 The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}. The DTA was authored by {}.
 
@@ -2769,8 +2769,8 @@ def mail_data_ready(ctx, truncated_title, researcher_email, researcher_name, req
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=u"YOUth data request {} (\"{}\"): data ready".format(request_id, truncated_title),
-                     body=u"""Dear {},
+                     subject="YOUth data request {} (\"{}\"): data ready".format(request_id, truncated_title),
+                     body="""Dear {},
 
 The data you have requested has been made available to you within a new folder in Yoda. You can access the data through the webportal in the "research" area or you can connect Yoda as a network drive and access the data through your file explorer. For information on how to access the data, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda
 

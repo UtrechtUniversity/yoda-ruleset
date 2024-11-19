@@ -39,7 +39,7 @@ def api_browse_folder(ctx,
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
         if 'DATA_NAME' in x and 'META_DATA_ATTR_VALUE' in x:
             return {x['DATA_NAME']: x['META_DATA_ATTR_VALUE']}
         elif 'DATA_NAME' in x:
@@ -128,7 +128,7 @@ def api_browse_collections(ctx,
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         if 'DATA_NAME' in x:
             return {'name':        x['DATA_NAME'],
@@ -205,7 +205,7 @@ def api_search(ctx,
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         if 'DATA_NAME' in x:
             _, _, path, subpath = pathutil.info(x['COLL_NAME'])
@@ -231,8 +231,8 @@ def api_search(ctx,
     # Status description must be kept in tact.
     if search_type != 'status':
         search_string = search_string.replace("\\", "\\\\")
-        search_string = search_string.replace("%", "\%")
-        search_string = search_string.replace("_", "\_")
+        search_string = search_string.replace("%", r"\%")
+        search_string = search_string.replace("_", r"\_")
 
     zone = user.zone(ctx)
 
@@ -295,7 +295,7 @@ def _filter_vault_deposit_index(row):
        :returns: boolean value that indicates whether row should be displayed
     """
     # Remove ORDER_BY etc. wrappers from column names.
-    x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+    x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
     # Filter out deposit vault index collection
     return not re.match("^/[^/]+/home/vault-[^/]+/deposit-[^/]+/index$",
                         x['COLL_NAME'])

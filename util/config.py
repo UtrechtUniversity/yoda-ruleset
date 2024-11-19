@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 # Config class {{{
 
-class Config(object):
+class Config:
     """Stores configuration info, accessible through attributes (config.foo).
 
     Valid options are determined at __init__ time.
@@ -33,7 +33,7 @@ class Config(object):
 
     def __setattr__(self, k, v):
         if k.startswith('_'):
-            return super(Config, self).__setattr__(k, v)
+            return super().__setattr__(k, v)
         if self._frozen:
             print('Ruleset configuration error: No config changes possible to \'{}\''.format(k))
             return
@@ -45,7 +45,7 @@ class Config(object):
 
     def __getattr__(self, k):
         if k.startswith('_'):
-            return super(Config, self).__getattr__(k)
+            return super().__getattr__(k)
         try:
             return self._items[k]
         except KeyError:
@@ -182,7 +182,7 @@ try:
             else:
                 setattr(config, *m.groups())
 
-except IOError:
+except OSError:
     # Ignore, config file is optional.
     pass
 

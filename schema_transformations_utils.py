@@ -28,7 +28,7 @@ def correctify_scopus(org_scopus):
     # Get rid of all spaces.
     new_scopus = org_scopus.replace(' ', '')
 
-    if not re.search("^\d{1,11}$", new_scopus):
+    if not re.search(r"^\d{1,11}$", new_scopus):
         return None
 
     return new_scopus

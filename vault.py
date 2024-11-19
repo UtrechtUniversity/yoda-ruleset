@@ -233,7 +233,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     ctx.delayExec(
         "<PLUSET>%ds</PLUSET>" % delay,
-        "iiCopyFolderToResearch('%s', '%s')" % (coll_origin, coll_target),
+        "iiCopyFolderToResearch('{}', '{}')".format(coll_origin, coll_target),
         "")
 
     # TODO: response nog veranderen
@@ -291,7 +291,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 
     # Data names -> lowercase extensions, without the dot.
     exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
-    exts -= set([''])
+    exts -= {''}
 
     # Return any ext that is not in the preservable list.
     return list(exts - preservable_formats)

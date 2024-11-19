@@ -17,7 +17,7 @@ class Error(error.UUError):
     """Error for microservice failure."""
 
     def __init__(self, message, msi_status, msi_code, msi_args, src_exception):
-        super(Error, self).__init__(message)
+        super().__init__(message)
         # Store msi result, if any.
         # These may be None when an msi aborts in an abnormal way.
         self.msi_status = msi_status

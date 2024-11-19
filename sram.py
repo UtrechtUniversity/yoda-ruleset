@@ -223,7 +223,7 @@ def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
                      to=username,
                      cc='',
                      actor=user.full_name(ctx),
-                     subject=(u"Invitation to join collaboration {}".format(group_name)),
+                     subject=("Invitation to join collaboration {}".format(group_name)),
                      body="""Dear {},
 
 You have been invited by {} to join a collaboration page.

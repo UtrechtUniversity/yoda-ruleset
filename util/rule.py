@@ -7,7 +7,7 @@ import json
 from enum import Enum
 
 
-class Context(object):
+class Context:
     """Combined type of a callback and rei struct.
 
     `Context` can be treated as a rule engine callback for all intents and purposes.

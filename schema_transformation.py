@@ -202,7 +202,7 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
                     log.write(callback, "[METADATA] Executing transformation for: " + metadata_path)
                     execute_transformation(callback, metadata_path, transform)
         except Exception as e:
-            log.write(callback, "[METADATA] Exception occurred during schema transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
+            log.write(callback, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -290,7 +290,7 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
                     log.write(callback, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
 
         except Exception as e:
-            log.write(callback, "Exception occurred during ORCID transformation of %s: %s" % (coll_name, str(type(e)) + ":" + str(e)))
+            log.write(callback, "Exception occurred during ORCID transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -335,7 +335,7 @@ def transform_orcid(ctx, m):
                             if corrected_orcid is None:
                                 log.write(ctx, "Warning: unable to automatically fix ORCID '%s'" % (original_orcid))
                             elif corrected_orcid != original_orcid:
-                                log.write(ctx, "Updating ORCID '%s' to '%s'" % (original_orcid, corrected_orcid))
+                                log.write(ctx, "Updating ORCID '{}' to '{}'".format(original_orcid, corrected_orcid))
                                 pi['Name_Identifier'] = corrected_orcid
                                 data_changed = True
 
@@ -370,7 +370,7 @@ def html(f):
     """
     description = '\n'.join(map(lambda paragraph:
                             '<p>{}</p>'.format(  # Trim whitespace.
-                                re.sub('\s+', ' ', paragraph).strip()),
+                                re.sub(r'\s+', ' ', paragraph).strip()),
                                 # Docstring paragraphs are separated by blank lines.
                                 re.split('\n{2,}', f.__doc__)))
 

@@ -26,7 +26,7 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
 
            :returns:       data for this key (arb_status)
         """
-        value = super(ARBDataManager, self).get(ctx, keyname)
+        value = super().get(ctx, keyname)
         return constants.arb_status[value]
 
     def put(self, ctx, keyname, data):
@@ -36,7 +36,7 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
            :param keyname: name of the key
            :param data: data for this key (arb_status)
         """
-        super(ARBDataManager, self).put(ctx, keyname, data.value)
+        super().put(ctx, keyname, data.value)
 
     def _get_context_string(self):
         """ :returns: a string that identifies the particular type of data manager

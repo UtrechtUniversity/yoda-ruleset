@@ -8,7 +8,7 @@ import log
 import rule
 
 
-class Succeed(object):
+class Succeed:
     """Policy function result, indicates success.
 
     Evaluates to True in boolean context.
@@ -22,7 +22,7 @@ class Succeed(object):
     __nonzero__ = __bool__
 
 
-class Fail(object):
+class Fail:
     """Policy function result, indicates failure.
 
     As a result, the PEP-instrumented operation will be aborted, and

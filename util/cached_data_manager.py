@@ -6,7 +6,7 @@ import traceback
 import redis
 
 
-class CachedDataManager(object):
+class CachedDataManager:
     """This class contains a framework that subclasses can use
        to create a manager for cached data. The basic idea is that
        the subclass defines functions to access some data (e.g. in AVUs

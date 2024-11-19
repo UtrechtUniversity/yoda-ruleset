@@ -687,7 +687,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
                 keys = meta_diff[i].keys()
             if keys:
                 for item in keys:
-                    m = re.match("root\['(.*?)'\]", item)
+                    m = re.match(r"root\['(.*?)'\]", item)
                     if m:
                         item_list[action].append(m.group(1).replace('_', ' '))
 

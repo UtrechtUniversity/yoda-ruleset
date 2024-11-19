@@ -63,7 +63,7 @@ def get_revision_strategy(strategy_name):
         raise ValueError('Strategy "{}" is not supported'.format(strategy_name))
 
 
-class RevisionStrategy(object):
+class RevisionStrategy:
     HOURS = 3600
     DAYS = 86400
     WEEKS = 604800
