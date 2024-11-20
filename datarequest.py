@@ -379,7 +379,7 @@ def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
     if statuses is not None:
         def get_status(stat):
             return status[stat]
-        statuses = map(get_status, statuses)
+        statuses = list(map(get_status, statuses))
 
     return datarequest_action_permitted(ctx, request_id, roles, statuses)
 
@@ -830,9 +830,9 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         return OrderedDict([('total', 0), ('items', [])])
 
     # Merge datarequest title and status into results.
-    colls = map(transform, list(qcoll))
-    colls_title = map(transform_title, list(qcoll_title))
-    colls_status = map(transform_status, list(qcoll_status))
+    colls = list(map(transform, list(qcoll)))
+    colls_title = list(map(transform_title, list(qcoll_title)))
+    colls_status = list(map(transform_status, list(qcoll_status)))
     for datarequest in colls:
         for datarequest_title in colls_title:
             if datarequest_title['id'] == datarequest['id']:
@@ -1183,7 +1183,7 @@ def datarequest_attachments_get(ctx, request_id):
     # Return list of attachment filepaths
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
                                       ATTACHMENTS_PATHNAME)
-    return map(get_filename, list(collection.data_objects(ctx, coll_path)))
+    return list(map(get_filename, list(collection.data_objects(ctx, coll_path))))
 
 
 @api.make()
@@ -1397,7 +1397,7 @@ def datarequest_dac_members_get(ctx, request_id):
 
     :returns: List of DAC members
     """
-    dac_members = map(lambda member: member[0], group.members(ctx, GROUP_DAC))
+    dac_members = list(map(lambda member: member[0], group.members(ctx, GROUP_DAC)))
     request_owner = datarequest_owner_get(ctx, request_id)
     if request_owner in dac_members:
         dac_members.remove(request_owner)
@@ -1487,9 +1487,9 @@ def assign_request(ctx, assignees, request_id):
 
     # Grant read permissions on relevant files of data request
     attachments = datarequest_attachments_get(ctx, request_id)
-    attachments = map(lambda attachment: ATTACHMENTS_PATHNAME + "/" + attachment, attachments)
+    attachments = list(map(lambda attachment: ATTACHMENTS_PATHNAME + "/" + attachment, attachments))
     for assignee in json.loads(assignees):
-        for doc in map(lambda filename: filename + JSON_EXT, [DATAREQUEST, PR_REVIEW, DM_REVIEW]) + attachments:
+        for doc in list(map(lambda filename: filename + JSON_EXT, [DATAREQUEST, PR_REVIEW, DM_REVIEW])) + attachments:
             file_path = "{}/{}".format(coll_path, doc)
             ctx.adminTempWritePermission(file_path, "grantread", "{}#{}".format(assignee, user.zone(ctx)))
 
@@ -1575,8 +1575,8 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        readers = [GROUP_PM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
-                                   datarequest_reviewers_get(ctx, request_id))
+        readers = [GROUP_PM] + list(map(lambda reviewer: reviewer + "#" + user.zone(ctx),
+                                        datarequest_reviewers_get(ctx, request_id)))
         file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
@@ -1683,8 +1683,8 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        readers = [GROUP_PM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
-                                   datarequest_reviewers_get(ctx, request_id))
+        readers = [GROUP_PM] + list(map(lambda reviewer: reviewer + "#" + user.zone(ctx),
+                                        datarequest_reviewers_get(ctx, request_id)))
         file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
@@ -2209,7 +2209,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         researcher              = datarequest['contact']['principal_investigator']
         researcher_email        = datarequest_owner_get(ctx, request_id)
         cc                      = cc_email_addresses_get(datarequest['contact'])
-        pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+        pm_email, _             = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
@@ -2264,7 +2264,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
         # Get additional email input parameters
         feedback_for_researcher = assignment['feedback_for_researcher']
-        pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+        pm_email, _             = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
@@ -2300,7 +2300,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = evaluation.get('feedback_for_researcher', '')
-    pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    pm_email, _             = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
     truncated_title         = truncated_title_get(ctx, request_id)
 
     # Send emails
@@ -2354,7 +2354,7 @@ def dta_post_upload_actions_emails(ctx, request_id):
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(datarequest['contact'])
     # (Also) cc project manager
-    pm_email, _      = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    pm_email, _      = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
     cc               = cc + ',{}'.format(pm_email) if cc else pm_email
     truncated_title  = truncated_title_get(ctx, request_id)
 
@@ -2366,7 +2366,7 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
     authoring_dm        = data_object.owner(ctx, datarequest_dta_path_get(ctx, request_id))[0]
-    cc, _ = pm_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    cc, _ = pm_email, _ = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
     truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send email

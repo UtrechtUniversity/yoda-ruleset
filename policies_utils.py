@@ -30,7 +30,7 @@ def _column_in_select_inp(selectInp, columns):
 
 def _column_in_cond_inp(sqlCondInp, columns):
     condition_data = ast.literal_eval(str(sqlCondInp))
-    condition_columns = map(lambda c: c[0], condition_data)
+    condition_columns = list(map(lambda c: c[0], condition_data))
     for column in columns:
         if column in condition_columns:
             return True

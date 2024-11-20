@@ -88,11 +88,11 @@ def api_browse_folder(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)])
+    colls = list(map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)]))
 
     qdata = Query(ctx, dcols, "COLL_NAME = '{}' AND DATA_REPL_STATUS n> '0'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
-    datas = map(transform, list(qdata))
+    datas = list(map(transform, list(qdata)))
 
     # No results at all? Make sure the collection actually exists.
     if len(colls) + len(datas) == 0 and not collection.exists(ctx, coll):
@@ -172,7 +172,7 @@ def api_browse_collections(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)])
+    colls = list(map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)]))
 
     # No results at all? Make sure the collection actually exists.
     if len(colls) == 0 and not collection.exists(ctx, coll):
@@ -279,7 +279,7 @@ def api_search(ctx,
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
                   limit=int(limit), case_sensitive=query_is_case_sensitive, output=AS_DICT)
 
-    datas = map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)])
+    datas = list(map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)]))
 
     return OrderedDict([('total', qdata.total_rows()),
                         ('items', datas)])

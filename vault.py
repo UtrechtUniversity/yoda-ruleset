@@ -1665,7 +1665,7 @@ def api_vault_get_published_packages(ctx, path):
 
     # Sort by publication date
     sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-    latest_publ = map(lambda x: x[-1], sorted_publ)
+    latest_publ = list(map(lambda x: x[-1], sorted_publ))
 
     # Append to data package
     for items in latest_publ:

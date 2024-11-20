@@ -31,22 +31,22 @@ __all__ = ['rule_meta_validate',
 def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
-    return filter(lambda x: type(x) in (dict, OrderedDict)
-                  and 'rel' in x
-                  and 'href' in x
-                  and type(x['rel']) is str
-                  and type(x['href']) is str,
-                  metadata['links'])
+    return list(filter(lambda x: type(x) in (dict, OrderedDict)
+                       and 'rel' in x
+                       and 'href' in x
+                       and type(x['rel']) is str
+                       and type(x['href']) is str,
+                       metadata['links']))
 
 
 def metadata_get_schema_id(metadata):
-    desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
+    desc = list(filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata)))
     if len(desc) > 0:
         return desc[0]['href']
 
 
 def metadata_set_schema_id(metadata, schema_id):
-    other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
+    other_links = list(filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata)))
 
     metadata['links'] = [OrderedDict([
         ['rel',  'describedby'],

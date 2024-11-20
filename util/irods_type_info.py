@@ -43,7 +43,7 @@ irods_types.GenQueryInp.__repr__ = \
 
 
 def col_name(i):
-    return filter(lambda kv: kv[1] == i, cols)[0][0]
+    return list(filter(lambda kv: kv[1] == i, cols))[0][0]
 
 
 cols =\
