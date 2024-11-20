@@ -1297,7 +1297,7 @@ def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
     return '0' if no_errors else '1'
 
 
-@rule.make(inputs=range(4), outputs=range(4, 6))
+@rule.make(inputs=[0, 1, 2, 3], outputs=[4, 5])
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Rule interface for processing vault status transition request.
 

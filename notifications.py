@@ -182,7 +182,7 @@ Yoda system
 """.format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
-@rule.make(inputs=range(2), outputs=range(2, 4))
+@rule.make(inputs=[0, 1], outputs=[2, 3])
 def rule_mail_notification_report(ctx, to, notifications):
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
