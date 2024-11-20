@@ -36,7 +36,7 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 	}
 
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
-	writeLine("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
+	writeString("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
 	if (*allowed) {
 		succeed;
 	}
@@ -73,7 +73,7 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
 	# When the datamanager needs write/read access to the root of a vault package this rule is run
 	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
-		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
+		writeString("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
 		if (*accessLevel != "write" && *accessLevel != "read") {
 			*allowed = false;
 			*reason = "A datamanager can only obtain or revoke write access for the datamanager group to a vault package";
@@ -107,7 +107,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 
 	# When a datamanager wants to grant or revoke read access for a research or read group in the vault, this rule will run
 	on (*objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
-		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
+		writeString("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
 		if (*accessLevel != "read" && *accessLevel != "null") {
 			*allowed = false;
 			*reason = "A datamanager can only grant write or read access or revoke access in the vault.";

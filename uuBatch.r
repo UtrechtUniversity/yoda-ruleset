@@ -30,13 +30,13 @@ verifyChecksumData(*path, *chksum, *update) {
     }
 
     if (*chksum == "") {
-	writeLine("serverLog", "*path: no checksum");
+	writeString("serverLog", "*path: no checksum");
 	if (*update != 0) {
 	    errorcode(msiDataObjChksum(*path, "ChksumAll=", *status));
 	}
     } else {
 	msiSubstr(*chksum, "0", "5", *type);
-	writeLine("serverLog", "*path: *chksum");
+	writeString("serverLog", "*path: *chksum");
 	if (*type == "sha2:") {
 	    errorcode(msiDataObjChksum(*path, "verifyChksum=", *status));
 	} else if (*update != 0) {

@@ -64,7 +64,7 @@ createRevisionStores {
 
 					iiRevisionCreate(*resource, *path, UUMAXREVISIONSIZE, *id);
 					if (*id != "") {
-				        	writeLine("serverLog", "Revision created for *path with id: *id");
+				        	writeString("serverLog", "Revision created for *path with id: *id");
 					}
 
 					if (*objectReadPermission == 0) {
@@ -106,7 +106,7 @@ createRevisionStores {
 
 					iiRevisionCreate(*resource, *path, UUMAXREVISIONSIZE, *id);
 					if (*id != "") {
-				        	writeLine("serverLog", "Revision created for *path with id: *id");
+				        	writeString("serverLog", "Revision created for *path with id: *id");
 					}
 
 					if (*objectReadPermission == 0) {

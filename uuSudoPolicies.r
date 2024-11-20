@@ -38,25 +38,25 @@
 # Implementation 1: Allow access only to rodsadmin. {{{
 
 acPreSudoUserAdd(*userName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
-	writeLine("serverLog", "In acPreSudoUserAdd, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoUserAdd, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoUserRemove(*userName, *policyKv) {
-	writeLine("serverLog", "In acPreSudoUserRemove, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoUserRemove, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
-	writeLine("serverLog", "In acPreSudoGroupAdd, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoGroupAdd, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoGroupRemove(*groupName, *policyKv) {
-	writeLine("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
   # User is admin, check whether the vault has no datapackages.
@@ -64,37 +64,37 @@ acPreSudoGroupRemove(*groupName, *policyKv) {
 }
 
 acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
-	writeLine("serverLog", "In acPreSudoGroupMemberAdd, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoGroupMemberAdd, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
-	writeLine("serverLog", "In acPreSudoGroupMemberRemove, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoGroupMemberRemove, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	writeLine("serverLog", "In acPreSudoObjAclSet, recursive is <*recursive>, access level is <*accessLevel>, other name is <*otherName>, object path is <*objPath>, actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoObjAclSet, recursive is <*recursive>, access level is <*accessLevel>, other name is <*otherName>, object path is <*objPath>, actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
-	writeLine("serverLog", "In acPreSudoObjMetaSet, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoObjMetaSet, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) {
-	writeLine("serverLog", "In acPreSudoObjMetaAdd, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoObjMetaAdd, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }
 
 acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
-	writeLine("serverLog", "In acPreSudoObjMetaRemove, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	writeString("serverLog", "In acPreSudoObjMetaRemove, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }

@@ -140,7 +140,7 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 	msiAddKeyVal(*buffer, IILOCKATTRNAME, *rootCollection)
 	#DEBUG writeLine("ServerLog", "iiFolderLockChange: *buffer");
 	if (*lockIt == "lock") {
-		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
+		#DEBUG writeString("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
 		uuTreeWalk(*direction, *rootCollection, "iiAddMetadataToItem", *buffer, *error);
 		if (*error == 0) {
@@ -152,7 +152,7 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 			}
 		}
 	} else {
-		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive unlocking of *rootCollection");
+		#DEBUG writeString("serverLog", "iiFolderLockChange: recursive unlocking of *rootCollection");
 		*direction="reverse";
 		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataFromItem", *buffer, *error);
 		if (*error == 0) {
@@ -187,7 +187,7 @@ iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d
 iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
-	#DEBUG writeLine("serverLog", "iiAddMetadataToItem: Setting *buffer on *objPath");
+	#DEBUG writeString("serverLog", "iiAddMetadataToItem: Setting *buffer on *objPath");
 	*error = errorcode(msiAssociateKeyValuePairsToObj(*buffer, *objPath, *objType));
 }
 
@@ -202,14 +202,14 @@ iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) 
 iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
-	#DEBUG writeLine("serverLog", "iiRemoveMetadataKeyFromItem: Removing *buffer on *objPath");
+	#DEBUG writeString("serverLog", "iiRemoveMetadataKeyFromItem: Removing *buffer on *objPath");
 	*error = errormsg(msiRemoveKeyValuePairsFromObj(*buffer, *objPath, *objType), *msg);
 	if (*error < 0) {
-		writeLine("serverLog", "iiRemoveMetadataFromItem: removing *buffer from *objPath failed with errorcode: *error");
-		writeLine("serverLog", *msg);
+		writeString("serverLog", "iiRemoveMetadataFromItem: removing *buffer from *objPath failed with errorcode: *error");
+		writeString("serverLog", *msg);
 		if (*error == -819000) {
 			# This happens when metadata was already removed or never there.
-			writeLine("serverLog", "iiRemoveMetadaFromItem: -819000 detected. Keep on trucking, this happens if metadata was already removed");
+			writeString("serverLog", "iiRemoveMetadaFromItem: -819000 detected. Keep on trucking, this happens if metadata was already removed");
 			*error = 0;
 		}
 	}

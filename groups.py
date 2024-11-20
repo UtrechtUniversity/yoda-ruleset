@@ -866,14 +866,14 @@ def rule_group_remove_external_user(ctx, username, userzone):
    """
     if user.is_admin(ctx):
         ret = removeExternalUser(ctx, username, userzone)
-        ctx.writeLine("serverLog", "Status code for removing external user "
-                                   + username + "#" + userzone
-                                   + " : " + ret)
+        ctx.writeString("serverLog", "Status code for removing external user "
+                                     + username + "#" + userzone
+                                     + " : " + ret)
         return ret
     else:
-        ctx.writeLine("serverLog", "Cannot remove external user "
-                                   + username + "#" + userzone
-                                   + " : need admin permissions.")
+        ctx.writeString("serverLog", "Cannot remove external user "
+                                     + username + "#" + userzone
+                                     + " : need admin permissions.")
         return '0'
 
 

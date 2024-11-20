@@ -11,7 +11,7 @@
 # \param[in] prefix	    prefix of metadata to remov
 #
 iiRemoveAVUs(*coll, *prefix) {
-	#DEBUG writeLine("serverLog", "iiRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
+	#DEBUG writeString("serverLog", "iiRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
 	msiString2KeyValPair("", *kvp);
 	*prefix = *prefix ++ "%";
 
@@ -21,11 +21,11 @@ iiRemoveAVUs(*coll, *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
 		if (*attr == *prev) {
-			#DEBUG writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
+			#DEBUG writeString("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
 		       *duplicates = cons((*attr, *val), *duplicates);
 		} else {
 			msiAddKeyVal(*kvp, *attr, *val);
-			#DEBUG writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			#DEBUG writeString("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 			*prev = *attr;
 		}
 	}
@@ -35,7 +35,7 @@ iiRemoveAVUs(*coll, *prefix) {
 	foreach(*pair in *duplicates) {
 
 		(*attr, *val) = *pair;
-		#DEBUG writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		#DEBUG writeString("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 		msiString2KeyValPair("", *kvp);
 		msiAddKeyVal(*kvp, *attr, *val);
 		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");

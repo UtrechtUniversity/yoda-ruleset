@@ -173,7 +173,7 @@ def main(rule_args, ctx, rei):
     metadata_export = OrderedDict([])
     for (path, status) in package_statuses:
         try:
-            ctx.writeLine("serverLog", "[export] Collecting metadata for vault data package {}".format(path))
+            ctx.writeString("serverLog", "[export] Collecting metadata for vault data package {}".format(path))
             vault_metadata = OrderedDict()
 
             # Path
@@ -209,7 +209,7 @@ def main(rule_args, ctx, rei):
 
             metadata_export[path] = vault_metadata
         except Exception:
-            ctx.writeLine("serverLog", "[export] Error collecting metadata for vault data package {}".format(path))
+            ctx.writeString("serverLog", "[export] Error collecting metadata for vault data package {}".format(path))
     ctx.writeLine("stdout", json.dumps(metadata_export, indent=4))
 
 INPUT null

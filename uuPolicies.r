@@ -100,7 +100,7 @@ acPostProcForDeleteUser {
 
 	# Log removal of user.
 	*actor = uuClientFullName;
-	writeLine("serverLog", "User *userName#*userZone is removed by *actor.")
+	writeString("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
 # Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
@@ -114,7 +114,7 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
        *access_allowed = '';
        rule_check_anonymous_access_allowed(*client_addr, *access_allowed);
         if ( *access_allowed != "true" ) {
-            writeLine("serverLog", "Refused access to anonymous account from address *client_addr.");
+            writeString("serverLog", "Refused access to anonymous account from address *client_addr.");
             failmsg(-1, "Refused access to anonymous account from address *client_addr.");
         }
     }
@@ -122,11 +122,11 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *max_connections_exceeded = '';
     rule_check_max_connections_exceeded(*max_connections_exceeded);
 		if ( *max_connections_exceeded == "true" ) {
-		    writeLine("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
+		    writeString("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
 		    failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
 		}
 
-    writeLine("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
+    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 
 # Enforce server to use TLS encryption.

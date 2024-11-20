@@ -1,5 +1,5 @@
 check {
-        writeLine("serverLog", "[METADATA] Start updating metadata.");
+        writeString("serverLog", "[METADATA] Start updating metadata.");
         rule_batch_transform_vault_metadata("0", *batch, *pause, *delay);
 }
 

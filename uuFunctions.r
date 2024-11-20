@@ -90,7 +90,7 @@ uuReplicateBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, 
 
 # Disable msiSendMail.
 msiSendMail(*xtoAddr,*xsubjectLine,*xbody){
-    writeLine('serverLog','WARNING: msiSendMail is disabled');
+    writeString('serverLog','WARNING: msiSendMail is disabled');
 }
 
 #
@@ -105,7 +105,7 @@ wrap_msi_file_checksum(*file, *resc, *sum) {
     }
     if (*host == "") {
         *result = "-1";
-        writeLine("serverLog","Could not find resource location for *resc when invoking file checksum microservice. Resource probably does not exist.");
+        writeString("serverLog","Could not find resource location for *resc when invoking file checksum microservice. Resource probably does not exist.");
     } else {
         remote(*host, "null") {
             *result = errorcode(msi_file_checksum(*file, *resc, *sum));

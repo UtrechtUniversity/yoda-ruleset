@@ -26,9 +26,9 @@ addEpicPids {
 				iiRegisterEpicPID(*path, *url, *pid, *httpCode);
 				if (*httpCode == "200" || *httpCode == "201") {
 					iiSaveEpicPID(*path, *url, *pid);
-					writeLine("serverLog", "Registered EPIC PID for *path");
+					writeString("serverLog", "Registered EPIC PID for *path");
 				} else {
-					writeLine("serverLog", "Failed to register EPIC PID for *path, httpCode=*httpCode");
+					writeString("serverLog", "Failed to register EPIC PID for *path, httpCode=*httpCode");
 				}
 			}
 		}

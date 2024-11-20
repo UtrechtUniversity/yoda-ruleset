@@ -44,7 +44,7 @@ processVaultActions() {
 							*pending = true;
 						}
 					} else {
-						writeLine("serverLog", "Error in vault transition: unable to find folder *folder, which was referred to in metadata from *collName. Ignoring ...");
+						writeString("serverLog", "Error in vault transition: unable to find folder *folder, which was referred to in metadata from *collName. Ignoring ...");
 					}
 
 

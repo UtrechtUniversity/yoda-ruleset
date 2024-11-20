@@ -243,7 +243,7 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
             callback.writeLine("stdout", "Use case 1 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 1.")
+                callback.writeString("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 1.")
 
             status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run, callback)
             if status == '':
@@ -254,7 +254,7 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
             callback.writeLine("stdout", "Use case 2 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 2.")
+                callback.writeString("serverLog", "Modifying data object: " + data['data_id'] + " on path: " + logical_path + " for use case 2.")
 
             status = modify_data_object(data['data_id'], data['data_repl_num'], data['expected_data_path'], dry_run, callback)
             if status == '':
@@ -269,7 +269,7 @@ def preconditions_for_data_object(data, run_type, dry_run, callback):
             callback.writeLine("stdout", "Use case 3 - Data ID: " + data['data_id'] + ", Path: " + logical_path)
 
             if dry_run == 'False':
-                callback.writeLine("serverLog", "Unregistering replica with data id: " + data['data_id'] + " on path: " + logical_path + " for use case 3.")
+                callback.writeString("serverLog", "Unregistering replica with data id: " + data['data_id'] + " on path: " + logical_path + " for use case 3.")
 
             if len(actual_replicas_list) == 1:
                 # Use scope = object for unregistering the replica
@@ -294,7 +294,7 @@ def modify_data_object(data_id, repl_num, data_path, dry_run, callback):
     """Modify the replica with correct data path."""
     if dry_run == 'False':
         try:
-            callback.writeLine("serverLog", "Subprocess - iadmin - data_path: " + data_path)
+            callback.writeString("serverLog", "Subprocess - iadmin - data_path: " + data_path)
             status = subprocess.check_output(['iadmin', 'modrepl', 'data_id', data_id, 'replica_number', repl_num, 'DATA_PATH', data_path], stderr=subprocess.STDOUT)
         except Exception as e:
             status = e.output[e.output.find("ERROR:"):].rstrip()
@@ -313,13 +313,13 @@ def unregister_replica(repl_num, logical_path, dry_run, callback, scope='replica
     if dry_run == 'False':
         if scope == 'object':
             try:
-                callback.writeLine("serverLog", "Subprocess - iunreg - object scope - logical_path: " + logical_path)
+                callback.writeString("serverLog", "Subprocess - iunreg - object scope - logical_path: " + logical_path)
                 status = subprocess.check_output(['iunreg', logical_path], stderr=subprocess.STDOUT)
             except Exception as e:
                 status = e.output[e.output.find("ERROR:"):].rstrip()
         else:
             try:
-                callback.writeLine("serverLog", "Subprocess - iunreg - replica scope - logical_path: " + logical_path)
+                callback.writeString("serverLog", "Subprocess - iunreg - replica scope - logical_path: " + logical_path)
                 status = subprocess.check_output(['iunreg', '-n', repl_num, '-N', '1', logical_path], stderr=subprocess.STDOUT)
             except Exception as e:
                 status = e.output[e.output.find("ERROR:"):].rstrip()
