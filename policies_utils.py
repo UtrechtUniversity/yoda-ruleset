@@ -16,7 +16,7 @@ def is_safe_genquery_inp(genquery_inp):
        :returns: boolean value. True if query may be executed; false if query
                  should be rejected for security or safety reasons.
     """
-    return _is_safe_genquery_inp(genquery_inp.selectInp, genquery_inp.sqlCondInp)
+    return _is_safe_genquery_inp(genquery_inp.selectInp, genquery_inp.sqlCondInp.inx)
 
 
 def _column_in_select_inp(selectInp, columns):
@@ -29,8 +29,7 @@ def _column_in_select_inp(selectInp, columns):
 
 
 def _column_in_cond_inp(sqlCondInp, columns):
-    condition_data = ast.literal_eval(str(sqlCondInp))
-    condition_columns = list(map(lambda c: c[0], condition_data))
+    condition_columns = ast.literal_eval(str(sqlCondInp))
     for column in columns:
         if column in condition_columns:
             return True

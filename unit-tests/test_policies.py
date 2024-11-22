@@ -17,22 +17,22 @@ class PoliciesTest(TestCase):
         # Queries that do not pose any problems
         # select D_DATA_ID where DATA_NAME = 'rods' and COLL_NAME = '/tempZone/home'
         selectInp = {401: 1}
-        sqlCondInp = [(403, "= 'rods'"), (501, "= '/tempZone/home'")]
+        sqlCondInp = [403, 501]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select D_CREATE_TIME, D_MODIFY_TIME, DATA_MODE, D_RESC_ID, D_DATA_ID, DATA_SIZE, D_OWNER_NAME, D_OWNER_ZONE, D_REPL_STATUS, D_DATA_CHECKSUM where COLL_NAME ='/tempZone/home' and DATA_NAME ='rods'
         selectInp = {419: 1, 420: 1, 421: 1, 423: 1, 401: 1, 407: 1, 411: 1, 412: 1, 413: 1, 415: 1}
-        sqlCondInp = [(501, "='/tempZone/home'"), (403, "='rods'")]
+        sqlCondInp = [501, 403]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select COLL_INFO2, COLL_ID, COLL_NAME, COLL_OWNER_NAME, COLL_OWNER_ZONE, COLL_CREATE_TIME, COLL_MODIFY_TIME, COLL_TYPE, COLL_INFO1 where COLL_NAME ='/tempZone/home/rods'
         selectInp = {512: 1, 500: 1, 501: 1, 503: 1, 504: 1, 508: 1, 509: 1, 510: 1, 511: 1}
-        sqlCondInp = [(501, "='/tempZone/home/rods'")]
+        sqlCondInp = [501]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select D_CREATE_TIME, D_MODIFY_TIME, DATA_MODE, D_DATA_ID, DATA_NAME, COLL_NAME, DATA_SIZE where COLL_NAME  = '/tempZone/home/rods'
         selectInp = {419: 1, 420: 1, 421: 1, 401: 1, 403: 1, 501: 1, 407: 1}
-        sqlCondInp = [(501, " = '/tempZone/home/rods'")]
+        sqlCondInp = [501]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select ZONE_CONNECTION, ZONE_COMMENT, ZONE_NAME, ZONE_TYPE where
@@ -42,7 +42,7 @@ class PoliciesTest(TestCase):
 
         # select META_COLL_ATTR_VALUE where COLL_NAME = '/a/b/c'
         selectInp = {611: 1}
-        sqlCondInp = [(501, "= '/a/b/c'")]
+        sqlCondInp = [501]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select META_COLL_ATTR_VALUE, COLL_NAME where
@@ -67,7 +67,7 @@ class PoliciesTest(TestCase):
 
         # select META_DATA_ATTR_VALUE where DATA_NAME = 'test.dat'
         selectInp = {601: 1}
-        sqlCondInp = [(403, "= 'test.dat'")]
+        sqlCondInp = [403]
         self.assertTrue(_is_safe_genquery_inp(selectInp, sqlCondInp))
 
         # select META_DATA_ATTR_VALUE, COLL_NAME where
