@@ -94,7 +94,11 @@ def _api(f):
     :returns: Wrapper function to turn a Python function into a basic API function
     """
     # Determine required and optional argument names from the function signature.
-    a_pos, a_var, a_kw, a_defaults = inspect.getargspec(f)
+    full_argspec = inspect.getfullargspec(f)
+    a_pos = full_argspec.args
+    a_kw = full_argspec.varkw
+    a_defaults = full_argspec.defaults
+
     a_pos = a_pos[1:]  # ignore callback/context param.
 
     required = set(a_pos if a_defaults is None else a_pos[:-len(a_defaults)])

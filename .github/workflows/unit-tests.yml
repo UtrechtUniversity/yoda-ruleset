@@ -10,31 +10,29 @@ on:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: [2.7]
+        python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
-        # setup-python stopped supporting Python 2.7, use https://github.com/MatteoH2O1999/setup-python
-        uses: MatteoH2O1999/setup-python@v3.2.1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          allow-build: info
-          cache-build: true
+          architecture: x64
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install coveragepy==1.6.0
+          python -m pip install coverage==7.6.7
 
       - name: Run unit tests
         run: |
           cd unit-tests
-          coverage run --omit=test_*.py,unit_tests.py --source=$(cd .. ; pwd),$(cd ../util ; pwd) -m unittest unit_tests
+          export PYTHONPATH=$(cd ../util ; pwd):$PYTHONPATH
+          coverage run --omit=test_*.py,unit_tests.py -m unittest unit_tests
 
       - name: Report code coverage
         run: |

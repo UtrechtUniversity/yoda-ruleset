@@ -1,6 +1,6 @@
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.10.0'
+__version__   = '2.0.0'
 __copyright__ = 'Copyright (c) 2015-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
@@ -21,6 +21,9 @@ __author__    =  ('Felix Croes'
               + ', Lazlo Westerhof'
               + ', Jelmer Zondergeld')
 # (in alphabetical order)
+
+import sys
+sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
 
 # Import all modules containing rules into the package namespace,
 # so that they become visible to iRODS.
