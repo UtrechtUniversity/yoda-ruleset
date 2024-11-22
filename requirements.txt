@@ -22,4 +22,4 @@ persist-queue==0.8.1
 redis==3.5.3
 psutil==5.9.6
 iteration_utilities==0.8.0
-#pysqlcipher3==1.2.1 (installed by yoda/roles/yoda_rulesets/tasks/main.yml)
+rotki-pysqlcipher3==2024.10.1
