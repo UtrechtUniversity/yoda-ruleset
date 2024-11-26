@@ -151,9 +151,12 @@ def read(ctx, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     buf = ret['arguments'][2]
 
+    # Convert BytesBuffer to string.
+    ret_val = msi.bytes_buf_to_str(ctx, buf, "")
+    output = ret_val["arguments"][1]
     msi.data_obj_close(ctx, handle, 0)
 
-    return ''.join(buf.buf[:buf.len])
+    return output
 
 
 def copy(ctx, path_org, path_copy, force=True):
