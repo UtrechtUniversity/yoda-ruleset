@@ -21,7 +21,7 @@ def api_search_revisions_on_filename(user, filename):
     return api_request(
         user,
         "revisions_search_on_filename",
-        {"searchString": filename, "offset": 0, "limit": "10"}
+        {"searchString": filename, "offset": 0, "limit": 10}
     )
 
 
