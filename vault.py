@@ -281,8 +281,8 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
-    data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
-                                collection.data_objects(ctx, coll, recursive=True))
+    data_names = map(lambda x: pathutil.chop(x)[1],
+                     collection.data_objects(ctx, coll, recursive=True))
 
     # Exclude Yoda metadata files
     data_names = itertools.ifilter(lambda
@@ -290,7 +290,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
                                    data_names)
 
     # Data names -> lowercase extensions, without the dot.
-    exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
+    exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
     exts -= {''}
 
     # Return any ext that is not in the preservable list.

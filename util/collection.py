@@ -104,14 +104,14 @@ def subcollections(ctx, path, recursive=False):
                                    genquery.AS_LIST, ctx)
 
     if not recursive:
-        return itertools.imap(to_absolute, q_root)
+        return map(to_absolute, q_root)
 
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
                                   "COLL_PARENT_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
 
-    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+    return map(to_absolute, itertools.chain(q_root, q_sub))
 
 
 def data_objects(ctx, path, recursive=False):
@@ -138,14 +138,14 @@ def data_objects(ctx, path, recursive=False):
                                    genquery.AS_LIST, ctx)
 
     if not recursive:
-        return itertools.imap(to_absolute, q_root)
+        return map(to_absolute, q_root)
 
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                   "COLL_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
 
-    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+    return map(to_absolute, itertools.chain(q_root, q_sub))
 
 
 def create(ctx, path, entire_tree=''):

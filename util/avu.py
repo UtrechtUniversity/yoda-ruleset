@@ -22,16 +22,16 @@ Avu.unit  = Avu.u
 
 def of_data(ctx, path):
     """Get (a,v,u) triplets for a given data object."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                              "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+                                   "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
 def of_coll(ctx, coll):
     """Get (a,v,u) triplets for a given collection."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-                                              "COLL_NAME = '{}'".format(coll)))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+                                   "COLL_NAME = '{}'".format(coll)))
 
 
 def get_attr_val_of_coll(ctx, coll, attr):
@@ -72,13 +72,13 @@ def inside_coll(ctx, path, recursive=False):
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
         "COLL_PARENT_NAME = '{}'".format(path),
         genquery.AS_LIST, ctx)
-    collection_root = itertools.imap(lambda x: to_absolute(x, "collection"), collection_root)
+    collection_root = map(lambda x: to_absolute(x, "collection"), collection_root)
 
     data_objects_root = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
         "COLL_NAME = '{}'".format(path),
         genquery.AS_LIST, ctx)
-    data_objects_root = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_root)
+    data_objects_root = map(lambda x: to_absolute(x, "data_object"), data_objects_root)
 
     if not recursive:
         return itertools.chain(collection_root, data_objects_root)
@@ -87,22 +87,22 @@ def inside_coll(ctx, path, recursive=False):
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
         "COLL_PARENT_NAME like '{}/%'".format(path),
         genquery.AS_LIST, ctx)
-    collection_sub = itertools.imap(lambda x: to_absolute(x, "collection"), collection_sub)
+    collection_sub = map(lambda x: to_absolute(x, "collection"), collection_sub)
 
     data_objects_sub = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
         "COLL_NAME like '{}/%'".format(path),
         genquery.AS_LIST, ctx)
-    data_objects_sub = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_sub)
+    data_objects_sub = map(lambda x: to_absolute(x, "data_object"), data_objects_sub)
 
     return itertools.chain(collection_root, data_objects_root, collection_sub, data_objects_sub)
 
 
 def of_group(ctx, group):
     """Get (a,v,u) triplets for a given group."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                                              "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                   "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
 def set_on_data(ctx, path, a, v):
