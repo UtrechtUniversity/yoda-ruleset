@@ -344,3 +344,5 @@ def api_load_text_obj(ctx, file_path='/'):
         return api.Error('large_size', 'The given text file is too large to render')
     except error.UUError:
         return api.Error('ReadError', 'Could not retrieve file')
+    except Exception:
+        return api.Error('not_valid', 'The given data object is not a text file')
