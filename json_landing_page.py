@@ -123,9 +123,8 @@ def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_j
     try:
         language = ""
         language_id = json_data["Language"]
-        # Convert just the language schemas to unicode to handle when a language has non-ascii characters (like Volapük)
-        schema_lang_ids = list(map(lambda x: x.decode("utf-8"), json_schema["definitions"]["optionsISO639-1"]["enum"]))
-        schema_lang_names = list(map(lambda x: x.decode("utf-8"), json_schema["definitions"]["optionsISO639-1"]["enumNames"]))
+        schema_lang_ids = json_schema["definitions"]["optionsISO639-1"]["enum"]
+        schema_lang_names = json_schema["definitions"]["optionsISO639-1"]["enumNames"]
         index = schema_lang_ids.index(language_id)
         # Language variable must be kept in unicode, otherwise landing page fails to build with a language with non-ascii characters
         language = schema_lang_names[index]
