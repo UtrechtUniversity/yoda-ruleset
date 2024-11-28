@@ -605,7 +605,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     """
     # Embargo handling
     combiJsonPath = publication_state["combiJsonPath"]
-    dictJsonData = jsonutil.read(ctx, combiJsonPath, want_bytes=False)
+    dictJsonData = jsonutil.read(ctx, combiJsonPath)
 
     # Remove empty objects to prevent empty fields on landingpage.
     dictJsonData = misc.remove_empty_objects(dictJsonData)

@@ -19,7 +19,7 @@ def metadata_post(ctx, payload):
 
     response = requests.post(url,
                              auth=auth,
-                             data=payload,
+                             data=payload.encode(),
                              headers=headers,
                              timeout=30,
                              verify=config.datacite_tls_verify)
@@ -35,7 +35,7 @@ def metadata_put(ctx, doi, payload):
 
     response = requests.put(url,
                             auth=auth,
-                            data=payload,
+                            data=payload.encode(),
                             headers=headers,
                             timeout=30,
                             verify=config.datacite_tls_verify)
