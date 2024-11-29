@@ -3,7 +3,6 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import itertools
 import os
 import re
 import subprocess
@@ -264,13 +263,13 @@ def api_vault_preservable_formats_lists(ctx):
 
 @api.make()
 def api_vault_unpreservable_files(ctx, coll, list_name):
-    """Retrieve the set of unpreservable file formats in a collection.
+    """Retrieve list of unpreservable file formats in a collection.
 
     :param ctx:       Combined type of a callback and rei struct
     :param coll:      Collection of folder to check
     :param list_name: Name of preservable file format list
 
-    :returns: Set of unpreservable file formats
+    :returns: List of unpreservable file formats
     """
     space, zone, _, _ = pathutil.info(coll)
     if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
@@ -285,9 +284,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
                      collection.data_objects(ctx, coll, recursive=True))
 
     # Exclude Yoda metadata files
-    data_names = itertools.ifilter(lambda
-                                   x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x),
-                                   data_names)
+    data_names = filter(lambda x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x), data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))

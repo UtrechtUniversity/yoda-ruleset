@@ -5,9 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import json
-import sys
-if sys.version_info > (2, 7):
-    from functools import reduce
+from functools import reduce
 
 import genquery
 import irods_types
