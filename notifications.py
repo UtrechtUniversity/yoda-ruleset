@@ -8,7 +8,7 @@ import json
 import random
 import string
 import time
-import urllib
+import urllib.parse
 from datetime import datetime, timedelta
 
 import genquery
@@ -86,10 +86,10 @@ def api_notifications_load(ctx, sort_order="desc"):
             space, _, group, subpath = pathutil.info(notification["target"])
             if space is pathutil.Space.RESEARCH:
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
-                notification["link"] = "/research/browse?dir=" + urllib.quote("/{}/{}".format(group, subpath))
+                notification["link"] = "/research/browse?dir=" + urllib.parse.quote(f"/{group}/{subpath}")
             elif space is pathutil.Space.VAULT:
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
-                notification["link"] = "/vault/browse?dir=" + urllib.quote("/{}/{}".format(group, subpath))
+                notification["link"] = "/vault/browse?dir=" + urllib.parse.quote(f"/{group}/{subpath}")
 
                 # Deposit situation required different information to be presented.
                 if subpath.startswith('deposit-'):
