@@ -6,6 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 class UUError(Exception):
     """Generic Python rule error."""
+    def __init__(self, message):
+        self.message = message
+        super(UUError, self).__init__(message)
 
 
 class UUFileSizeError(UUError):
