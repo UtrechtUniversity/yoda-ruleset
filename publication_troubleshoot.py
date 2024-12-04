@@ -31,9 +31,11 @@ def find_full_package_path(ctx, package_name, write_stdout):
 
     :returns: The full path of the data package if found, otherwise None.
     """
+    user_zone = user.zone(ctx)
+
     try:
         query_condition = (
-            "COLL_NAME like '%{}%'".format(package_name)
+            "COLL_NAME like '/{}/home/vault-%{}%'".format(user_zone, package_name)
         )
         query_attributes = "COLL_NAME"
         iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
