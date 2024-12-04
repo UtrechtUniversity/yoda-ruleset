@@ -18,13 +18,6 @@ iiFolderStatus(*folder, *folderStatus) {
 	}
 }
 
-# \brief Schedule copy-to-vault (asynchronously).
-#
-iiScheduleCopyToVault() {
-	delay ("<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>1s</PLUSET>") {
-		msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
-	}
-}
 
 # \brief Schedule copy-to-vault for just one coll (asynchronously).
 #
@@ -32,7 +25,7 @@ iiScheduleCopyToVault() {
 #
 iiScheduleCollCopyToVault(*coll) {
 	delay ("<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>1s</PLUSET>") {
-		msiExecCmd("scheduled-copytovault.sh", "'*coll'", "", "", 0, *out);
+		msiExecCmd("admin-scheduled-copytovault.sh", "'*coll'", "", "", 0, *out);
 	}
 }
 
@@ -332,7 +325,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 	}
 
 	# Note: The folders will not transition to SECURED status.
-	if (*transitionFrom == ACCEPTED && *transitionTo == FOLDER) { 
+	if (*transitionFrom == ACCEPTED && *transitionTo == FOLDER) {
 		*allowed = false;
 		*reason = "Only a rodsadmin is allowed to secure a folder to the vault";
 		succeed;

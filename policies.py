@@ -503,16 +503,16 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
-    # allow 'admin-*' scripts, if first arg is the actor username&zone.
+    # Allow scheduled admin scripts.
+    if cmd.startswith('admin-scheduled-'):
+        return policy.succeed()
+
+    # Allow 'admin-*' scripts, if first arg is the actor username&zone.
     if cmd.startswith('admin-'):
         if args == str(actor) or args.startswith(str(actor) + ' '):
             return policy.succeed()
         else:
             return policy.fail('Actor not given as first arg to admin- execcmd')
-
-    # Allow scheduled scripts.
-    if cmd.startswith('scheduled-'):
-        return policy.succeed()
 
     return policy.fail('No execcmd privileges for this command')
 
