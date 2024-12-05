@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import re
+import sys
 
 import pytest
 import requests
@@ -201,7 +202,12 @@ def login(user, password):
     # Retrieve the login CSRF token.
     content = client.get(url, verify=False).content.decode()
     p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
-    csrf = p.findall(content)[0]
+    found_csrf_tokens = p.findall(content)
+    if len(found_csrf_tokens) == 0:
+        print(f"Error: could not find login CSRF token in response from server for login of user {user}. Response was:")
+        print(content)
+        sys.exit(1)
+    csrf = found_csrf_tokens[0]
 
     # Login as user.
     if verbose_test:
@@ -214,7 +220,12 @@ def login(user, password):
     # Retrieve the authenticated CSRF token.
     content = response.content.decode()
     p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
-    csrf = p.findall(content)[0]
+    found_csrf_tokens = p.findall(content)
+    if len(found_csrf_tokens) == 0:
+        print(f"Error: could not find authenticated CSRF token in response from server for login of user {user}. Response was:")
+        print(content)
+        sys.exit(1)
+    csrf = found_csrf_tokens[0]
 
     # Return CSRF and session cookies.
     if verbose_test:
