@@ -74,6 +74,12 @@ jobs:
         docker exec provider.yoda sh -c "set -x ; cd /etc/irods/yoda-ruleset && sudo -u irods git checkout ${{ steps.extract_branch.outputs.branch }} && sudo -u irods python -m pip --no-cache-dir install --user -r /etc/irods/yoda-ruleset/requirements.txt && sudo -u irods make && sudo -u irods make install"
         docker exec provider.yoda sh -c "set -x ; sudo -u irods /var/lib/irods/irodsctl restart"
 
+    - name: Upgrade UU microservices for testing the RC version of Yoda 1.9.5
+      if: github.event.pull_request.head.ref == 'rc-1.9.5'
+      shell: bash
+      run: |
+        docker exec provider.yoda sh -c 'set -x ; sudo yum remove -y irods-uu-microservices ; sudo wget https://github.com/UtrechtUniversity/irods-uu-microservices/releases/download/v1.2.0/irods-uu-microservices-4.2.12_1.2.0-0.rpm ; sudo rpm -ivh irods-uu-microservices-4.2.12_1.2.0-0.rpm'
+
     - name: Pull and install latest version of portal
       shell: bash
       run: |
