@@ -123,6 +123,12 @@ jobs:
       run: |
         docker exec provider.yoda sh -c 'set -x ; cat /var/lib/irods/log/rodsLog*'
 
+
+    - name: Output web server logs
+      if: failure()
+      run: |
+        docker exec portal.yoda sh -c 'set -x ; for log in error.log portal_access.log ; do echo "${log}:" ; cat "/var/log/apache2/$log" ; echo; done'
+
 # Uncomment section below when needed for debugging.
 #
 #    - name: Setup tmate session for debugging
