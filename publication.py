@@ -3,8 +3,10 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 import re
 from datetime import datetime
+from typing import Dict, List, Tuple
 
 import genquery
 from requests.exceptions import ReadTimeout
@@ -25,7 +27,7 @@ __all__ = ['rule_process_publication',
            'rule_lift_embargos_on_data_access']
 
 
-def get_publication_config(ctx):
+def get_publication_config(ctx: rule.Context) -> Dict:
     """Get all publication config keys and their values and report any missing keys."""
     zone = user.zone(ctx)
     system_coll = "/" + zone + constants.UUSYSTEMCOLLECTION
@@ -70,12 +72,14 @@ def get_publication_config(ctx):
     return config_keys
 
 
-def generate_combi_json(ctx, publication_config, publication_state):
+def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
     """Join system metadata with the user metadata in yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
+
+    :raises Exception: When latest metadata is not found
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
     davrodsAnonymousVHost = publication_config["davrodsAnonymousVHost"]
@@ -100,6 +104,8 @@ def generate_combi_json(ctx, publication_config, publication_state):
 
     # metadataJsonPath contains latest json
     metadataJsonPath = meta.get_latest_vault_metadata_path(ctx, vaultPackage)
+    if metadataJsonPath is None:
+        raise Exception
 
     # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
     json_datacite.json_datacite_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, versionDOI, publicationDate, openAccessLink, licenseUri)
@@ -107,7 +113,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
     publication_state["combiJsonPath"] = combiJsonPath
 
 
-def generate_system_json(ctx, publication_state):
+def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
     """Overwrite combi metadata json with system-only metadata.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -135,7 +141,7 @@ def generate_system_json(ctx, publication_state):
     publication_state["combiJsonPath"] = system_json_path
 
 
-def get_publication_state(ctx, vault_package):
+def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
     """The publication state is kept as metadata on the vault package.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -191,7 +197,7 @@ def get_publication_state(ctx, vault_package):
     return publication_state
 
 
-def save_publication_state(ctx, vault_package, publication_state):
+def save_publication_state(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
     """Save the publication state key-value-pairs to AVU's on the vault package.
 
     :param ctx:               Combined type of a callback and rei struct
@@ -204,7 +210,7 @@ def save_publication_state(ctx, vault_package, publication_state):
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
-def set_update_publication_state(ctx, vault_package):
+def set_update_publication_state(ctx: rule.Context, vault_package: str) -> str:
     """Routine to set publication state of vault package pending to update.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -251,7 +257,7 @@ def set_update_publication_state(ctx, vault_package):
     return ""
 
 
-def get_publication_date(ctx, vault_package):
+def get_publication_date(ctx: rule.Context, vault_package: str) -> str:
     """Determine the time of publication as a datetime with UTC offset.
 
     First try action_log. Then icat-time.
@@ -279,7 +285,7 @@ def get_publication_date(ctx, vault_package):
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
-def get_last_modified_datetime(ctx, vault_package):
+def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     """Determine the time of last modification as a datetime with UTC offset.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -294,13 +300,14 @@ def get_last_modified_datetime(ctx, vault_package):
     )
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
-
         my_date = datetime.fromtimestamp(int(log_item_list[0]))
-
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
+    my_date = datetime.now()
+    return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
-def generate_preliminary_doi(ctx, publication_config, publication_state):
+
+def generate_preliminary_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -310,13 +317,13 @@ def generate_preliminary_doi(ctx, publication_config, publication_state):
     dataCitePrefix = publication_config["dataCitePrefix"]
     yodaPrefix = publication_config["yodaPrefix"]
 
-    randomId = datacite.generate_random_id(ctx, publication_config["randomIdLength"])
+    randomId = datacite.generate_random_id(publication_config["randomIdLength"])
 
     publication_state["randomId"] = randomId
     publication_state["versionDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_base_doi(ctx, publication_config, publication_state):
+def generate_base_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
     """Generate a base DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -326,13 +333,13 @@ def generate_base_doi(ctx, publication_config, publication_state):
     dataCitePrefix = publication_config["dataCitePrefix"]
     yodaPrefix = publication_config["yodaPrefix"]
 
-    randomId = datacite.generate_random_id(ctx, publication_config["randomIdLength"])
+    randomId = datacite.generate_random_id(publication_config["randomIdLength"])
 
     publication_state["baseRandomId"] = randomId
     publication_state["baseDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_datacite_json(ctx, publication_state):
+def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
     """Generate a DataCite compliant JSON based on yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -353,7 +360,7 @@ def generate_datacite_json(ctx, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_state, doi, send_method, base_doi=False):
+def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: str, send_method: str, base_doi: bool = False) -> None:
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -370,9 +377,9 @@ def post_metadata_to_datacite(ctx, publication_state, doi, send_method, base_doi
 
     try:
         if send_method == 'post':
-            httpCode = datacite.metadata_post(ctx, datacite_json)
+            httpCode = datacite.metadata_post(datacite_json)
         else:
-            httpCode = datacite.metadata_put(ctx, doi, datacite_json)
+            httpCode = datacite.metadata_put(doi, datacite_json)
 
         if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
             publication_state["dataCiteMetadataPosted"] = "yes"
@@ -389,7 +396,7 @@ def post_metadata_to_datacite(ctx, publication_state, doi, send_method, base_doi
         publication_state["status"] = "Retry"
 
 
-def post_draft_doi_to_datacite(ctx, publication_state):
+def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> None:
     """Upload DOI to DataCite. This will register the DOI as a draft.
     This function is also a draft, and will have to be reworked!
 
@@ -401,7 +408,7 @@ def post_draft_doi_to_datacite(ctx, publication_state):
 
     try:
         # post the DOI only
-        httpCode = datacite.metadata_post(ctx, {
+        httpCode = datacite.metadata_post({
             'data': {
                 'type': 'dois',
                 'attributes': {
@@ -425,18 +432,17 @@ def post_draft_doi_to_datacite(ctx, publication_state):
         publication_state["status"] = "Retry"
 
 
-def remove_metadata_from_datacite(ctx, publication_state, type_flag):
+def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
     """Remove metadata XML from DataCite.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Determine whether it is base DOI or version DOI
     """
-    import json
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
     try:
-        httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
+        httpCode = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
 
         if httpCode == 200:
             publication_state["dataCiteMetadataPosted"] = "yes"
@@ -457,18 +463,17 @@ def remove_metadata_from_datacite(ctx, publication_state, type_flag):
         publication_state["status"] = "Retry"
 
 
-def mint_doi(ctx, publication_state, type_flag):
+def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
-    import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
     try:
-        httpCode = datacite.metadata_put(ctx, publication_state[type_flag + "DOI"], payload)
+        httpCode = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
 
         if httpCode == 200:  # 201:
             publication_state[type_flag + "DOIMinted"] = "yes"
@@ -488,7 +493,7 @@ def mint_doi(ctx, publication_state, type_flag):
         publication_state["status"] = "Retry"
 
 
-def generate_landing_page_url(ctx, publication_config, publication_state):
+def generate_landing_page_url(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
     """Generate a URL for the landing page.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -505,7 +510,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     publication_state["landingPageUrl"] = landingPageUrl
 
 
-def generate_landing_page(ctx, publication_state, publish):
+def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
     """Generate a dataCite compliant XML based up yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -540,7 +545,7 @@ def generate_landing_page(ctx, publication_state, publish):
     publication_state["landingPagePath"] = landing_page_path
 
 
-def copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state):
+def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -565,7 +570,7 @@ def copy_landingpage_to_public_host(ctx, random_id, publication_config, publicat
         log.write(ctx, "copy_landingpage_to_public: " + error)
 
 
-def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state):
+def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -589,7 +594,7 @@ def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         log.write(ctx, "copy_metadata_to_public: " + error)
 
 
-def set_access_restrictions(ctx, vault_package, publication_state):
+def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
     """Set access restriction for vault package.
 
     This function is called when (re)publishing a vault package.
@@ -600,8 +605,6 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     :param ctx:                Combined type of a callback and rei struct
     :param vault_package:      Path to the package in the vault
     :param publication_state:  Dict with state of the publication process
-
-    :returns: None
     """
     # Embargo handling
     combiJsonPath = publication_state["combiJsonPath"]
@@ -658,7 +661,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
         publication_state["anonymousAccess"] = "yes"
 
 
-def check_doi_availability(ctx, publication_state, type_flag):
+def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
     """Request DOI to check on availability. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -668,7 +671,7 @@ def check_doi_availability(ctx, publication_state, type_flag):
     doi = publication_state[type_flag + "DOI"]
 
     try:
-        http_code = datacite.metadata_get(ctx, doi)
+        http_code = datacite.metadata_get(doi)
 
         if http_code == 404:
             publication_state[type_flag + "DOIAvailable"] = "yes"
@@ -685,7 +688,7 @@ def check_doi_availability(ctx, publication_state, type_flag):
         publication_state["status"] = "Retry"
 
 
-def process_publication(ctx, vault_package):
+def process_publication(ctx: rule.Context, vault_package: str) -> str:
     """Handling of publication of vault_package.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -999,7 +1002,7 @@ def process_publication(ctx, vault_package):
     return publication_state["status"]
 
 
-def process_depublication(ctx, vault_package):
+def process_depublication(ctx: rule.Context, vault_package: str) -> str:
     status = "Unknown"
 
     log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
@@ -1145,7 +1148,7 @@ def process_depublication(ctx, vault_package):
     return publication_state["status"]
 
 
-def process_republication(ctx, vault_package):
+def process_republication(ctx: rule.Context, vault_package: str) -> str:
     """Routine to process a republication with sanity checks at every step."""
     publication_state = {}
 
@@ -1315,7 +1318,11 @@ def process_republication(ctx, vault_package):
 
 
 @rule.make(inputs=[0, 1, 2, 3])
-def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
+def rule_update_publication(ctx: rule.Context,
+                            vault_package: str,
+                            update_datacite: str,
+                            update_landingpage: str,
+                            update_moai: str) -> None:
     """Rule interface for updating the publication of a vault package.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -1352,7 +1359,11 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
         log.write(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package), True)
 
 
-def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
+def update_publication(ctx: rule.Context,
+                       vault_package: str,
+                       update_datacite: bool = False,
+                       update_landingpage: bool = False,
+                       update_moai: bool = False) -> str:
     """Routine to update a publication with sanity checks at every step.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -1365,7 +1376,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     """
     publication_state = {}
 
-    def _check_return_if_publication_status(return_statuses, location):
+    def _check_return_if_publication_status(return_statuses: List[str], location: str) -> bool:
         # Used to check whether we need to return early because of an
         # unexpected publication status, and log a message for troubleshooting
         # purposes.
@@ -1509,7 +1520,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     return publication_state["status"]
 
 
-def get_collection_metadata(ctx, coll, prefix):
+def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> Dict:
     """Retrieve all collection metadata.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -1531,14 +1542,14 @@ def get_collection_metadata(ctx, coll, prefix):
     return coll_metadata
 
 
-def get_all_versions(ctx, path, doi):
+def get_all_versions(ctx: rule.Context, path: str, doi: str) -> Tuple[List, List]:
     """Get all the version DOI of published data package in a vault.
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of the published data package
     :param doi:  Base DOI of the selected publication
 
-    :return: Dict of related version DOIs
+    :return: Tuple with version DOIS and previous version DOIs
     """
     coll_parent_name = path.rsplit('/', 1)[0]
 
@@ -1577,7 +1588,7 @@ rule_process_republication = rule.make(inputs=[0], outputs=[1, 2])(process_repub
 
 
 @rule.make()
-def rule_lift_embargos_on_data_access(ctx):
+def rule_lift_embargos_on_data_access(ctx: rule.Context) -> str:
     """Find vault packages that have a data access embargo that can be lifted as the embargo expires.
 
     If lift_embargo_date <= now, update publication.

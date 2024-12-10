@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from typing import Dict, Tuple
 
 import genquery
 
@@ -14,12 +15,12 @@ __all__ = ['api_schema_get_schemas']
 
 
 @api.make()
-def api_schema_get_schemas(ctx):
+def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
     """Retrieve selectable schemas and default schema.
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: Dit with schemas and default schema.
+    :returns: Dict with schemas and default schema.
     """
     schemas = []
 
@@ -42,7 +43,7 @@ def api_schema_get_schemas(ctx):
             'schema_default': schema_default}
 
 
-def get_schema_collection(ctx, rods_zone, group_name):
+def get_schema_collection(ctx: rule.Context, rods_zone: str, group_name: str) -> str:
     """Determine schema collection based upon rods zone and name of the group.
 
     If there is no schema id set on group level and
@@ -87,7 +88,7 @@ def get_schema_collection(ctx, rods_zone, group_name):
     return config.default_yoda_schema
 
 
-def get_schema_id_from_group(ctx, group_name):
+def get_schema_id_from_group(ctx: rule.Context, group_name: str) -> str | None:
     """Returns the schema_id value that has been set on an iRODS group
 
     :param ctx:        Combined type of a callback and rei struct
@@ -107,7 +108,7 @@ def get_schema_id_from_group(ctx, group_name):
     return None
 
 
-def get_active_schema_path(ctx, path):
+def get_active_schema_path(ctx: rule.Context, path: str) -> str:
     """Get the iRODS path to a schema file from a deposit, research or vault path.
 
     The schema collection is determined from group name of the path.
@@ -143,7 +144,7 @@ def get_active_schema_path(ctx, path):
     return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
 
 
-def get_active_schema(ctx, path):
+def get_active_schema(ctx: rule.Context, path: str) -> Dict:
     """Get a schema object from a research or vault path.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -155,7 +156,7 @@ def get_active_schema(ctx, path):
     return jsonutil.read(ctx, get_active_schema_path(ctx, path))
 
 
-def get_active_schema_uischema(ctx, path):
+def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[Dict, Dict]:
     """Get a schema and uischema object from a research or vault path.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -171,7 +172,7 @@ def get_active_schema_uischema(ctx, path):
         jsonutil.read(ctx, uischema_path)
 
 
-def get_active_schema_id(ctx, path):
+def get_active_schema_id(ctx: rule.Context, path: str) -> str:
     """Get the active schema id from a research or vault path.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -183,14 +184,14 @@ def get_active_schema_id(ctx, path):
     return get_active_schema(ctx, path)['$id']
 
 
-def get_schema_id(ctx, metadata_path, metadata=None):
+def get_schema_id(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> str | None:
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
         metadata = jsonutil.read(ctx, metadata_path)
     return meta.metadata_get_schema_id(metadata)
 
 
-def get_schema_path_by_id(ctx, path, schema_id):
+def get_schema_path_by_id(ctx: rule.Context, path: str, schema_id: str) -> str | None:
     """Get a schema path from a schema id."""
     _, zone, _2, _3 = pathutil.info(path)
 
@@ -203,7 +204,7 @@ def get_schema_path_by_id(ctx, path, schema_id):
         return None
 
 
-def get_schema_by_id(ctx, path, schema_id):
+def get_schema_by_id(ctx: rule.Context, path: str, schema_id: str) -> Dict | None:
     """
     Get a schema from a schema id.
 
@@ -216,7 +217,7 @@ def get_schema_by_id(ctx, path, schema_id):
 
     :returns: Schema object (parsed from JSON)
     """
-    path = get_schema_path_by_id(ctx, path, schema_id)
-    if path is None:
+    schema_path = get_schema_path_by_id(ctx, path, schema_id)
+    if schema_path is None:
         return None
-    return jsonutil.read(ctx, path)
+    return jsonutil.read(ctx, schema_path)

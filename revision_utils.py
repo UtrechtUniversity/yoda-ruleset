@@ -7,12 +7,13 @@ __license__   = 'GPLv3, see LICENSE'
 import datetime
 import hashlib
 import os
+from typing import List, Tuple
 
-from revision_strategies import get_revision_strategy
-from util import constants, log, pathutil
+from revision_strategies import get_revision_strategy, RevisionStrategy
+from util import constants, log, pathutil, rule
 
 
-def revision_eligible(max_size, data_obj_exists, size, path, groups, revision_store_exists):
+def revision_eligible(max_size: int, data_obj_exists: bool, size: int, path: str, groups: List, revision_store_exists: bool) -> Tuple[bool, str]:
     """Determine whether can create a revision of given data object.
 
     :param max_size:              Max size that file can be to create a revision (in bytes)
@@ -55,7 +56,7 @@ def revision_eligible(max_size, data_obj_exists, size, path, groups, revision_st
     return True, ""
 
 
-def calculate_end_of_calendar_day():
+def calculate_end_of_calendar_day() -> int:
     """Calculate the unix timestamp for the end of the current day (Same as start of next day).
 
     :returns: End of calendar day - Timestamp of the end of the current day
@@ -67,7 +68,7 @@ def calculate_end_of_calendar_day():
     return int(tomorrow.strftime("%s"))
 
 
-def get_revision_store_path(zone, trailing_slash=False):
+def get_revision_store_path(zone: str, trailing_slash: bool = False) -> str:
     """Produces the logical path of the revision store
 
        :param zone: zone name
@@ -81,7 +82,12 @@ def get_revision_store_path(zone, trailing_slash=False):
         return os.path.join("/" + zone, constants.UUREVISIONCOLLECTION.lstrip(os.path.sep))
 
 
-def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_time_bound, original_exists, verbose):
+def get_deletion_candidates(ctx: 'rule.Context',
+                            revision_strategy: RevisionStrategy,
+                            revisions: List,
+                            initial_upper_time_bound: bool,
+                            original_exists: bool,
+                            verbose: bool) -> List:
     """Get revision data objects for a particular versioned data object that should be deleted, as per
        a given revision strategy.
 
@@ -181,7 +187,11 @@ def get_deletion_candidates(ctx, revision_strategy, revisions, initial_upper_tim
     return deletion_candidates
 
 
-def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, original_exists_dict, verbose):
+def revision_cleanup_prefilter(ctx: 'rule.Context',
+                               revisions_list: List,
+                               revision_strategy_name: str,
+                               original_exists_dict: bool,
+                               verbose: bool) -> List:
     """Filters out revisioned data objects from a list if we can easily determine that they don't meet criteria for being removed,
        for example if the number of revisions of an existing versioned data object is at most one.
 
@@ -231,7 +241,7 @@ def revision_cleanup_prefilter(ctx, revisions_list, revision_strategy_name, orig
     return results
 
 
-def get_resc(row):
+def get_resc(row: List) -> str:
     """Get the resc id for a data object given the metadata provided (for revision job).
 
     :param row: metadata for the data object
@@ -246,7 +256,7 @@ def get_resc(row):
     return row[3]
 
 
-def get_balance_id(row, path):
+def get_balance_id(row: List, path: str) -> int:
     """Get the balance id for a data object given the metadata provided (for revision job).
 
     :param row:  metadata for the data object

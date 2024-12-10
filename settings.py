@@ -3,6 +3,8 @@
 __copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Dict,  Sequence
+
 from genquery import Query
 
 from util import *
@@ -21,7 +23,7 @@ USER_SETTINGS = {"mail_notifications": {"default": "OFF", "values": ["OFF", "IMM
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
 
-def load(ctx, setting, username=None):
+def load(ctx: rule.Context, setting: str, username: str | None = None) -> Sequence[str]:
     """Load user setting.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -44,7 +46,7 @@ def load(ctx, setting, username=None):
 
 
 @api.make()
-def api_settings_load(ctx):
+def api_settings_load(ctx: rule.Context) -> api.Result:
     """Load user settings.
 
     :param ctx: Combined type of a callback and rei struct
@@ -64,7 +66,7 @@ def api_settings_load(ctx):
 
 
 @api.make()
-def api_settings_save(ctx, settings):
+def api_settings_save(ctx: rule.Context, settings: Dict) -> api.Result:
     """Save user settings.
 
     :param ctx:      Combined type of a callback and rei struct

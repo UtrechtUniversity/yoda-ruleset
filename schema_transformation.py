@@ -13,6 +13,7 @@ import json
 import os
 import re
 import time
+from typing import Callable, Dict
 
 import genquery
 import session_vars
@@ -23,7 +24,7 @@ import schema_transformations
 from util import *
 
 
-def execute_transformation(ctx, metadata_path, transform, keep_metadata_backup=True):
+def execute_transformation(ctx: rule.Context, metadata_path: str, transform: Callable, keep_metadata_backup: bool = True) -> None:
     """Transform a metadata file with the given transformation function."""
     coll, data = os.path.split(metadata_path)
 
@@ -50,10 +51,10 @@ def execute_transformation(ctx, metadata_path, transform, keep_metadata_backup=T
 
 
 @api.make()
-def api_transform_metadata(ctx, coll, keep_metadata_backup=True):
+def api_transform_metadata(ctx: rule.Context, coll: str, keep_metadata_backup: bool = True) -> api.Result:
     """Transform a yoda-metadata file in the given collection to the active schema."""
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
-    if metadata_path.endswith('.json'):
+    if metadata_path and metadata_path.endswith('.json'):
         # JSON metadata.
         log.write(ctx, 'Transforming JSON metadata in the research space: <{}>'.format(metadata_path))
         transform = get(ctx, metadata_path)
@@ -64,10 +65,9 @@ def api_transform_metadata(ctx, coll, keep_metadata_backup=True):
         execute_transformation(ctx, metadata_path, transform, keep_metadata_backup)
     else:
         return api.Error('no_metadata', 'No metadata file found')
-    return None
 
 
-def get(ctx, metadata_path, metadata=None):
+def get(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> Callable | None:
     """Find a transformation that can be executed on the given metadata JSON.
 
     :param ctx:           Combined type of a ctx and rei struct
@@ -82,8 +82,9 @@ def get(ctx, metadata_path, metadata=None):
 
         # Ideally, we would check that the metadata is valid in its current
         # schema before claiming that we can transform it...
-
         # print('{} -> {}'.format(src,dst))
+        if src is None:
+            return None
 
         return schema_transformations.get(src, dst)
     except KeyError:
@@ -114,7 +115,7 @@ def rule_get_transformation_info(rule_args, callback, rei):
         rule_args[1:3] = 'true', transformation_html(transform)
 
 
-def copy_acls_from_parent(ctx, path, recursive_flag):
+def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> None:
     """
     When inheritance is missing we need to copy ACLs when introducing new data in vault package.
 
@@ -310,7 +311,7 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
             "")
 
 
-def transform_orcid(ctx, m):
+def transform_orcid(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform all present orcid's into the correct format. If possible!
 
@@ -342,7 +343,7 @@ def transform_orcid(ctx, m):
     return {'metadata': m, 'data_changed': data_changed}
 
 
-def correctify_orcid(org_orcid):
+def correctify_orcid(org_orcid: str) -> str | None:
     """Function to correct illformatted ORCIDs. Returns None if value cannot be fixed."""
     # Get rid of all spaces.
     orcid = org_orcid.replace(' ', '')
@@ -359,7 +360,7 @@ def correctify_orcid(org_orcid):
     return "https://orcid.org/{}".format(orcs[-1])
 
 
-def html(f):
+def html(f: Callable) -> str:
     """Get a human-readable HTML description of a transformation function.
 
     The text is derived from the function's docstring.
@@ -368,18 +369,19 @@ def html(f):
 
     :returns: Human-readable HTML description of a transformation function
     """
+    docstring = "" if f.__doc__ is None else f.__doc__
     description = '\n'.join(map(lambda paragraph:
                             '<p>{}</p>'.format(  # Trim whitespace.
                                 re.sub(r'\s+', ' ', paragraph).strip()),
                                 # Docstring paragraphs are separated by blank lines.
-                                re.split('\n{2,}', f.__doc__)))
+                                re.split('\n{2,}', docstring)))
 
     # Remove docstring.
     return re.sub('((:param).*)|((:returns:).*)', ' ', description)
 
 
 @rule.make(inputs=[], outputs=[0])
-def rule_batch_vault_metadata_schema_report(ctx):
+def rule_batch_vault_metadata_schema_report(ctx: rule.Context) -> str:
     """Show vault metadata schema about each data package in vault
 
     :param ctx:      Combined type of a callback and rei struct

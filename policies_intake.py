@@ -3,12 +3,14 @@
 __copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Dict
+
 import genquery
 
 from util import *
 
 
-def object_is_locked(ctx, path, is_collection):
+def object_is_locked(ctx: rule.Context, path: str, is_collection: bool) -> Dict:
     """Returns whether given object in path (collection or dataobject) is locked or frozen
 
     :param ctx:           Combined type of a callback and rei struct
@@ -48,7 +50,7 @@ def object_is_locked(ctx, path, is_collection):
     return locked_state
 
 
-def is_data_in_locked_dataset(ctx, actor, path):
+def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
     """ Check whether given data object is within a locked dataset """
     dataset_id = ''
     coll = pathutil.chop(path)[0]
@@ -114,7 +116,7 @@ def is_data_in_locked_dataset(ctx, actor, path):
     return False
 
 
-def is_coll_in_locked_dataset(ctx, actor, coll):
+def is_coll_in_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
     """ Check whether given collection is within a locked dataset """
     dataset_id = ''
     intake_group_prefix = _get_intake_group_prefix(coll)
@@ -160,14 +162,14 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
             # Lock status could not be determined. Assume collection is not locked.
-            log.debug(ctx, "Could not determine lock state of data object " + path)
+            log.debug(ctx, "Could not determine lock state of data object " + coll)
             return False
 
     log.debug(ctx, 'After check for datasetid - no dataset found')
     return False
 
 
-def coll_in_path_of_locked_dataset(ctx, actor, coll):
+def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
     """ If collection is part of a locked dataset, or holds one on a deeper level, then deletion is not allowed """
     dataset_id = ''
     intake_group_prefix = _get_intake_group_prefix(coll)
@@ -211,7 +213,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
-            log.debug(ctx, "Could not determine lock state of data object " + path)
+            log.debug(ctx, "Could not determine lock state of data object " + coll)
             # Pretend presence of a lock so no unwanted data gets deleted
             return True
     else:
@@ -242,7 +244,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
         return False
 
 
-def _get_intake_group_prefix(coll):
+def _get_intake_group_prefix(coll: str) -> str:
     """ Get the group prefix of a intake collection name: 'grp-intake' or 'intake' """
     parts = coll.split('/')[3].split('-')
     del parts[-1]

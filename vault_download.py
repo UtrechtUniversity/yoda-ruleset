@@ -14,7 +14,7 @@ __all__ = ['api_vault_download',
            'rule_vault_download_archive']
 
 
-def vault_downloadable(ctx, coll):
+def vault_downloadable(ctx: rule.Context, coll: str) -> bool:
     if coll.endswith("/original"):
         return False
 
@@ -32,17 +32,17 @@ def vault_downloadable(ctx, coll):
     return False
 
 
-def vault_bagitor(ctx, coll):
+def vault_bagitor(ctx: rule.Context, coll: str) -> str:
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
                                      "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIBAGITOR),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
 
-    return False
+    return ""
 
 
-def vault_download(ctx, actor, coll):
+def vault_download(ctx: rule.Context, actor: str, coll: str) -> str:
     try:
         # Prepare for download.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "bagit")
@@ -54,7 +54,7 @@ def vault_download(ctx, actor, coll):
         return "Failure"
 
 
-def vault_download_archive(ctx, coll):
+def vault_download_archive(ctx: rule.Context, coll: str) -> str:
     if bagit.status(ctx, coll) != "bagit":
         return "Invalid"
     try:
@@ -84,7 +84,7 @@ def vault_download_archive(ctx, coll):
 
 
 @api.make()
-def api_vault_download(ctx, coll):
+def api_vault_download(ctx: rule.Context, coll: str) -> api.Result:
     """Request to download a vault data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -109,10 +109,10 @@ def api_vault_download(ctx, coll):
 
 
 @rule.make(inputs=[0, 1], outputs=[2])
-def rule_vault_download(ctx, actor, coll):
+def rule_vault_download(ctx: rule.Context, actor: str, coll: str) -> str:
     return vault_download(ctx, actor, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_download_archive(ctx, coll):
+def rule_vault_download_archive(ctx: rule.Context, coll: str) -> str:
     return vault_download_archive(ctx, coll)

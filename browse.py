@@ -5,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from typing import Dict
 
 import magic
 from genquery import AS_DICT, Query
@@ -18,13 +19,13 @@ __all__ = ['api_browse_folder',
 
 
 @api.make()
-def api_browse_folder(ctx,
-                      coll='/',
-                      sort_on='name',
-                      sort_order='asc',
-                      offset=0,
-                      limit=10,
-                      space=pathutil.Space.OTHER.value):
+def api_browse_folder(ctx: rule.Context,
+                      coll: str = '/',
+                      sort_on: str = 'name',
+                      sort_order: str = 'asc',
+                      offset: int = 0,
+                      limit: int = 10,
+                      space: str = pathutil.Space.OTHER.value) -> api.Result:
     """Get paginated collection contents, including size/modify date information.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -37,7 +38,7 @@ def api_browse_folder(ctx,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
         if 'DATA_NAME' in x and 'META_DATA_ATTR_VALUE' in x:
@@ -104,13 +105,13 @@ def api_browse_folder(ctx,
 
 
 @api.make()
-def api_browse_collections(ctx,
-                           coll='/',
-                           sort_on='name',
-                           sort_order='asc',
-                           offset=0,
-                           limit=10,
-                           space=pathutil.Space.OTHER.value):
+def api_browse_collections(ctx: rule.Context,
+                           coll: str = '/',
+                           sort_on: str = 'name',
+                           sort_order: str = 'asc',
+                           offset: int = 0,
+                           limit: int = 10,
+                           space: str = pathutil.Space.OTHER.value) -> api.Result:
     """Get paginated collection contents, including size/modify date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
@@ -126,7 +127,7 @@ def api_browse_collections(ctx,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -184,13 +185,13 @@ def api_browse_collections(ctx,
 
 
 @api.make()
-def api_search(ctx,
-               search_string,
-               search_type='filename',
-               sort_on='name',
-               sort_order='asc',
-               offset=0,
-               limit=10):
+def api_search(ctx: rule.Context,
+               search_string: str,
+               search_type: str = 'filename',
+               sort_on: str = 'name',
+               sort_order: str = 'asc',
+               offset: int = 0,
+               limit: int = 10) -> api.Result:
     """Get paginated search results, including size/modify date/location information.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -203,7 +204,7 @@ def api_search(ctx,
 
     :returns: Dict with paginated search results
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -216,8 +217,7 @@ def api_search(ctx,
                     'type':        'data',
                     'size':        int(x['DATA_SIZE']),
                     'modify_time': int(x['DATA_MODIFY_TIME'])}
-
-        if 'COLL_NAME' in x:
+        elif 'COLL_NAME' in x:
             _, _, path, subpath = pathutil.info(x['COLL_NAME'])
             if subpath != '':
                 path = path + "/" + subpath
@@ -225,6 +225,8 @@ def api_search(ctx,
             return {'name':        "/{}".format(path),
                     'type':        'coll',
                     'modify_time': int(x['COLL_MODIFY_TIME'])}
+        else:
+            return {}
 
     # Replace, %, _ and \ since iRODS does not handle those correctly.
     # HdR this can only be done in a situation where search_type is NOT status!
@@ -285,7 +287,7 @@ def api_search(ctx,
                         ('items', datas)])
 
 
-def _filter_vault_deposit_index(row):
+def _filter_vault_deposit_index(row: Dict) -> bool:
     """This internal function filters out index collections in deposit vault collections.
        These collections are used internally by Yoda for indexing data package metadata, and
        should not be displayed.
@@ -302,7 +304,7 @@ def _filter_vault_deposit_index(row):
 
 
 @api.make()
-def api_load_text_obj(ctx, file_path='/'):
+def api_load_text_obj(ctx: rule.Context, file_path: str = '/') -> api.Result:
     """Retrieve a text file (as a string) in either the research, deposit, or vault space.
 
     :param ctx:       Combined type of a callback and rei struct

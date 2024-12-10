@@ -5,6 +5,7 @@ __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
+from typing import Dict, List
 
 import requests
 import session_vars
@@ -13,7 +14,7 @@ import mail
 from util import *
 
 
-def sram_post_collaboration(ctx, group_name, description):
+def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -57,7 +58,7 @@ def sram_post_collaboration(ctx, group_name, description):
     return data
 
 
-def sram_get_uid(ctx, co_identifier, user_name):
+def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
     """Get SRAM Collaboration member uid.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -91,7 +92,7 @@ def sram_get_uid(ctx, co_identifier, user_name):
     return uid
 
 
-def sram_delete_collaboration(ctx, co_identifier):
+def sram_delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
     """Delete SRAM Collaborative Organisation.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -113,7 +114,7 @@ def sram_delete_collaboration(ctx, co_identifier):
     return response.status_code == 204
 
 
-def sram_delete_collaboration_membership(ctx, co_identifier, uuid):
+def sram_delete_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str) -> bool:
     """Delete SRAM Collaborative Organisation membership.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -136,7 +137,7 @@ def sram_delete_collaboration_membership(ctx, co_identifier, uuid):
     return response.status_code == 204
 
 
-def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
+def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, username: str, co_identifier: str) -> bool:
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:           Combined type of a ctx and rei struct
@@ -180,7 +181,7 @@ def sram_put_collaboration_invitation(ctx, group_name, username, co_identifier):
     return response.status_code == 201
 
 
-def sram_connect_service_collaboration(ctx, short_name):
+def sram_connect_service_collaboration(ctx: rule.Context, short_name: str) -> bool:
     """Connect a service to an existing SRAM collaboration.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -208,7 +209,7 @@ def sram_connect_service_collaboration(ctx, short_name):
     return response.status_code == 201
 
 
-def invitation_mail_group_add_user(ctx, group_name, username, co_identifier):
+def invitation_mail_group_add_user(ctx: rule.Context, group_name: str, username: str, co_identifier: str) -> str:
     """Send invitation email to newly added user to the group.
 
     :param ctx: Combined type of a ctx and rei struct
@@ -235,7 +236,7 @@ Yoda
 """.format(username.split('@')[0], session_vars.get_map(ctx.rei)["client_user"]["user_name"], config.sram_rest_api_url, co_identifier))
 
 
-def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
+def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str, new_role: str) -> bool:
     """Update SRAM Collaborative Organisation membership.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -269,13 +270,13 @@ def sram_update_collaboration_membership(ctx, co_identifier, uuid, new_role):
     return response.status_code == 201
 
 
-def sram_get_co_members(ctx, co_identifier):
+def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
     """Get SRAM Collaboration members.
 
     :param ctx:           Combined type of a callback and rei struct
     :param co_identifier: SRAM CO identifier
 
-    :returns: Email of the user
+    :returns: List of emails of the SRAM Collaboration members
     """
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}

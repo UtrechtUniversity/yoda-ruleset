@@ -10,6 +10,7 @@ import string
 import time
 import urllib.parse
 from datetime import datetime, timedelta
+from typing import List, Tuple
 
 import genquery
 from dateutil import relativedelta
@@ -34,13 +35,13 @@ __all__ = ['api_notifications_load',
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
-def generate_random_id(ctx):
+def generate_random_id(ctx: rule.Context) -> str:
     """Generate random ID for notification."""
     characters = string.ascii_lowercase + string.digits
     return ''.join(random.choice(characters) for x in range(10))
 
 
-def set(ctx, actor, receiver, target, message):
+def set(ctx: rule.Context, actor: str, receiver: str, target: str, message: str) -> None:
     """Set user notification and send mail notification when configured.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -63,13 +64,13 @@ def set(ctx, actor, receiver, target, message):
 
 
 @api.make()
-def api_notifications_load(ctx, sort_order="desc"):
+def api_notifications_load(ctx: rule.Context, sort_order: str = "desc") -> List:
     """Load user notifications.
 
     :param ctx:        Combined type of a callback and rei struct
     :param sort_order: Sort order of notifications on timestamp ("asc" or "desc", default "desc")
 
-    :returns: Dict with all notifications
+    :returns: List with all notifications
     """
     results = [v for v
                in Query(ctx, "META_USER_ATTR_VALUE",
@@ -144,7 +145,7 @@ def api_notifications_load(ctx, sort_order="desc"):
 
 
 @api.make()
-def api_notifications_dismiss(ctx, identifier):
+def api_notifications_dismiss(ctx: rule.Context, identifier: str) -> api.Result:
     """Dismiss user notification.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -156,7 +157,7 @@ def api_notifications_dismiss(ctx, identifier):
 
 
 @api.make()
-def api_notifications_dismiss_all(ctx):
+def api_notifications_dismiss_all(ctx: rule.Context) -> api.Result:
     """Dismiss all user notifications.
 
     :param ctx: Combined type of a callback and rei struct
@@ -166,7 +167,7 @@ def api_notifications_dismiss_all(ctx):
     ctx.uuUserMetaRemove(user_name, key, '', '')
 
 
-def send_notification(ctx, to, actor, message):
+def send_notification(ctx: rule.Context, to: str, actor: str, message: str) -> api.Result:
     return mail.send(ctx,
                      to=to,
                      actor=actor,
@@ -183,9 +184,9 @@ Yoda system
 
 
 @rule.make(inputs=[0, 1], outputs=[2, 3])
-def rule_mail_notification_report(ctx, to, notifications):
+def rule_mail_notification_report(ctx: rule.Context, to: str, notifications: str) -> Tuple[str, str]:
     if not user.is_admin(ctx):
-        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
+        return '0', 'Only rodsadmin can send test mail'
 
     return mail.wrapper(ctx,
                         to=to,
@@ -203,7 +204,7 @@ Yoda system
 
 
 @rule.make()
-def rule_process_ending_retention_packages(ctx):
+def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
     """Rule interface for checking vault packages for ending retention.
 
     :param ctx: Combined type of a callback and rei struct
@@ -296,7 +297,7 @@ def rule_process_ending_retention_packages(ctx):
 
 
 @rule.make()
-def rule_process_groups_expiration_date(ctx):
+def rule_process_groups_expiration_date(ctx: rule.Context) -> None:
     """Rule interface for checking research groups for reaching group expiration date.
 
     :param ctx: Combined type of a callback and rei struct
@@ -346,7 +347,7 @@ def rule_process_groups_expiration_date(ctx):
 
 
 @rule.make()
-def rule_process_inactive_research_groups(ctx):
+def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
     """Rule interface for checking for research groups that have not been modified after a certain amount of months.
 
     :param ctx: Combined type of a callback and rei struct
@@ -459,7 +460,7 @@ def rule_process_inactive_research_groups(ctx):
 
 
 @rule.make()
-def rule_process_data_access_token_expiry(ctx):
+def rule_process_data_access_token_expiry(ctx: rule.Context) -> None:
     """Rule interface for checking for data access tokens that are expiring soon.
 
     :param ctx: Combined type of a callback and rei struct

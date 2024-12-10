@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
+from typing import Any, Dict, Iterable, List, Tuple
 
 import genquery
 import requests
@@ -40,7 +41,7 @@ __all__ = ['api_group_data',
            'rule_group_sram_sync']
 
 
-def getGroupsData(ctx):
+def getGroupsData(ctx: rule.Context) -> Iterable[Any]:
     """Return groups and related data."""
     groups = {}
 
@@ -117,7 +118,7 @@ def getGroupsData(ctx):
     return groups.values()
 
 
-def getGroupData(ctx, name):
+def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
     """Get data for one group."""
     group = None
 
@@ -192,7 +193,7 @@ def getGroupData(ctx, name):
     return group
 
 
-def getCategories(ctx):
+def getCategories(ctx: rule.Context) -> List[str]:
     """Get a list of all group categories."""
     categories = []
 
@@ -208,7 +209,7 @@ def getCategories(ctx):
     return categories
 
 
-def getDatamanagerCategories(ctx):
+def getDatamanagerCategories(ctx: rule.Context) -> List:
     """Get a list of all datamanager group categories."""
     categories = []
 
@@ -229,7 +230,7 @@ def getDatamanagerCategories(ctx):
     return categories
 
 
-def getSubcategories(ctx, category):
+def getSubcategories(ctx: rule.Context, category: str) -> List:
     """Get a list of all subcategories within a given group category.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -272,7 +273,7 @@ def getSubcategories(ctx, category):
     return list(categories)
 
 
-def user_role(ctx, username, group_name):
+def user_role(ctx: rule.Context, username: str, group_name: str) -> str:
     """Get role of user in group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -300,7 +301,7 @@ def user_role(ctx, username, group_name):
 api_group_get_user_role = api.make()(user_role)
 
 
-def user_is_datamanager(ctx, category, user):
+def user_is_datamanager(ctx: rule.Context, category: str, user: str) -> bool:
     """Return if user is datamanager of category.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -313,7 +314,7 @@ def user_is_datamanager(ctx, category, user):
         in ('normal', 'manager')
 
 
-def group_category(ctx, group):
+def group_category(ctx: rule.Context, group: str) -> str:
     """Return category of group.
 
     :param ctx:   Combined type of a ctx and rei struct
@@ -327,7 +328,7 @@ def group_category(ctx, group):
 
 
 @api.make()
-def api_group_data(ctx):
+def api_group_data(ctx: rule.Context) -> Dict:
     """Retrieve group data as hierarchy for user.
 
     The structure of the group hierarchy parameter is as follows:
@@ -355,7 +356,7 @@ def api_group_data(ctx):
     return (internal_api_group_data(ctx))
 
 
-def internal_api_group_data(ctx):
+def internal_api_group_data(ctx: rule.Context) -> Dict:
     # This is the entry point for integration tests against api_group_data
     if user.is_admin(ctx):
         groups = getGroupsData(ctx)
@@ -460,7 +461,7 @@ def internal_api_group_data(ctx):
     return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
-def user_is_a_datamanager(ctx):
+def user_is_a_datamanager(ctx: rule.Context) -> bool:
     """Return groups whether current user is datamanager of a group, not specifically of a specific group.
 
     :param ctx: Combined type of a ctx and rei struct
@@ -485,7 +486,7 @@ def user_is_a_datamanager(ctx):
 
 
 @api.make()
-def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
+def api_group_process_csv(ctx: rule.Context, csv_header_and_data: str, allow_update: bool, delete_users: bool) -> api.Result:
     """Process contents of CSV file containing group definitions.
 
     Parsing is stopped immediately when an error is found and the rownumber is returned to the user.
@@ -520,7 +521,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     return api.Result.ok(info=[status_msg['message']])
 
 
-def validate_data(ctx, data, allow_update):
+def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
     """Validation of extracted data.
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -551,7 +552,7 @@ def validate_data(ctx, data, allow_update):
     return errors
 
 
-def apply_data(ctx, data, allow_update, delete_users):
+def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: bool) -> Dict:
     """ Update groups with the validated data
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -581,7 +582,7 @@ def apply_data(ctx, data, allow_update, delete_users):
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
             message += "Group '{}' already exists.".format(group_name)
         else:
-            return {status: 'error', message: "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
+            return {"status": "error", "message": "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
@@ -675,7 +676,7 @@ def apply_data(ctx, data, allow_update, delete_users):
     return {"status": "ok", "message": message}
 
 
-def _are_roles_equivalent(a, b):
+def _are_roles_equivalent(a: str, b: str) -> bool:
     """Checks whether two roles are equivalent, Yoda and Yoda-clienttools use slightly different names."""
     r_role_names = ["viewer", "reader"]
     m_role_names = ["member", "normal"]
@@ -690,7 +691,7 @@ def _are_roles_equivalent(a, b):
         return False
 
 
-def group_user_exists(ctx, group_name, username, include_readonly):
+def group_user_exists(ctx: rule.Context, group_name: str, username: str, include_readonly: bool) -> bool:
     group = getGroupData(ctx, group_name)
     if '#' not in username:
         username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
@@ -705,7 +706,7 @@ def group_user_exists(ctx, group_name, username, include_readonly):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_user_exists(ctx, username):
+def rule_user_exists(ctx: rule.Context, username: str) -> str:
     """Rule wrapper to check if a user exists.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -716,7 +717,8 @@ def rule_user_exists(ctx, username):
     return "true" if user.exists(ctx, username) else "false"
 
 
-def rule_group_user_exists(rule_args, callback, rei):
+@rule.make(inputs=[0, 1, 2], outputs=[3])
+def rule_group_user_exists(ctx: rule.Context, group_name: str, user_name: str, include_readonly: bool) -> str:
     """Check if a user is a member of the given group.
 
     rule_group_user_exists(group, user, includeRo, membership)
@@ -724,25 +726,25 @@ def rule_group_user_exists(rule_args, callback, rei):
     considered as well. Otherwise, the user must be a normal member or manager of
     the given group.
 
-    :param rule_args: [0] Group to check for user membership
-                      [1] User to check for membership
-                      [2] Include read-only shadow group users
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:              Combined type of a ctx and rei struct
+    :param group_name:       Group to check for user membership
+    :param user_name:        User to check for membership
+    :param include_readonly: Include read-only shadow group users
+
+    :returns: Indicator if user is a member of the given group.
     """
-    ctx = rule.Context(callback, rei)
-    exists = group_user_exists(ctx, rule_args[0], rule_args[1], rule_args[2])
-    rule_args[3] = "true" if exists else "false"
+    exists = group_user_exists(ctx, group_name, user_name, include_readonly)
+    return "true" if exists else "false"
 
 
 @api.make()
-def api_group_categories(ctx):
+def api_group_categories(ctx: rule.Context) -> api.Result:
     """Retrieve category list."""
     return getCategories(ctx)
 
 
 @api.make()
-def api_group_subcategories(ctx, category):
+def api_group_subcategories(ctx: rule.Context, category: str) -> api.Result:
     """Retrieve subcategory list.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -753,7 +755,7 @@ def api_group_subcategories(ctx, category):
     return getSubcategories(ctx, category)
 
 
-def provisionExternalUser(ctx, username, creatorUser, creatorZone):
+def provisionExternalUser(ctx: rule.Context, username: str, creatorUser: str, creatorZone: str) -> int:
     """Call External User Service API to add new user.
 
     :param ctx:         Combined type of a ctx and rei struct
@@ -824,7 +826,7 @@ def rule_group_provision_external_user(rule_args, ctx, rei):
     rule_args[4] = message
 
 
-def removeExternalUser(ctx, username, userzone):
+def removeExternalUser(ctx: rule.Context, username: str, userzone: str) -> str:
     """Call External User Service API to remove user.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -854,7 +856,7 @@ def removeExternalUser(ctx, username, userzone):
 
 
 @rule.make(inputs=[0, 1], outputs=[])
-def rule_group_remove_external_user(ctx, username, userzone):
+def rule_group_remove_external_user(ctx: rule.Context, username: str, userzone: str) -> str:
     """Remove external user from EUS
 
       :param ctx:      Combined type of a ctx and rei struct
@@ -878,7 +880,7 @@ def rule_group_remove_external_user(ctx, username, userzone):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_group_check_external_user(ctx, username):
+def rule_group_check_external_user(ctx: rule.Context, username: str) -> str:
     """Check that a user is external.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -896,7 +898,7 @@ def rule_group_check_external_user(ctx, username):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_group_expiration_date_validate(ctx, expiration_date):
+def rule_group_expiration_date_validate(ctx: rule.Context, expiration_date: str) -> str:
     """Validation of expiration date.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -920,7 +922,7 @@ def rule_group_expiration_date_validate(ctx, expiration_date):
 
 
 @api.make()
-def api_group_search_users(ctx, pattern):
+def api_group_search_users(ctx: rule.Context, pattern: str) -> api.Result:
     (username, zone_name) = user.from_str(ctx, pattern)
     userList = list()
 
@@ -942,7 +944,7 @@ def api_group_search_users(ctx, pattern):
 
 
 @api.make()
-def api_group_exists(ctx, group_name):
+def api_group_exists(ctx: rule.Context, group_name: str) -> api.Result:
     """Check if group exists.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -953,7 +955,14 @@ def api_group_exists(ctx, group_name):
     return group.exists(ctx, group_name)
 
 
-def group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification):
+def group_create(ctx: rule.Context,
+                 group_name: str,
+                 category: str,
+                 subcategory: str,
+                 schema_id: str,
+                 expiration_date: str,
+                 description: str,
+                 data_classification: str) -> api.Result:
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -965,7 +974,7 @@ def group_create(ctx, group_name, category, subcategory, schema_id, expiration_d
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     try:
         co_identifier = ''
@@ -1005,7 +1014,7 @@ api_group_create = api.make()(group_create)
 
 
 @api.make()
-def api_group_update(ctx, group_name, property_name, property_value):
+def api_group_update(ctx: rule.Context, group_name: str, property_name: str, property_value: str) -> api.Result:
     """Update group property.
 
     :param ctx:            Combined type of a ctx and rei struct
@@ -1013,7 +1022,7 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :param property_name:  Name of the property to update
     :param property_value: Value of the property to update
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     try:
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
@@ -1028,13 +1037,13 @@ def api_group_update(ctx, group_name, property_name, property_value):
 
 
 @api.make()
-def api_group_delete(ctx, group_name):
+def api_group_delete(ctx: rule.Context, group_name: str) -> api.Result:
     """Delete a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group to delete
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     try:
         # Delete SRAM collaboration if group is a SRAM group.
@@ -1057,7 +1066,7 @@ def api_group_delete(ctx, group_name):
 
 
 @api.make()
-def api_group_get_description(ctx, group_name):
+def api_group_get_description(ctx: rule.Context, group_name: str) -> api.Result:
     """Retrieve description of a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1072,7 +1081,7 @@ def api_group_get_description(ctx, group_name):
 
 
 @api.make()
-def api_group_user_is_member(ctx, username, group_name):
+def api_group_user_is_member(ctx: rule.Context, username: str, group_name: str) -> api.Result:
     """Check if user is member of a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1084,7 +1093,7 @@ def api_group_user_is_member(ctx, username, group_name):
     return group_user_exists(ctx, group_name, username, True)
 
 
-def group_user_add(ctx, username, group_name):
+def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1127,7 +1136,7 @@ def group_user_add(ctx, username, group_name):
 api_group_user_add = api.make()(group_user_add)
 
 
-def group_user_update_role(ctx, username, group_name, new_role):
+def group_user_update_role(ctx: rule.Context, username: str, group_name: str, new_role: str) -> api.Result:
     """Update role of a user in a group.
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1135,7 +1144,7 @@ def group_user_update_role(ctx, username, group_name, new_role):
     :param group_name: Name of the group
     :param new_role:   New role of the user
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     try:
         if config.enable_sram:
@@ -1164,14 +1173,14 @@ def group_user_update_role(ctx, username, group_name, new_role):
 api_group_user_update_role = api.make()(group_user_update_role)
 
 
-def group_remove_user_from_group(ctx, username, group_name):
+def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: str) -> api.Result:
     """Remove a user from a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     try:
         if config.enable_sram:
@@ -1200,7 +1209,7 @@ def group_remove_user_from_group(ctx, username, group_name):
 api_group_remove_user_from_group = api.make()(group_remove_user_from_group)
 
 
-def sram_enabled(ctx, group_name):
+def sram_enabled(ctx: rule.Context, group_name: str) -> Tuple[bool, str]:
     """Checks if the group is SRAM enabled
 
     :param ctx:        Combined type of a ctx and rei struct
@@ -1226,7 +1235,7 @@ def sram_enabled(ctx, group_name):
 
 
 @rule.make()
-def rule_group_sram_sync(ctx):
+def rule_group_sram_sync(ctx: rule.Context) -> None:
     """Synchronize groups with SRAM.
 
     :param ctx: Combined type of a ctx and rei struct

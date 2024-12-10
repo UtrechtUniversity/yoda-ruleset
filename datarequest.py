@@ -10,6 +10,7 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
+from typing import Dict, List
 
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
@@ -198,14 +199,14 @@ status_transitions = [(status(x),
                                    ('DTA_SIGNED',                        'DATA_READY')]]
 
 
-def status_transition_allowed(ctx, current_status, new_status):
+def status_transition_allowed(ctx: rule.Context, current_status: status, new_status: status) -> bool:
     transition = (current_status, new_status)
 
     return transition in status_transitions
 
 
-def status_set(ctx, request_id, status):
-    """Set the status of a data request
+def status_set(ctx: rule.Context, request_id: str, status: status) -> None:
+    """Set the status of a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -214,8 +215,8 @@ def status_set(ctx, request_id, status):
     metadata_set(ctx, request_id, "status", status.value)
 
 
-def status_get_from_path(ctx, path):
-    """Get the status of a datarequest from a path
+def status_get_from_path(ctx: rule.Context, path: str) -> status:
+    """Get the status of a datarequest from a path.
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of the datarequest collection
@@ -228,8 +229,8 @@ def status_get_from_path(ctx, path):
     return status_get(ctx, request_id)
 
 
-def status_get(ctx, request_id):
-    """Get the status of a data request
+def status_get(ctx: rule.Context, request_id: str) -> status:
+    """Get the status of a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -256,8 +257,8 @@ def status_get(ctx, request_id):
         raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
 
 
-def type_get(ctx, request_id):
-    """Get the type of a data request
+def type_get(ctx: rule.Context, request_id: str) -> type:
+    """Get the type of a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -281,8 +282,7 @@ def type_get(ctx, request_id):
     return datarequest_type
 
 
-def available_documents_get(ctx, request_id, datarequest_type, datarequest_status):
-
+def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type: str, datarequest_status: str) -> List:
     # Construct list of existing documents
     available_documents = []
     if datarequest_type == type.REGULAR.value:
@@ -327,15 +327,14 @@ def available_documents_get(ctx, request_id, datarequest_type, datarequest_statu
 #                 Helper functions                #
 ###################################################
 
-def metadata_set(ctx, request_id, key, value):
-    """Set an arbitrary metadata field on a data request
+def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
+    """Set an arbitrary metadata field on a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param key:        Key of the metadata field
     :param value:      Value of the metadata field
     """
-
     # Construct path to the collection of the data request
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
@@ -349,7 +348,7 @@ def metadata_set(ctx, request_id, key, value):
     ctx.adminDatarequestActions()
 
 
-def generate_request_id(ctx):
+def generate_request_id(ctx: rule.Context) -> int:
     coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     max_request_id = 0
 
@@ -362,38 +361,35 @@ def generate_request_id(ctx):
 
 
 @api.make()
-def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
-    """Wrapper around datarequest_action_permitted
+def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: List, statuses: List) -> api.Result:
+    """Wrapper around datarequest_action_permitted.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+    :param roles:      List of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
+    :param statuses:   List of permitted current data request statuses or None (check skipped)
 
-    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
-    :param statuses:     Array of permitted current data request statuses or None (check skipped)
-
-    :returns:            True if permitted, False if not
-    :rtype:              Boolean
+    :returns: True if permitted, False if not
     """
 
     # Convert statuses to list of status enumeration elements
     if statuses is not None:
-        def get_status(stat):
+        def get_status(stat: str) -> status:
             return status[stat]
         statuses = list(map(get_status, statuses))
 
     return datarequest_action_permitted(ctx, request_id, roles, statuses)
 
 
-def datarequest_action_permitted(ctx, request_id, roles, statuses):
-    """Check if current user and data request status meet specified restrictions
+def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: List, statuses: List | None) -> bool:
+    """Check if current user and data request status meet specified restrictions.
 
-    :param ctx:          Combined type of a callback and rei struct
-    :param request_id:   Unique identifier of the data request
-    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
-    :param statuses:     Array of permitted current data request statuses or None (check skipped)
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param roles:      List of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
+    :param statuses:   List of permitted current data request statuses or None (check skipped)
 
-    :returns:            True if permitted, False if not
-    :rtype:              Boolean
+    :returns: True if permitted, False if not
     """
     try:
         # Force conversion of request_id to string
@@ -428,28 +424,26 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
 
 @api.make()
-def api_datarequest_roles_get(ctx, request_id=None):
-    """Get roles of invoking user
+def api_datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> api.Result:
+    """Get roles of invoking user.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request (OWN and REV roles will not be checked
                        if this parameter is missing)
 
-    :returns:          Array of user roles
-    :rtype:            Array
+    :returns: List of user roles
     """
     return datarequest_roles_get(ctx, request_id)
 
 
-def datarequest_roles_get(ctx, request_id):
-    """Get roles of invoking user
+def datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> List:
+    """Get roles of invoking user.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request (OWN and REV roles will not be checked
                        if this parameter is missing)
 
-    :returns:          Array of user roles
-    :rtype:            Array
+    :returns: List of user roles
     """
     roles = []
     if user.is_member_of(ctx, GROUP_PM):
@@ -467,27 +461,24 @@ def datarequest_roles_get(ctx, request_id):
     return roles
 
 
-def datarequest_is_owner(ctx, request_id):
-    """Check if the invoking user is also the owner of a given data request
+def datarequest_is_owner(ctx: rule.Context, request_id: str) -> bool:
+    """Check if the invoking user is also the owner of a given data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :return:           True if user_name is owner of specified data request else False
-    :rtype:            bool
+    :return: True if user_name is owner of specified data request else False
     """
     return datarequest_owner_get(ctx, request_id) == user.name(ctx)
 
 
-def datarequest_owner_get(ctx, request_id):
-    """Get the account name (i.e. email address) of the owner of a data request
+def datarequest_owner_get(ctx: rule.Context, request_id: str) -> str | None:
+    """Get the account name (i.e. email address) of the owner of a data request.
 
     :param ctx:        Combined type of a callback and a rei struct
     :param request_id: Unique identifier of the data request
-    :type  request_id: str
 
-    :return:           Account name of data request owner
-    :rtype:            string
+    :return:  Account name of data request owner
     """
     # Construct path to the data request
     file_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DATAREQUEST
@@ -500,8 +491,8 @@ def datarequest_owner_get(ctx, request_id):
         return None
 
 
-def datarequest_is_reviewer(ctx, request_id, pending=False):
-    """Check if a user is assigned as reviewer to a data request
+def datarequest_is_reviewer(ctx: rule.Context, request_id: str, pending: bool = False) -> bool:
+    """Check if a user is assigned as reviewer to a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -525,8 +516,8 @@ def datarequest_is_reviewer(ctx, request_id, pending=False):
     return is_reviewer
 
 
-def datarequest_reviewers_get(ctx, request_id, pending=False):
-    """Return a list of users assigned as reviewers to a data request
+def datarequest_reviewers_get(ctx: rule.Context, request_id: str, pending: bool = False) -> List[str]:
+    """Return a list of users assigned as reviewers to a data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -557,12 +548,12 @@ def datarequest_reviewers_get(ctx, request_id, pending=False):
 
 
 @api.make()
-def api_datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
+def api_datarequest_schema_get(ctx: rule.Context, schema_name: str, version: str = SCHEMA_VERSION) -> api.Result:
     return datarequest_schema_get(ctx, schema_name, version)
 
 
-def datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
-    """Get schema and UI schema of a datarequest form
+def datarequest_schema_get(ctx: rule.Context, schema_name: str, version: str = SCHEMA_VERSION) -> api.Result:
+    """Get schema and UI schema of a datarequest form.
 
     :param ctx:         Combined type of a callback and rei struct
     :param schema_name: Name of schema
@@ -587,13 +578,13 @@ def datarequest_schema_get(ctx, schema_name, version=SCHEMA_VERSION):
 
 
 @api.make()
-def api_datarequest_resubmission_id_get(ctx, request_id):
-    """Given a request ID, get the request ID of the associated resubmitted data request
+def api_datarequest_resubmission_id_get(ctx: rule.Context, request_id: str) -> api.Result:
+    """Given a request ID, get the request ID of the associated resubmitted data request.
 
-    :param ctx:            Combined type of a callback and rei struct
-    :param request_id:     Unique identifier of the data request
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
-    :returns:              String containing the request ID of the resubmitted data request
+    :returns: String containing the request ID of the resubmitted data request
     """
     coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=AS_DICT))
@@ -605,14 +596,14 @@ def api_datarequest_resubmission_id_get(ctx, request_id):
         return api.Error("metadata_read_error", "Not exactly 1 match for when searching for data requests with previous_request_id = {}".format(request_id))
 
 
-def datarequest_provenance_write(ctx, request_id, request_status):
-    """Write the timestamp of a status transition to a provenance log
+def datarequest_provenance_write(ctx: rule.Context, request_id: str, request_status: status) -> api.Result:
+    """Write the timestamp of a status transition to a provenance log.
 
     :param ctx:            Combined type of a callback and rei struct
     :param request_id:     Unique identifier of the data request
     :param request_status: Status of which to write a timestamp
 
-    :returns:              Nothing
+    :returns: Nothing or API error
     """
     # Check if request ID is valid
     if re.search(r"^\d+$", request_id) is None:
@@ -644,7 +635,7 @@ def datarequest_provenance_write(ctx, request_id, request_status):
         return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
-def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
+def datarequest_data_valid(ctx: rule.Context, data: Dict, schema_name: str | None = None, schema: str | None = None) -> bool:
     """Check if form data contains no errors
 
     Default mode of operation is to provide schema data and the schema name of the schema against
@@ -665,7 +656,7 @@ def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
     :param schema:      JSON schema against which to validate the form data (in case a default
                         schema doesn't suffice)
 
-    :returns: Boolean indicating if datarequest is valid or API error
+    :returns: Boolean indicating if datarequest is valid
     """
     # Check if a schema is specified
     if not (schema_name or schema):
@@ -682,11 +673,10 @@ def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
         return len(errors) == 0
     except error.UUJsonValidationError:
         # File may be missing or not valid JSON
-        return api.Error("validation_error",
-                         "{} form data could not be validated against its schema.".format(schema_name))
+        return False
 
 
-def cc_email_addresses_get(contact_object):
+def cc_email_addresses_get(contact_object: Dict) -> str | None:
     try:
         cc = contact_object['cc_email_addresses']
         return cc.replace(' ', '')
@@ -695,7 +685,7 @@ def cc_email_addresses_get(contact_object):
 
 
 @rule.make(inputs=[], outputs=[0, 1])
-def rule_datarequest_review_period_expiration_check(ctx):
+def rule_datarequest_review_period_expiration_check(ctx: rule.Context) -> None:
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
     ccols    = ['COLL_NAME']
@@ -704,7 +694,7 @@ def rule_datarequest_review_period_expiration_check(ctx):
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
 
-def datarequest_sync_avus(ctx, request_id):
+def datarequest_sync_avus(ctx: rule.Context, request_id: str) -> None:
     """Sometimes data requests are manually edited in place (e.g. for small
     textual changes). This in-place editing is done on the datarequest.json
     file.
@@ -741,8 +731,13 @@ def datarequest_sync_avus(ctx, request_id):
 ###################################################
 
 @api.make()
-def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10,
-                           archived=False, dacrequests=True):
+def api_datarequest_browse(ctx: rule.Context,
+                           sort_on: str = 'name',
+                           sort_order: str = 'asc',
+                           offset: int = 0,
+                           limit: int = 10,
+                           archived: bool = False,
+                           dacrequests: bool = True) -> api.Result:
     """Get paginated datarequests, including size/modify date information.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -755,7 +750,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     :param dacrequests: If true, show a DAC member's own data requests (instead of data requests to
                         be reviewed
 
-    :returns:           Dict with paginated datarequests
+    :returns: Dict with paginated datarequests
     """
     # Convert parameters that couldn't be passed as actual boolean values to booleans
     archived    = archived == "True"
@@ -764,7 +759,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -773,14 +768,14 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
                 'create_time': int(x['COLL_CREATE_TIME']),
                 'status':      x['META_DATA_ATTR_VALUE']}
 
-    def transform_title(row):
+    def transform_title(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'title':       x['META_DATA_ATTR_VALUE']}
 
-    def transform_status(row):
+    def transform_status(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -852,26 +847,25 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
 
 
-def datarequest_process_expired_review_periods(ctx, request_ids):
+def datarequest_process_expired_review_periods(ctx: rule.Context, request_ids: List) -> None:
     """Process expired review periods by setting their status to REVIEWED.
 
     :param ctx:         Combined type of a callback and rei struct
-    :param request_ids: Array of unique data request identifiers
+    :param request_ids: List of unique data request identifiers
     """
     for request_id in request_ids:
         status_set(ctx, request_id, status.REVIEWED)
 
 
-def file_write_and_lock(ctx, coll_path, filename, data, readers):
+def file_write_and_lock(ctx: rule.Context, coll_path: str, filename: str, data: Dict, readers: List[str]) -> None:
     """Grant temporary write permission and write file to disk.
 
     :param ctx:       Combined type of a callback and rei struct
     :param coll_path: Path to collection of file
     :param filename:  Name of file
     :param data:      The data to be written to disk
-    :param readers:   Array of user names that should be given read access to the file
+    :param readers:   List of user names that should be given read access to the file
     """
-
     file_path = "{}/{}".format(coll_path, filename)
 
     # Grant temporary write permission
@@ -896,7 +890,7 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
 
 
 @api.make()
-def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
+def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -935,7 +929,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         request_id = draft_request_id
     else:
         # Generate request ID and construct data request collection path.
-        request_id = generate_request_id(ctx)
+        request_id = str(generate_request_id(ctx))
 
     # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1030,7 +1024,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
 
 @api.make()
-def api_datarequest_get(ctx, request_id):
+def api_datarequest_get(ctx: rule.Context, request_id: int) -> api.Result:
     """Retrieve a data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1039,25 +1033,25 @@ def api_datarequest_get(ctx, request_id):
     :returns: Dict with request JSON and status or API error on failure
     """
     # Force conversion of request_id to string
-    request_id = str(request_id)
+    request_id_str = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
+    datarequest_action_permitted(ctx, request_id_str, ["PM", "DM", "DAC", "OWN"], None)
 
     # Get request type
     try:
-        datarequest_type = type_get(ctx, request_id).value
+        datarequest_type = type_get(ctx, request_id_str).value
     except Exception as e:
         return api.Error("datarequest_type_fail", "Error: {}".format(e))
 
     # Get request status
-    datarequest_status = status_get(ctx, request_id).value
+    datarequest_status = status_get(ctx, request_id_str).value
 
     # Get list of available documents
-    datarequest_available_documents = available_documents_get(ctx, request_id, datarequest_type, datarequest_status)
+    datarequest_available_documents = available_documents_get(ctx, request_id_str, datarequest_type, datarequest_status)
 
     # Get request
-    datarequest_json = datarequest_get(ctx, request_id)
+    datarequest_json = datarequest_get(ctx, request_id_str)
     datarequest = json.loads(datarequest_json)
 
     # Get request schema version
@@ -1080,7 +1074,7 @@ def api_datarequest_get(ctx, request_id):
             'requestStatus': datarequest_status, 'requestAvailableDocuments': datarequest_available_documents}
 
 
-def datarequest_get(ctx, request_id):
+def datarequest_get(ctx: rule.Context, request_id: str) -> str | api.Error:
     """Retrieve a data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1088,9 +1082,6 @@ def datarequest_get(ctx, request_id):
 
     :returns: Datarequest JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DATAREQUEST + JSON_EXT
@@ -1104,18 +1095,15 @@ def datarequest_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_attachment_upload_permission(ctx, request_id, action):
+def api_datarequest_attachment_upload_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
     """
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("grantread" or "revoke")
 
-    :returns:          Nothing
+    :returns: Nothing
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
@@ -1131,16 +1119,13 @@ def api_datarequest_attachment_upload_permission(ctx, request_id, action):
 
 
 @api.make()
-def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
+def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id: str, filename: str) -> api.Result:
     """Grant read permissions on the attachment to the owner of the associated data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of attachment
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
@@ -1152,30 +1137,27 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
 
 
 @api.make()
-def api_datarequest_attachments_get(ctx, request_id):
-    """Get all attachments of a given data request
+def api_datarequest_attachments_get(ctx: rule.Context, request_id: str) -> api.Result:
+    """Get all attachments of a given data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          List of attachment filenames
+    :returns: List of attachment filenames
     """
     return datarequest_attachments_get(ctx, request_id)
 
 
-def datarequest_attachments_get(ctx, request_id):
-    """Get all attachments of a given data request
+def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> List:
+    """Get all attachments of a given data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          List of attachment filenames
+    :returns: List of attachment filenames
     """
-    def get_filename(file_path):
+    def get_filename(file_path: str) -> str:
         return file_path.split('/')[-1]
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
@@ -1187,7 +1169,7 @@ def datarequest_attachments_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_attachments_submit(ctx, request_id):
+def api_datarequest_attachments_submit(ctx: rule.Context, request_id: str) -> api.Result:
     """Finalize the submission of uploaded attachments
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1209,7 +1191,7 @@ def api_datarequest_attachments_submit(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_preliminary_review_submit(ctx, data, request_id):
+def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist a preliminary review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1218,9 +1200,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
         return api.Error("validation_fail",
@@ -1255,7 +1234,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
 
 @api.make()
-def api_datarequest_preliminary_review_get(ctx, request_id):
+def api_datarequest_preliminary_review_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a preliminary review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1263,16 +1242,13 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     :returns: Preliminary review JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
 
     return datarequest_preliminary_review_get(ctx, request_id)
 
 
-def datarequest_preliminary_review_get(ctx, request_id):
+def datarequest_preliminary_review_get(ctx: rule.Context, request_id: str) -> str | api.Result:
     """Retrieve a preliminary review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1280,9 +1256,6 @@ def datarequest_preliminary_review_get(ctx, request_id):
 
     :returns: Preliminary review JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = PR_REVIEW + JSON_EXT
@@ -1296,7 +1269,7 @@ def datarequest_preliminary_review_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_datamanager_review_submit(ctx, data, request_id):
+def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist a datamanager review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1305,9 +1278,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
         return api.Error("validation_fail",
@@ -1343,7 +1313,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
 
 @api.make()
-def api_datarequest_datamanager_review_get(ctx, request_id):
+def api_datarequest_datamanager_review_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a data manager review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1351,9 +1321,6 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     :returns: Datamanager review JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
 
@@ -1361,7 +1328,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     return datarequest_datamanager_review_get(ctx, request_id)
 
 
-def datarequest_datamanager_review_get(ctx, request_id):
+def datarequest_datamanager_review_get(ctx: rule.Context, request_id: str) -> str | api.Result:
     """Retrieve a data manager review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1369,9 +1336,6 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
     :returns: Datamanager review JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DM_REVIEW + JSON_EXT
@@ -1385,11 +1349,11 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_dac_members_get(ctx, request_id):
+def api_datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> api.Result:
     return datarequest_dac_members_get(ctx, request_id)
 
 
-def datarequest_dac_members_get(ctx, request_id):
+def datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> List:
     """Get list of DAC members
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1408,7 +1372,7 @@ def datarequest_dac_members_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_assignment_submit(ctx, data, request_id):
+def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist an assignment to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1417,9 +1381,6 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     :returns: API status
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Validate data against schema
     dac_members = datarequest_dac_members_get(ctx, request_id)
     schema      = datarequest_schema_get(ctx, ASSIGNMENT)
@@ -1475,7 +1436,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return api.Error("InvalidData", "Invalid value for 'decision' key in datamanager review review JSON data.")
 
 
-def assign_request(ctx, assignees, request_id):
+def assign_request(ctx: rule.Context, assignees: str, request_id: str) -> None:
     """Assign a data request to one or more DAC members for review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1509,7 +1470,7 @@ def assign_request(ctx, assignees, request_id):
 
 
 @api.make()
-def api_datarequest_assignment_get(ctx, request_id):
+def api_datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve assignment.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1517,16 +1478,13 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     :returns: Datarequest assignment JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM"], None)
 
     return datarequest_assignment_get(ctx, request_id)
 
 
-def datarequest_assignment_get(ctx, request_id):
+def datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve an assignment
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1550,7 +1508,7 @@ def datarequest_assignment_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_review_submit(ctx, data, request_id):
+def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist a data request review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1559,9 +1517,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     :returns: A JSON dict with status info for the front office
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
         return api.Error("validation_fail",
@@ -1616,7 +1571,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
 
 @api.make()
-def api_datarequest_reviews_get(ctx, request_id):
+def api_datarequest_reviews_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a data request review.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1624,9 +1579,6 @@ def api_datarequest_reviews_get(ctx, request_id):
 
     :returns: Datarequest review JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "REV"], None)
 
@@ -1650,7 +1602,7 @@ def api_datarequest_reviews_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_evaluation_submit(ctx, data, request_id):
+def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist an evaluation to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1658,10 +1610,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     :param request_id: Unique identifier of the data request
 
     :returns: API status
-    """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
+    :raises UUError: If datarequest owner could not be determined
+    """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, EVALUATION):
         return api.Error("validation_fail",
@@ -1676,8 +1627,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Write approval conditions to disk if applicable
     if 'approval_conditions' in data:
         try:
+            datarequest_owner = datarequest_owner_get(ctx, request_id)
+            if datarequest_owner is None:
+                raise error.UUError
             file_write_and_lock(ctx, coll_path, APPROVAL_CONDITIONS + JSON_EXT,
-                                data['approval_conditions'], [datarequest_owner_get(ctx, request_id)])
+                                data['approval_conditions'], [datarequest_owner])
         except error.UUError:
             return api.Error('write_error', 'Could not write approval conditions to disk')
 
@@ -1709,7 +1663,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
 
 @api.make()
-def api_datarequest_approval_conditions_get(ctx, request_id):
+def api_datarequest_approval_conditions_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve approval conditions
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1717,9 +1671,6 @@ def api_datarequest_approval_conditions_get(ctx, request_id):
 
     :returns: Approval conditions JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"], None)
 
@@ -1741,7 +1692,7 @@ def api_datarequest_approval_conditions_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_evaluation_get(ctx, request_id):
+def api_datarequest_evaluation_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve an evaluation.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1749,16 +1700,13 @@ def api_datarequest_evaluation_get(ctx, request_id):
 
     :returns: Evaluation JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DAC"], None)
 
     return datarequest_evaluation_get(ctx, request_id)
 
 
-def datarequest_evaluation_get(ctx, request_id):
+def datarequest_evaluation_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve an evaluation
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1766,9 +1714,6 @@ def datarequest_evaluation_get(ctx, request_id):
 
     :returns: Evaluation JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = EVALUATION + JSON_EXT
@@ -1781,7 +1726,7 @@ def datarequest_evaluation_get(ctx, request_id):
         return api.Error("ReadError", "Could not get evaluation data.")
 
 
-def datarequest_feedback_write(ctx, request_id, feedback):
+def datarequest_feedback_write(ctx: rule.Context, request_id: str, feedback: str) -> api.Result:
     """ Write feedback to researcher to a separate file and grant the researcher read access
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1790,9 +1735,6 @@ def datarequest_feedback_write(ctx, request_id, feedback):
 
     :returns:          API status
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct path to feedback file
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
@@ -1811,7 +1753,7 @@ def datarequest_feedback_write(ctx, request_id, feedback):
 
 
 @api.make()
-def api_datarequest_feedback_get(ctx, request_id):
+def api_datarequest_feedback_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Get feedback for researcher
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1819,9 +1761,6 @@ def api_datarequest_feedback_get(ctx, request_id):
 
     :returns:          JSON-formatted string containing feedback for researcher
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"],
                                  [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
@@ -1841,7 +1780,7 @@ def api_datarequest_feedback_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_preregistration_submit(ctx, data, request_id):
+def api_datarequest_preregistration_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
     """Persist a preregistration to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1850,9 +1789,6 @@ def api_datarequest_preregistration_submit(ctx, data, request_id):
 
     :returns: API status
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PREREGISTRATION):
         return api.Error("validation_fail",
@@ -1875,7 +1811,7 @@ def api_datarequest_preregistration_submit(ctx, data, request_id):
 
 
 @api.make()
-def api_datarequest_preregistration_get(ctx, request_id):
+def api_datarequest_preregistration_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a preregistration.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1883,16 +1819,13 @@ def api_datarequest_preregistration_get(ctx, request_id):
 
     :returns: Preregistration JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM"], None)
 
     return datarequest_preregistration_get(ctx, request_id)
 
 
-def datarequest_preregistration_get(ctx, request_id):
+def datarequest_preregistration_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a preregistration.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1900,9 +1833,6 @@ def datarequest_preregistration_get(ctx, request_id):
 
     :returns: Preregistration JSON or API error on failure
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = PREREGISTRATION + JSON_EXT
@@ -1916,15 +1846,12 @@ def datarequest_preregistration_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_preregistration_confirm(ctx, request_id):
+def api_datarequest_preregistration_confirm(ctx: rule.Context, request_id: str) -> api.Result:
     """Set the status of a submitted datarequest to PREREGISTRATION_CONFIRMED.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM"], [status.PREREGISTRATION_SUBMITTED])
 
@@ -1932,18 +1859,15 @@ def api_datarequest_preregistration_confirm(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_dta_upload_permission(ctx, request_id, action):
+def api_datarequest_dta_upload_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
     """
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("revoke")
 
-    :returns:          Nothing
+    :returns: API result
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
                                                            status.DAO_APPROVED])
@@ -1958,16 +1882,15 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
 
 
 @api.make()
-def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
+def api_datarequest_dta_post_upload_actions(ctx: rule.Context, request_id: str, filename: str) -> api.Result:
     """Grant read permissions on the DTA to the owner of the associated data request.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of DTA
-    """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
+    :returns: API result
+    """
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
                                                            status.DAO_APPROVED])
@@ -1981,25 +1904,22 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
+    return api.OK()
 
 
 @api.make()
-def api_datarequest_dta_path_get(ctx, request_id):
+def api_datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
     return datarequest_dta_path_get(ctx, request_id)
 
 
-def datarequest_dta_path_get(ctx, request_id):
-
-    """Get path to DTA
+def datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
+    """Get path to DTA.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          Path to DTA
+    :returns: Path to DTA
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
 
@@ -2008,18 +1928,15 @@ def datarequest_dta_path_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_signed_dta_upload_permission(ctx, request_id, action):
+def api_datarequest_signed_dta_upload_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
     """
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("revoke")
 
-    :returns:          Nothing
+    :returns: API result
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
@@ -2033,16 +1950,15 @@ def api_datarequest_signed_dta_upload_permission(ctx, request_id, action):
 
 
 @api.make()
-def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
+def api_datarequest_signed_dta_post_upload_actions(ctx: rule.Context, request_id: str, filename: str) -> api.Result:
     """Grant read permissions on the signed DTA to the datamanagers group.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of signed DTA
-    """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
+    :return: API result
+    """
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
@@ -2055,10 +1971,11 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
+    return api.OK()
 
 
 @api.make()
-def api_datarequest_signed_dta_path_get(ctx, request_id):
+def api_datarequest_signed_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Get path to signed DTA
 
     :param ctx:        Combined type of a callback and rei struct
@@ -2066,9 +1983,6 @@ def api_datarequest_signed_dta_path_get(ctx, request_id):
 
     :returns:          Path to signed DTA
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
 
@@ -2077,15 +1991,12 @@ def api_datarequest_signed_dta_path_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_data_ready(ctx, request_id):
+def api_datarequest_data_ready(ctx: rule.Context, request_id: str) -> api.Result:
     """Set the status of a submitted datarequest to DATA_READY.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.DTA_SIGNED])
 
@@ -2096,14 +2007,14 @@ def api_datarequest_data_ready(ctx, request_id):
 #                   Email logic                   #
 ###################################################
 
-def truncated_title_get(ctx, request_id):
+def truncated_title_get(ctx: rule.Context, request_id: str) -> str:
     datarequest = json.loads(datarequest_get(ctx, request_id))
     study_title = datarequest['datarequest']['study_information']['title']
 
     return study_title if len(study_title) < 16 else study_title[0:15] + "..."
 
 
-def send_emails(ctx, obj_name, status_to):
+def send_emails(ctx: rule.Context, obj_name: str, status_to: str) -> None:
     # Get request ID
     temp, _       = pathutil.chop(obj_name)
     _, request_id = pathutil.chop(temp)
@@ -2160,7 +2071,7 @@ def send_emails(ctx, obj_name, status_to):
         data_ready_emails(ctx, request_id)
 
 
-def datarequest_submit_emails(ctx, request_id, dao=False):
+def datarequest_submit_emails(ctx: rule.Context, request_id: str, dao: bool = False) -> None:
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
@@ -2190,7 +2101,7 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
                                 researcher['department'], timestamp, study_title)
 
 
-def preliminary_review_emails(ctx, request_id, datarequest_status):
+def preliminary_review_emails(ctx: rule.Context, request_id: str, datarequest_status: status) -> None:
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
     truncated_title     = truncated_title_get(ctx, request_id)
@@ -2222,7 +2133,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
                           feedback_for_researcher, pm_email, request_id, cc)
 
 
-def datamanager_review_emails(ctx, request_id, datarequest_status):
+def datamanager_review_emails(ctx: rule.Context, request_id: str, datarequest_status: status) -> None:
     # Get (source data for) email input parameters
     pm_members          = group.members(ctx, GROUP_PM)
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
@@ -2242,7 +2153,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
                                              request_id)
 
 
-def assignment_emails(ctx, request_id, datarequest_status):
+def assignment_emails(ctx: rule.Context, request_id: str, datarequest_status: status) -> None:
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
@@ -2275,7 +2186,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
                           feedback_for_researcher, pm_email, request_id, cc)
 
 
-def review_emails(ctx, request_id):
+def review_emails(ctx: rule.Context, request_id: str) -> None:
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
@@ -2292,7 +2203,7 @@ def review_emails(ctx, request_id):
         mail_review_pm(ctx, truncated_title, pm_email, request_id)
 
 
-def evaluation_emails(ctx, request_id, datarequest_status):
+def evaluation_emails(ctx: rule.Context, request_id: str, datarequest_status: status) -> None:
     # Get (source data for) email input parameters
     datarequest             = json.loads(datarequest_get(ctx, request_id))
     researcher              = datarequest['contact']['principal_investigator']
@@ -2315,7 +2226,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
                       feedback_for_researcher, pm_email, request_id, cc)
 
 
-def preregistration_submit_emails(ctx, request_id):
+def preregistration_submit_emails(ctx: rule.Context, request_id: str) -> None:
     # Get parameters
     truncated_title  = truncated_title_get(ctx, request_id)
 
@@ -2324,7 +2235,7 @@ def preregistration_submit_emails(ctx, request_id):
         mail_preregistration_submit(ctx, truncated_title, pm_email, request_id)
 
 
-def datarequest_approved_emails(ctx, request_id, dao=False):
+def datarequest_approved_emails(ctx: rule.Context, request_id: str, dao: bool = False) -> None:
     # Get parameters
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']['principal_investigator']
@@ -2347,7 +2258,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
                                          request_id)
 
 
-def dta_post_upload_actions_emails(ctx, request_id):
+def dta_post_upload_actions_emails(ctx: rule.Context, request_id: str) -> None:
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
@@ -2362,7 +2273,7 @@ def dta_post_upload_actions_emails(ctx, request_id):
     mail_dta(ctx, truncated_title, researcher_email, researcher['name'], request_id, cc)
 
 
-def signed_dta_post_upload_actions_emails(ctx, request_id):
+def signed_dta_post_upload_actions_emails(ctx: rule.Context, request_id: str) -> None:
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
     authoring_dm        = data_object.owner(ctx, datarequest_dta_path_get(ctx, request_id))[0]
@@ -2375,7 +2286,7 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
         mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc)
 
 
-def data_ready_emails(ctx, request_id):
+def data_ready_emails(ctx: rule.Context, request_id: str) -> None:
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']

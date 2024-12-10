@@ -9,8 +9,9 @@ import datarequest
 from util import *
 
 
-def can_set_datarequest_status(ctx, obj_name, status_to):
-
+def can_set_datarequest_status(ctx: rule.Context,
+                               obj_name: str,
+                               status_to: str) -> policy.Succeed | policy.Fail:
     # Get current status.
     try:
         status_from = datarequest.status_get_from_path(ctx, obj_name)
@@ -26,8 +27,7 @@ def can_set_datarequest_status(ctx, obj_name, status_to):
     return policy.succeed()
 
 
-def post_status_transition(ctx, obj_name, value):
-
+def post_status_transition(ctx: rule.Context, obj_name: str, value: str) -> None:
     # Write timestamp to provenance log
     request_id = re.sub(r"^[^0-9]*/(\d+).*", r"\1", obj_name)
     status     = datarequest.status[value]

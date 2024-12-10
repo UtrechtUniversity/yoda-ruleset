@@ -16,7 +16,7 @@ from util import *
 __all__ = ['rule_replicate_batch']
 
 
-def replicate_asynchronously(ctx, path, source_resource, target_resource):
+def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str, target_resource: str) -> None:
     """Schedule replication of a data object.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -71,7 +71,7 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
 
 
 @rule.make()
-def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit, dry_run):
+def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, balance_id_max: int, batch_size_limit: int, dry_run: str) -> None:
     """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
@@ -87,7 +87,6 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
     :param balance_id_max:   Maximum balance id for batch jobs (value 1-64)
     :param batch_size_limit: Maximum number of items to be processed within one batch
     :param dry_run:          When '1' do not actually replicate, only log what would have replicated
-
     """
     count         = 0
     count_ok      = 0
@@ -191,7 +190,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
                 # Mark as correctly replicated
                 count_ok += 1
             except msi.Error as e:
-                log.write(ctx, 'ERROR - The file {} could not be replicated from {} to {}: {}'.format(file, from_path, to_path, str(e)))
+                log.write(ctx, 'ERROR - The file {} could not be replicated from {} to {}: {}'.format(path, from_path, to_path, str(e)))
 
                 if print_verbose:
                     log.write(ctx, "Batch replication retry: copying {} from {} to {}".format(path, data_resc_name, to_path))
@@ -250,7 +249,7 @@ def rule_replicate_batch(ctx, verbose, balance_id_min, balance_id_max, batch_siz
         log.write(ctx, "Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
 
 
-def is_replication_blocked_by_admin(ctx):
+def is_replication_blocked_by_admin(ctx: rule.Context) -> bool:
     """Admin can put the replication process on hold by adding a file called 'stop_replication' in collection /yoda/flags.
 
     :param ctx: Combined type of a callback and rei struct
@@ -262,24 +261,19 @@ def is_replication_blocked_by_admin(ctx):
     return collection.exists(ctx, path)
 
 
-def memory_rss_usage():
-    """
-    The RSS (resident) memory size in bytes for the current process.
-    """
+def memory_rss_usage() -> int:
+    """The RSS (resident) memory size in bytes for the current process."""
     p = psutil.Process()
     return p.memory_info().rss
 
 
-def show_memory_usage(ctx):
-    """
-    For debug purposes show the current RSS usage.
-    """
+def show_memory_usage(ctx: rule.Context) -> None:
+    """For debug purposes show the current RSS usage."""
     log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
 
 
-def memory_limit_exceeded(rss_limit):
-    """
-    True when a limit other than 0 was specified and memory usage is currently
+def memory_limit_exceeded(rss_limit: int) -> bool:
+    """True when a limit other than 0 was specified and memory usage is currently
     above this limit. Otherwise False.
 
     :param rss_limit: Max memory usage in bytes
@@ -287,4 +281,4 @@ def memory_limit_exceeded(rss_limit):
     :returns: Boolean indicating if memory limited exceeded
     """
     rss_limit = int(rss_limit)
-    return rss_limit and memory_rss_usage() > rss_limit
+    return rss_limit > 0 and memory_rss_usage() > rss_limit

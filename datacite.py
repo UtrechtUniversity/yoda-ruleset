@@ -5,13 +5,14 @@ __license__ = 'GPLv3, see LICENSE'
 
 import random
 import string
+from typing import Dict
 
 import requests
 
 from util import *
 
 
-def metadata_post(ctx, payload):
+def metadata_post(payload: Dict) -> int:
     """Register DOI metadata with DataCite."""
     url = "{}/dois".format(config.datacite_rest_api_url)
     auth = (config.datacite_username, config.datacite_password)
@@ -27,7 +28,7 @@ def metadata_post(ctx, payload):
     return response.status_code
 
 
-def metadata_put(ctx, doi, payload):
+def metadata_put(doi: str, payload: str) -> int:
     """Update metadata with DataCite."""
     url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -43,7 +44,7 @@ def metadata_put(ctx, doi, payload):
     return response.status_code
 
 
-def metadata_get(ctx, doi):
+def metadata_get(doi: str) -> int:
     """Check with DataCite if DOI is available."""
     url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -58,7 +59,7 @@ def metadata_get(ctx, doi):
     return response.status_code
 
 
-def generate_random_id(ctx, length):
+def generate_random_id(length: int) -> str:
     """Generate random ID for DOI."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for x in range(int(length)))

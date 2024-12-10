@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
+from typing import Dict, List
 
 import genquery
 
@@ -22,12 +23,12 @@ __all__ = ['api_resource_browse_group_data',
 
 
 @api.make()
-def api_resource_browse_group_data(ctx,
-                                   sort_on='name',
-                                   sort_order='asc',
-                                   offset=0,
-                                   limit=10,
-                                   search_groups=""):
+def api_resource_browse_group_data(ctx: rule.Context,
+                                   sort_on: str = 'name',
+                                   sort_order: str = 'asc',
+                                   offset: int = 0,
+                                   limit: int = 10,
+                                   search_groups: str = "") -> api.Result:
     """Get paginated group data groupname / size
 
     :param ctx:        Combined type of a callback and rei struct
@@ -88,10 +89,8 @@ def api_resource_browse_group_data(ctx,
 
 
 @api.make()
-def api_resource_full_year_differentiated_group_storage(ctx, group_name):
-    # def api_resource_full_range ...
-
-    """Return the full range of registered storage data differentiated into vault/research/revision/total
+def api_resource_full_year_differentiated_group_storage(ctx: rule.Context, group_name: str) -> api.Result:
+    """Return the full range of registered storage data differentiated into vault/research/revision/total.
 
     :param ctx:           Combined type of a callback and rei struct
     :param group_name:    Group that is searched for storage data
@@ -135,7 +134,7 @@ def api_resource_full_year_differentiated_group_storage(ctx, group_name):
 
 
 @api.make()
-def api_resource_category_stats(ctx):
+def api_resource_category_stats(ctx: rule.Context) -> api.Result:
     """Collect storage stats of last month for categories.
     Storage is summed up for each category.
 
@@ -235,7 +234,7 @@ def api_resource_category_stats(ctx):
 
 
 @api.make()
-def api_resource_monthly_category_stats(ctx):
+def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     """Collect storage stats for all twelve months based upon categories a user is datamanager of.
 
     Statistics gathered:
@@ -329,7 +328,7 @@ def api_resource_monthly_category_stats(ctx):
     return {'storage': all_storage, 'dates': storage_dates}
 
 
-def get_group_category_info(ctx, groupName):
+def get_group_category_info(ctx: rule.Context, groupName: str) -> Dict:
     """Get category and subcategory for a group.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -358,7 +357,7 @@ def get_group_category_info(ctx, groupName):
     return {'category': category, 'subcategory': subcategory}
 
 
-def get_groups_on_categories(ctx, categories, search_groups=""):
+def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups: str = "") -> List:
     """Get all groups belonging to all given categories.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -414,7 +413,7 @@ def get_groups_on_categories(ctx, categories, search_groups=""):
 
 
 @rule.make()
-def rule_resource_store_storage_statistics(ctx):
+def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
     """
     For all categories present, store all found storage data for each group belonging to these categories.
 
@@ -558,13 +557,13 @@ def rule_resource_store_storage_statistics(ctx):
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[])
-def rule_resource_update_resc_arb_data(ctx, resc_name, bytes_free, bytes_total):
+def rule_resource_update_resc_arb_data(ctx: rule.Context, resc_name: str, bytes_free: int, bytes_total: int) -> None:
     """
     Update ARB data for a specific resource
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param resc_name: Name of a particular unixfilesystem resource
-    :param bytes_free: Free size on this resource, in bytes
+    :param ctx:         Combined type of a callback and rei struct
+    :param resc_name:   Name of a particular unixfilesystem resource
+    :param bytes_free:  Free size on this resource, in bytes
     :param bytes_total: Total size of this resource, in bytes
     """
     if user.user_type(ctx) != 'rodsadmin':
@@ -595,7 +594,7 @@ def rule_resource_update_resc_arb_data(ctx, resc_name, bytes_free, bytes_total):
 
 
 @rule.make()
-def rule_resource_update_misc_arb_data(ctx):
+def rule_resource_update_misc_arb_data(ctx: rule.Context) -> None:
     """Update ARB data for resources that are not covered by the regular process. That is,
        all resources that are neither unixfilesystem nor passthrough resources, as well as
        passthrough resources that do not have a unixfilesystem child resource.
@@ -629,7 +628,7 @@ def rule_resource_update_misc_arb_data(ctx):
                 manager.put(ctx, resc, constants.arb_status.IGNORE)
 
 
-def get_categories(ctx):
+def get_categories(ctx: rule.Context) -> List:
     """Get all categories for current user.
 
     :param ctx: Combined type of a callback and rei struct
@@ -665,7 +664,7 @@ def get_categories(ctx):
     return categories
 
 
-def get_groups_on_category(ctx, category):
+def get_groups_on_category(ctx: rule.Context, category: str) -> List:
     """Get all groups for category."""
     groups = []
     iter = genquery.row_iterator(
@@ -681,7 +680,7 @@ def get_groups_on_category(ctx, category):
     return groups
 
 
-def get_group_data_sizes(ctx, group_name, ref_period=None):
+def get_group_data_sizes(ctx: rule.Context, group_name: str, ref_period: str | None = None) -> List:
     """Get group data sizes and return as a list of values.
 
     If no reference period is specified return closest to today.

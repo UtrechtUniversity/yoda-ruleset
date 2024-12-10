@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from typing import Dict, List, Tuple
 
 import irods_types
 
@@ -19,7 +20,7 @@ __all__ = ['api_meta_form_load',
            'api_meta_form_save']
 
 
-def get_coll_lock(ctx, path, org_metadata=None):
+def get_coll_lock(ctx: rule.Context, path: str, org_metadata: List | None = None) -> Tuple[str, str]:
     """Check for existence of locks on a collection.
 
     path -> ((no|here|outoftree|ancestor|descendant), rootcoll)
@@ -33,7 +34,7 @@ def get_coll_lock(ctx, path, org_metadata=None):
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
-    ret = ('no', None)
+    ret = ('no', '')
 
     for root in [v for k, v in org_metadata if k == constants.IILOCKATTRNAME]:
         if root == path:
@@ -49,7 +50,7 @@ def get_coll_lock(ctx, path, org_metadata=None):
     return ret
 
 
-def get_coll_lock_count(ctx, path, org_metadata=None):
+def get_coll_lock_count(ctx: rule.Context, path: str, org_metadata: List | None = None) -> int:
     """Count locks on a collection.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -69,7 +70,7 @@ def get_coll_lock_count(ctx, path, org_metadata=None):
     return count
 
 
-def humanize_validation_error(e):
+def humanize_validation_error(e: str) -> str:
     """Transform a jsonschema validation error such that it is readable by humans.
 
     :param e: a jsonschema.exceptions.ValidationError
@@ -98,7 +99,7 @@ def humanize_validation_error(e):
         return 'This field contains an error: ' + ' -> '.join(path_out)
 
 
-def load(ctx, coll):
+def load(ctx: rule.Context, coll: str) -> api.Result:
     """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
@@ -278,7 +279,7 @@ def load(ctx, coll):
             'is_locked': is_locked}
 
 
-def save(ctx, coll, metadata):
+def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct

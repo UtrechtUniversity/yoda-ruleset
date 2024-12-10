@@ -8,9 +8,9 @@ import re
 import subprocess
 import time
 from datetime import datetime
+from typing import Dict, List, Tuple
 
 import genquery
-import irods_types
 from dateutil import parser
 
 import folder
@@ -48,7 +48,7 @@ __all__ = ['api_vault_submit',
 
 
 @api.make()
-def api_vault_submit(ctx, coll, previous_version=None):
+def api_vault_submit(ctx: rule.Context, coll: str, previous_version: str | None = None) -> api.Result:
     """Submit data package for publication.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -72,7 +72,7 @@ def api_vault_submit(ctx, coll, previous_version=None):
 
 
 @api.make()
-def api_vault_approve(ctx, coll):
+def api_vault_approve(ctx: rule.Context, coll: str) -> api.Result:
     """Approve data package for publication.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -102,7 +102,7 @@ def api_vault_approve(ctx, coll):
 
 
 @api.make()
-def api_vault_cancel(ctx, coll):
+def api_vault_cancel(ctx: rule.Context, coll: str) -> api.Result:
     """Cancel submit of data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -125,7 +125,7 @@ def api_vault_cancel(ctx, coll):
 
 
 @api.make()
-def api_vault_depublish(ctx, coll):
+def api_vault_depublish(ctx: rule.Context, coll: str) -> api.Result:
     """Depublish data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -148,7 +148,7 @@ def api_vault_depublish(ctx, coll):
 
 
 @api.make()
-def api_vault_republish(ctx, coll):
+def api_vault_republish(ctx: rule.Context, coll: str) -> api.Result:
     """Republish data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -171,7 +171,7 @@ def api_vault_republish(ctx, coll):
 
 
 @api.make()
-def api_vault_copy_to_research(ctx, coll_origin, coll_target):
+def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str) -> api.Result:
     """Copy data package from vault to research space.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -242,7 +242,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
 
 @api.make()
-def api_vault_preservable_formats_lists(ctx):
+def api_vault_preservable_formats_lists(ctx: rule.Context) -> api.Result:
     """Retrieve lists of preservable file formats on the system.
 
     :param ctx: Combined type of a callback and rei struct
@@ -262,7 +262,7 @@ def api_vault_preservable_formats_lists(ctx):
 
 
 @api.make()
-def api_vault_unpreservable_files(ctx, coll, list_name):
+def api_vault_unpreservable_files(ctx: rule.Context, coll: str, list_name: str) -> api.Result:
     """Retrieve list of unpreservable file formats in a collection.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -284,36 +284,35 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
                      collection.data_objects(ctx, coll, recursive=True))
 
     # Exclude Yoda metadata files
-    data_names = filter(lambda x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x), data_names)
+    data_names_filtered = filter(lambda x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x), data_names)
 
     # Data names -> lowercase extensions, without the dot.
-    exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
+    exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names_filtered)))
     exts -= {''}
 
     # Return any ext that is not in the preservable list.
     return list(exts - preservable_formats)
 
 
-def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
+@rule.make(inputs=[0], outputs=[])
+def rule_vault_copy_original_metadata_to_vault(ctx: rule.Context, vault_package: str) -> None:
     """Copy the original metadata JSON into the root of the package.
 
-    :param rule_args: [0] Path of a new package in the vault
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path of a package in the vault
     """
-    vault_package = rule_args[0]
-    vault_copy_original_metadata_to_vault(callback, vault_package)
+    vault_copy_original_metadata_to_vault(ctx, vault_package)
 
 
-def get_vault_copy_numthreads(ctx):
+def get_vault_copy_numthreads(ctx: rule.Context) -> int:
     # numThreads should be 0 if want multithreading with no specified amount of threads
     return 0 if config.vault_copy_multithread_enabled else 1
 
 
-def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
+def vault_copy_original_metadata_to_vault(ctx: rule.Context, vault_package_path: str) -> None:
     """Copy original metadata to the vault package root.
 
-    :param ctx:  Combined type of a callback and rei struct
+    :param ctx:                Combined type of a callback and rei struct
     :param vault_package_path: Path of a package in the vault
     """
     original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
@@ -325,22 +324,20 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
-def rule_vault_write_license(rule_args, callback, rei):
+@rule.make(inputs=[0], outputs=[])
+def rule_vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args: [0] Path of a package in the vault
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:            Combined type of a callback and rei struct
+    :param vault_pkg_coll: Path of a package in the vault
     """
-
-    vault_pkg_coll = rule_args[0]
-    vault_write_license(callback, vault_pkg_coll)
+    vault_write_license(ctx, vault_pkg_coll)
 
 
-def vault_write_license(ctx, vault_pkg_coll):
+def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
     """Write the license as a text file into the root of the vault package.
 
-    :param ctx:  Combined type of a callback and rei struct
+    :param ctx:            Combined type of a callback and rei struct
     :param vault_pkg_coll: Path of a package in the vault
     """
     zone = user.zone(ctx)
@@ -398,30 +395,31 @@ def vault_write_license(ctx, vault_pkg_coll):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_enable_indexing(ctx, coll):
+def rule_vault_enable_indexing(ctx: rule.Context, coll: str) -> str:
     vault_enable_indexing(ctx, coll)
     return "Success"
 
 
-def vault_enable_indexing(ctx, coll):
+def vault_enable_indexing(ctx: rule.Context, coll: str) -> None:
     if config.enable_open_search:
         if not collection.exists(ctx, coll + "/index"):
             # index collection does not exist yet
             path = meta.get_latest_vault_metadata_path(ctx, coll)
-            ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
-            meta.ingest_metadata_vault(ctx, path)
+            if path:
+                ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+                meta.ingest_metadata_vault(ctx, path)
 
         # add indexing attribute and update opensearch
         subprocess.call(["imeta", "add", "-C", coll + "/index", "irods::indexing::index", "yoda::metadata", "elasticsearch"])
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_disable_indexing(ctx, coll):
+def rule_vault_disable_indexing(ctx: rule.Context, coll: str) -> str:
     vault_disable_indexing(ctx, coll)
     return "Success"
 
 
-def vault_disable_indexing(ctx, coll):
+def vault_disable_indexing(ctx: rule.Context, coll: str) -> None:
     if config.enable_open_search:
         if collection.exists(ctx, coll + "/index"):
             coll = coll + "/index"
@@ -434,7 +432,7 @@ def vault_disable_indexing(ctx, coll):
 
 
 @api.make()
-def api_vault_system_metadata(ctx, coll):
+def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     """Return system metadata of a vault collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -466,8 +464,8 @@ def api_vault_system_metadata(ctx, coll):
         # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
         # modified_date = date.fromisoformat(row[0])
         modified_date = parser.parse(row[0])
-        modified_date = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
-        system_metadata["Modified date"] = "{}".format(modified_date)
+        modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
+        system_metadata["Modified date"] = "{}".format(modified_date_time)
 
     # Landingpage URL.
     landinpage_url = ""
@@ -524,15 +522,15 @@ def api_vault_system_metadata(ctx, coll):
     return system_metadata
 
 
-def get_coll_vault_status(ctx, path, org_metadata=None):
+def get_coll_vault_status(ctx: rule.Context, path: str, org_metadata: List | None = None) -> constants.vault_package_state:
     """Get the status of a vault folder."""
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
-    org_metadata = dict(org_metadata)
-    if constants.IIVAULTSTATUSATTRNAME in org_metadata:
-        x = org_metadata[constants.IIVAULTSTATUSATTRNAME]
+    org_metadata_dict = dict(org_metadata)
+    if constants.IIVAULTSTATUSATTRNAME in org_metadata_dict:
+        x = org_metadata_dict[constants.IIVAULTSTATUSATTRNAME]
         try:
             return constants.vault_package_state(x)
         except Exception:
@@ -541,7 +539,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
     return constants.vault_package_state.EMPTY
 
 
-def get_all_published_versions(ctx, path):
+def get_all_published_versions(ctx: rule.Context, path: str) -> Tuple[str | None, str | None, List]:
     """Get all published versions of a data package."""
     base_doi = get_doi(ctx, path, 'base')
     package_doi = get_doi(ctx, path)
@@ -582,7 +580,7 @@ def get_all_published_versions(ctx, path):
 
 
 @api.make()
-def api_vault_collection_details(ctx, path):
+def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
     """Return details of a vault collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -694,7 +692,7 @@ def api_vault_collection_details(ctx, path):
 
 
 @api.make()
-def api_vault_get_package_by_reference(ctx, reference):
+def api_vault_get_package_by_reference(ctx: rule.Context, reference: str) -> api.Result:
     """Return path to data package with provided reference (UUID4).
 
     :param ctx:       Combined type of a callback and rei struct
@@ -719,7 +717,7 @@ def api_vault_get_package_by_reference(ctx, reference):
 
 
 @api.make()
-def api_vault_get_landingpage_data(ctx, coll):
+def api_vault_get_landingpage_data(ctx: rule.Context, coll: str) -> api.Result:
     """Retrieve landingpage data of data package.
 
     Landinpage data consists of metadata and system metadata.
@@ -767,7 +765,7 @@ def api_vault_get_landingpage_data(ctx, coll):
 
 
 @api.make()
-def api_vault_get_publication_terms(ctx):
+def api_vault_get_publication_terms(ctx: rule.Context) -> api.Result:
     """Retrieve the publication terms."""
     zone = user.zone(ctx)
     terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)
@@ -791,7 +789,7 @@ def api_vault_get_publication_terms(ctx):
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
 
 
-def change_read_access_group(ctx, coll, actor, group, grant=True):
+def change_read_access_group(ctx: rule.Context, coll: str, actor: str, group: str, grant: bool = True) -> Tuple[bool, api.Result]:
     """Grant/revoke research group read access to vault package.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -818,7 +816,7 @@ def change_read_access_group(ctx, coll, actor, group, grant=True):
     return True, ''
 
 
-def check_change_read_access_research_group(ctx, coll, grant=True):
+def check_change_read_access_research_group(ctx: rule.Context, coll: str, grant: bool = True) -> Tuple[bool, api.Result]:
     """Initial checks when changing read rights of research group for datapackage in vault.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -843,7 +841,7 @@ def check_change_read_access_research_group(ctx, coll, grant=True):
     return True, ''
 
 
-def change_read_access_research_group(ctx, coll, grant=True):
+def change_read_access_research_group(ctx: rule.Context, coll: str, grant: bool = True) -> api.Result:
     """Grant/revoke read rights of members of research group to a
     datapackage in vault. This operation also includes read only members.
 
@@ -884,7 +882,7 @@ def change_read_access_research_group(ctx, coll, grant=True):
 
 
 @api.make()
-def api_grant_read_access_research_group(ctx, coll):
+def api_grant_read_access_research_group(ctx: rule.Context, coll: str) -> api.Result:
     """Grant read rights of research group for datapackage in vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -896,7 +894,7 @@ def api_grant_read_access_research_group(ctx, coll):
 
 
 @api.make()
-def api_revoke_read_access_research_group(ctx, coll):
+def api_revoke_read_access_research_group(ctx: rule.Context, coll: str) -> api.Result:
     """Revoke read rights of research group for datapackage in vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -908,17 +906,17 @@ def api_revoke_read_access_research_group(ctx, coll):
 
 
 @rule.make()
-def rule_vault_retry_copy_to_vault(ctx):
+def rule_vault_retry_copy_to_vault(ctx: rule.Context) -> None:
     copy_to_vault(ctx, constants.CRONJOB_STATE["PENDING"])
     copy_to_vault(ctx, constants.CRONJOB_STATE["RETRY"])
 
 
-def copy_to_vault(ctx, state):
+def copy_to_vault(ctx: rule.Context, state: str) -> None:
     """ Collect all folders with a given cronjob state
         and try to copy them to the vault.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param state: one of constants.CRONJOB_STATE
+    :param ctx:   Combined type of a callback and rei struct
+    :param state: One of constants.CRONJOB_STATE
     """
     iter = get_copy_to_vault_colls(ctx, state)
     for row in iter:
@@ -933,7 +931,7 @@ def copy_to_vault(ctx, state):
             folder.folder_secure_set_retry(ctx, coll)
 
 
-def get_copy_to_vault_colls(ctx, cronjob_state):
+def get_copy_to_vault_colls(ctx: rule.Context, cronjob_state: str) -> List:
     iter = list(genquery.Query(ctx,
                 ['COLL_NAME'],
                 "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
@@ -943,7 +941,7 @@ def get_copy_to_vault_colls(ctx, cronjob_state):
     return iter
 
 
-def copy_folder_to_vault(ctx, coll, target):
+def copy_folder_to_vault(ctx: rule.Context, coll: str, target: str) -> bool:
     """Copy folder and all its contents to target in vault using irsync.
 
     The data will reside under folder '/original' within the vault.
@@ -958,7 +956,7 @@ def copy_folder_to_vault(ctx, coll, target):
     try:
         returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
     except Exception as e:
-        log.write(ctx, "irsync failure: " + e)
+        log.write(ctx, "irsync failure: " + str(e))
         log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
         return False
 
@@ -969,103 +967,7 @@ def copy_folder_to_vault(ctx, coll, target):
     return True
 
 
-def treewalk_and_ingest(ctx, folder, target, origin, error):
-    """Treewalk folder and ingest.
-
-    :param ctx:    Combined type of a callback and rei struct
-    :param folder: Will change every time as it represents every folder that has to be copied to vault
-    :param target: Target of ingest
-    :param origin: Origin of treewalk
-    :param error:  0/1 indicating if treewalk or ingest failed
-
-    :returns: Error status (which should remain 0 for further processing in iterative manner)
-    """
-    parent_coll, coll = pathutil.chop(folder)
-
-    # 1. Process this collection itself as a collection.
-    # INGEST
-    if error == 0:
-        # INGEST COLLECTION
-        error = ingest_object(ctx, parent_coll, coll, True, target, origin)
-
-    # 2. Process dataobjects located directly within the collection
-    if error == 0:
-        iter = genquery.row_iterator(
-            "DATA_NAME",
-            "COLL_NAME = '" + folder + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            # INGEST OBJECT
-            error = ingest_object(ctx, folder, row[0], False, target, origin)
-            if error:
-                break
-
-    if error == 0:
-        # 3. Process the subfolders
-        # Loop through subfolders which have folder as parent folder
-        iter = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_PARENT_NAME = '" + folder + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            error = treewalk_and_ingest(ctx, row[0], target, origin, error)
-            if error:
-                break
-
-    return error
-
-
-def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
-    source_path = parent + "/" + item
-    read_access = msi.check_access(ctx, source_path, 'read_object', irods_types.BytesBuf())['arguments'][2]
-
-    # TODO use set_acl_check?
-    if read_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
-        except msi.Error:
-            return 1
-
-    dest_path = destination
-
-    if source_path != origin:
-        markIncomplete = False
-        # rewrite path to copy objects that are located underneath the toplevel collection
-        source_length = len(source_path)
-        relative_path = source_path[len(origin) + 1: source_length]
-        dest_path = destination + '/' + relative_path
-    else:
-        markIncomplete = True
-
-    if item_is_collection:
-        # CREATE COLLECTION
-        try:
-            msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
-        except msi.Error:
-            return 1
-
-        if markIncomplete:
-            avu.set_on_coll(ctx, dest_path, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
-    else:
-        # CREATE COPY OF DATA OBJECT
-        try:
-            # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
-            ctx.msiDataObjCopy(source_path, dest_path, 'numThreads={}++++verifyChksum='.format(get_vault_copy_numthreads(ctx)), 0)
-        except msi.Error:
-            return 1
-
-    if read_access != b'\x01':
-        try:
-            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
-        except msi.Error:
-            return 1
-
-    return 0
-
-
-def set_vault_permissions(ctx, coll, target):
+def set_vault_permissions(ctx: rule.Context, coll: str, target: str) -> bool:
     """Set permissions in the vault as such that data can be copied to the vault."""
     group_name = folder.collection_group_name(ctx, coll)
     if group_name == '':
@@ -1161,7 +1063,7 @@ def set_vault_permissions(ctx, coll, target):
     return True
 
 
-def reader_needs_access(ctx, group_name, coll):
+def reader_needs_access(ctx: rule.Context, group_name: str, coll: str) -> bool:
     """Return if research group has access to this group but readers do not"""
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
@@ -1183,7 +1085,7 @@ def reader_needs_access(ctx, group_name, coll):
     return not reader_found and research_found
 
 
-def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
+def set_reader_vault_permissions(ctx: rule.Context, group_name: str, zone: str, dry_run: bool) -> bool:
     """Given a research group name, give reader group access to
     vault packages if they don't have that access already.
 
@@ -1240,7 +1142,7 @@ def set_reader_vault_permissions(ctx, group_name, zone, dry_run):
 
 
 @rule.make(inputs=[0, 1], outputs=[2])
-def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
+def rule_vault_grant_readers_vault_access(ctx: rule.Context, dry_run: str, verbose: str) -> str:
     """Rule for granting reader members of research groups access to vault packages in their
     group if they don't have access already
 
@@ -1250,8 +1152,8 @@ def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
 
     :return: String status of completed successfully ('0') or there were errors ('1')
     """
-    dry_run = (dry_run == '1')
-    verbose = (verbose == '1')
+    dry_run_mode = (dry_run == '1')
+    verbose_mode = (verbose == '1')
     no_errors = True
 
     log.write(ctx, "grant_readers_vault_access started.")
@@ -1260,11 +1162,11 @@ def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
         log.write(ctx, "User is not rodsadmin")
         return '1'
 
-    if dry_run or verbose:
+    if dry_run_mode or verbose_mode:
         modes = []
-        if dry_run:
+        if dry_run_mode:
             modes.append("dry run")
-        if verbose:
+        if verbose_mode:
             modes.append("verbose")
         log.write(ctx, "Running grant_readers_vault_access in {} mode.".format((" and ").join(modes)))
 
@@ -1281,7 +1183,7 @@ def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
         name = row[0]
         if verbose:
             log.write(ctx, "{}: checking permissions".format(name))
-        if not set_reader_vault_permissions(ctx, name, zone, dry_run):
+        if not set_reader_vault_permissions(ctx, name, zone, dry_run_mode):
             no_errors = False
 
     message = ""
@@ -1295,13 +1197,13 @@ def rule_vault_grant_readers_vault_access(ctx, dry_run, verbose):
 
 
 @rule.make(inputs=[0, 1, 2, 3], outputs=[4, 5])
-def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
+def rule_vault_process_status_transitions(ctx: rule.Context, coll: str, new_coll_status: str, actor: str, previous_version: str) -> str:
     """Rule interface for processing vault status transition request.
 
-    :param ctx:             Combined type of a callback and rei struct
-    :param coll:            Vault collection to change status for
-    :param new_coll_status: New vault package status
-    :param actor:           Actor of the status change
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault collection to change status for
+    :param new_coll_status:  New vault package status
+    :param actor:            Actor of the status change
     :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo.
@@ -1311,7 +1213,7 @@ def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, pre
     return 'Success'
 
 
-def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
+def vault_process_status_transitions(ctx: rule.Context, coll: str, new_coll_status: str, actor: str, previous_version: str) -> List:
     """Processing vault status transition request.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -1320,7 +1222,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
     :param actor:            Actor of the status change
     :param previous_version: Path to previous version of data package in the vault
 
-    :return: Dict with status and statusinfo
+    :return: List with status and statusinfo
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -1374,7 +1276,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous
     return ['Success', '']
 
 
-def vault_request_status_transitions(ctx, coll, new_vault_status, previous_version=None):
+def vault_request_status_transitions(ctx: rule.Context, coll: str, new_vault_status: str, previous_version: str | None = None) -> List:
     """Request vault status transition action.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -1382,7 +1284,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
     :param new_vault_status: New vault status
     :param previous_version: Path to previous version of data package in the vault
 
-    :return: Dict with status and statusinfo
+    :return: List with status and statusinfo
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -1444,9 +1346,10 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
 
     # Data package is new version of existing data package with a DOI.
     previous_version_path = ""
-    doi = get_doi(ctx, previous_version)
-    if previous_version and doi:
-        previous_version_path = previous_version
+    if previous_version:
+        doi = get_doi(ctx, previous_version)
+        if doi:
+            previous_version_path = previous_version
 
     # Add vault action request to actor group.
     avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor, previous_version_path]))
@@ -1458,13 +1361,13 @@ def vault_request_status_transitions(ctx, coll, new_vault_status, previous_versi
     return ['', '']
 
 
-def set_submitter(ctx, path, actor):
+def set_submitter(ctx: rule.Context, path: str, actor: str) -> None:
     """Set submitter of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
     avu.set_on_coll(ctx, path, attribute, actor)
 
 
-def get_submitter(ctx, path):
+def get_submitter(ctx: rule.Context, path: str) -> str:
     """Set submitter of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
@@ -1472,16 +1375,16 @@ def get_submitter(ctx, path):
     if attribute in org_metadata:
         return org_metadata[attribute]
     else:
-        return None
+        return ""
 
 
-def set_approver(ctx, path, actor):
+def set_approver(ctx: rule.Context, path: str, actor: str) -> None:
     """Set approver of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
     avu.set_on_coll(ctx, path, attribute, actor)
 
 
-def get_approver(ctx, path):
+def get_approver(ctx: rule.Context, path: str) -> str:
     """Set approver of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
@@ -1489,10 +1392,10 @@ def get_approver(ctx, path):
     if attribute in org_metadata:
         return org_metadata[attribute]
     else:
-        return None
+        return ""
 
 
-def get_doi(ctx, path, doi='version'):
+def get_doi(ctx: rule.Context, path: str, doi: str = 'version') -> str | None:
     """Get the DOI of a data package in the vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -1516,7 +1419,7 @@ def get_doi(ctx, path, doi='version'):
     return None
 
 
-def get_previous_version(ctx, path):
+def get_previous_version(ctx: rule.Context, path: str) -> str | None:
     """Get the previous version of a data package in the vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -1536,7 +1439,7 @@ def get_previous_version(ctx, path):
     return None
 
 
-def get_title(ctx, path):
+def get_title(ctx: rule.Context, path: str) -> str:
     """Get the title of a data package in the vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -1556,7 +1459,7 @@ def get_title(ctx, path):
     return "(no title)"
 
 
-def meta_add_new_version(ctx, new_version, previous_version):
+def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: str) -> None:
     """Add new version as related resource metadata to data package in a vault.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -1604,13 +1507,13 @@ def meta_add_new_version(ctx, new_version, previous_version):
         meta_form.save(ctx, new_version, metadata)
 
 
-def get_all_doi_versions(ctx, path):
+def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List]:
     """Get the path and DOI of latest versions of published data package in a vault.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param path:    Path of vault with data packages
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of vault with data packages
 
-    :return: Dict of data packages with DOI
+    :return: Lists of data packages with DOI
     """
 
     iter = genquery.row_iterator(
@@ -1646,7 +1549,7 @@ def get_all_doi_versions(ctx, path):
 
 
 @api.make()
-def api_vault_get_published_packages(ctx, path):
+def api_vault_get_published_packages(ctx: rule.Context, path: str) -> Dict:
     """Get the path and DOI of latest versions of published data package in a vault.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -1676,7 +1579,7 @@ def api_vault_get_published_packages(ctx, path):
     return published_packages
 
 
-def update_archive(ctx, coll, attr=None):
+def update_archive(ctx: rule.Context, coll: str, attr: str | None = None) -> None:
     """Potentially update archive after metadata changed.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -1685,10 +1588,9 @@ def update_archive(ctx, coll, attr=None):
     """
     if config.enable_data_package_archive:
         import vault_archive
-
         vault_archive.update(ctx, coll, attr)
 
 
 @rule.make(inputs=[], outputs=[0])
-def rule_vault_copy_numthreads(ctx):
+def rule_vault_copy_numthreads(ctx: rule.Context) -> int:
     return get_vault_copy_numthreads(ctx)

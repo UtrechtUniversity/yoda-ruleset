@@ -7,13 +7,14 @@ import email
 import re
 import smtplib
 from email.mime.text import MIMEText
+from typing import Tuple
 
 from util import *
 
 __all__ = ['rule_mail_test']
 
 
-def send(ctx, to, actor, subject, body, cc=None):
+def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: str | None = None) -> api.Result:
     """Send an e-mail with specified recipient, subject and body.
 
     The originating address and mail server credentials are taken from the
@@ -25,6 +26,8 @@ def send(ctx, to, actor, subject, body, cc=None):
     :param subject: Subject of mail
     :param body:    Body of mail
     :param cc:      Comma-separated list of CC recipient(s) of email (optional)
+
+    :raises: When smtp is not configer correctly
 
     :returns: API status
     """
@@ -51,7 +54,11 @@ def send(ctx, to, actor, subject, body, cc=None):
     try:
         # e.g. 'smtps://smtp.gmail.com:465' for SMTP over TLS, or
         # 'smtp://smtp.gmail.com:587' for STARTTLS on the mail submission port.
-        proto, host, port = re.search(r'^(smtps?)://([^:]+)(?::(\d+))?$', cfg['server']).groups()
+        smtp_config = re.search(r'^(smtps?)://([^:]+)(?::(\d+))?$', cfg['server'])\
+
+        if smtp_config is None:
+            raise Exception
+        proto, host, port = smtp_config.groups()
 
         # Default to port 465 for SMTP over TLS, and 587 for standard mail
         # submission with STARTTLS.
@@ -107,7 +114,7 @@ def send(ctx, to, actor, subject, body, cc=None):
         pass
 
 
-def wrapper(ctx, to, actor, subject, body):
+def wrapper(ctx: rule.Context, to: str, actor: str, subject: str, body: str) -> Tuple[str, str]:
     """Send mail, returns status/statusinfo in rule-language style."""
     x = send(ctx, to, actor, subject, body)
 
@@ -117,7 +124,7 @@ def wrapper(ctx, to, actor, subject, body):
 
 
 @rule.make(inputs=[0], outputs=[1, 2])
-def rule_mail_test(ctx, to):
+def rule_mail_test(ctx: rule.Context, to: str) -> Tuple[str, str]:
     if not user.is_admin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 

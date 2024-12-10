@@ -3,6 +3,8 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Tuple
+
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
@@ -26,7 +28,7 @@ __all__ = ['api_research_folder_add',
            'api_research_manifest']
 
 
-def folder_new_name_check(folder_name):
+def folder_new_name_check(folder_name: str) -> Tuple[bool, str]:
     if len(folder_name) == 0:
         return False, api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
 
@@ -47,14 +49,14 @@ def folder_new_name_check(folder_name):
 
 
 @api.make()
-def api_research_folder_add(ctx, coll, new_folder_name):
+def api_research_folder_add(ctx: rule.Context, coll: str, new_folder_name: str) -> api.Result:
     """Add a new folder to a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to create new folder in
     :param new_folder_name: Name of the new folder
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -102,7 +104,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     return api.Result.ok()
 
 
-def folder_copy_check(ctx, folder_path, new_folder_path, overwrite, copy=True):
+def folder_copy_check(ctx: rule.Context, folder_path: str, new_folder_path: str, overwrite: bool, copy: bool = True) -> Tuple[bool, str]:
     """Check whether can copy (or move) folder to new folder location.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -166,7 +168,7 @@ def folder_copy_check(ctx, folder_path, new_folder_path, overwrite, copy=True):
 
 
 @api.make()
-def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False):
+def api_research_folder_copy(ctx: rule.Context, folder_path: str, new_folder_path: str, overwrite: bool = False) -> api.Result:
     """Copy a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -174,7 +176,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False)
     :param new_folder_path: Path to the new copy of the folder
     :param overwrite:       Overwrite folder if it already exists
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     valid, errorResponse = folder_copy_check(ctx, folder_path, new_folder_path, overwrite, True)
     if not valid:
@@ -190,7 +192,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path, overwrite=False)
 
 
 @api.make()
-def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False):
+def api_research_folder_move(ctx: rule.Context, folder_path: str, new_folder_path: str, overwrite: bool = False) -> api.Result:
     """Move a folder in a research folder.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -198,7 +200,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False)
     :param new_folder_path: Path to the new folder
     :param overwrite:       Overwrite folder if it already exists
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     valid, errorResponse = folder_copy_check(ctx, folder_path, new_folder_path, overwrite, False)
     if not valid:
@@ -214,7 +216,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path, overwrite=False)
 
 
 @api.make()
-def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
+def api_research_folder_rename(ctx: rule.Context, new_folder_name: str, coll: str, org_folder_name: str) -> api.Result:
     """Rename an existing research folder.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -222,7 +224,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     :param coll:            Parent collection of folder
     :param org_folder_name: Current name of the folder
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -275,14 +277,14 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
 
 @api.make()
-def api_research_folder_delete(ctx, coll, folder_name):
+def api_research_folder_delete(ctx: rule.Context, coll: str, folder_name: str) -> api.Result:
     """Delete a research folder.
 
     :param ctx:         Combined type of a callback and rei struct
     :param coll:        Parent collection of folder to delete
     :param folder_name: Name of folder to delete
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     coll_target = coll + '/' + folder_name
 
@@ -322,7 +324,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
 
 @api.make()
-def api_research_list_temporary_files(ctx, coll):
+def api_research_list_temporary_files(ctx: rule.Context, coll: str) -> api.Result:
     """Get list of temporary files to be cleaned up.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -354,7 +356,7 @@ def api_research_list_temporary_files(ctx, coll):
 
 
 @api.make()
-def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
+def api_research_file_copy(ctx: rule.Context, filepath: str, new_filepath: str, overwrite: bool = False) -> api.Result:
     """Copy a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -362,7 +364,7 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
     :param new_filepath: Path to the new copy of the file
     :param overwrite:    Overwrite file if it already exists
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     if len(new_filepath) == 0:
         return api.Error('missing_filepath', 'Missing file path. Please add a file path')
@@ -424,7 +426,7 @@ def api_research_file_copy(ctx, filepath, new_filepath, overwrite=False):
 
 
 @api.make()
-def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
+def api_research_file_rename(ctx: rule.Context, new_file_name: str, coll: str, org_file_name: str) -> api.Result:
     """Rename a file in a research folder.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -432,7 +434,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     :param coll:          Parent collection of file
     :param org_file_name: Current name of the file
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     if len(new_file_name) == 0:
         return api.Error('missing_filename', 'Missing filename. Please add a file name')
@@ -494,7 +496,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 
 @api.make()
-def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
+def api_research_file_move(ctx: rule.Context, filepath: str, new_filepath: str, overwrite: bool = False) -> api.Result:
     """Move a file in a research folder.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -502,7 +504,7 @@ def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
     :param new_filepath: Path to the new location of the file
     :param overwrite:    Overwrite file if it already exists
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     if len(new_filepath) == 0:
         return api.Error('missing_filepath', 'Missing file path. Please add a file path')
@@ -567,14 +569,14 @@ def api_research_file_move(ctx, filepath, new_filepath, overwrite=False):
 
 
 @api.make()
-def api_research_file_delete(ctx, coll, file_name):
+def api_research_file_delete(ctx: rule.Context, coll: str, file_name: str) -> api.Result:
     """Delete a file in a research folder.
 
     :param ctx:       Combined type of a callback and rei struct
     :param coll:      Parent collection of file to delete
     :param file_name: Name of file to delete
 
-    :returns: Dict with API status result
+    :returns: API status result
     """
     path_target = coll + '/' + file_name
 
@@ -610,13 +612,13 @@ def api_research_file_delete(ctx, coll, file_name):
 
 
 @api.make()
-def api_research_system_metadata(ctx, coll):
+def api_research_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     """Return collection statistics as JSON.
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Research collection
 
-    :returns: Dict with research system metadata
+    :returns: API status result
     """
     data_count = collection.data_count(ctx, coll)
     collection_count = collection.collection_count(ctx, coll)
@@ -629,8 +631,14 @@ def api_research_system_metadata(ctx, coll):
 
 
 @api.make()
-def api_research_collection_details(ctx, path):
-    """Return details of a research collection."""
+def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
+    """Return details of a research collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to research collection
+
+    :returns: API status result
+    """
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
@@ -664,7 +672,7 @@ def api_research_collection_details(ctx, path):
 
 
 @api.make()
-def api_research_manifest(ctx, coll):
+def api_research_manifest(ctx: rule.Context, coll: str) -> api.Result:
     """Produce a manifest of data objects in a collection
 
     :param ctx:  Combined type of a callback and rei struct

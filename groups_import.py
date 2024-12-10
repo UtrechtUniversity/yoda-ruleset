@@ -3,18 +3,20 @@
 __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Dict, List, Set, Tuple
+
 from iteration_utilities import duplicates, unique_everseen
 
 from util import *
 
 
-def process_csv_line(ctx, line):
+def process_csv_line(ctx: 'rule.Context', line: Dict) -> Tuple:
     """Process a line as found in the csv consisting of
        category, subcategory, groupname, managers, members and viewers,
        and optionally schema id and expiration date.
 
-    :param ctx:      Combined type of a ctx and rei struct
-    :param line:     Dictionary of labels and corresponding lists of values
+    :param ctx:  Combined type of a ctx and rei struct
+    :param line: Dictionary of labels and corresponding lists of values
 
     :returns: Tuple of processed row data (None if error), and error message
     """
@@ -78,29 +80,29 @@ def process_csv_line(ctx, line):
     return row_data, None
 
 
-def column_name_is_role_label(column_name):
+def column_name_is_role_label(column_name: str) -> bool:
     return (column_name.lower() in get_role_labels()
             or column_name.lower().startswith(tuple(map(lambda s: s + ":", get_role_labels()))))
 
 
-def get_role_labels():
+def get_role_labels() -> List[str]:
     return ['viewer', 'member', 'manager']
 
 
-def get_csv_possible_labels():
+def get_csv_possible_labels() -> List[str]:
     return ['category', 'subcategory', 'groupname', 'viewer', 'member', 'manager', 'schema_id', 'expiration_date']
 
 
-def get_csv_required_labels():
+def get_csv_required_labels() -> List[str]:
     return ['category', 'subcategory', 'groupname']
 
 
-def get_csv_predefined_labels():
+def get_csv_predefined_labels() -> List[str]:
     """These labels should not repeat"""
     return ['category', 'subcategory', 'groupname', 'schema_id', 'expiration_date']
 
 
-def get_duplicate_columns(fields_list):
+def get_duplicate_columns(fields_list: List) -> Set:
     fields_seen = set()
     duplicate_fields = set()
 
@@ -152,12 +154,12 @@ def parse_csv_file(ctx):
     return extracted_data
 
 
-def get_duplicate_groups(row_data):
+def get_duplicate_groups(row_data: List) -> List:
     group_names = list(map(lambda r: r[2], row_data))
     return list(unique_everseen(duplicates(group_names)))
 
 
-def parse_data(ctx, csv_header_and_data):
+def parse_data(ctx: 'rule.Context', csv_header_and_data: str) -> Tuple:
     """Process contents of csv data consisting of header and rows of data.
 
     :param ctx:                 Combined type of a ctx and rei struct
