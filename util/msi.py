@@ -8,15 +8,19 @@ all errors to unambiguous Python exceptions.
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Callable, Tuple, TYPE_CHECKING
+
 import irods_types
 
 import error
+if TYPE_CHECKING:
+    import rule
 
 
 class Error(error.UUError):
     """Error for microservice failure."""
 
-    def __init__(self, message, msi_status, msi_code, msi_args, src_exception):
+    def __init__(self, message: str, msi_status: str, msi_code: str, msi_args: str, src_exception: str) -> None:
         super().__init__(message)
         # Store msi result, if any.
         # These may be None when an msi aborts in an abnormal way.
@@ -25,7 +29,7 @@ class Error(error.UUError):
         self.msi_args = msi_args
         self.src_exception = src_exception
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.msi_status is not None:
             return '{}: error code {}'.format(self.message, self.msi_code)
         elif self.src_exception is not None:
@@ -36,13 +40,13 @@ class Error(error.UUError):
 
 # Machinery for wrapping microservices and creating microservice-specific exceptions. {{{
 
-def make(name, error_text):
+def make(name: str, error_text: str) -> Tuple[Callable, type]:
     """Create msi wrapper function and exception type as a tuple (see functions below)."""
     e = _make_exception(name, error_text)
     return (_wrap('msi' + name, e), e)
 
 
-def _run(msi, exception, *args):
+def _run(msi: str, exception: str, *args: str) -> str:
     """Run an MSI such that it throws an MSI-specific exception on failure."""
     try:
         ret = msi(*args)
@@ -60,7 +64,7 @@ def _run(msi, exception, *args):
     return ret
 
 
-def _wrap(msi, exception):
+def _wrap(msi: str, exception: str) -> Callable:
     """Wrap an MSI such that it throws an MSI-specific exception on failure.
 
     The arguments to the wrapper are the same as that of the msi, only with
@@ -77,7 +81,7 @@ def _wrap(msi, exception):
     return lambda callback, *args: _run(getattr(callback, msi), exception, *args)
 
 
-def _make_exception(name, message):
+def _make_exception(name: str, message: str) -> type:
     """Create a msi Error subtype for a specific microservice."""
     t = type('{}Error'.format(name), (Error,), {})
     t.__init__ = lambda self, status, code, args, e = None: \
@@ -151,6 +155,6 @@ touch, TouchError = make('_touch', 'Could not update the data object or collecti
 obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object or collection')
 
 
-def kvpair(ctx, k, v):
+def kvpair(ctx: 'rule.Context', k: str, v: str) -> str:
     """Create a keyvalpair object, needed by certain msis."""
     return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]

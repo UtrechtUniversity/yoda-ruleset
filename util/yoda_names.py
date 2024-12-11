@@ -6,11 +6,12 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from datetime import datetime
+from typing import List
 
 from config import config
 
 
-def is_valid_category(name):
+def is_valid_category(name: str) -> bool:
     """Is this name a valid category name?
 
     :param name: name of the category
@@ -20,7 +21,7 @@ def is_valid_category(name):
     return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
 
 
-def is_valid_subcategory(name):
+def is_valid_subcategory(name: str) -> bool:
     """Is this name a valid subcategory name?
 
     :param name: name of the subcategory
@@ -30,7 +31,7 @@ def is_valid_subcategory(name):
     return is_valid_category(name)
 
 
-def is_valid_groupname(name):
+def is_valid_groupname(name: str) -> bool:
     """Is this name a valid group name
 
     :param name: name of the group
@@ -40,28 +41,27 @@ def is_valid_groupname(name):
     return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None and len(name) < 64
 
 
-def is_email_username(name):
+def is_email_username(name: str) -> bool:
     """Is this name a valid email username?
 
-       :param name: name of the user
+    :param name: name of the user
 
-       :returns: boolean value that indicates whether this name is a valid email username
+    :returns: boolean value that indicates whether this name is a valid email username
     """
     return re.search(r'@.*[^\.]+\.[^\.]+$', name) is not None
 
 
-def is_internal_user(username):
-    """Determines if a username refers to an internal user (a user in one of
-       the internal domains)
+def is_internal_user(username: str) -> bool:
+    """Determines if a username refers to an internal user (a user in one of the internal domains)
 
-       :param username: name of the user
+    :param username: name of the user
 
-       :returns: boolean value that indicates whether this username refers to an internal user
-"""
+    :returns: boolean value that indicates whether this username refers to an internal user
+    """
     return _is_internal_user(username, config.external_users_domain_filter)
 
 
-def _is_internal_user(username, external_domain_filter):
+def _is_internal_user(username: str, external_domain_filter: List) -> bool:
     if '@' not in username:
         return True
 
@@ -76,7 +76,7 @@ def _is_internal_user(username, external_domain_filter):
     return False
 
 
-def is_valid_expiration_date(expiration_date):
+def is_valid_expiration_date(expiration_date: str) -> bool:
     """Validation of expiration date.
 
     :param expiration_date: String containing date that has to be validated
@@ -99,7 +99,7 @@ def is_valid_expiration_date(expiration_date):
         return False
 
 
-def is_valid_schema_id(schema_id):
+def is_valid_schema_id(schema_id: str) -> bool:
     """Is this schema at least a correctly formatted schema-id?"""
     if schema_id == "":
         return True

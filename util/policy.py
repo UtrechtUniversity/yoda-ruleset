@@ -3,6 +3,8 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Callable, Tuple
+
 import api
 import log
 import rule
@@ -14,10 +16,10 @@ class Succeed:
     Evaluates to True in boolean context.
     """
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Action permitted'
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return True
     __nonzero__ = __bool__
 
@@ -31,13 +33,13 @@ class Fail:
     Evaluates to False in boolean context.
     """
 
-    def __init__(self, reason):
+    def __init__(self, reason: str) -> None:
         self.reason = reason
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Action not permitted: ' + self.reason
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
     __nonzero__ = __bool__
 
@@ -47,14 +49,14 @@ fail    = Fail
 succeed = Succeed
 
 
-def all(*x):
+def all(*x: Tuple[Succeed | Fail]) -> Succeed | Fail:
     for i in x:
         if not i:
             return i
     return succeed()
 
 
-def require():
+def require() -> Callable:
     """Turn a function into a PEP rule that fails unless policy.succeed() is returned.
 
     The function must explicitly return policy.succeed() or .fail('reason') as a result.
@@ -62,9 +64,9 @@ def require():
 
     :returns: Decorator to turn a function into a PEP rule that fails unless policy.succeed() is returned
     """
-    def deco(f):
+    def deco(f: Callable) -> Callable:
         @rule.make(outputs=[])
-        def r(ctx, *args):
+        def r(ctx: rule.Context, *args: str) -> None:
             """Execute a function as a PEP rule.
 
             :param ctx:  Combined type of a callback and rei struct

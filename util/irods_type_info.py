@@ -4,10 +4,15 @@ Importing this module (anywhere) adds stringifyability to some frequently-used
 irods_types types.
 """
 
+__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
+from typing import Any
+
 import irods_types
 
 
-def pyify(x):
+def pyify(x: Any) -> Any:
     """Turn irods type into equivalent python type, if possible."""
     return x._pyify() if '_pyify' in dir(x) else str(x)
 
@@ -42,7 +47,7 @@ irods_types.GenQueryInp.__repr__ = \
 # (add more as needed)
 
 
-def col_name(i):
+def col_name(i: int) -> str:
     return list(filter(lambda kv: kv[1] == i, cols))[0][0]
 
 

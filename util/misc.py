@@ -6,19 +6,20 @@ __license__   = 'GPLv3, see LICENSE'
 import math
 import time
 from collections import OrderedDict
+from typing import Dict
 
 import constants
 
 
-def check_data_package_system_avus(extracted_avus):
-    """
-    Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
+def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
+    """Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
+
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
     a successfully published data package.
 
     :param extracted_avus: AVUs of the data package in AVU form
 
-    :returns:            Dictionary of the results of the check
+    :returns: Dictionary of the results of the check
     """
     # Filter those starting with 'org_publication'
     extracted_avs = {}
@@ -90,7 +91,7 @@ def check_data_package_system_avus(extracted_avus):
     return results
 
 
-def last_run_time_acceptable(found, last_run, config_backoff_time):
+def last_run_time_acceptable(found: bool, last_run: int, config_backoff_time: int) -> bool:
     """Return whether the last run time is acceptable to continue with task."""
     now = int(time.time())
 
@@ -102,7 +103,7 @@ def last_run_time_acceptable(found, last_run, config_backoff_time):
     return True
 
 
-def human_readable_size(size_bytes):
+def human_readable_size(size_bytes: int) -> str:
     if size_bytes == 0:
         return "0 B"
 
@@ -113,7 +114,7 @@ def human_readable_size(size_bytes):
     return '{} {}'.format(s, size_name[i])
 
 
-def remove_empty_objects(d):
+def remove_empty_objects(d: Dict) -> Dict:
     """Remove empty objects (None, '', {}, []) from OrderedDict."""
     if isinstance(d, dict):
         # Create OrderedDict to maintain order.

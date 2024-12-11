@@ -16,7 +16,7 @@ if 'unittest' not in sys.modules:
     import user
 
 
-def write(ctx, message, write_stdout=False):
+def write(ctx: rule.Context, message: str, write_stdout: bool = False) -> None:
     """Write a message to the log or stdout.
     Includes client name and originating module if writing to log.
 
@@ -32,7 +32,7 @@ def write(ctx, message, write_stdout=False):
         _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
 
 
-def _write(ctx, message):
+def _write(ctx: rule.Context, message: str) -> None:
     """Write a message to the log, including the client name (intended for internal use).
 
     :param ctx:     Combined type of a callback and rei struct
@@ -44,7 +44,7 @@ def _write(ctx, message):
         ctx.writeString('serverLog', message)
 
 
-def debug(ctx, message):
+def debug(ctx: rule.Context, message: str) -> None:
     """"Write a message to the log, if in a development environment.
 
     :param ctx:     Combined type of a callback and rei struct

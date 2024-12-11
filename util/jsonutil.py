@@ -5,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 from collections import OrderedDict
+from typing import Dict
 
 import jsonavu
 
@@ -13,16 +14,17 @@ import data_object
 import error
 import log
 import msi
+import rule
 
 
 class ParseError(error.UUError):
     """Exception for unparsable JSON text."""
 
 
-def parse(text):
+def parse(text: str) -> OrderedDict:
     """Parse JSON into an OrderedDict.
 
-    :param text:       JSON to parse into an OrderedDict
+    :param text: JSON to parse into an OrderedDict
 
     :raises ParseError: JSON file format error
 
@@ -34,7 +36,7 @@ def parse(text):
         raise ParseError('JSON file format error')
 
 
-def dump(data, **options):
+def dump(data: Dict, **options: int) -> str:
     """Dump an object to a JSON string."""
     # json.dumps seems to not like mixed str/unicode input, so make sure
     # everything is of the same type first.
@@ -43,17 +45,17 @@ def dump(data, **options):
                       **({'indent': 4} if options == {} else options))
 
 
-def read(callback, path, **options):
+def read(ctx: rule.Context, path: str, **options: int) -> OrderedDict:
     """Read an iRODS data object and parse it as JSON."""
-    return parse(data_object.read(callback, path), **options)
+    return parse(data_object.read(ctx, path), **options)
 
 
-def write(callback, path, data, **options):
+def write(ctx: rule.Context, path: str, data: Dict, **options: int) -> None:
     """Write a JSON object to an iRODS data object."""
-    return data_object.write(callback, path, dump(data, **options))
+    return data_object.write(ctx, path, dump(data, **options))
 
 
-def set_on_object(ctx, path, type, namespace, json_string):
+def set_on_object(ctx: rule.Context, path: str, type: str, namespace: str, json_string: str) -> bool:
     """Write a JSON object as AVUs to an iRODS object.
 
     :param ctx:         Combined type of a callback and rei struct

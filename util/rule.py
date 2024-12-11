@@ -5,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 from enum import Enum
+from typing import Callable, Dict, List
 
 
 class Context:
@@ -13,11 +14,11 @@ class Context:
     `Context` can be treated as a rule engine callback for all intents and purposes.
     However @rule and @api functions that need access to the rei, can do so through this object.
     """
-    def __init__(self, callback, rei):
+    def __init__(self, callback: object, rei: object) -> None:
         self.callback = callback
         self.rei      = rei
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> object:
         """Allow accessing the callback directly."""
         return getattr(self.callback, name)
 
@@ -29,7 +30,7 @@ class Output(Enum):
     STDOUT_BIN = 2  # write to stdout, without a trailing newline
 
 
-def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE):
+def make(inputs: List | None = None, outputs: List | None = None, transform: Callable = lambda x: x, handler: Output = Output.STORE) -> Callable:
     """Create a rule (with iRODS calling conventions) from a Python function.
 
     :param inputs:    Optional list of rule_args indices to influence how parameters are passed to the function.
@@ -75,7 +76,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
 
     :returns: Decorator to create a rule from a Python function
     """
-    def encode_val(v):
+    def encode_val(v: str | int | List | Dict) -> str:
         """Encode a value such that it can be safely transported in rule_args, as output."""
         if type(v) is str:
             return v
@@ -84,8 +85,8 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
             # note: the result of encoding e.g. int(5) should be equal to str(int(5)).
             return json.dumps(v)
 
-    def deco(f):
-        def r(rule_args, callback, rei):
+    def deco(f: Callable) -> Callable:
+        def r(rule_args: List, callback: object, rei: object) -> None:
             a = rule_args if inputs is None else [rule_args[i] for i in inputs]
             result = f(Context(callback, rei), *a)
 

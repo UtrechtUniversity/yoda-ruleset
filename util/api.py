@@ -11,28 +11,29 @@ import inspect
 import traceback
 import zlib
 from collections import OrderedDict
+from typing import Callable, Dict
 
+import error
 import jsonutil
 import log
 import rule
 from config import config
-from error import *
 
 
 class Result:
     """API result."""
 
-    def __init__(self, data=None, status='ok', info=None, debug_info=None):
+    def __init__(self, data: Dict | None = None, status: str = 'ok', info: str | None = None, debug_info: str | None = None) -> None:
         self.status      = status
         self.status_info = info
         self.data        = data
         self.debug_info  = debug_info
 
     @staticmethod
-    def ok(**xs):
+    def ok(**xs: int) -> object:
         return Result(**xs)
 
-    def as_dict(self):
+    def as_dict(self) -> OrderedDict:
         if config.environment == 'development':
             # Emit debug information in dev.
             # This may contain stack traces, exception texts, timing info,
@@ -46,29 +47,29 @@ class Result:
                                 ('status_info', self.status_info),
                                 ('data',        self.data)])
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self.status == 'ok'
     __nonzero__ = __bool__
 
 
-class Error(Result, UUError):
+class Error(Result, error.UUError):
     """Error with descriptive (user-readable) message.
 
     Returned/raised by API functions to produce informative error output.
     """
-    def __init__(self, name, info, debug_info=None, data=None):
+    def __init__(self, name: str, info: str, debug_info: str | None = None, data: str | None = None) -> None:
         self.name = name
         self.info = info
         self.debug_info = debug_info
 
         Result.__init__(self, data, 'error_' + name, info, debug_info)
-        UUError.__init__(self, 'error_' + name)
+        error.UUError.__init__(self, 'error_' + name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{}: {}'.format(self.name, self.info)
 
 
-def _api(f):
+def _api(f: Callable) -> Callable:
     """Turn a Python function into a basic API function.
 
     By itself, this wrapper is not very useful, as the resulting function is
@@ -107,7 +108,7 @@ def _api(f):
     # If the function accepts **kwargs, we do not forbid extra arguments.
     allow_extra = a_kw is not None
 
-    def wrapper(ctx, inp):
+    def wrapper(ctx: rule.Context, inp: str) -> Dict:
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments.
 
         :param ctx: Combined type of a callback and rei struct
@@ -119,10 +120,10 @@ def _api(f):
         :returns: Result of the JSON API call
         """
         # Result shorthands.
-        def error_internal(debug_info=None):
+        def error_internal(debug_info: str | None = None) -> Error:
             return Error('internal', 'An internal error occurred', debug_info=debug_info)
 
-        def bad_request(debug_info=None):
+        def bad_request(debug_info: str | None = None) -> Error:
             return Error('badrequest', 'An internal error occurred', debug_info=debug_info)
 
         # Input is base64 encoded and compressed to reduce size (max rule length in iRODS is 20KB)
@@ -195,7 +196,7 @@ def _api(f):
     return wrapper
 
 
-def make():
+def make() -> Callable:
     """Create API functions callable as iRODS rules.
 
     This translate between a Python calling convention and the iRODS rule
@@ -221,7 +222,7 @@ def make():
 
     :returns: API function callable as iRODS rules
     """
-    def deco(f):
+    def deco(f: Callable) -> Callable:
         # The "base" API function, that does handling of arguments and errors.
         base = _api(f)
 

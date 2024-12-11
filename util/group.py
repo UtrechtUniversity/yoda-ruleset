@@ -3,12 +3,16 @@
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import List, TYPE_CHECKING
+
 import genquery
 
 import user
+if TYPE_CHECKING:
+    import rule
 
 
-def exists(ctx, grp):
+def exists(ctx: 'rule.Context', grp: str) -> bool:
     """Check if a group with the given name exists.
 
     :param ctx: Combined type of a callback and rei struct
@@ -20,7 +24,7 @@ def exists(ctx, grp):
                                .format(grp)).first() is not None
 
 
-def members(ctx, grp):
+def members(ctx: 'rule.Context', grp: str) -> List:
     """Get members of a given group.
 
     :param ctx: Combined type of a callback and rei struct
@@ -33,7 +37,7 @@ def members(ctx, grp):
                           .format(grp))
 
 
-def is_member(ctx, grp, usr=None):
+def is_member(ctx: 'rule.Context', grp: str, usr: str | None = None) -> bool:
     """Check if a group has a certain member.
 
     :param ctx: Combined type of a callback and rei struct
@@ -45,7 +49,7 @@ def is_member(ctx, grp, usr=None):
     return user.is_member_of(ctx, grp, usr)
 
 
-def get_category(ctx, grp):
+def get_category(ctx: 'rule.Context', grp: str) -> str | None:
     """Get the category of a group.
 
     :param ctx: Combined type of a callback and rei struct
