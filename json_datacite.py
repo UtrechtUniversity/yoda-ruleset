@@ -1,56 +1,23 @@
-# -*- coding: utf-8 -*-
 """Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import Dict, List
+
 from dateutil import parser
 
 from util import *
 
-__all__ = ['rule_json_datacite_create_combi_metadata_json',
-           'rule_json_datacite_create_datacite_json']
 
-
-@rule.make()
-def rule_json_datacite_create_combi_metadata_json(ctx,
-                                                  metadataJsonPath,
-                                                  combiJsonPath,
-                                                  lastModifiedDateTime,
-                                                  yodaDOI,
-                                                  publicationDate,
-                                                  openAccessLink,
-                                                  licenseUri):
-    """Frontend function to add system info to yoda-metadata in json format.
-
-    :param ctx:                  Combined type of a callback and rei struct
-    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
-    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-                                 other are system info parameters
-    :param lastModifiedDateTime: Last modification time of publication
-    :param yodaDOI:              DOI of publication
-    :param publicationDate:      Date of publication
-    :param openAccessLink:       Open access link to data of publication
-    :param licenseUri:           URI to license of publication
-    """
-    json_datacite_create_combi_metadata_json(ctx,
-                                             metadataJsonPath,
-                                             combiJsonPath,
-                                             lastModifiedDateTime,
-                                             yodaDOI,
-                                             publicationDate,
-                                             openAccessLink,
-                                             licenseUri)
-
-
-def json_datacite_create_combi_metadata_json(ctx,
-                                             metadataJsonPath,
-                                             combiJsonPath,
-                                             lastModifiedDateTime,
-                                             yodaDOI,
-                                             publicationDate,
-                                             openAccessLink,
-                                             licenseUri):
+def json_datacite_create_combi_metadata_json(ctx: rule.Context,
+                                             metadataJsonPath: str,
+                                             combiJsonPath: str,
+                                             lastModifiedDateTime: str,
+                                             yodaDOI: str,
+                                             publicationDate: str,
+                                             openAccessLink: str,
+                                             licenseUri: str) -> None:
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param ctx:                  Combined type of a callback and rei struct
@@ -82,12 +49,7 @@ def json_datacite_create_combi_metadata_json(ctx,
     jsonutil.write(ctx, combiJsonPath, metaDict)
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_json_datacite_create_datacite_json(ctx, landing_page_url, combi_path):
-    return json_datacite_create_datacite_json(ctx, landing_page_url, combi_path)
-
-
-def json_datacite_create_datacite_json(ctx, landing_page_url, combi_path):
+def json_datacite_create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> Dict:
     """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -135,32 +97,32 @@ def json_datacite_create_datacite_json(ctx, landing_page_url, combi_path):
     return metadata
 
 
-def get_DOI(combi):
+def get_DOI(combi: Dict) -> str:
     return combi['System']['Persistent_Identifier_Datapackage']['Identifier']
 
 
-def get_identifiers(combi):
+def get_identifiers(combi: Dict) -> List:
     return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
              'identifierType': 'DOI'}]
 
 
-def get_titles(combi):
+def get_titles(combi: Dict) -> List:
     return [{'title': combi['Title'], 'language': 'en-us'}]
 
 
-def get_descriptions(combi):
+def get_descriptions(combi: Dict) -> List:
     return [{'description': combi['Description'], 'descriptionType': 'Abstract'}]
 
 
-def get_publisher(combi):
+def get_publisher(combi: Dict) -> str:
     return config.datacite_publisher
 
 
-def get_publication_year(combi):
+def get_publication_year(combi: Dict) -> str:
     return combi['System']['Publication_Date'][0:4]
 
 
-def get_subjects(combi):
+def get_subjects(combi: Dict) -> List:
     """Get list in DataCite format containing:
 
        1) standard objects like tags/disciplne
@@ -205,7 +167,7 @@ def get_subjects(combi):
     return subjects
 
 
-def get_funders(combi):
+def get_funders(combi: Dict) -> List:
     funders = []
     try:
         for funder in combi.get('Funding_Reference', []):
@@ -217,7 +179,7 @@ def get_funders(combi):
     return funders
 
 
-def get_creators(combi):
+def get_creators(combi: Dict) -> List:
     """Return creator information in DataCite format.
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -254,7 +216,7 @@ def get_creators(combi):
     return all_creators
 
 
-def get_contributors(combi):
+def get_contributors(combi: Dict) -> List:
     """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
 
@@ -328,7 +290,7 @@ def get_contributors(combi):
     return all
 
 
-def get_dates(combi):
+def get_dates(combi: Dict) -> List:
     """Return list of dates in DataCite format."""
 
     # Format last modified date for DataCite: https://support.datacite.org/docs/schema-optional-properties-v41#8-date
@@ -340,11 +302,11 @@ def get_dates(combi):
 
     dates = [{'date': last_modified_date, 'dateType': 'Updated'}]
 
-    embargo_end_date = combi.get('Embargo_End_Date', None)
+    embargo_end_date = combi.get('Embargo_End_Date')
     if embargo_end_date is not None:
         dates.append({'date': embargo_end_date, 'dateType': 'Available'})
 
-    collected = combi.get('Collected', None)
+    collected = combi.get('Collected')
     if collected is not None:
         try:
             x = collected.get('Start_Date')
@@ -357,12 +319,12 @@ def get_dates(combi):
     return dates
 
 
-def get_version(combi):
+def get_version(combi: Dict) -> str:
     """Get string in DataCite format containing version info."""
     return combi.get('Version', '')
 
 
-def get_rights_list(combi):
+def get_rights_list(combi: Dict) -> List:
     """Get list in DataCite format containing rights related information."""
     options = {'Open':       'info:eu-repo/semantics/openAccess',
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
@@ -375,12 +337,12 @@ def get_rights_list(combi):
     return rights_list
 
 
-def get_language(combi):
+def get_language(combi: Dict) -> str:
     """Get string in DataCite format containing language."""
     return 'en-us'
 
 
-def get_resource_type(combi):
+def get_resource_type(combi: Dict) -> Dict:
     """Get dict in DataCite format containing Resource type and default handling."""
     """
     "types": {
@@ -410,7 +372,7 @@ def get_resource_type(combi):
     return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
-def get_related_resources(combi):
+def get_related_resources(combi: Dict) -> List:
     """Get list in DataCite format containing related datapackages."""
     """
   "relatedIdentifiers": [
@@ -445,7 +407,7 @@ def get_related_resources(combi):
     return related_dps
 
 
-def get_geo_locations(combi):
+def get_geo_locations(combi: Dict) -> List:
     """Get list of geoLocation elements in datacite format containing the information of geo locations.
 
        There are two versions of this:
@@ -492,6 +454,6 @@ def get_geo_locations(combi):
             if location:
                 geoLocations.append({'geoLocationPlace': location})
     except KeyError:
-        return
+        return []
 
     return geoLocations

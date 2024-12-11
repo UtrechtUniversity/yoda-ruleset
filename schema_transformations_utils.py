@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """JSON schema transformation utility functions."""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'
@@ -7,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 
-def correctify_orcid(org_orcid):
+def correctify_orcid(org_orcid: str) -> str | None:
     """Correct illformatted ORCID."""
     # Get rid of all spaces.
     orcid = org_orcid.replace(' ', '')
@@ -24,18 +23,18 @@ def correctify_orcid(org_orcid):
     return "https://orcid.org/{}".format(orcs[-1])
 
 
-def correctify_scopus(org_scopus):
+def correctify_scopus(org_scopus: str) -> str | None:
     """Correct illformatted Scopus."""
     # Get rid of all spaces.
     new_scopus = org_scopus.replace(' ', '')
 
-    if not re.search("^\d{1,11}$", new_scopus):
+    if not re.search(r"^\d{1,11}$", new_scopus):
         return None
 
     return new_scopus
 
 
-def correctify_isni(org_isni):
+def correctify_isni(org_isni: str) -> str | None:
     """Correct ill-formatted ISNI."""
     # Remove all spaces.
     new_isni = org_isni.replace(' ', '')
@@ -45,14 +44,14 @@ def correctify_isni(org_isni):
 
     # The last part should hold a valid id like eg: 123412341234123X.
     # If not, it is impossible to correct it to the valid isni format
-    new_isni = new_isni.split('/')
-    if not re.search("^[0-9]{15}[0-9X]$", new_isni[-1]):
+    new_isni_split = new_isni.split('/')
+    if not re.search("^[0-9]{15}[0-9X]$", new_isni_split[-1]):
         return None
 
-    return "https://isni.org/isni/{}".format(new_isni[-1])
+    return "https://isni.org/isni/{}".format(new_isni_split[-1])
 
 
-def correctify_researcher_id(org_researcher_id):
+def correctify_researcher_id(org_researcher_id: str) -> str:
     """Correct illformatted ResearcherID."""
     # Get rid of all spaces.
     researcher_id = org_researcher_id.replace(' ', '')

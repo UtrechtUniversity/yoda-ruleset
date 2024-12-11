@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """Functions for communicating with EPIC and some utilities."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import uuid
+from typing import Dict
 
 import publication
 from util import *
@@ -12,7 +12,7 @@ from util import *
 __all__ = ['rule_generate_uuid']
 
 
-def generate_uuid(ctx):
+def generate_uuid(ctx: rule.Context) -> str:
     """Generate random ID for DOI."""
     randomuuid = str(uuid.uuid4())
     return randomuuid.upper()
@@ -21,7 +21,7 @@ def generate_uuid(ctx):
 rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
 
 
-def register_epic_pid(ctx, target):
+def register_epic_pid(ctx: rule.Context, target: str) -> Dict:
     """Create and try to register an EPIC PID.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -44,7 +44,7 @@ def register_epic_pid(ctx, target):
             'httpCode': ret['arguments'][2]}
 
 
-def save_epic_pid(ctx, target, url, pid):
+def save_epic_pid(ctx: rule.Context, target: str, url: str, pid: str) -> None:
     """Save persistent EPIC ID.
 
     :param ctx:    Combined type of a callback and rei struct

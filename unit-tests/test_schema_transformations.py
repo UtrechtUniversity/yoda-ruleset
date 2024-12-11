@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unit tests for the correctify functions in schema_transformations"""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'

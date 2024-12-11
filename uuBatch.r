@@ -24,19 +24,19 @@ verifyChecksumBatch(*start, *max, *update) {
 }
 
 verifyChecksumData(*path, *chksum, *update) {
-    msiCheckAccess(*path, "read object", *access);
+    msiCheckAccess(*path, "read_object", *access);
     if (*access == 0) {
 	msiSetACL("default", "admin:read", uuClientFullName, *path);
     }
 
     if (*chksum == "") {
-	writeLine("serverLog", "*path: no checksum");
+	writeString("serverLog", "*path: no checksum");
 	if (*update != 0) {
 	    errorcode(msiDataObjChksum(*path, "ChksumAll=", *status));
 	}
     } else {
 	msiSubstr(*chksum, "0", "5", *type);
-	writeLine("serverLog", "*path: *chksum");
+	writeString("serverLog", "*path: *chksum");
 	if (*type == "sha2:") {
 	    errorcode(msiDataObjChksum(*path, "verifyChksum=", *status));
 	} else if (*update != 0) {

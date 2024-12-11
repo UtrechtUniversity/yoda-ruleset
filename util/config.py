@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import List
+
 
 # Config class {{{
 
-class Config(object):
+class Config:
     """Stores configuration info, accessible through attributes (config.foo).
 
     Valid options are determined at __init__ time.
@@ -23,18 +24,18 @@ class Config(object):
       y = config.bar  # AttributeError
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: int) -> None:
         """kwargs must contain all valid options and their default values."""
         self._items  = kwargs
         self._frozen = False
 
-    def freeze(self):
+    def freeze(self) -> None:
         """Prevent further config changes via setattr."""
         self._frozen = True
 
-    def __setattr__(self, k, v):
+    def __setattr__(self, k: str, v: int) -> None:
         if k.startswith('_'):
-            return super(Config, self).__setattr__(k, v)
+            return super().__setattr__(k, v)
         if self._frozen:
             print('Ruleset configuration error: No config changes possible to \'{}\''.format(k))
             return
@@ -44,9 +45,9 @@ class Config(object):
         # Set as config option.
         self._items[k] = v
 
-    def __getattr__(self, k):
+    def __getattr__(self, k: str) -> str | int | bool | List:
         if k.startswith('_'):
-            return super(Config, self).__getattr__(k)
+            return super().__getattr__(k)
         try:
             return self._items[k]
         except KeyError:
@@ -54,10 +55,10 @@ class Config(object):
             raise AttributeError('Config item <{}> does not exist'.format(k))
 
     # Never dump config values, they may contain sensitive info.
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Config()'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Config()'
 
     # def __repr__(self):
@@ -183,7 +184,7 @@ try:
             else:
                 setattr(config, *m.groups())
 
-except IOError:
+except OSError:
     # Ignore, config file is optional.
     pass
 

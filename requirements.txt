@@ -1,4 +1,4 @@
-setuptools==44.0.0
+setuptools==75.6.0
 MarkupSafe==1.1.1
 enum34==1.1.10
 Jinja2==2.11.3
@@ -8,9 +8,8 @@ configparser==4.0.2
 zipp==1.2.0
 contextlib2==0.6.0.post1
 importlib-metadata==2.1.1
-jsonschema==3.2.0
+jsonschema==4.19.1
 pathvalidate==0.29.1
-lxml==4.6.5
 requests_cache==0.5.2
 irods-avu-json==2.2.0
 python2-secrets==1.0.5
@@ -18,9 +17,9 @@ python-dateutil==2.7.0
 python-magic==0.4.27
 certifi==2021.10.8
 execnet==1.9.0
-deepdiff==3.3.0
+deepdiff==8.0.1
 persist-queue==0.8.1
 redis==3.5.3
 psutil==5.9.6
 iteration_utilities==0.8.0
-#pysqlcipher3==1.2.1 (installed by yoda/roles/yoda_rulesets/tasks/main.yml)
+rotki-pysqlcipher3==2024.10.1

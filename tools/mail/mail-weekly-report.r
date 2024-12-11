@@ -15,7 +15,7 @@ mail_weekly_report
     msiCloseGenQuery(*GenQInpCount, *GenQOutCount);
 
     if (*count==0) {
-        writeLine("serverLog", "[EMAIL] No weekly notification mail was sent out, no users are subscribed");
+        writeString("serverLog", "[EMAIL] No weekly notification mail was sent out, no users are subscribed");
         succeed;
     }
 

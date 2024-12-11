@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -6,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from typing import Dict
 
 import magic
 from genquery import AS_DICT, Query
@@ -19,13 +19,13 @@ __all__ = ['api_browse_folder',
 
 
 @api.make()
-def api_browse_folder(ctx,
-                      coll='/',
-                      sort_on='name',
-                      sort_order='asc',
-                      offset=0,
-                      limit=10,
-                      space=pathutil.Space.OTHER.value):
+def api_browse_folder(ctx: rule.Context,
+                      coll: str = '/',
+                      sort_on: str = 'name',
+                      sort_order: str = 'asc',
+                      offset: int = 0,
+                      limit: int = 10,
+                      space: str = pathutil.Space.OTHER.value) -> api.Result:
     """Get paginated collection contents, including size/modify date information.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -38,9 +38,9 @@ def api_browse_folder(ctx,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
         if 'DATA_NAME' in x and 'META_DATA_ATTR_VALUE' in x:
             return {x['DATA_NAME']: x['META_DATA_ATTR_VALUE']}
         elif 'DATA_NAME' in x:
@@ -89,11 +89,11 @@ def api_browse_folder(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)])
+    colls = list(map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)]))
 
     qdata = Query(ctx, dcols, "COLL_NAME = '{}' AND DATA_REPL_STATUS n> '0'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
-    datas = map(transform, list(qdata))
+    datas = list(map(transform, list(qdata)))
 
     # No results at all? Make sure the collection actually exists.
     if len(colls) + len(datas) == 0 and not collection.exists(ctx, coll):
@@ -105,13 +105,13 @@ def api_browse_folder(ctx,
 
 
 @api.make()
-def api_browse_collections(ctx,
-                           coll='/',
-                           sort_on='name',
-                           sort_order='asc',
-                           offset=0,
-                           limit=10,
-                           space=pathutil.Space.OTHER.value):
+def api_browse_collections(ctx: rule.Context,
+                           coll: str = '/',
+                           sort_on: str = 'name',
+                           sort_order: str = 'asc',
+                           offset: int = 0,
+                           limit: int = 10,
+                           space: str = pathutil.Space.OTHER.value) -> api.Result:
     """Get paginated collection contents, including size/modify date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
@@ -127,9 +127,9 @@ def api_browse_collections(ctx,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         if 'DATA_NAME' in x:
             return {'name':        x['DATA_NAME'],
@@ -173,7 +173,7 @@ def api_browse_collections(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)])
+    colls = list(map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)]))
 
     # No results at all? Make sure the collection actually exists.
     if len(colls) == 0 and not collection.exists(ctx, coll):
@@ -185,13 +185,13 @@ def api_browse_collections(ctx,
 
 
 @api.make()
-def api_search(ctx,
-               search_string,
-               search_type='filename',
-               sort_on='name',
-               sort_order='asc',
-               offset=0,
-               limit=10):
+def api_search(ctx: rule.Context,
+               search_string: str,
+               search_type: str = 'filename',
+               sort_on: str = 'name',
+               sort_order: str = 'asc',
+               offset: int = 0,
+               limit: int = 10) -> api.Result:
     """Get paginated search results, including size/modify date/location information.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -204,9 +204,9 @@ def api_search(ctx,
 
     :returns: Dict with paginated search results
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         if 'DATA_NAME' in x:
             _, _, path, subpath = pathutil.info(x['COLL_NAME'])
@@ -217,8 +217,7 @@ def api_search(ctx,
                     'type':        'data',
                     'size':        int(x['DATA_SIZE']),
                     'modify_time': int(x['DATA_MODIFY_TIME'])}
-
-        if 'COLL_NAME' in x:
+        elif 'COLL_NAME' in x:
             _, _, path, subpath = pathutil.info(x['COLL_NAME'])
             if subpath != '':
                 path = path + "/" + subpath
@@ -226,14 +225,16 @@ def api_search(ctx,
             return {'name':        "/{}".format(path),
                     'type':        'coll',
                     'modify_time': int(x['COLL_MODIFY_TIME'])}
+        else:
+            return {}
 
     # Replace, %, _ and \ since iRODS does not handle those correctly.
     # HdR this can only be done in a situation where search_type is NOT status!
     # Status description must be kept in tact.
     if search_type != 'status':
         search_string = search_string.replace("\\", "\\\\")
-        search_string = search_string.replace("%", "\%")
-        search_string = search_string.replace("_", "\_")
+        search_string = search_string.replace("%", r"\%")
+        search_string = search_string.replace("_", r"\_")
 
     zone = user.zone(ctx)
 
@@ -280,13 +281,13 @@ def api_search(ctx,
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
                   limit=int(limit), case_sensitive=query_is_case_sensitive, output=AS_DICT)
 
-    datas = map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)])
+    datas = list(map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)]))
 
     return OrderedDict([('total', qdata.total_rows()),
                         ('items', datas)])
 
 
-def _filter_vault_deposit_index(row):
+def _filter_vault_deposit_index(row: Dict) -> bool:
     """This internal function filters out index collections in deposit vault collections.
        These collections are used internally by Yoda for indexing data package metadata, and
        should not be displayed.
@@ -296,14 +297,14 @@ def _filter_vault_deposit_index(row):
        :returns: boolean value that indicates whether row should be displayed
     """
     # Remove ORDER_BY etc. wrappers from column names.
-    x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+    x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
     # Filter out deposit vault index collection
     return not re.match("^/[^/]+/home/vault-[^/]+/deposit-[^/]+/index$",
                         x['COLL_NAME'])
 
 
 @api.make()
-def api_load_text_obj(ctx, file_path='/'):
+def api_load_text_obj(ctx: rule.Context, file_path: str = '/') -> api.Result:
     """Retrieve a text file (as a string) in either the research, deposit, or vault space.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -345,3 +346,5 @@ def api_load_text_obj(ctx, file_path='/'):
         return api.Error('large_size', 'The given text file is too large to render')
     except error.UUError:
         return api.Error('ReadError', 'Could not retrieve file')
+    except Exception:
+        return api.Error('not_valid', 'The given data object is not a text file')

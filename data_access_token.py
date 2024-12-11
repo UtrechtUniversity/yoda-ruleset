@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 """Functions for token management."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
 import secrets
 from datetime import datetime, timedelta
 from traceback import print_exc
+from typing import List
 
 from pysqlcipher3 import dbapi2 as sqlite3
 
@@ -20,7 +20,7 @@ __all__ = ['api_token_generate',
 
 
 @api.make()
-def api_token_generate(ctx, label=None):
+def api_token_generate(ctx: rule.Context, label: str = "") -> api.Result:
     """Generates a token for user authentication.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -28,7 +28,7 @@ def api_token_generate(ctx, label=None):
 
     :returns: Generated token or API error
     """
-    def generate_token():
+    def generate_token() -> str:
         length = int(config.token_length)
         token = secrets.token_urlsafe(length)
         return token[:length]
@@ -64,14 +64,13 @@ def api_token_generate(ctx, label=None):
 
 
 @api.make()
-def api_token_load(ctx):
+def api_token_load(ctx: rule.Context) -> api.Result:
     """Loads valid tokens of user.
 
     :param ctx: Combined type of a callback and rei struct
 
     :returns: Valid tokens
     """
-
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
@@ -84,8 +83,8 @@ def api_token_load(ctx):
             conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
                                     {"user_id": user_id, "now": datetime.now()}):
-                exp_time = datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S.%f')
-                exp_time = exp_time.strftime('%Y-%m-%d %H:%M:%S')
+                date_time = datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S.%f')
+                exp_time = date_time.strftime('%Y-%m-%d %H:%M:%S')
                 result.append({"label": row[0], "exp_time": exp_time})
     except Exception:
         print_exc()
@@ -99,7 +98,7 @@ def api_token_load(ctx):
 
 
 @api.make()
-def api_token_delete(ctx, label):
+def api_token_delete(ctx: rule.Context, label: str) -> api.Result:
     """Deletes a token of the user.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -131,10 +130,10 @@ def api_token_delete(ctx, label):
 
 
 @api.make()
-def api_token_delete_expired(ctx):
+def api_token_delete_expired(ctx: rule.Context) -> api.Result:
     """Deletes expired tokens of current user
 
-    :param ctx:   Combined type of a callback and rei struct
+    :param ctx: Combined type of a callback and rei struct
 
     :returns: Status of token deletion
     """
@@ -161,8 +160,9 @@ def api_token_delete_expired(ctx):
     return result
 
 
-def get_all_tokens(ctx):
+def get_all_tokens(ctx: rule.Context) -> List:
     """Retrieve all valid tokens.
+
     :param ctx: Combined type of a callback and rei struct
 
     :returns: Valid tokens
@@ -193,7 +193,7 @@ def get_all_tokens(ctx):
     return result
 
 
-def token_database_initialized():
+def token_database_initialized() -> bool:
     """Checks whether token database has been initialized
 
     :returns: Boolean value

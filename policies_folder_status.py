@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -13,7 +12,10 @@ import provenance
 from util import *
 
 
-def pre_status_transition(ctx, coll, current, new):
+def pre_status_transition(ctx: rule.Context,
+                          coll: str,
+                          current: constants.research_package_state,
+                          new: constants.research_package_state) -> policy.Succeed | policy.Fail:
     """Action taken before status transition."""
     if current != constants.research_package_state.LOCKED \
         and new in [constants.research_package_state.LOCKED,
@@ -51,7 +53,11 @@ def pre_status_transition(ctx, coll, current, new):
     return policy.succeed()
 
 
-def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
+def can_transition_folder_status(ctx: rule.Context,
+                                 actor: str,
+                                 coll: str,
+                                 status_from: str,
+                                 status_to: str) -> policy.Succeed | policy.Fail:
     transition = (constants.research_package_state(status_from),
                   constants.research_package_state(status_to))
     if transition not in constants.folder_transitions:
@@ -85,7 +91,10 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
     return policy.succeed()
 
 
-def can_set_folder_status_attr(ctx, actor, coll, status):
+def can_set_folder_status_attr(ctx: rule.Context,
+                               actor: str,
+                               coll: str,
+                               status: str) -> policy.Succeed | policy.Fail:
     try:
         status = "" if status == "FOLDER" else status
         new = constants.research_package_state(status)
@@ -101,9 +110,11 @@ def can_set_folder_status_attr(ctx, actor, coll, status):
         return (current, new)
 
 
-def post_status_transition(ctx, path, actor, status):
+def post_status_transition(ctx: rule.Context,
+                           path: str,
+                           actor: str,
+                           status: str) -> None:
     """Post folder status transition actions."""
-
     status = "" if status == "FOLDER" else status
     status = constants.research_package_state(status)
 

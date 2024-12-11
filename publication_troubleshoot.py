@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions and rules for troubleshooting published data packages."""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'
@@ -32,9 +31,11 @@ def find_full_package_path(ctx, package_name, write_stdout):
 
     :returns: The full path of the data package if found, otherwise None.
     """
+    user_zone = user.zone(ctx)
+
     try:
         query_condition = (
-            "COLL_NAME like '%{}%'".format(package_name)
+            "COLL_NAME like '/{}/home/vault-%{}%'".format(user_zone, package_name)
         )
         query_attributes = "COLL_NAME"
         iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
@@ -107,7 +108,7 @@ def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
         log.write(ctx, "check_datacite_doi_registration: Error while trying to get {} - {}".format(doi_name, e), write_stdout)
         return False
 
-    status_code = datacite.metadata_get(ctx, doi)
+    status_code = datacite.metadata_get(doi)
     return status_code == 200
 
 

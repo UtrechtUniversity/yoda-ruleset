@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """GenQuery column constants
 
    Adapted from ./lib/core/include/rodsGenQuery.h in main iRODS repository."""

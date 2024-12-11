@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -13,9 +12,10 @@ import constants
 import data_object
 import log
 import msi
+import rule
 
 
-def manifest(ctx, coll):
+def manifest(ctx: rule.Context, coll: str) -> str:
     """Generate a BagIt manifest of collection.
 
     Manifest with a complete listing of each file name along with
@@ -42,7 +42,7 @@ def manifest(ctx, coll):
     ]) + "\n"
 
 
-def status(ctx, coll):
+def status(ctx: rule.Context, coll: str) -> str | bool:
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
                                      "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
                                      genquery.AS_LIST,
@@ -52,7 +52,7 @@ def status(ctx, coll):
     return False
 
 
-def create(ctx, archive, coll, resource):
+def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     # Create manifest file.
     log.write(ctx, "Creating manifest file for data package <{}>".format(coll))
     data_object.write(ctx, coll + "/manifest-sha256.txt", manifest(ctx, coll))
@@ -75,7 +75,7 @@ def create(ctx, archive, coll, resource):
     ctx.iiCopyACLsFromParent(archive, "default")
 
 
-def extract(ctx, archive, coll, resource=0):
+def extract(ctx: rule.Context, archive: str, coll: str, resource: str = '0') -> None:
     ret = msi.archive_extract(ctx, archive, coll, 0, resource, 0)
     if ret < 0:
         log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))

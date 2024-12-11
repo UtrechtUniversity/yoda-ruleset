@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
 """iRODS policy utility functions"""
 
 __copyright__ = 'Copyright (c) 2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import ast
+from typing import Set
 
 from util.genquery_col_constants import *
 
 
-def is_safe_genquery_inp(genquery_inp):
+def is_safe_genquery_inp(genquery_inp: object) -> bool:
     """Checks if a GenQuery input matches Yoda policies
 
        :param genquery_inp: GenQueryInp object containing query information
@@ -17,10 +17,10 @@ def is_safe_genquery_inp(genquery_inp):
        :returns: boolean value. True if query may be executed; false if query
                  should be rejected for security or safety reasons.
     """
-    return _is_safe_genquery_inp(genquery_inp.selectInp, genquery_inp.sqlCondInp)
+    return _is_safe_genquery_inp(genquery_inp.selectInp, genquery_inp.sqlCondInp.inx)
 
 
-def _column_in_select_inp(selectInp, columns):
+def _column_in_select_inp(selectInp: Set[int], columns: Set[int]) -> bool:
     selectedInpHash = ast.literal_eval(str(selectInp))
     selected_columns  = selectedInpHash.keys()
     for column in columns:
@@ -29,16 +29,15 @@ def _column_in_select_inp(selectInp, columns):
     return False
 
 
-def _column_in_cond_inp(sqlCondInp, columns):
-    condition_data = ast.literal_eval(str(sqlCondInp))
-    condition_columns = map(lambda c: c[0], condition_data)
+def _column_in_cond_inp(sqlCondInp: Set[int], columns: Set[int]) -> bool:
+    condition_columns = ast.literal_eval(str(sqlCondInp))
     for column in columns:
         if column in condition_columns:
             return True
     return False
 
 
-def _is_safe_genquery_inp(selectInp, sqlCondInp):
+def _is_safe_genquery_inp(selectInp: Set[int], sqlCondInp: Set[int]) -> bool:
     # Defines groups of GenQuery columns
     dataobject_columns = {COL_D_DATA_ID, COL_D_COLL_ID, COL_DATA_NAME, COL_DATA_REPL_NUM,
                           COL_DATA_VERSION, COL_DATA_TYPE_NAME, COL_DATA_SIZE,

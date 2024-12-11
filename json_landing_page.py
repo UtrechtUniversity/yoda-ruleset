@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
+from typing import Dict
 
 import jinja2
 from dateutil import parser
@@ -12,7 +12,7 @@ from dateutil import parser
 from util import *
 
 
-def persistent_identifier_to_uri(identifier_scheme, identifier):
+def persistent_identifier_to_uri(identifier_scheme: str, identifier: str) -> str:
     """Transform a persistent identifier to URI.
 
     Supported identifier schemes are Handle, DOI, ORCID and URL.
@@ -42,7 +42,13 @@ def persistent_identifier_to_uri(identifier_scheme, identifier):
     return uri
 
 
-def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_json_path, json_schema, base_doi, versions):
+def json_landing_page_create_json_landing_page(ctx: rule.Context,
+                                               zone: str,
+                                               template_name: str,
+                                               combi_json_path: str,
+                                               json_schema: Dict,
+                                               base_doi: str,
+                                               versions: Dict) -> str:
     """Get the landing page of published YoDa metadata as a string.
 
     :param ctx:             Combined type of a ctx and rei struct
@@ -57,9 +63,7 @@ def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_j
     """
     # Landing page creation is part of the publication process
     # Read user & system metadata from corresponding combi JSON file
-    # (Python2) 'want_bytes=False': Do not encode embedded unicode strings as
-    #                               UTF-8, as that will trip up jinja2.
-    json_data = jsonutil.read(ctx, combi_json_path, want_bytes=False)
+    json_data = jsonutil.read(ctx, combi_json_path)
 
     # Remove empty objects to prevent empty fields on landingpage.
     json_data = misc.remove_empty_objects(json_data)
@@ -126,9 +130,8 @@ def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_j
     try:
         language = ""
         language_id = json_data["Language"]
-        # Convert just the language schemas to unicode to handle when a language has non-ascii characters (like Volapük)
-        schema_lang_ids = map(lambda x: x.decode("utf-8"), json_schema["definitions"]["optionsISO639-1"]["enum"])
-        schema_lang_names = map(lambda x: x.decode("utf-8"), json_schema["definitions"]["optionsISO639-1"]["enumNames"])
+        schema_lang_ids = json_schema["definitions"]["optionsISO639-1"]["enum"]
+        schema_lang_names = json_schema["definitions"]["optionsISO639-1"]["enumNames"]
         index = schema_lang_ids.index(language_id)
         # Language variable must be kept in unicode, otherwise landing page fails to build with a language with non-ascii characters
         language = schema_lang_names[index]
@@ -191,12 +194,12 @@ def json_landing_page_create_json_landing_page(ctx, zone, template_name, combi_j
     # Format last modified and publication date.
     # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
     # last_modified_date = date.fromisoformat(json_data['System']['Last_Modified_Date'])
-    last_modified_date = parser.parse(json_data["System"]["Last_Modified_Date"])
-    last_modified_date = last_modified_date.strftime("%Y-%m-%d %H:%M:%S%z")
+    last_modified_date_time = parser.parse(json_data["System"]["Last_Modified_Date"])
+    last_modified_date = last_modified_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
     # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
     # publication_date = date.fromisoformat(json_data['System']['Publication_Date'])
-    publication_date = parser.parse(json_data["System"]["Publication_Date"])
-    publication_date = publication_date.strftime("%Y-%m-%d %H:%M:%S%z")
+    publication_date_time = parser.parse(json_data["System"]["Publication_Date"])
+    publication_date = publication_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
 
     tm = Template(template)
     # Add custom function to transform a persistent identifier to URI.

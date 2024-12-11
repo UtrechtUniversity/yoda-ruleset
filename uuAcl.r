@@ -120,25 +120,25 @@ uuEnforceGroupAcl(*path) {
 			uuAclListOfDataObj(*path, *aclList);
 		}
 
-		#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: aclList -> *aclList");
+		#DEBUG writeString("serverLog", "uuEnforceGroupAcl: aclList -> *aclList");
 		uuAclListOfColl("/*rodsZone/home/*groupName", *groupAclList);
-		#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: groupAclList -> *groupAclList");
+		#DEBUG writeString("serverLog", "uuEnforceGroupAcl: groupAclList -> *groupAclList");
 		*aclsToRemove = uuAclListSetDiff(*aclList, *groupAclList, true);
-		#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: aclsToRemove -> *aclsToRemove");
+		#DEBUG writeString("serverLog", "uuEnforceGroupAcl: aclsToRemove -> *aclsToRemove");
 		*aclsToAdd = uuAclListSetDiff(*groupAclList, *aclList, false);
-		#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: aclsToAdd -> *aclsToAdd");
+		#DEBUG writeString("serverLog", "uuEnforceGroupAcl: aclsToAdd -> *aclsToAdd");
 
 		*recurse = if *objType == "-c" then "recursive" else "default"
 
 		foreach(*acl in *aclsToAdd) {
 			uuAclToStrings(*acl, *userName, *accessLevel);
-			#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: Setting ACL *accessLevel *userName *path");
+			#DEBUG writeString("serverLog", "uuEnforceGroupAcl: Setting ACL *accessLevel *userName *path");
 			msiSetACL(*recurse, *accessLevel, *userName, *path);
 		}
 
 		foreach(*acl in *aclsToRemove) {
 				uuAclToStrings(*acl, *userName, *accessLevel);
-				#DEBUG writeLine("serverLog", "uuEnforceGroupAcl: Removing ACL *accessLevel *userName *path");
+				#DEBUG writeString("serverLog", "uuEnforceGroupAcl: Removing ACL *accessLevel *userName *path");
 				msiSetACL(*recurse, "null", *userName, *path);
 		}
 }

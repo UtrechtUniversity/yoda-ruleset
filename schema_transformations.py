@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from typing import Callable, Dict
 
 from schema_transformations_utils import correctify_isni, correctify_orcid, correctify_researcher_id, correctify_scopus
 
@@ -26,7 +26,7 @@ __all__ = []
 # The docstring of a transformation function should describe the transformation
 # in a human-readable manner: it is provided to the user executing the transformation.
 
-def _default0_default1(ctx, m):
+def _default0_default1(ctx: rule.Context, m: Dict) -> Dict:
     """
     A Data type field is added to be used for publication purposes to DataCite.
 
@@ -46,7 +46,7 @@ def _default0_default1(ctx, m):
 
     :returns: Transformed (default-1) JSON object
     """
-    def fixup_name(n):
+    def fixup_name(n: str) -> Dict:
         """Split a name into a first and last name, error-prone, but acceptable."""
         n.strip()  # Trim whitespace, if any.
 
@@ -77,7 +77,7 @@ def _default0_default1(ctx, m):
     return m
 
 
-def _default1_default2(ctx, m):
+def _default1_default2(ctx: rule.Context, m: Dict) -> Dict:
     """
     Metadata fields Discipline, Language and Tags have become required fields.
 
@@ -109,7 +109,7 @@ def _default1_default2(ctx, m):
     return m
 
 
-def _default2_default3(ctx, m):
+def _default2_default3(ctx: rule.Context, m: Dict) -> Dict:
     """
     Add affiliation identifiers to creators and contributors.
 
@@ -144,7 +144,7 @@ def _default2_default3(ctx, m):
                 # Check Scopus
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
                     # Check for incorrect Scopus format.
-                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
                         corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
                         # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_scopus is None:
@@ -203,7 +203,7 @@ def _default2_default3(ctx, m):
                 # Check Scopus
                 elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
                     # Check for incorrect Scopus format.
-                    if not re.search("^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
+                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
                         corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
                         # Only if an actual correction took place change the value and mark this data as 'changed'.
                         if corrected_scopus is None:
@@ -266,7 +266,7 @@ def _default2_default3(ctx, m):
     return m
 
 
-def _core1_core2(ctx, m):
+def _core1_core2(ctx: rule.Context, m: Dict) -> Dict:
     """
     Add affiliation identifiers to creators.
 
@@ -298,7 +298,7 @@ def _core1_core2(ctx, m):
     return m
 
 
-def _dag0_default2(ctx, m):
+def _dag0_default2(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform dag-0 data to the default-2 schema definition
 
@@ -362,7 +362,7 @@ def _dag0_default2(ctx, m):
     return m
 
 
-def _default1_teclab0(ctx, m):
+def _default1_teclab0(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform Default-1 data to the teclab-0 schema definition
 
@@ -483,7 +483,7 @@ def _default1_teclab0(ctx, m):
     return m
 
 
-def _default1_hptlab0(ctx, m):
+def _default1_hptlab0(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform Default-1 data to the hptlab-0 schema definition
 
@@ -602,7 +602,7 @@ def _default1_hptlab0(ctx, m):
     return m
 
 
-def _hptlab0_hptlab1(ctx, m):
+def _hptlab0_hptlab1(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform hptlab-0 data to the hptlab-1 schema definition which holds better qualified lists.
 
@@ -658,7 +658,7 @@ def _hptlab0_hptlab1(ctx, m):
     return m
 
 
-def _teclab0_teclab1(ctx, m):
+def _teclab0_teclab1(ctx: rule.Context, m: Dict) -> Dict:
     """
     Transform teclab-0 data to the teclab-1 schema definition which holds better qualified lists.
 
@@ -717,7 +717,7 @@ def _teclab0_teclab1(ctx, m):
 # }}}
 
 
-def get(src_id, dst_id):
+def get(src_id: str, dst_id: str) -> Callable | None:
     """
     Get a transformation function that maps metadata from the given src schema id to the dst schema id.
 

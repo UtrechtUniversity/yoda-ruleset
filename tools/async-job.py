@@ -51,7 +51,7 @@ def lock_or_die(balance_id_min, balance_id_max):
             exit(1)
         else:
             raise
-    os.write(fd, str(os.getpid()))
+    os.write(fd, str(os.getpid()).encode())
     os.close(fd)
 
     # Remove lock no matter how we exit.

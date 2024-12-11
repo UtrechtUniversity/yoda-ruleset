@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Integration tests for the development environment."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -554,10 +553,10 @@ basic_integration_tests = [
      "check": lambda x: x},
     {"name":  "folder.determine_new_vault_target.research",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/research-initial/testdata"),
-     "check": lambda x: re.match("^\/tempZone\/home\/vault-initial\/testdata\[[0-9]*\]$", x) is not None},
+     "check": lambda x: re.match(r"^\/tempZone\/home\/vault-initial\/testdata\[[0-9]*\]$", x) is not None},
     {"name":  "folder.determine_new_vault_target.deposit",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/deposit-pilot/deposit-hi[123123]"),
-     "check": lambda x: re.match("^\/tempZone\/home\/vault-pilot\/deposit-hi\[[0-9]*\]\[[0-9]*\]$", x) is not None},
+     "check": lambda x: re.match(r"^\/tempZone\/home\/vault-pilot\/deposit-hi\[[0-9]*\]\[[0-9]*\]$", x) is not None},
     {"name":  "folder.determine_new_vault_target.invalid",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
      "check": lambda x: x == ""},

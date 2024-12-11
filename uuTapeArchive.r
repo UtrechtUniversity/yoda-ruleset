@@ -12,7 +12,7 @@ dmput(*data, *hostAddress, *dmfs) {
     #if (*dmfs not like "DUL" && *dmfs not like "OFL" && *dmfs not like "UNM" && *dmfs not like "MIG") {
         msiExecCmd("dmput", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
-        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmput started: *data. Returned Status - *dmStat.");
+        writeString("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmput started: *data. Returned Status - *dmStat.");
     #}
 }
 
@@ -26,7 +26,7 @@ dmget(*data, *hostAddress, *dmfs) {
     #if (*dmfs not like "DUL" && *dmfs not like "REG" && *dmfs not like "UNM" && *dmfs not like "MIG") {
         msiExecCmd("dmget", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
-        writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmget started: *data. Returned Status - *dmStat.");
+        writeString("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmget started: *data. Returned Status - *dmStat.");
     #}
 }
 

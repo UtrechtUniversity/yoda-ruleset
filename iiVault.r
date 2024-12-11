@@ -16,7 +16,7 @@
 #
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
-	msiCheckAccess(*sourcePath, "read object", *readAccess);
+	msiCheckAccess(*sourcePath, "read_object", *readAccess);
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
 		if (*error < 0) {
@@ -116,9 +116,9 @@ iiGenericSecureCopy(*argv, *origin_path, *err) {
         if (*intErr < 0 ) {
                 msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
                 msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-                writeLine("serverLog", "iiGenericSecureCopy: errorcode *err");
-                writeLine("serverLog", *stderr);
-                writeLine("serverLog", *stdout);
+                writeString("serverLog", "iiGenericSecureCopy: errorcode *err");
+                writeString("serverLog", *stderr);
+                writeString("serverLog", *stdout);
         }
 }
 
@@ -142,13 +142,13 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
 
                 if (*userFound) {
                         if (*accessName == "own") {
-                                writeLine("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                                writeString("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "own", *userName, *path);
-                        } else if (*accessName == "read object") {
-                                writeLine("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                        } else if (*accessName == "read_object") {
+                                writeString("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "read", *userName, *path);
-                        } else if (*accessName == "modify object") {
-                                writeLine("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                        } else if (*accessName == "modify_object") {
+                                writeString("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "write", *userName, *path);
                         }
                 }
@@ -207,9 +207,9 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
         foreach(*row in SELECT ORDER_DESC(META_COLL_MODIFY_TIME), COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
                 *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
                 if (*err < 0) {
-                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
+                        writeString("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
                 } else {
-                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId actor is *actionActor");
+                        writeString("serverLog", "iiVaultGetActionActor: org_vault_action_*collId actor is *actionActor");
                 }
                 break;
         }

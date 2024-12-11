@@ -111,7 +111,7 @@ def get_dataobject_acls(path: str) -> List[Tuple[str, str]]:
         match = re.search(r"^        ACL - ([\S\s]+)$", line)
         if match:
             acl_line = match.group(1)
-            for acl_entry in acl_line.replace("read object", "read").replace("g:", "").split():
+            for acl_entry in acl_line.replace("read_object", "read").replace("g:", "").split():
                 (acl_group, acl_priv) = acl_entry.split(":")
                 acl_clean_group = acl_group.split("#")[0]
                 results.append((acl_clean_group, acl_priv))

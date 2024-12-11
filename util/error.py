@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 """Common UU Error/Exception types."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
 class UUError(Exception):
     """Generic Python rule error."""
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super(UUError, self).__init__(message)
 
 
 class UUFileSizeError(UUError):

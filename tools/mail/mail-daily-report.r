@@ -15,7 +15,7 @@ mail_daily_report
     msiCloseGenQuery(*GenQInpCount, *GenQOutCount);
 
     if (*count==0) {
-        writeLine("serverLog", "[EMAIL] No daily notification mail was sent out, no users are subscribed");
+        writeString("serverLog", "[EMAIL] No daily notification mail was sent out, no users are subscribed");
         succeed;
     }
 

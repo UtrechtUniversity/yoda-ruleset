@@ -675,10 +675,10 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 
 	# {
 	#uuGetUserAndZone(*user, *userName, *userZone);
-	#writeLine("serverLog", "*user -> *userName # *userZone");
+	#writeString("serverLog", "*user -> *userName # *userZone");
 
 	#uuGroupGetMembers(*groupName, true, true, *members);
-	#writeLine("serverLog", "*user -> *userName # *userZone");
+	#writeString("serverLog", "*user -> *userName # *userZone");
 	# }
 
 	# The above call to uuGroupGetMembers OVERWRITES *userName with a different
@@ -974,15 +974,15 @@ uuGroupUserAdd(*groupName, *user, *creatorUser, *creatorZone, *status, *message)
                         *message = ""
                         rule_group_provision_external_user(*userName, *creatorUser, *creatorZone, *http_code, *message);
                         if (*message != "") {
-                                writeLine("serverLog", "[EXTERNAL USER] *message");
+                                writeString("serverLog", "[EXTERNAL USER] *message");
                                 *status = *http_code;
                                 succeed; # Return here (fail would ruin the status and error message).
                         }
-                        writeLine("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient on the behalf of *creatorUser on *creatorZone.");
+                        writeString("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient on the behalf of *creatorUser on *creatorZone.");
 					}
 					else {
 						# Actor user is not allowed to do this action
-						writeLine("serverLog", "[EXTERNAL USER] Actor $userNameClient on $rodsZoneClient does not have sufficient permissions to create external user *userName");
+						writeString("serverLog", "[EXTERNAL USER] Actor $userNameClient on $rodsZoneClient does not have sufficient permissions to create external user *userName");
 						succeed; # Return here (fail would ruin the status and error message).
 					}
                 }

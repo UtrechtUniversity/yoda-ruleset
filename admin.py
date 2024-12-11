@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for admin module."""
 
 __copyright__ = 'Copyright 2024, Utrecht University'
@@ -12,7 +11,7 @@ from util import *
 
 
 @api.make()
-def api_admin_has_access(ctx):
+def api_admin_has_access(ctx: rule.Context) -> api.Result:
     """
     Checks if the user has admin access based on user rights or membership in admin-priv group.
 

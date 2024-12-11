@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for deposit module."""
 
 __copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
@@ -6,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from typing import Dict
 
 import genquery
 from genquery import AS_DICT, Query
@@ -25,7 +25,7 @@ DEPOSIT_GROUP = "deposit-pilot"
 
 
 @api.make()
-def api_deposit_copy_data_package(ctx, reference, deposit_group):
+def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_group: str) -> api.Result:
     """Create deposit collection and copies selected datapackage into the newly created deposit
 
     :param ctx:           Combined type of a callback and rei struct
@@ -76,14 +76,14 @@ def api_deposit_copy_data_package(ctx, reference, deposit_group):
     # Register to delayed rule queue.
     ctx.delayExec(
         "<PLUSET>1s</PLUSET>",
-        "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
+        "iiCopyFolderToResearch('{}', '{}')".format(coll_data_package, coll_target),
         "")
 
     return {"data": new_deposit_path}
 
 
 @api.make()
-def api_deposit_create(ctx, deposit_group):
+def api_deposit_create(ctx: rule.Context, deposit_group: str) -> api.Result:
     """Create deposit collection through API
 
     :param ctx:           Combined type of a callback and rei struct
@@ -99,7 +99,7 @@ def api_deposit_create(ctx, deposit_group):
     return {"deposit_path": result["deposit_path"]}
 
 
-def deposit_create(ctx, deposit_group):
+def deposit_create(ctx: rule.Context, deposit_group: str | None) -> Dict:
     """Create deposit collection.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -140,7 +140,7 @@ def deposit_create(ctx, deposit_group):
 
 
 @api.make()
-def api_deposit_status(ctx, path):
+def api_deposit_status(ctx: rule.Context, path: str) -> api.Result:
     """Retrieve status of deposit.
 
     :param ctx: Combined type of a callback and rei struct
@@ -175,7 +175,7 @@ def api_deposit_status(ctx, path):
 
 
 @api.make()
-def api_deposit_submit(ctx, path):
+def api_deposit_submit(ctx: rule.Context, path: str) -> api.Result:
     """Submit deposit collection.
 
     :param ctx: Combined type of a callback and rei struct
@@ -196,12 +196,12 @@ def api_deposit_submit(ctx, path):
 
 
 @api.make()
-def api_deposit_overview(ctx,
-                         sort_on='name',
-                         sort_order='asc',
-                         offset=0,
-                         limit=10,
-                         space=pathutil.Space.OTHER.value):
+def api_deposit_overview(ctx: rule.Context,
+                         sort_on: str = 'name',
+                         sort_order: str = 'asc',
+                         offset: int = 0,
+                         limit: int = 10,
+                         space: str = pathutil.Space.OTHER.value) -> api.Result:
     """Get paginated collection contents, including size/modify date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
@@ -216,9 +216,9 @@ def api_deposit_overview(ctx,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row):
+    def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
-        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+        x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         deposit_size = collection.size(ctx, x['COLL_NAME'])
 
@@ -283,7 +283,7 @@ def api_deposit_overview(ctx,
             qcoll = Query(ctx, ccols,
                           "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
                           offset=offset, limit=limit, output=AS_DICT)
-            colls = map(transform, list(qcoll))
+            colls = list(map(transform, list(qcoll)))
             all_colls += colls
 
     return OrderedDict([('total', len(all_colls)),

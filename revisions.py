@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for revision management."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -9,6 +8,7 @@ import os
 import random
 import re
 import time
+from typing import Dict, Iterator, List, Tuple
 
 import genquery
 import irods_types
@@ -31,7 +31,7 @@ __all__ = ['api_revisions_restore',
 
 
 @api.make()
-def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
+def api_revisions_search_on_filename(ctx: rule.Context, searchString: str, offset: int = 0, limit: int = 10) -> api.Result:
     """Search revisions of a file in a research folder and return list of corresponding revisions.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -115,7 +115,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
 
 @api.make()
-def api_revisions_list(ctx, path):
+def api_revisions_list(ctx: rule.Context, path: str) -> api.Result:
     """Get list revisions of a file in a research folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -162,7 +162,7 @@ def api_revisions_list(ctx, path):
 
 
 @api.make()
-def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename):
+def api_revisions_restore(ctx: rule.Context, revision_id: str, overwrite: str, coll_target: str, new_filename: str) -> api.Result:
     """Copy selected revision to target collection with given name.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -245,7 +245,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     return api.Result.ok()
 
 
-def resource_modified_post_revision(ctx, resource, zone, path):
+def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str, path: str) -> None:
     """Create revisions on file modifications.
 
     This policy should trigger whenever a new file is added or modified
@@ -310,12 +310,20 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             # CAT_SQL_ERROR: this AVU is already present. No need to set it anymore.
             pass
         else:
-            error_status = re.search("status \[(.*?)\]", str(e))
-            log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_status.group(1)))
+            error_msg = ""
+            error_status = re.search(r"status \[(.*?)\]", str(e))
+            if error_status is not None:
+                error_msg = error_status.group(1)
+            log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_msg))
 
 
 @rule.make()
-def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size_limit, dry_run='0'):
+def rule_revision_batch(ctx: rule.Context,
+                        verbose: str,
+                        balance_id_min: str,
+                        balance_id_max: str,
+                        batch_size_limit: str,
+                        dry_run: str = '0') -> None:
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects (in research space) marked with 'org_revision_scheduled' metadata.
@@ -433,7 +441,7 @@ def rule_revision_batch(ctx, verbose, balance_id_min, balance_id_max, batch_size
         log.write(ctx, "Batch revision job ignored {} data objects in research area, excluding data objects postponed because of delay time.".format(count_ignored))
 
 
-def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data_id, resc, path):
+def check_eligible_and_create_revision(ctx: rule.Context, print_verbose: bool, attr: str, errorattr: str, data_id: str, resc: str, path: str) -> bool:
     """ Check that a data object is eligible for a revision, and if so, create a revision.
         Then remove or add revision flags as appropriate.
 
@@ -476,15 +484,15 @@ def check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data
     return revision_created
 
 
-def remove_revision_error_flag(ctx, data_id, path, errorattr):
+def remove_revision_error_flag(ctx: rule.Context, data_id: str, path: str, errorattr: str) -> None:
     """Remove revision_error flag"""
     # Revision creation OK. Remove any existing error indication attribute.
-    iter2 = genquery.row_iterator(
+    iter = genquery.row_iterator(
         "DATA_NAME",
         "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
         genquery.AS_LIST, ctx
     )
-    for _row in iter2:
+    for _row in iter:
         # Only try to remove it if we know for sure it exists,
         # otherwise we get useless errors in the log.
         avu.rmw_from_data(ctx, path, errorattr, "%")
@@ -492,7 +500,7 @@ def remove_revision_error_flag(ctx, data_id, path, errorattr):
         break
 
 
-def remove_revision_scheduled_flag(ctx, print_verbose, path, attr):
+def remove_revision_scheduled_flag(ctx: rule.Context, print_verbose: bool, path: str, attr: str) -> None:
     """Remove revision_scheduled flag (no matter if it succeeded or not)."""
     # rods should have been given own access via policy to allow AVU
     # changes.
@@ -518,7 +526,7 @@ def remove_revision_scheduled_flag(ctx, print_verbose, path, attr):
             log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
 
-def is_revision_blocked_by_admin(ctx):
+def is_revision_blocked_by_admin(ctx: rule.Context) -> bool:
     """Admin can put the revision process on a hold by adding a file called 'stop_revisions' in collection /yoda/flags.
 
     :param ctx: Combined type of a callback and rei struct
@@ -530,7 +538,7 @@ def is_revision_blocked_by_admin(ctx):
     return collection.exists(ctx, path)
 
 
-def get_revision_store(ctx, group_name):
+def get_revision_store(ctx: rule.Context, group_name: str) -> str | None:
     """Get path to revision store for group if the path exists.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -546,7 +554,7 @@ def get_revision_store(ctx, group_name):
     return revision_store if revision_store_exists else None
 
 
-def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_store):
+def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resource: str, group_name: str, revision_store: str) -> bool:
     """Create a revision of a data object in a revision folder.
 
     :param ctx:            Combined type of a callback and rei struct
@@ -587,7 +595,7 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     rev_filename = basename + "_" + iso8601 + data_owner
     rev_coll = revision_store + "/" + coll_id
 
-    read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
+    read_access = msi.check_access(ctx, path, 'read_object', irods_types.BytesBuf())['arguments'][2]
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
@@ -634,10 +642,10 @@ def revision_create(ctx, print_verbose, data_id, resource, group_name, revision_
     return revision_created
 
 
-def revision_cleanup_scan_revision_objects(ctx, revision_list):
+def revision_cleanup_scan_revision_objects(ctx: rule.Context, revision_list: List) -> List:
     """Obtain information about all revisions.
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:           Combined type of a callback and rei struct
     :param revision_list: List of revision data object IDs
 
     :returns:   Nested list, where the outer list represents revisioned data objects,
@@ -700,7 +708,7 @@ def revision_cleanup_scan_revision_objects(ctx, revision_list):
     return revisions_info
 
 
-def get_all_revision_data_ids(ctx):
+def get_all_revision_data_ids(ctx: rule.Context) -> Iterator[Tuple[str, str]]:
     """"Returns all data IDs of revision data objects
 
         :param ctx:  Combined type of a callback and rei struct
@@ -719,7 +727,7 @@ def get_all_revision_data_ids(ctx):
         yield (row[0], row[1])
 
 
-def _update_revision_store_acls(ctx):
+def _update_revision_store_acls(ctx: rule.Context) -> None:
     """Sets the revision store ACL to grant present rodsadmin user access
 
        :param ctx: Combined type of a callback and rei struct
@@ -742,7 +750,7 @@ def _update_revision_store_acls(ctx):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_revisions_cleanup_collect(ctx, target_batch_size):
+def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) -> str:
     """Collect a list of revision data object IDs and puts them in the spool system for processing
        by the revision cleanup scan job.
 
@@ -763,7 +771,6 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
 
     log.write(ctx, "Starting revision cleanup collect process.")
 
-    target_batch_size = int(target_batch_size)
     ingest_state = {
         "batch": [],
         "current_coll": None,
@@ -771,7 +778,7 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
     }
     number_revisions = 0
 
-    def ingest_new_data_id(ctx, coll_id, data_id, ingest_state, target_batch_size):
+    def ingest_new_data_id(ctx: rule.Context, coll_id: str, data_id: str, ingest_state: Dict, target_batch_size: int) -> None:
         """Read data object. Store it in ingest state as long as its collection ID is the same as
            the previous one, so that all data objects in the same collection are
            part of the same batch.
@@ -805,10 +812,10 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
 
     for (coll_id, data_id) in get_all_revision_data_ids(ctx):
         number_revisions += 1
-        ingest_new_data_id(ctx, coll_id, data_id, ingest_state, target_batch_size)
+        ingest_new_data_id(ctx, coll_id, data_id, ingest_state, int(target_batch_size))
 
     if (len(ingest_state["batch"]) > 0
-            and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_coll"]) >= target_batch_size):
+            and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_coll"]) >= int(target_batch_size)):
         put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
         ingest_state["batch"] = []
 
@@ -821,7 +828,7 @@ def rule_revisions_cleanup_collect(ctx, target_batch_size):
 
 
 @rule.make(inputs=[0, 1], outputs=[2])
-def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
+def rule_revisions_cleanup_scan(ctx: rule.Context, revision_strategy_name: str, verbose_flag: str) -> str:
     """Collect revision data and put it in the spool system for processing by the revision cleanup
        scan jobs
 
@@ -866,11 +873,11 @@ def rule_revisions_cleanup_scan(ctx, revision_strategy_name, verbose_flag):
     return 'Revision store cleanup scan job completed'
 
 
-def get_original_exists_dict(ctx, revision_data):
+def get_original_exists_dict(ctx: rule.Context, revision_data: List) -> Dict:
     """Returns a dictionary that indicates which original data objects of revision data still exist
 
-     :param ctx:                    Combined type of a callback and rei struct
-     :param revision_data:          List of lists of revision tuples in (data_id, timestamp, revision_path) format
+     :param ctx:           Combined type of a callback and rei struct
+     :param revision_data: List of lists of revision tuples in (data_id, timestamp, revision_path) format
 
      :returns: dictionary, in which the keys are revision path. The values are booleans, and indicate whether
                the versioned data object of the revision still exists. If the revision data object does not
@@ -892,7 +899,7 @@ def get_original_exists_dict(ctx, revision_data):
     return result
 
 
-def versioned_data_object_exists(ctx, revision_path):
+def versioned_data_object_exists(ctx: rule.Context, revision_path: str) -> bool:
     """Checks whether the version data object of a revision still exists
 
      :param ctx:                    Combined type of a callback and rei struct
@@ -903,19 +910,7 @@ def versioned_data_object_exists(ctx, revision_path):
 
      :raises KeyError:              If revision data object does not have revision AVUs
                                     that point to versioned data object.
-
-     :raises UnicodeEncodeError:    If the revision path cannot be converted to a utf-8 byte string.
     """
-
-    if isinstance(revision_path, unicode):
-        try:
-            # Switch back to bytes for now
-            # TODO change logic in Python 3
-            revision_path = revision_path.encode('utf-8')
-        except UnicodeEncodeError:
-            log.write(ctx, "File path {} is not UTF-8 encoded or is not compatible with UTF-8 encoding".format(revision_path))
-            raise
-
     revision_avus = avu.of_data(ctx, revision_path)
     avu_dict = {a: v for (a, v, u) in revision_avus}
 
@@ -932,7 +927,7 @@ def versioned_data_object_exists(ctx, revision_path):
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay, verbose_flag):
+def rule_revisions_cleanup_process(ctx: rule.Context, revision_strategy_name: str, endOfCalendarDay: str, verbose_flag: str) -> str:
     """Applies the selected revision strategy to a batch of spooled revision data
 
     :param ctx:                    Combined type of a callback and rei struct
@@ -1000,7 +995,7 @@ def rule_revisions_cleanup_process(ctx, revision_strategy_name, endOfCalendarDay
     return 'Revision store cleanup processing job completed'
 
 
-def revision_remove(ctx, revision_id, revision_path):
+def revision_remove(ctx: rule.Context, revision_id: str, revision_path: str) -> bool:
     """Remove a revision from the revision store.
 
     Called by revision-cleanup.r cronjob.
@@ -1032,24 +1027,19 @@ def revision_remove(ctx, revision_id, revision_path):
     return False
 
 
-def memory_rss_usage():
-    """
-    The RSS (resident) memory size in bytes for the current process.
-    """
+def memory_rss_usage() -> int:
+    """The RSS (resident) memory size in bytes for the current process."""
     p = psutil.Process()
     return p.memory_info().rss
 
 
-def show_memory_usage(ctx):
-    """
-    For debug purposes show the current RSS usage.
-    """
+def show_memory_usage(ctx: rule.Context) -> None:
+    """For debug purposes show the current RSS usage."""
     log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
 
 
-def memory_limit_exceeded(rss_limit):
-    """
-    True when a limit other than 0 was specified and memory usage is currently
+def memory_limit_exceeded(rss_limit: int) -> bool:
+    """True when a limit other than 0 was specified and memory usage is currently
     above this limit. Otherwise False.
 
     :param rss_limit: Max memory usage in bytes
@@ -1057,15 +1047,14 @@ def memory_limit_exceeded(rss_limit):
     :returns: Boolean indicating if memory limited exceeded
     """
     rss_limit = int(rss_limit)
-    return rss_limit and memory_rss_usage() > rss_limit
+    return rss_limit > 0 and memory_rss_usage() > rss_limit
 
 
-def remove_revision_creation_avu_from_deleted_data_objects(ctx, print_verbose):
-    """
-    Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
+def remove_revision_creation_avu_from_deleted_data_objects(ctx: rule.Context, print_verbose: bool) -> None:
+    """Removes revision creation AVUs from deleted data objects [marked with 'org_revision_scheduled' metadata].
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param print_verbose: Whether to log verbose messages for troubleshooting (Boolean)
+    :param ctx:           Combined type of a callback and rei struct
+    :param print_verbose: Whether to log verbose messages for troubleshooting
     """
     revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
 __copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
@@ -34,7 +33,7 @@ from util import *
 # Separate from ACLs, we deny certain operations on collections and data in
 # research or deposit folders when paths are locked.
 
-def can_coll_create(ctx, actor, coll):
+def can_coll_create(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed | policy.Fail:
     """Disallow creating collections in locked folders."""
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
@@ -49,7 +48,7 @@ def can_coll_create(ctx, actor, coll):
     return policy.succeed()
 
 
-def can_coll_delete(ctx, actor, coll):
+def can_coll_delete(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed | policy.Fail:
     """Disallow deleting collections in locked folders and collections containing locked folders."""
     log.debug(ctx, 'check coll delete <{}>'.format(coll))
 
@@ -67,14 +66,14 @@ def can_coll_delete(ctx, actor, coll):
     return policy.succeed()
 
 
-def can_coll_move(ctx, actor, src, dst):
+def can_coll_move(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'check coll move <{}> -> <{}>'.format(src, dst))
 
     return policy.all(can_coll_delete(ctx, actor, src),
                       can_coll_create(ctx, actor, dst))
 
 
-def can_data_create(ctx, actor, path):
+def can_data_create(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'check data create <{}>'.format(path))
 
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
@@ -96,7 +95,7 @@ def can_data_create(ctx, actor, path):
     return policy.succeed()
 
 
-def can_data_write(ctx, actor, path):
+def can_data_write(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'check data write <{}>'.format(path))
 
     # Disallow writing to locked objects in research and deposit folders.
@@ -112,7 +111,7 @@ def can_data_write(ctx, actor, path):
     return policy.succeed()
 
 
-def can_data_delete(ctx, actor, path):
+def can_data_delete(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
     if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_admin(ctx, actor):
         return policy.fail('Cannot delete or move data directly under /home')
 
@@ -127,12 +126,12 @@ def can_data_delete(ctx, actor, path):
     return policy.succeed()
 
 
-def can_data_copy(ctx, actor, src, dst):
+def can_data_copy(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'check data copy <{}> -> <{}>'.format(src, dst))
     return can_data_create(ctx, actor, dst)
 
 
-def can_data_move(ctx, actor, src, dst):
+def can_data_move(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'check data move <{}> -> <{}>'.format(src, dst))
     return policy.all(can_data_delete(ctx, actor, src),
                       can_data_create(ctx, actor, dst))
@@ -152,7 +151,7 @@ def can_data_move(ctx, actor, src, dst):
 # Most of them 'cut' and call identically named Python functions in this file.
 
 @policy.require()
-def py_acPreprocForCollCreate(ctx):
+def py_acPreprocForCollCreate(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acPreprocForCollCreate')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
     return can_coll_create(ctx, user.user_and_zone(ctx),
@@ -160,7 +159,7 @@ def py_acPreprocForCollCreate(ctx):
 
 
 @policy.require()
-def py_acPreprocForRmColl(ctx):
+def py_acPreprocForRmColl(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acPreprocForRmColl')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
     return can_coll_delete(ctx, user.user_and_zone(ctx),
@@ -168,7 +167,7 @@ def py_acPreprocForRmColl(ctx):
 
 
 @policy.require()
-def py_acPreprocForDataObjOpen(ctx):
+def py_acPreprocForDataObjOpen(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acPreprocForDataObjOpen')
     # data object reads are always allowed.
     # writes are blocked e.g. when the object is locked (unless actor is a rodsadmin).
@@ -180,7 +179,7 @@ def py_acPreprocForDataObjOpen(ctx):
 
 
 @policy.require()
-def py_acDataDeletePolicy(ctx):
+def py_acDataDeletePolicy(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acDataDeletePolicy')
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
@@ -189,7 +188,7 @@ def py_acDataDeletePolicy(ctx):
 
 
 @policy.require()
-def py_acPreProcForObjRename(ctx, src, dst):
+def py_acPreProcForObjRename(ctx: rule.Context, src: str, dst: str) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acPreProcForObjRename')
 
     # irods/lib/api/include/dataObjInpOut.h
@@ -201,11 +200,11 @@ def py_acPreProcForObjRename(ctx, src, dst):
     elif session_vars.get_map(ctx.rei)['operation_type'] == RENAME_COLL:
         return can_coll_move(ctx, user.user_and_zone(ctx), src, dst)
 
-    # if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+    return policy.succeed()
 
 
 @policy.require()
-def py_acPostProcForPut(ctx):
+def py_acPostProcForPut(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'py_acPostProcForPut')
     # Data object creation cannot be prevented by API dynpeps and static PEPs,
     # due to how MSIs work. Thus, this ugly workaround specifically for MSIs.
@@ -219,7 +218,7 @@ def py_acPostProcForPut(ctx):
 
 
 @policy.require()
-def py_acPostProcForCopy(ctx):
+def py_acPostProcForCopy(ctx: rule.Context) -> policy.Succeed | policy.Fail:
     # See py_acPostProcForPut.
     log.debug(ctx, 'py_acPostProcForCopy')
 
@@ -256,7 +255,10 @@ def py_acPostProcForCopy(ctx):
 
 
 @policy.require()
-def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
+def pep_api_data_obj_create_pre(ctx: rule.Context,
+                                instance_name: str,
+                                rs_comm: object,
+                                data_obj_inp: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_data_obj_create_pre')
 
     # Catch object creation/overwrite via Davrods and PRC.
@@ -269,7 +271,11 @@ def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
 
 
 @policy.require()
-def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_inp, open_stat):
+def pep_api_data_obj_create_and_stat_pre(ctx: rule.Context,
+                                         instance_name: str,
+                                         rs_comm: object,
+                                         data_obj_inp: object,
+                                         open_stat: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_data_obj_create_and_stat_pre')
 
     # Not triggered by any of our clients currently, but needed for completeness.
@@ -307,14 +313,20 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
 
 
 @policy.require()
-def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):
+def pep_api_data_obj_trim_pre(ctx: rule.Context,
+                              instance_name: str,
+                              rs_comm: object,
+                              data_obj_inp: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_data_obj_trim_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
 
 
 @policy.require()
-def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate_inp):
+def pep_api_data_obj_truncate_pre(ctx: rule.Context,
+                                  instance_name: str,
+                                  rs_comm: object,
+                                  data_obj_truncate_inp: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_data_obj_truncate_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_truncate_inp.objPath))
@@ -338,8 +350,13 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
 
 # Policy for most AVU changes
 @policy.require()
-def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
-
+def py_acPreProcForModifyAVUMetadata(ctx: rule.Context,
+                                     option: str,
+                                     obj_type: str,
+                                     obj_name: str,
+                                     attr: str,
+                                     value: str,
+                                     unit: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
 
     if obj_type not in ['-d', '-C']:
@@ -413,21 +430,32 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
 
 # imeta mod
 @policy.require()
-def py_acPreProcForModifyAVUMetadata_mod(ctx, *args):
+def py_acPreProcForModifyAVUMetadata_mod(ctx: rule.Context,
+                                         option: str,
+                                         obj_type: str,
+                                         obj_name: str,
+                                         a_attr: str,
+                                         a_value: str,
+                                         a_unit: str,
+                                         b_name: str,
+                                         b_value: str,
+                                         b_unit: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if t_dst not in ['-d', '-C']:
+    if obj_type not in ['-d', '-C']:
         return policy.succeed()
 
-    if pathutil.info(dst).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
+    if pathutil.info(obj_name).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
         return policy.fail('Metadata mod not allowed')
+
+    return policy.succeed()
 
 
 # imeta cp
 @policy.require()
-def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
+def py_acPreProcForModifyAVUMetadata_cp(ctx: rule.Context, option: str, t_src: str, t_dst: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
     if user.is_admin(ctx, actor):
         return policy.succeed()
@@ -450,7 +478,13 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
 # conditions defined in folder.py and iiVaultTransitions.r
 # are called here.
 @rule.make()
-def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
+def py_acPostProcForModifyAVUMetadata(ctx: rule.Context,
+                                      option: str,
+                                      obj_type: str,
+                                      obj_name: str,
+                                      attr: str,
+                                      value: str,
+                                      unit: str) -> None:
     info = pathutil.info(obj_name)
 
     if attr == constants.IISTATUSATTRNAME and info.space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
@@ -473,7 +507,10 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
 # ichmod
 @policy.require()
-def pep_api_mod_access_control_pre(ctx, instance_name, rs_comm, mod_access_control_inp):
+def pep_api_mod_access_control_pre(ctx: rule.Context,
+                                   instance_name: str,
+                                   rs_comm: object,
+                                   mod_access_control_inp: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_mod_access_control_pre')
     actor = user.user_and_zone(ctx)
     if user.is_admin(ctx, actor):
@@ -491,7 +528,11 @@ def pep_api_mod_access_control_pre(ctx, instance_name, rs_comm, mod_access_contr
 
 # ExecCmd {{{
 @policy.require()
-def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
+def py_acPreProcForExecCmd(ctx: rule.Context,
+                           cmd: str,
+                           args: str,
+                           addr: str,
+                           hint: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
 
     # No restrictions for rodsadmin and priv group.
@@ -504,23 +545,23 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
-    # allow 'admin-*' scripts, if first arg is the actor username&zone.
+    # Allow scheduled admin scripts.
+    if cmd.startswith('admin-scheduled-'):
+        return policy.succeed()
+
+    # Allow 'admin-*' scripts, if first arg is the actor username&zone.
     if cmd.startswith('admin-'):
         if args == str(actor) or args.startswith(str(actor) + ' '):
             return policy.succeed()
         else:
             return policy.fail('Actor not given as first arg to admin- execcmd')
 
-    # Allow scheduled scripts.
-    if cmd.startswith('scheduled-'):
-        return policy.succeed()
-
     return policy.fail('No execcmd privileges for this command')
 
 
 # Internal function to determine whether changes to data objects on a particular
 # resource need to trigger policies (e.g. asynchronous replication) by default.
-def resource_should_trigger_policies(resource):
+def resource_should_trigger_policies(resource: str) -> bool:
     if resource in config.resource_primary:
         return True
 
@@ -535,7 +576,10 @@ def resource_should_trigger_policies(resource):
 
 
 @rule.make()
-def pep_resource_modified_post(ctx, instance_name, _ctx, out):
+def pep_resource_modified_post(ctx: rule.Context,
+                               instance_name: str,
+                               _ctx: rule.Context,
+                               out: str) -> None:
     if not resource_should_trigger_policies(instance_name):
         return
 
@@ -579,7 +623,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
 
 
 @rule.make()
-def py_acPostProcForObjRename(ctx, src, dst):
+def py_acPostProcForObjRename(ctx: rule.Context, src: str, dst: str) -> None:
     # Update ACLs to give correct group ownership when an object is moved into
     # a different research- or grp- collection.
     info = pathutil.info(dst)
@@ -589,9 +633,16 @@ def py_acPostProcForObjRename(ctx, src, dst):
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4, 5, 6], outputs=[2])
-def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host, parser, vote):
+def pep_resource_resolve_hierarchy_pre(ctx: rule.Context,
+                                       resource: str,
+                                       _ctx: rule.Context,
+                                       out: str,
+                                       operation: str,
+                                       host: str,
+                                       parser: str,
+                                       vote: str) -> str | None:
     if not config.arb_enabled or operation != "CREATE":
-        return
+        return None
 
     arb_data = arb_data_manager.ARBDataManager()
     arb_status = arb_data.get(ctx, resource)
@@ -603,7 +654,7 @@ def pep_resource_resolve_hierarchy_pre(ctx, resource, _ctx, out, operation, host
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_check_anonymous_access_allowed(ctx, address):
+def rule_check_anonymous_access_allowed(ctx: rule.Context, address: str) -> str:
     """Check if access to the anonymous account is allowed from a particular network
        address. Non-local access to the anonymous account should only be allowed from
        DavRODS servers, for security reasons.
@@ -618,7 +669,7 @@ def rule_check_anonymous_access_allowed(ctx, address):
 
 
 @rule.make(inputs=[], outputs=[0])
-def rule_check_max_connections_exceeded(ctx):
+def rule_check_max_connections_exceeded(ctx: rule.Context) -> str:
     """Check if user exceeds the maximum number of connections.
 
     :param ctx: Combined type of a callback and rei struct
@@ -637,7 +688,12 @@ def rule_check_max_connections_exceeded(ctx):
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
-def pep_database_gen_query_pre(ctx, dbtype, _ctx, results, genquery_inp, genquery_out):
+def pep_database_gen_query_pre(ctx: rule.Context,
+                               dbtype: str,
+                               _ctx: rule.Context,
+                               results: str,
+                               genquery_inp: object,
+                               genquery_out: object) -> None:
     if not is_safe_genquery_inp(genquery_inp):
         # We can't use log here, because the REI is not (always) available.
         print("Refused unsafe query: " + str(genquery_inp))

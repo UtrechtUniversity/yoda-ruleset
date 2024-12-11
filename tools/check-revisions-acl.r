@@ -68,9 +68,9 @@ getCollAccess(*coll) {
 	if (*name == "own") {
 	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
-	} else if (*name == "read object") {
+	} else if (*name == "read_object") {
 	    *access."*userId" = "read";
-	} else if (*name == "modify object") {
+	} else if (*name == "modify_object") {
 	    *access."*userId" = "write";
 	}
     }
@@ -90,9 +90,9 @@ getDataAccess(*coll, *data) {
 	if (*name == "own") {
 	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
-	} else if (*name == "read object") {
+	} else if (*name == "read_object") {
 	    *access."*userId" = "read";
-	} else if (*name == "modify object") {
+	} else if (*name == "modify_object") {
 	    *access."*userId" = "write";
 	}
     }

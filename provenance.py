@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Functions for provenance handling."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
 import time
+from typing import List
 
 import genquery
 
@@ -18,7 +18,7 @@ __all__ = ['rule_provenance_log_action',
 
 
 @rule.make()
-def rule_provenance_log_action(ctx, actor, coll, action):
+def rule_provenance_log_action(ctx: rule.Context, actor: str, coll: str, action: str) -> None:
     """Function to add action log record to provenance of specific folder.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -35,7 +35,7 @@ def rule_provenance_log_action(ctx, actor, coll, action):
         log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
-def log_action(ctx, actor, coll, action, update=True):
+def log_action(ctx: rule.Context, actor: str, coll: str, action: str, update: bool = True) -> None:
     """Function to add action log record to provenance of specific folder.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -55,7 +55,7 @@ def log_action(ctx, actor, coll, action, update=True):
 
 
 @rule.make()
-def rule_copy_provenance_log(ctx, source, target):
+def rule_copy_provenance_log(ctx: rule.Context, source: str, target: str) -> None:
     """Copy the provenance log of a collection to another collection.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -65,7 +65,7 @@ def rule_copy_provenance_log(ctx, source, target):
     provenance_copy_log(ctx, source, target)
 
 
-def provenance_copy_log(ctx, source, target):
+def provenance_copy_log(ctx: rule.Context, source: str, target: str) -> None:
     """Copy the provenance log of a collection to another collection.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -89,7 +89,7 @@ def provenance_copy_log(ctx, source, target):
         log.write(ctx, "rule_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
 
 
-def get_provenance_log(ctx, coll):
+def get_provenance_log(ctx: rule.Context, coll: str) -> List:
     """Return provenance log of a collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -114,7 +114,7 @@ def get_provenance_log(ctx, coll):
 
 
 @api.make()
-def api_provenance_log(ctx, coll):
+def api_provenance_log(ctx: rule.Context, coll: str) -> api.Result:
     """Return formatted provenance log of a collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -135,7 +135,7 @@ def api_provenance_log(ctx, coll):
     return output
 
 
-def latest_action_actor(ctx, path):
+def latest_action_actor(ctx: rule.Context, path: str) -> str:
     """Return the actor of the latest provenance action.
 
     :param ctx:  Combined type of a callback and rei struct

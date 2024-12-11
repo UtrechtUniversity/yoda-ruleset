@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -8,6 +7,7 @@ import json
 import re
 from collections import OrderedDict
 from datetime import datetime
+from typing import Dict, List
 
 import genquery
 import irods_types
@@ -29,25 +29,26 @@ __all__ = ['rule_meta_validate',
            'rule_get_latest_vault_metadata_path']
 
 
-def metadata_get_links(metadata):
+def metadata_get_links(metadata: Dict) -> List:
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
-    return filter(lambda x: type(x) in (dict, OrderedDict)
-                  and 'rel' in x
-                  and 'href' in x
-                  and type(x['rel']) is str
-                  and type(x['href']) is str,
-                  metadata['links'])
+    return list(filter(lambda x: type(x) in (dict, OrderedDict)
+                       and 'rel' in x
+                       and 'href' in x
+                       and type(x['rel']) is str
+                       and type(x['href']) is str,
+                       metadata['links']))
 
 
-def metadata_get_schema_id(metadata):
-    desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
+def metadata_get_schema_id(metadata: Dict) -> str | None:
+    desc = list(filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata)))
     if len(desc) > 0:
         return desc[0]['href']
+    return None
 
 
-def metadata_set_schema_id(metadata, schema_id):
-    other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
+def metadata_set_schema_id(metadata: Dict, schema_id: str) -> None:
+    other_links = list(filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata)))
 
     metadata['links'] = [OrderedDict([
         ['rel',  'describedby'],
@@ -55,11 +56,11 @@ def metadata_set_schema_id(metadata, schema_id):
     ])] + other_links
 
 
-def get_json_metadata_errors(callback,
-                             metadata_path,
-                             metadata=None,
-                             schema=None,
-                             ignore_required=False):
+def get_json_metadata_errors(ctx: rule.Context,
+                             metadata_path: str,
+                             metadata: Dict | None = None,
+                             schema: Dict | None = None,
+                             ignore_required: bool = False) -> List:
     """
     Validate JSON metadata, and return a list of errors, if any.
 
@@ -73,7 +74,7 @@ def get_json_metadata_errors(callback,
     This will throw exceptions on missing metadata / schema files and invalid
     JSON formats.
 
-    :param callback:        Combined type of a callback and rei struct
+    :param ctx:             Combined type of a callback and rei struct
     :param metadata_path:   Path to the JSON object
     :param metadata:        Pre-parsed JSON object
     :param schema:          Schema to check against
@@ -82,10 +83,10 @@ def get_json_metadata_errors(callback,
     :returns: List of errors in JSON object
     """
     if schema is None:
-        schema = schema_.get_active_schema(callback, metadata_path)
+        schema = schema_.get_active_schema(ctx, metadata_path)
 
     if metadata is None:
-        metadata = jsonutil.read(callback, metadata_path)
+        metadata = jsonutil.read(ctx, metadata_path)
 
     # Perform validation and filter errors.
     # Validation is handed to a Python 3 interpreter to validate with the Draft201909 validator.
@@ -145,22 +146,21 @@ def get_json_metadata_errors(callback,
 
     # Log metadata errors.
     for error in errors:
-        log.write(callback, error)
+        log.write(ctx, error)
 
     return errors
 
 
-def is_json_metadata_valid(callback,
-                           metadata_path,
-                           metadata=None,
-                           ignore_required=False):
-    """
-    Check if json metadata contains no errors.
+def is_json_metadata_valid(ctx: rule.Context,
+                           metadata_path: str,
+                           metadata: Dict | None = None,
+                           ignore_required: bool = False) -> bool:
+    """Check if json metadata contains no errors.
 
     Argument 'metadata' may contain a preparsed JSON document, otherwise it
     is loaded from the provided path.
 
-    :param callback:        Combined type of a callback and rei struct
+    :param ctx:             Combined type of a callback and rei struct
     :param metadata_path:   Path to the JSON object
     :param metadata:        Pre-parsed JSON object
     :param ignore_required: Ignore required fields
@@ -168,7 +168,7 @@ def is_json_metadata_valid(callback,
     :returns: Boolean indicating if JSON metadata is valid
     """
     try:
-        return len(get_json_metadata_errors(callback,
+        return len(get_json_metadata_errors(ctx,
                                             metadata_path,
                                             metadata=metadata,
                                             ignore_required=ignore_required)) == 0
@@ -177,14 +177,13 @@ def is_json_metadata_valid(callback,
         return False
 
 
-def get_collection_metadata_path(ctx, coll):
-    """
-    Check if a collection has a JSON metadata file and provide its path, if any.
+def get_collection_metadata_path(ctx: rule.Context, coll: str) -> str | None:
+    """Check if a collection has a JSON metadata file and provide its path, if any.
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Path of collection to check for metadata
 
-    :returns: String with path to metadata file
+    :returns: Path to metadata file
     """
     path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
     if data_object.exists(ctx, path):
@@ -193,14 +192,13 @@ def get_collection_metadata_path(ctx, coll):
     return None
 
 
-def get_latest_vault_metadata_path(ctx, vault_pkg_coll):
-    """
-    Get the latest vault metadata JSON file.
+def get_latest_vault_metadata_path(ctx: rule.Context, vault_pkg_coll: str) -> str | None:
+    """Get the latest vault metadata JSON file.
 
     :param ctx:            Combined type of a callback and rei struct
     :param vault_pkg_coll: Vault package collection
 
-    :returns: string -- Metadata JSON path
+    :returns: Metadata JSON path
     """
     name = None
 
@@ -240,28 +238,27 @@ def rule_meta_validate(rule_args, callback, rei):
         rule_args[2] = 'metadata validated'
 
 
-def collection_has_cloneable_metadata(callback, coll):
-    """
-    Check if a collection has metadata, and validate it.
+def collection_has_cloneable_metadata(ctx: rule.Context, coll: str) -> str | None:
+    """Check if a collection has metadata, and validate it.
 
     This always ignores 'required' schema attributes, since metadata can
     only be cloned in the research area.
 
-    :param callback: Combined type of a callback and rei struct
-    :param coll:     Path of collection to check for cloneable metadata
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path of collection to check for cloneable metadata
 
-    :returns: String with the parent metadata_path on success, or False otherwise.
+    :returns: String with the parent metadata_path on success or None otherwise.
     """
-    path = get_collection_metadata_path(callback, coll)
+    path = get_collection_metadata_path(ctx, coll)
 
     if path is None:
-        return False
+        return None
 
     if path.endswith('.json'):
-        if is_json_metadata_valid(callback, path, ignore_required=True):
+        if is_json_metadata_valid(ctx, path, ignore_required=True):
             return path
 
-    return False
+    return None
 
 
 rule_meta_collection_has_cloneable_metadata = (
@@ -271,7 +268,7 @@ rule_meta_collection_has_cloneable_metadata = (
 
 
 @api.make()
-def api_meta_remove(ctx, coll):
+def api_meta_remove(ctx: rule.Context, coll: str) -> None:
     """Remove a collection's metadata JSON, if it exists."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
@@ -284,34 +281,31 @@ def api_meta_remove(ctx, coll):
 
 
 @api.make()
-def api_meta_clone_file(ctx, target_coll):
+def api_meta_clone_file(ctx: rule.Context, target_coll: str) -> api.Result:
     """Clone a metadata file from a parent collection to a subcollection.
 
     :param ctx:         Combined type of a callback and rei struct
     :param target_coll: Target collection (where the metadata is copied to)
 
-    :returns: None
-
-    :raises Error: The metadata file could not be copied
+    :returns: API result
     """
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
     source_data = get_collection_metadata_path(ctx, source_coll)
 
-    if source_data.endswith('.json'):
+    if source_data and source_data.endswith('.json'):
         target_data = '{}/{}'.format(target_coll, constants.IIJSONMETADATA)
     else:
-        # No metadata to clone? Abort.
-        return
+        return api.Error('no_metadata', 'No metadata file exists to clone')
 
     try:
         data_object.copy(ctx, source_data, target_data)
     except msi.Error as e:
-        raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
+        return api.Error('copy_failed', 'The metadata file could not be copied', str(e))
 
 
 # Functions that deal with ingesting metadata into AVUs {{{
 
-def ingest_metadata_research(ctx, path):
+def ingest_metadata_research(ctx: rule.Context, path: str) -> None:
     """Validate JSON metadata (without requiredness) and ingests as AVUs in the research space."""
     coll, data = pathutil.chop(path)
 
@@ -335,7 +329,7 @@ def ingest_metadata_research(ctx, path):
                            jsonutil.dump(metadata))
 
 
-def ingest_metadata_deposit(ctx, path):
+def ingest_metadata_deposit(ctx: rule.Context, path: str) -> None:
     """Validate JSON metadata (without requiredness) and ingests as AVUs in the deposit space."""
     coll, data = pathutil.chop(path)
 
@@ -356,7 +350,7 @@ def ingest_metadata_deposit(ctx, path):
         avu.associate_to_coll(ctx, coll, 'Data_Access_Restriction', metadata['Data_Access_Restriction'])
 
 
-def ingest_metadata_staging(ctx, path):
+def ingest_metadata_staging(ctx: rule.Context, path: str) -> None:
     """Set cronjob metadata flag and triggers vault ingest."""
     ret = msi.string_2_key_val_pair(ctx,
                                     '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
@@ -374,7 +368,7 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
-def update_index_metadata(ctx, path, metadata, creation_time, data_package):
+def update_index_metadata(ctx: rule.Context, path: str, metadata: Dict, creation_time: str, data_package: str) -> None:
     """Update the index attributes for JSON metadata."""
     msi.coll_create(ctx, path, "", irods_types.BytesBuf())
     ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
@@ -512,7 +506,7 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
         log.write(ctx, 'update_index_metadata: Metadata index update unsuccessful on path {}'.format(path))
 
 
-def ingest_metadata_vault(ctx, path):
+def ingest_metadata_vault(ctx: rule.Context, path: str) -> None:
     """Ingest (pre-validated) JSON metadata in the vault."""
     # The JSON metadata file has just landed in the vault, required validation /
     # logging / provenance has already taken place.
@@ -561,7 +555,7 @@ def ingest_metadata_vault(ctx, path):
 
 
 @rule.make()
-def rule_meta_modified_post(ctx, path, user, zone):
+def rule_meta_modified_post(ctx: rule.Context, path: str, user: str, zone: str) -> None:
     if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
@@ -628,7 +622,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     prev_json_data = json.loads(json.dumps(prev_json))
 
     try:
-        ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
+        ret = msi.check_access(ctx, json_path, 'modify_object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
             msi.set_acl(ctx, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError:
@@ -688,7 +682,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
                 keys = meta_diff[i].keys()
             if keys:
                 for item in keys:
-                    m = re.match("root\['(.*?)'\]", item)
+                    m = re.match(r"root\['(.*?)'\]", item)
                     if m:
                         item_list[action].append(m.group(1).replace('_', ' '))
 
@@ -745,9 +739,8 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     set_result('Success', '')
 
 
-def copy_user_metadata(ctx, source, target):
-    """
-    Copy the user metadata (AVUs) of a collection to another collection.
+def copy_user_metadata(ctx: rule.Context, source: str, target: str) -> None:
+    """Copy the user metadata (AVUs) of a collection to another collection.
 
     This only copies user metadata, so it ignores system metadata.
 
@@ -760,7 +753,7 @@ def copy_user_metadata(ctx, source, target):
         user_metadata = list(avu.inside_coll(ctx, source, recursive=True))
 
         # Group AVUs by entity and filter system metadata.
-        grouped_user_metadata = {}
+        grouped_user_metadata: Dict = {}
         for path, type, attribute, value, unit in user_metadata:
             if not attribute.startswith(constants.UUORGMETADATAPREFIX) and unit != constants.UUFLATINDEX and not unit.startswith(constants.UUUSERMETADATAROOT + '_'):
                 grouped_user_metadata.setdefault(path, {"type": type, "avus": []})
@@ -793,7 +786,7 @@ def copy_user_metadata(ctx, source, target):
         log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
 
 
-def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name, write_stdout):
+def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cache: Dict, report_name: str, write_stdout: bool) -> Dict | None:
     """Process a single data package to retrieve and validate that its metadata conforms to the schema.
 
     :param ctx:          Combined type of a callback and rei struct
@@ -802,7 +795,7 @@ def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name, wri
     :param report_name:  Name of report script (for logging)
     :param write_stdout: A boolean representing whether to write to stdout or rodsLog
 
-    :returns:            A dictionary result containing if schema matches and the schema short name.
+    :returns: A dictionary result containing if schema matches and the schema short name.
     """
     metadata_path = get_latest_vault_metadata_path(ctx, coll_name)
 
@@ -819,6 +812,9 @@ def vault_metadata_matches_schema(ctx, coll_name, schema_cache, report_name, wri
 
     # Determine schema
     schema_id = schema_.get_schema_id(ctx, metadata_path)
+    if schema_id is None:
+        return None
+
     schema_shortname = schema_id.split("/")[-2]
 
     # Retrieve schema and cache it for future use

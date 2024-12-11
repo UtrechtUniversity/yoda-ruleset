@@ -1,12 +1,35 @@
-# -*- coding: utf-8 -*-
 """Functions for revision strategies, which control which revisions are kept and which ones are to
    be discarded."""
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import List
 
-def get_revision_strategy(strategy_name):
+
+class RevisionStrategy:
+    HOURS = 3600
+    DAYS = 86400
+    WEEKS = 604800
+
+    def __init__(self, strategy_name: str, buckets_configuration: List) -> None:
+        self._name = strategy_name
+        self._buckets = buckets_configuration
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_buckets(self) -> List:
+        return self._buckets
+
+    def get_minimum_bucket_size(self) -> int:
+        return min(map(lambda bucket_timespan_bucket_size_offset: bucket_timespan_bucket_size_offset[1], self.get_buckets()))
+
+    def get_total_bucket_timespan(self) -> int:
+        return sum(map(lambda bucket_timespan_bucket_size_offset1: bucket_timespan_bucket_size_offset1[0], self.get_buckets()))
+
+
+def get_revision_strategy(strategy_name: str) -> RevisionStrategy:
     """Returns a revision strategy object for a particular revision strategy name. This
        object can be used to obtain information about the revision strategy.
 
@@ -62,25 +85,3 @@ def get_revision_strategy(strategy_name):
         return RevisionStrategy(strategy_name, buckets_configuration[strategy_name])
     else:
         raise ValueError('Strategy "{}" is not supported'.format(strategy_name))
-
-
-class RevisionStrategy(object):
-    HOURS = 3600
-    DAYS = 86400
-    WEEKS = 604800
-
-    def __init__(self, strategy_name, buckets_configuration):
-        self._name = strategy_name
-        self._buckets = buckets_configuration
-
-    def get_name(self):
-        return self._name
-
-    def get_buckets(self):
-        return self._buckets
-
-    def get_minimum_bucket_size(self):
-        return min(map(lambda bucket_timespan_bucket_size_offset: bucket_timespan_bucket_size_offset[1], self.get_buckets()))
-
-    def get_total_bucket_timespan(self):
-        return sum(map(lambda bucket_timespan_bucket_size_offset1: bucket_timespan_bucket_size_offset1[0], self.get_buckets()))

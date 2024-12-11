@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Policy check functions for data package status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
@@ -12,7 +11,10 @@ import vault
 from util import *
 
 
-def pre_status_transition(ctx, coll, current, new):
+def pre_status_transition(ctx: rule.Context,
+                          coll: str,
+                          current: constants.research_package_state,
+                          new: constants.research_package_state) -> policy.Succeed | policy.Fail:
     """Action taken before status transition."""
     if current is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION \
        and new is constants.vault_package_state.UNPUBLISHED:
@@ -22,7 +24,11 @@ def pre_status_transition(ctx, coll, current, new):
     return policy.succeed()
 
 
-def can_transition_datapackage_status(ctx, actor, coll, status_from, status_to):
+def can_transition_datapackage_status(ctx: rule.Context,
+                                      actor: str,
+                                      coll: str,
+                                      status_from: str,
+                                      status_to: str) -> policy.Succeed | policy.Fail:
     transition = (constants.vault_package_state(status_from),
                   constants.vault_package_state(status_to))
     if transition not in constants.datapackage_transitions:
@@ -39,7 +45,10 @@ def can_transition_datapackage_status(ctx, actor, coll, status_from, status_to):
     return policy.succeed()
 
 
-def can_set_datapackage_status_attr(ctx, actor, coll, status):
+def can_set_datapackage_status_attr(ctx: rule.Context,
+                                    actor: str,
+                                    coll: str,
+                                    status: str) -> policy.Succeed | policy.Fail:
     try:
         new = constants.vault_package_state(status)
     except ValueError:
@@ -54,7 +63,10 @@ def can_set_datapackage_status_attr(ctx, actor, coll, status):
         return (current, new)
 
 
-def post_status_transition(ctx, path, actor, status):
+def post_status_transition(ctx: rule.Context,
+                           path: str,
+                           actor: str,
+                           status: str) -> None:
     """Post data package status transition actions."""
     status = constants.vault_package_state(status)
     actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]

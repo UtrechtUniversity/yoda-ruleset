@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 """Logging facilities."""
 
-__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import inspect
@@ -17,7 +16,7 @@ if 'unittest' not in sys.modules:
     import user
 
 
-def write(ctx, message, write_stdout=False):
+def write(ctx: rule.Context, message: str, write_stdout: bool = False) -> None:
     """Write a message to the log or stdout.
     Includes client name and originating module if writing to log.
 
@@ -33,19 +32,19 @@ def write(ctx, message, write_stdout=False):
         _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
 
 
-def _write(ctx, message):
+def _write(ctx: rule.Context, message: str) -> None:
     """Write a message to the log, including the client name (intended for internal use).
 
     :param ctx:     Combined type of a callback and rei struct
     :param message: Message to write to log
     """
     if type(ctx) is rule.Context:
-        ctx.writeLine('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
+        ctx.writeString('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
     else:
-        ctx.writeLine('serverLog', message)
+        ctx.writeString('serverLog', message)
 
 
-def debug(ctx, message):
+def debug(ctx: rule.Context, message: str) -> None:
     """"Write a message to the log, if in a development environment.
 
     :param ctx:     Combined type of a callback and rei struct

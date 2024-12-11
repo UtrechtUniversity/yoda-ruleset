@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
 __copyright__ = 'Copyright (c) 2016-2024, Utrecht University'
@@ -105,7 +104,7 @@ class vault_package_state(Enum):
     DEPUBLISHED               = 'DEPUBLISHED'
     PENDING_REPUBLICATION     = 'PENDING_REPUBLICATION'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -136,7 +135,7 @@ class research_package_state(Enum):
     REJECTED  = 'REJECTED'
     SECURED   = 'SECURED'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 

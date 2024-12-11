@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to archive vault data packages."""
 
 __copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
@@ -6,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import time
+from typing import Dict, List
 
 import genquery
 import irods_types
@@ -26,7 +26,7 @@ __all__ = ['api_vault_archive',
            'rule_vault_update_archive']
 
 
-def package_system_metadata(ctx, coll):
+def package_system_metadata(ctx: rule.Context, coll: str) -> List:
     """Retrieve system metadata of collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -47,7 +47,7 @@ def package_system_metadata(ctx, coll):
     ]
 
 
-def package_provenance_log(ctx, system_metadata):
+def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
     """Retrieve provenance log from system metadata.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -55,7 +55,7 @@ def package_provenance_log(ctx, system_metadata):
 
     :returns: List of dicts with provenance log
     """
-    def key(item):
+    def key(item: Dict) -> int:
         return int(item["time"])
 
     provenance_log = []
@@ -70,15 +70,16 @@ def package_provenance_log(ctx, system_metadata):
     return sorted(provenance_log, key=key)
 
 
-def package_archive_path(ctx, coll):
+def package_archive_path(ctx: rule.Context, coll: str) -> str | None:
     for row in genquery.row_iterator("DATA_PATH",
                                      "COLL_NAME = '{}' AND DATA_NAME = 'archive.tar'".format(coll),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
+    return None
 
 
-def vault_archivable(ctx, coll):
+def vault_archivable(ctx: rule.Context, coll: str) -> bool:
     minimum = int(config.data_package_archive_minimum)
     maximum = int(config.data_package_archive_maximum)
 
@@ -102,11 +103,11 @@ def vault_archivable(ctx, coll):
     return False
 
 
-def vault_archival_status(ctx, coll):
+def vault_archival_status(ctx: rule.Context, coll: str) -> str:
     return bagit.status(ctx, coll)
 
 
-def create_archive(ctx, coll):
+def create_archive(ctx: rule.Context, coll: str) -> None:
     log.write(ctx, "Creating archive of data package <{}>".format(coll))
     user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
     system_metadata = package_system_metadata(ctx, coll)
@@ -131,7 +132,7 @@ def create_archive(ctx, coll):
     ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")
 
 
-def extract_archive(ctx, coll):
+def extract_archive(ctx: rule.Context, coll: str) -> None:
     while True:
         state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
         if state not in ("UNM", "MIG"):
@@ -145,7 +146,7 @@ def extract_archive(ctx, coll):
     bagit.extract(ctx, coll + "/archive.tar", coll + "/archive", resource=config.resource_vault)
 
 
-def vault_archive(ctx, actor, coll):
+def vault_archive(ctx: rule.Context, actor: str, coll: str) -> str:
     try:
         # Prepare for archival.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archive")
@@ -166,7 +167,7 @@ def vault_archive(ctx, actor, coll):
         return "Failure"
 
 
-def vault_create_archive(ctx, coll):
+def vault_create_archive(ctx: rule.Context, coll: str) -> str:
     if vault_archival_status(ctx, coll) != "archive":
         return "Invalid"
     try:
@@ -203,7 +204,7 @@ def vault_create_archive(ctx, coll):
         return "Failure"
 
 
-def vault_unarchive(ctx, actor, coll):
+def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
     try:
         # Prepare for unarchival.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
@@ -226,7 +227,7 @@ def vault_unarchive(ctx, actor, coll):
         return "Failure"
 
 
-def vault_extract_archive(ctx, coll):
+def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
     if vault_archival_status(ctx, coll) != "extract":
         return "Invalid"
     try:
@@ -252,13 +253,13 @@ def vault_extract_archive(ctx, coll):
         return "Failure"
 
 
-def update(ctx, coll, attr):
+def update(ctx: rule.Context, coll: str, attr: str | None) -> None:
     if pathutil.info(coll).space == pathutil.Space.VAULT and attr not in (constants.IIARCHIVEATTRNAME, constants.UUPROVENANCELOG) and vault_archival_status(ctx, coll) == "archived":
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
         ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
 
 
-def vault_update_archive(ctx, coll):
+def vault_update_archive(ctx: rule.Context, coll: str) -> str:
     try:
         log.write(ctx, "Start update of archived data package <{}>".format(coll))
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
@@ -280,7 +281,7 @@ def vault_update_archive(ctx, coll):
 
 
 @api.make()
-def api_vault_archive(ctx, coll):
+def api_vault_archive(ctx: rule.Context, coll: str) -> api.Result:
     """Request to archive vault data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -306,7 +307,7 @@ def api_vault_archive(ctx, coll):
 
 
 @api.make()
-def api_vault_archival_status(ctx, coll):
+def api_vault_archival_status(ctx: rule.Context, coll: str) -> api.Result:
     """Request archival status of vault data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -318,7 +319,7 @@ def api_vault_archival_status(ctx, coll):
 
 
 @api.make()
-def api_vault_extract(ctx, coll):
+def api_vault_extract(ctx: rule.Context, coll: str) -> api.Result:
     """Request to unarchive an archived vault data package.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -344,23 +345,25 @@ def api_vault_extract(ctx, coll):
 
 
 @rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_vault_archive(ctx, actor, coll, action):
+def rule_vault_archive(ctx: rule.Context, actor: str, coll: str, action: str) -> str:
     if action == "archive":
         return vault_archive(ctx, actor, coll)
     elif action == "extract":
         return vault_unarchive(ctx, actor, coll)
+    else:
+        return "Failure"
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_create_archive(ctx, coll):
+def rule_vault_create_archive(ctx: rule.Context, coll: str) -> str:
     return vault_create_archive(ctx, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_extract_archive(ctx, coll):
+def rule_vault_extract_archive(ctx: rule.Context, coll: str) -> str:
     return vault_extract_archive(ctx, coll)
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_vault_update_archive(ctx, coll):
+def rule_vault_update_archive(ctx: rule.Context, coll: str) -> str:
     return vault_update_archive(ctx, coll)

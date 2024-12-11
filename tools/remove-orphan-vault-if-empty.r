@@ -37,11 +37,11 @@ removeOrphanVaultIfEmpty {
 		# The vault belonged to a research group, of which a revision collection still exists.
 		# Remove the revision coll as well.
 
-		writeLine("serverLog", "Orphan revision collection '*revisionColl' will be removed");
+		writeString("serverLog", "Orphan revision collection '*revisionColl' will be removed");
 		# Add ourselves (rods) as an owner.
 		msiSudoObjAclSet("recursive", "own", uuClientFullName, *revisionColl, "");
 		msiRmColl(*revisionColl, "forceFlag=", *error);
-		writeLine("serverLog", "Orphan revision collection '*revisionColl' was removed");
+		writeString("serverLog", "Orphan revision collection '*revisionColl' was removed");
 	}
 
 	# Now remove the vault group, if it is empty.
@@ -50,9 +50,9 @@ removeOrphanVaultIfEmpty {
 
 	if (*vaultIsEmpty) {
 		msiSudoGroupRemove(*vaultName, "");
-		writeLine("serverLog", "Empty orphan vault '*vaultName' was removed");
+		writeString("serverLog", "Empty orphan vault '*vaultName' was removed");
 	} else {
-		writeLine("serverLog", "Orphan vault '*vaultName' was not removed as it is non-empty");
+		writeString("serverLog", "Orphan vault '*vaultName' was not removed as it is non-empty");
 	}
 }
 

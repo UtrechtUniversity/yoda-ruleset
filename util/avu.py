@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with AVUs."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -7,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 import itertools
 import json
 from collections import namedtuple
+from typing import Dict, Iterable, List, Tuple
 
 import genquery
 import irods_types
@@ -14,6 +14,7 @@ import irods_types
 import log
 import msi
 import pathutil
+import rule
 
 Avu = namedtuple('Avu', list('avu'))
 Avu.attr  = Avu.a
@@ -21,21 +22,21 @@ Avu.value = Avu.v
 Avu.unit  = Avu.u
 
 
-def of_data(ctx, path):
+def of_data(ctx: rule.Context, path: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given data object."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                              "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+                                   "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
-def of_coll(ctx, coll):
+def of_coll(ctx: rule.Context, coll: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given collection."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-                                              "COLL_NAME = '{}'".format(coll)))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+                                   "COLL_NAME = '{}'".format(coll)))
 
 
-def get_attr_val_of_coll(ctx, coll, attr):
+def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
     """Get the value corresponding to an attr for a given collection."""
     iter = genquery.Query(
         ctx,
@@ -47,7 +48,7 @@ def get_attr_val_of_coll(ctx, coll, attr):
     raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
 
 
-def inside_coll(ctx, path, recursive=False):
+def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
     """Get a list of all AVUs inside a collection with corresponding paths.
 
     Note: the returned value is a generator / lazy list, so that large
@@ -63,7 +64,7 @@ def inside_coll(ctx, path, recursive=False):
     :returns: List of all AVUs inside a collection with corresponding paths
     """
     # coll+name -> path
-    def to_absolute(row, type):
+    def to_absolute(row: List, type: str) -> Tuple[str, str, str, str, str]:
         if type == "collection":
             return (row[1], type, row[2], row[3], row[4])
         else:
@@ -73,13 +74,13 @@ def inside_coll(ctx, path, recursive=False):
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
         "COLL_PARENT_NAME = '{}'".format(path),
         genquery.AS_LIST, ctx)
-    collection_root = itertools.imap(lambda x: to_absolute(x, "collection"), collection_root)
+    collection_root = map(lambda x: to_absolute(x, "collection"), collection_root)
 
     data_objects_root = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
         "COLL_NAME = '{}'".format(path),
         genquery.AS_LIST, ctx)
-    data_objects_root = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_root)
+    data_objects_root = map(lambda x: to_absolute(x, "data_object"), data_objects_root)
 
     if not recursive:
         return itertools.chain(collection_root, data_objects_root)
@@ -88,31 +89,31 @@ def inside_coll(ctx, path, recursive=False):
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
         "COLL_PARENT_NAME like '{}/%'".format(path),
         genquery.AS_LIST, ctx)
-    collection_sub = itertools.imap(lambda x: to_absolute(x, "collection"), collection_sub)
+    collection_sub = map(lambda x: to_absolute(x, "collection"), collection_sub)
 
     data_objects_sub = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
         "COLL_NAME like '{}/%'".format(path),
         genquery.AS_LIST, ctx)
-    data_objects_sub = itertools.imap(lambda x: to_absolute(x, "data_object"), data_objects_sub)
+    data_objects_sub = map(lambda x: to_absolute(x, "data_object"), data_objects_sub)
 
     return itertools.chain(collection_root, data_objects_root, collection_sub, data_objects_sub)
 
 
-def of_group(ctx, group):
+def of_group(ctx: rule.Context, group: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given group."""
-    return itertools.imap(lambda x: Avu(*x),
-                          genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                                              "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+    return map(lambda x: Avu(*x),
+               genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                   "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
-def set_on_data(ctx, path, a, v):
+def set_on_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
     """Set key/value metadata on a data object."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
 
 
-def set_on_coll(ctx, coll, a, v, catch=False):
+def set_on_coll(ctx: rule.Context, coll: str, a: str, v: str, catch: bool = False) -> bool | None:
     """Set key/value metadata on a collection. Optionally catch any exceptions that occur.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -124,18 +125,18 @@ def set_on_coll(ctx, coll, a, v, catch=False):
     :returns: True if catch=True and no exceptions occurred during operation
     """
     if catch:
-        return _set_on_coll_catch(ctx, coll, a, v)
+        return _set_on_coll_catch(ctx, coll, a, v)  # type: ignore[func-returns-value]
 
     _set_on_coll(ctx, coll, a, v)
     return True
 
 
-def _set_on_coll(ctx, coll, a, v):
+def _set_on_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
 
 
-def _set_on_coll_catch(ctx, coll, a, v):
+def _set_on_coll_catch(ctx: rule.Context, coll: str, a: str, v: str) -> bool | None:
     """Set AVU, but catch exception."""
     try:
         _set_on_coll(ctx, coll, a, v)
@@ -146,59 +147,59 @@ def _set_on_coll_catch(ctx, coll, a, v):
     return True
 
 
-def set_on_resource(ctx, resource, a, v):
+def set_on_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
     """Set key/value metadata on a resource."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
 
 
-def associate_to_data(ctx, path, a, v):
+def associate_to_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
     """Associate key/value metadata to a data object."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
 
 
-def associate_to_coll(ctx, coll, a, v):
+def associate_to_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     """Associate key/value metadata on a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
 
 
-def associate_to_group(ctx, group, a, v):
+def associate_to_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
     """Associate key/value metadata on a group."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], group, '-u')
 
 
-def associate_to_resource(ctx, resource, a, v):
+def associate_to_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
     """Associate key/value metadata on a group."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
 
 
-def rm_from_coll(ctx, coll, a, v):
+def rm_from_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     """Remove key/value metadata from a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], coll, '-C')
 
 
-def rm_from_data(ctx, coll, a, v):
+def rm_from_data(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     """Remove key/value metadata from a data object."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], coll, '-d')
 
 
-def rm_from_group(ctx, group, a, v):
+def rm_from_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
     """Remove key/value metadata from a group."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], group, '-u')
 
 
-def rmw_from_coll(ctx, obj, a, v, catch=False, u=''):
+def rmw_from_coll(ctx: rule.Context, obj: str, a: str, v: str, catch: bool = False, u: str = '') -> bool:
     """Remove AVU from collection with wildcards. Optionally catch any exceptions that occur.
 
     :param ctx:   Combined type of a callback and rei struct
-    :param obj:  Collection to get paginated contents of
+    :param obj:   Collection to get paginated contents of
     :param a:     Attribute
     :param v:     Value
     :param catch: Whether to catch any exceptions that occur
@@ -213,11 +214,11 @@ def rmw_from_coll(ctx, obj, a, v, catch=False, u=''):
     return True
 
 
-def _rmw_from_coll(ctx, obj, a, v, u=''):
+def _rmw_from_coll(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> None:
     msi.rmw_avu(ctx, '-C', obj, a, v, u)
 
 
-def _rmw_from_coll_catch(ctx, obj, a, v, u=''):
+def _rmw_from_coll_catch(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> bool:
     try:
         _rmw_from_coll(ctx, obj, a, v, u)
     except Exception:
@@ -227,17 +228,17 @@ def _rmw_from_coll_catch(ctx, obj, a, v, u=''):
     return True
 
 
-def rmw_from_data(ctx, obj, a, v, u=''):
+def rmw_from_data(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> None:
     """Remove AVU from data object with wildcards."""
     msi.rmw_avu(ctx, '-d', obj, a, v, u)
 
 
-def rmw_from_group(ctx, group, a, v, u=''):
+def rmw_from_group(ctx: rule.Context, group: str, a: str, v: str, u: str = '') -> None:
     """Remove AVU from group with wildcards."""
     msi.rmw_avu(ctx, '-u', group, a, v, u)
 
 
-def apply_atomic_operations(ctx, operations):
+def apply_atomic_operations(ctx: rule.Context, operations: Dict) -> bool:
     """Sequentially executes all operations as a single transaction.
 
     Operations should be a dict with structure as defined in

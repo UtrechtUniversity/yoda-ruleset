@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -6,39 +5,42 @@ __license__   = 'GPLv3, see LICENSE'
 
 import subprocess
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 import genquery
 import session_vars
 
 import log
+if TYPE_CHECKING:
+    import rule
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])
 User.__str__ = lambda self: '{}#{}'.format(*self)
 
 
-def user_and_zone(ctx):
+def user_and_zone(ctx: 'rule.Context') -> User:
     """Obtain client name and zone."""
     client = session_vars.get_map(ctx.rei)['client_user']
     return User(client['user_name'], client['irods_zone'])
 
 
-def full_name(ctx):
+def full_name(ctx: 'rule.Context') -> str:
     """Obtain client name and zone, formatted as a 'x#y' string."""
     return str(user_and_zone(ctx))
 
 
-def name(ctx):
+def name(ctx: 'rule.Context') -> str:
     """Get the name of the client user."""
     return session_vars.get_map(ctx.rei)['client_user']['user_name']
 
 
-def zone(ctx):
+def zone(ctx: 'rule.Context') -> str:
     """Get the zone of the client user."""
     return session_vars.get_map(ctx.rei)['client_user']['irods_zone']
 
 
-def from_str(ctx, s):
+def from_str(ctx: 'rule.Context', s: str) -> User:
     """Create a (user,zone) tuple from a user[#zone] string.
 
     If no zone is present in the string, the client's zone is used.
@@ -56,7 +58,7 @@ def from_str(ctx, s):
         return User(*parts)
 
 
-def exists(ctx, user):
+def exists(ctx: 'rule.Context', user: str | User) -> bool:
     """Check if a user ('rodsuser' or 'rodsadmin') exists.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -70,7 +72,7 @@ def exists(ctx, user):
     return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() in ["rodsuser", "rodsadmin"]
 
 
-def user_type(ctx, user=None):
+def user_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
     """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
@@ -89,12 +91,12 @@ def user_type(ctx, user=None):
                           "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
 
 
-def is_admin(ctx, user=None):
+def is_admin(ctx: 'rule.Context', user: str | User | None = None) -> bool:
     """Check if user is an admin."""
     return user_type(ctx, user) == 'rodsadmin'
 
 
-def is_member_of(ctx, group, user=None):
+def is_member_of(ctx: 'rule.Context', group: str, user: str | User | None = None) -> bool:
     """Check if user is member of given group."""
     if user is None:
         user = user_and_zone(ctx)
@@ -106,7 +108,7 @@ def is_member_of(ctx, group, user=None):
                           .format(*list(user) + [group])).first() is not None
 
 
-def name_from_id(ctx, user_id):
+def name_from_id(ctx: 'rule.Context', user_id: str) -> str:
     """Retrieve username from user ID."""
     for row in genquery.row_iterator("USER_NAME",
                                      "USER_ID = '{}'".format(user_id),
@@ -115,7 +117,7 @@ def name_from_id(ctx, user_id):
     return ''
 
 
-def number_of_connections(ctx):
+def number_of_connections(ctx: 'rule.Context') -> int:
     """Get number of active connections from client user."""
     connections = 0
     try:

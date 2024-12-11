@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -6,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 import uuid
+from typing import List, Tuple
 
 import genquery
 import irods_types
@@ -29,7 +29,7 @@ __all__ = ['rule_collection_group_name',
            'rule_folder_secure']
 
 
-def set_status(ctx, coll, status):
+def set_status(ctx: rule.Context, coll: str, status: constants.research_package_state) -> api.Result:
     """Change a folder's status.
 
     Status changes are validated by policy (AVU modify preproc).
@@ -69,7 +69,7 @@ def set_status(ctx, coll, status):
     return api.Result.ok()
 
 
-def set_status_as_datamanager(ctx, coll, status):
+def set_status_as_datamanager(ctx: rule.Context, coll: str, status: constants.research_package_state) -> api.Result:
     """Change a folder's status as a datamanager.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -88,7 +88,7 @@ def set_status_as_datamanager(ctx, coll, status):
 
 
 @api.make()
-def api_folder_lock(ctx, coll):
+def api_folder_lock(ctx: rule.Context, coll: str) -> api.Result:
     """Lock a folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -100,7 +100,7 @@ def api_folder_lock(ctx, coll):
 
 
 @api.make()
-def api_folder_unlock(ctx, coll):
+def api_folder_unlock(ctx: rule.Context, coll: str) -> api.Result:
     """Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
@@ -120,7 +120,7 @@ def api_folder_unlock(ctx, coll):
 
 
 @api.make()
-def api_folder_submit(ctx, coll):
+def api_folder_submit(ctx: rule.Context, coll: str) -> api.Result:
     """Submit a folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -132,7 +132,7 @@ def api_folder_submit(ctx, coll):
 
 
 @api.make()
-def api_folder_unsubmit(ctx, coll):
+def api_folder_unsubmit(ctx: rule.Context, coll: str) -> api.Result:
     """Unsubmit a folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -148,7 +148,7 @@ def api_folder_unsubmit(ctx, coll):
 
 
 @api.make()
-def api_folder_accept(ctx, coll):
+def api_folder_accept(ctx: rule.Context, coll: str) -> api.Result:
     """Accept a folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -160,7 +160,7 @@ def api_folder_accept(ctx, coll):
 
 
 @api.make()
-def api_folder_reject(ctx, coll):
+def api_folder_reject(ctx: rule.Context, coll: str) -> api.Result:
     """Reject a folder.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -172,7 +172,7 @@ def api_folder_reject(ctx, coll):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_folder_secure(ctx, coll):
+def rule_folder_secure(ctx: rule.Context, coll: str) -> str:
     """Rule interface for processing vault status transition request.
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
@@ -189,7 +189,7 @@ def rule_folder_secure(ctx, coll):
     return '1'
 
 
-def precheck_folder_secure(ctx, coll):
+def precheck_folder_secure(ctx: rule.Context, coll: str) -> bool:
     """Whether to continue with securing. Should not touch the retry attempts,
        these are prechecks and don't count toward the retry attempts limit
 
@@ -211,7 +211,7 @@ def precheck_folder_secure(ctx, coll):
     return True
 
 
-def folder_secure(ctx, coll):
+def folder_secure(ctx: rule.Context, coll: str) -> bool:
     """Secure a folder to the vault. If the previous copy did not finish, retry
 
     This function should only be called by a rodsadmin
@@ -293,7 +293,7 @@ def folder_secure(ctx, coll):
     return True
 
 
-def check_folder_secure(ctx, coll):
+def check_folder_secure(ctx: rule.Context, coll: str) -> bool:
     """Some initial set up that determines whether folder secure can continue.
        These WILL affect the retry attempts.
 
@@ -310,7 +310,7 @@ def check_folder_secure(ctx, coll):
     return True
 
 
-def correct_copytovault_start_status(ctx, coll):
+def correct_copytovault_start_status(ctx: rule.Context, coll: str) -> bool:
     """Confirm that the copytovault cronjob avu status is correct state to start securing"""
     cronjob_status = get_cronjob_status(ctx, coll)
     if cronjob_status in (constants.CRONJOB_STATE['PENDING'], constants.CRONJOB_STATE['RETRY']):
@@ -319,7 +319,7 @@ def correct_copytovault_start_status(ctx, coll):
     return False
 
 
-def correct_copytovault_start_location(coll):
+def correct_copytovault_start_location(coll: str) -> bool:
     """Confirm that the folder to be copied is in the correct location.
        For example: in a research or deposit folder and not in the trash.
 
@@ -331,7 +331,7 @@ def correct_copytovault_start_location(coll):
     return space in (pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT)
 
 
-def get_last_run_time(ctx, coll):
+def get_last_run_time(ctx: rule.Context, coll: str) -> Tuple[bool, int]:
     """Get the last run time, if found"""
     found = False
     last_run = 1
@@ -347,15 +347,15 @@ def get_last_run_time(ctx, coll):
     return found, last_run
 
 
-def set_last_run_time(ctx, coll):
+def set_last_run_time(ctx: rule.Context, coll: str) -> bool:
     """Set last run time, return True for successful set"""
     now = int(time.time())
     return avu.set_on_coll(ctx, coll, constants.IICOPYLASTRUN, str(now), True)
 
 
-def set_can_modify(ctx, coll):
+def set_can_modify(ctx: rule.Context, coll: str) -> bool:
     """Check if have permission to modify, set if necessary"""
-    check_access_result = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
+    check_access_result = msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())
     modify_access = check_access_result['arguments'][2]
     if modify_access != b'\x01':
         # This allows us permission to copy the files
@@ -368,7 +368,7 @@ def set_can_modify(ctx, coll):
     return True
 
 
-def get_retry_count(ctx, coll):
+def get_retry_count(ctx: rule.Context, coll: str) -> int:
     """ Get the retry count, if not such AVU, return 0 """
     retry_count = 0
     iter = genquery.row_iterator(
@@ -382,7 +382,7 @@ def get_retry_count(ctx, coll):
     return retry_count
 
 
-def retry_attempts(ctx, coll):
+def retry_attempts(ctx: rule.Context, coll: str) -> bool:
     """ Check if there have been too many retries. """
     retry_count = get_retry_count(ctx, coll)
 
@@ -392,7 +392,7 @@ def retry_attempts(ctx, coll):
     return True
 
 
-def folder_secure_succeed_avus(ctx, coll, group_name):
+def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) -> bool:
     """Set/rm AVUs on source folder when successfully secured folder"""
     attributes = [x[0] for x in get_org_metadata(ctx, coll)]
 
@@ -426,7 +426,7 @@ def folder_secure_succeed_avus(ctx, coll, group_name):
     return True
 
 
-def folder_secure_set_retry(ctx, coll):
+def folder_secure_set_retry(ctx: rule.Context, coll: str) -> None:
     # When a folder secure fails, try to set the retry AVU and other applicable AVUs on source folder.
     # If too many attempts, fail.
     new_retry_count = get_retry_count(ctx, coll) + 1
@@ -437,12 +437,12 @@ def folder_secure_set_retry(ctx, coll):
         send_folder_secure_notification(ctx, coll, "Failed to set retry state on data package")
 
 
-def folder_secure_set_retry_avus(ctx, coll, retry_count):
+def folder_secure_set_retry_avus(ctx: rule.Context, coll: str, retry_count: int) -> bool:
     avu.set_on_coll(ctx, coll, constants.IICOPYRETRYCOUNT, str(retry_count), True)
     return set_cronjob_status(ctx, constants.CRONJOB_STATE['RETRY'], coll)
 
 
-def folder_secure_fail(ctx, coll):
+def folder_secure_fail(ctx: rule.Context, coll: str) -> None:
     """When there are too many retries, give up, set the AVUs and send notifications"""
     # Errors are caught here in hopes that will still be able to set UNRECOVERABLE status at least
     avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True)
@@ -451,7 +451,7 @@ def folder_secure_fail(ctx, coll):
     set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
 
 
-def send_folder_secure_notification(ctx, coll, message):
+def send_folder_secure_notification(ctx: rule.Context, coll: str, message: str) -> None:
     """Send notification about folder secure to relevant datamanagers"""
     if datamanager_exists(ctx, coll):
         datamanagers = get_datamanagers(ctx, coll)
@@ -460,7 +460,7 @@ def send_folder_secure_notification(ctx, coll, message):
             notifications.set(ctx, "system", datamanager, coll, message)
 
 
-def set_epic_pid(ctx, target):
+def set_epic_pid(ctx: rule.Context, target: str) -> bool:
     """Try to set epic pid, if fails return False"""
     if config.epic_pid_enabled:
         ret = epic.register_epic_pid(ctx, target)
@@ -480,7 +480,7 @@ def set_epic_pid(ctx, target):
     return True
 
 
-def get_cronjob_status(ctx, coll):
+def get_cronjob_status(ctx: rule.Context, coll: str) -> str | None:
     """Get the cronjob status of given collection"""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
@@ -490,8 +490,10 @@ def get_cronjob_status(ctx, coll):
     for row in iter:
         return row[0]
 
+    return None
 
-def rm_cronjob_status(ctx, coll):
+
+def rm_cronjob_status(ctx: rule.Context, coll: str) -> bool:
     """Remove cronjob_copy_to_vault attribute on source collection
 
     :param ctx:  Combined type of a callback and rei struct
@@ -502,7 +504,7 @@ def rm_cronjob_status(ctx, coll):
     return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", True)
 
 
-def set_cronjob_status(ctx, status, coll):
+def set_cronjob_status(ctx: rule.Context, status: str, coll: str) -> bool:
     """Set cronjob_copy_to_vault attribute on source collection
 
     :param ctx:    Combined type of a callback and rei struct
@@ -514,7 +516,7 @@ def set_cronjob_status(ctx, status, coll):
     return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
 
 
-def set_acl_parents(ctx, acl_recurse, acl_type, coll):
+def set_acl_parents(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: str) -> None:
     """Set ACL for parent collections"""
     parent, _ = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":
@@ -522,7 +524,7 @@ def set_acl_parents(ctx, acl_recurse, acl_type, coll):
         parent, _ = pathutil.chop(parent)
 
 
-def set_acl_check(ctx, acl_recurse, acl_type, coll, error_msg=''):
+def set_acl_check(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: str, error_msg: str = '') -> bool:
     """Set the ACL if possible, log error_msg if it goes wrong"""
     # TODO turn acl_recurse into a boolean
     try:
@@ -535,7 +537,7 @@ def set_acl_check(ctx, acl_recurse, acl_type, coll, error_msg=''):
     return True
 
 
-def get_existing_vault_target(ctx, coll):
+def get_existing_vault_target(ctx: rule.Context, coll: str) -> Tuple[bool, str]:
     """Determine vault target on coll, if it was already determined before """
     found = False
     target = ""
@@ -551,7 +553,7 @@ def get_existing_vault_target(ctx, coll):
     return found, target
 
 
-def set_vault_target(ctx, coll, target):
+def set_vault_target(ctx: rule.Context, coll: str, target: str) -> bool:
     """Create vault target and AVUs"""
     msi.coll_create(ctx, target, '', irods_types.BytesBuf())
     if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE, True):
@@ -564,7 +566,7 @@ def set_vault_target(ctx, coll, target):
     return True
 
 
-def determine_and_set_vault_target(ctx, coll):
+def determine_and_set_vault_target(ctx: rule.Context, coll: str) -> str:
     """Determine and set target on coll"""
     found, target = get_existing_vault_target(ctx, coll)
 
@@ -582,7 +584,7 @@ def determine_and_set_vault_target(ctx, coll):
     return target
 
 
-def determine_new_vault_target(ctx, folder):
+def determine_new_vault_target(ctx: rule.Context, folder: str) -> str:
     """Determine vault target path for a folder."""
 
     group = collection_group_name(ctx, folder)
@@ -615,7 +617,7 @@ def determine_new_vault_target(ctx, folder):
     return target
 
 
-def collection_group_name(callback, coll):
+def collection_group_name(ctx: rule.Context, coll: str) -> str:
     """Return the name of the group a collection belongs to."""
 
     if pathutil.info(coll).space is pathutil.Space.DEPOSIT:
@@ -625,7 +627,7 @@ def collection_group_name(callback, coll):
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
         "COLL_NAME = '{}'".format(coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -635,7 +637,7 @@ def collection_group_name(callback, coll):
         iter2 = genquery.row_iterator(
             "USER_GROUP_NAME",
             "USER_GROUP_ID = '{}'".format(id),
-            genquery.AS_LIST, callback
+            genquery.AS_LIST, ctx
         )
 
         for row2 in iter2:
@@ -655,14 +657,14 @@ def collection_group_name(callback, coll):
                 return group_name
 
     # No results found. Not a group folder
-    log.write(callback, "{} does not belong to a research or intake group or is not available to current user.".format(coll))
+    log.write(ctx, "{} does not belong to a research or intake group or is not available to current user.".format(coll))
     return ""
 
 
 rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
 
-def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
+def get_org_metadata(ctx: rule.Context, path: str, object_type: pathutil.ObjectType = pathutil.ObjectType.COLL) -> List[Tuple[str, str]]:
     """Obtain a (k,v) list of all organisation metadata on a given collection or data object."""
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
@@ -674,7 +676,7 @@ def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
                                  else " AND COLL_NAME = '{}'".format(path)))]
 
 
-def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
+def get_locks(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]] | None = None, object_type: pathutil.ObjectType = pathutil.ObjectType.COLL) -> List[str]:
     """Return all locks on a collection or data object (includes locks on parents and children)."""
     if org_metadata is None:
         org_metadata = get_org_metadata(ctx, path, object_type=object_type)
@@ -685,7 +687,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 
 @api.make()
-def api_folder_get_locks(ctx, coll):
+def api_folder_get_locks(ctx: rule.Context, coll: str) -> api.Result:
     """Return a list of locks on a collection."""
     locks = []
 
@@ -698,12 +700,12 @@ def api_folder_get_locks(ctx, coll):
     return locks
 
 
-def has_locks(ctx, coll, org_metadata=None):
+def has_locks(ctx: rule.Context, coll: str, org_metadata: List[Tuple[str, str]] | None = None) -> bool:
     """Check whether a lock exists on the given collection, its parents or children."""
     return len(get_locks(ctx, coll, org_metadata=org_metadata)) > 0
 
 
-def is_locked(ctx, coll, org_metadata=None):
+def is_locked(ctx: rule.Context, coll: str, org_metadata: List[Tuple[str, str]] | None = None) -> bool:
     """Check whether a lock exists on the given collection itself or a parent collection.
 
     Locks on subcollections are not counted.
@@ -720,22 +722,22 @@ def is_locked(ctx, coll, org_metadata=None):
     return len([x for x in locks if coll.startswith(x)]) > 0
 
 
-def is_data_locked(ctx, path, org_metadata=None):
+def is_data_locked(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]] | None = None) -> bool:
     """Check whether a lock exists on the given data object."""
     locks = get_locks(ctx, path, org_metadata=org_metadata, object_type=pathutil.ObjectType.DATA)
 
     return len(locks) > 0
 
 
-def get_status(ctx, path, org_metadata=None):
+def get_status(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]] | None = None) -> constants.research_package_state:
     """Get the status of a research folder."""
     if org_metadata is None:
         org_metadata = get_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
-    org_metadata = dict(org_metadata)
-    if constants.IISTATUSATTRNAME in org_metadata:
-        x = org_metadata[constants.IISTATUSATTRNAME]
+    org_metadata_dict = dict(org_metadata)
+    if constants.IISTATUSATTRNAME in org_metadata_dict:
+        x = org_metadata_dict[constants.IISTATUSATTRNAME]
         try:
             x = "" if x == "FOLDER" else x
             return constants.research_package_state(x)
@@ -745,7 +747,7 @@ def get_status(ctx, path, org_metadata=None):
     return constants.research_package_state.FOLDER
 
 
-def datamanager_exists(ctx, coll):
+def datamanager_exists(ctx: rule.Context, coll: str) -> bool:
     """Check if a datamanager exists for a given collection."""
     group_name = collection_group_name(ctx, coll)
     category = group.get_category(ctx, group_name)
@@ -753,7 +755,7 @@ def datamanager_exists(ctx, coll):
     return group.exists(ctx, "datamanager-" + category)
 
 
-def get_datamanagers(ctx, coll):
+def get_datamanagers(ctx: rule.Context, coll: str) -> List[str]:
     """Retrieve datamanagers for a given collection."""
     group_name = collection_group_name(ctx, coll)
     category = group.get_category(ctx, group_name)
@@ -761,13 +763,13 @@ def get_datamanagers(ctx, coll):
     return group.members(ctx, "datamanager-" + category)
 
 
-def set_submitter(ctx, path, actor):
+def set_submitter(ctx: rule.Context, path: str, actor: str) -> None:
     """Set submitter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
     avu.set_on_coll(ctx, path, attribute, actor)
 
 
-def get_submitter(ctx, path):
+def get_submitter(ctx: rule.Context, path: str) -> str:
     """Get submitter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
     org_metadata = dict(get_org_metadata(ctx, path))
@@ -775,16 +777,16 @@ def get_submitter(ctx, path):
     if attribute in org_metadata:
         return org_metadata[attribute]
     else:
-        return None
+        return ""
 
 
-def set_accepter(ctx, path, actor):
+def set_accepter(ctx: rule.Context, path: str, actor: str) -> None:
     """Set accepter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
     avu.set_on_coll(ctx, path, attribute, actor)
 
 
-def get_accepter(ctx, path):
+def get_accepter(ctx: rule.Context, path: str) -> str:
     """Get accepter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
     org_metadata = dict(get_org_metadata(ctx, path))
@@ -792,16 +794,16 @@ def get_accepter(ctx, path):
     if attribute in org_metadata:
         return org_metadata[attribute]
     else:
-        return None
+        return ""
 
 
-def set_vault_data_package(ctx, path, vault):
+def set_vault_data_package(ctx: rule.Context, path: str, vault: str) -> None:
     """Set vault data package for deposit."""
     attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
     avu.set_on_coll(ctx, path, attribute, vault)
 
 
-def get_vault_data_package(ctx, path):
+def get_vault_data_package(ctx: rule.Context, path: str) -> str:
     """Get vault data package for deposit."""
     attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
     org_metadata = dict(get_org_metadata(ctx, path))
@@ -809,4 +811,4 @@ def get_vault_data_package(ctx, path):
     if attribute in org_metadata:
         return org_metadata[attribute]
     else:
-        return None
+        return ""

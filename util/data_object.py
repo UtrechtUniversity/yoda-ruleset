@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
@@ -6,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import binascii
 import json
+from typing import Dict, List, Tuple
 
 import genquery
 import irods_types
@@ -14,9 +14,10 @@ import constants
 import error
 import msi
 import pathutil
+import rule
 
 
-def exists(ctx, path):
+def exists(ctx: rule.Context, path: str) -> bool:
     """Check if a data object with the given path exists."""
     return len(list(genquery.row_iterator(
                "DATA_ID",
@@ -24,14 +25,14 @@ def exists(ctx, path):
                genquery.AS_LIST, ctx))) > 0
 
 
-def get_properties(ctx, data_id, resource):
-    """ Retrieves default properties of a data object from iRODS.
+def get_properties(ctx: rule.Context, data_id: str, resource: str) -> Dict | None:
+    """Retrieves default properties of a data object from iRODS.
 
-    :param ctx:                                   Combined type of a callback and rei struct
-    :param data_id:                               data_id of the data object
-    :param resource:                              Name of resource
+    :param ctx:      Combined type of a callback and rei struct
+    :param data_id:  Data ID of the data object
+    :param resource: Name of resource
 
-    :returns: dictionary mapping each requested property to its retrieved value, or None if not found.
+    :returns: Dictionary mapping each requested property to its retrieved value, or None if not found.
     """
     # Default properties available for retrieva
     properties = [
@@ -57,7 +58,7 @@ def get_properties(ctx, data_id, resource):
     return prop_dict
 
 
-def owner(ctx, path):
+def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     """Find the owner of a data object. Returns (name, zone) or None."""
     owners = list(genquery.row_iterator(
                   "DATA_OWNER_NAME, DATA_OWNER_ZONE",
@@ -66,7 +67,7 @@ def owner(ctx, path):
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
-def size(ctx, path):
+def size(ctx: rule.Context, path: str) -> int | None:
     """Get a data object's size in bytes.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -84,8 +85,10 @@ def size(ctx, path):
     for row in iter:
         return int(row[0])
 
+    return None
 
-def has_replica_with_status(ctx, path, statuses):
+
+def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> bool:
     """Check if data object has replica with specified replica statuses.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -107,7 +110,7 @@ def has_replica_with_status(ctx, path, statuses):
     return False
 
 
-def write(ctx, path, data):
+def write(ctx: rule.Context, path: str, data: str) -> None:
     """Write a string to an iRODS data object.
 
     This will overwrite the data object if it exists.
@@ -127,7 +130,7 @@ def write(ctx, path, data):
     msi.data_obj_close(ctx, handle, 0)
 
 
-def read(ctx, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
+def read(ctx: rule.Context, path: str, max_size: int = constants.IIDATA_MAX_SLURP_SIZE) -> str:
     """Read an entire iRODS data object into a string."""
     sz = size(ctx, path)
     if sz is None:
@@ -152,12 +155,15 @@ def read(ctx, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     buf = ret['arguments'][2]
 
+    # Convert BytesBuffer to string.
+    ret_val = msi.bytes_buf_to_str(ctx, buf, "")
+    output = ret_val["arguments"][1]
     msi.data_obj_close(ctx, handle, 0)
 
-    return ''.join(buf.buf[:buf.len])
+    return output
 
 
-def copy(ctx, path_org, path_copy, force=True):
+def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -> None:
     """Copy a data object.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -178,7 +184,7 @@ def copy(ctx, path_org, path_copy, force=True):
     msi.touch(ctx, json.dumps(json_inp))
 
 
-def remove(ctx, path, force=False):
+def remove(ctx: rule.Context, path: str, force: bool = False) -> None:
     """Delete a data object.
 
     :param ctx:   Combined type of a callback and rei struct
@@ -193,7 +199,7 @@ def remove(ctx, path, force=False):
                         irods_types.BytesBuf())
 
 
-def rename(ctx, path_org, path_target):
+def rename(ctx: rule.Context, path_org: str, path_target: str) -> None:
     """Rename data object from path_org to path_target.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -218,7 +224,7 @@ def rename(ctx, path_org, path_target):
     msi.touch(ctx, json.dumps(json_inp))
 
 
-def name_from_id(ctx, data_id):
+def name_from_id(ctx: rule.Context, data_id: str) -> str | None:
     """Get data object name from data object id.
 
     :param ctx:     Combined type of a callback and rei struct
@@ -230,8 +236,10 @@ def name_from_id(ctx, data_id):
     if x is not None:
         return '/'.join(x)
 
+    return None
 
-def id_from_path(ctx, path):
+
+def id_from_path(ctx: rule.Context, path: str) -> str:
     """Get data object id from data object path at its first appearance.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -243,7 +251,7 @@ def id_from_path(ctx, path):
                           "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path)).first()
 
 
-def decode_checksum(checksum):
+def decode_checksum(checksum: str) -> str:
     """Decode data object checksum.
 
     :param checksum: Base64 encoded SHA256 checksum
@@ -256,7 +264,7 @@ def decode_checksum(checksum):
         return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
 
 
-def get_group_owners(ctx, path):
+def get_group_owners(ctx: rule.Context, path: str) -> List:
     """Return list of groups of data object, each entry being name of the group and the zone."""
     parent, basename = pathutil.chop(path)
     groups = list(genquery.row_iterator(

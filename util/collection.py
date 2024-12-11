@@ -1,30 +1,29 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with collections."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import json
-import sys
-if sys.version_info > (2, 7):
-    from functools import reduce
+from functools import reduce
+from typing import Iterable, List, Tuple
 
 import genquery
 import irods_types
 
 import data_object
 import msi
+import rule
 
 
-def exists(ctx, path):
+def exists(ctx: rule.Context, path: str) -> bool:
     """Check if a collection with the given path exists."""
     return len(list(genquery.row_iterator(
                "COLL_ID", "COLL_NAME = '{}'".format(path),
                genquery.AS_LIST, ctx))) > 0
 
 
-def owner(ctx, path):
+def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     """Find the owner of a collection. Returns (name, zone) or None."""
     owners = list(genquery.row_iterator(
                   "COLL_OWNER_NAME, COLL_OWNER_ZONE",
@@ -33,7 +32,7 @@ def owner(ctx, path):
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
-def empty(ctx, path):
+def empty(ctx: rule.Context, path: str) -> bool:
     """Check if a collection contains any data objects."""
     return (len(list(genquery.row_iterator(
                      "DATA_ID",
@@ -45,9 +44,9 @@ def empty(ctx, path):
                     genquery.AS_LIST, ctx))) == 0)
 
 
-def size(ctx, path):
+def size(ctx: rule.Context, path: str) -> int:
     """Get a collection's size in bytes."""
-    def func(x, row):
+    def func(x: int, row: List) -> int:
         return x + int(row[1])
 
     return reduce(func,
@@ -59,7 +58,7 @@ def size(ctx, path):
                                                         genquery.AS_LIST, ctx)), 0)
 
 
-def data_count(ctx, path, recursive=True):
+def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
     """Get a collection's data count.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -72,7 +71,7 @@ def data_count(ctx, path, recursive=True):
     return sum(1 for _ in data_objects(ctx, path, recursive=recursive))
 
 
-def collection_count(ctx, path, recursive=True):
+def collection_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
     """Get a collection's collection count (the amount of collections within a collection)."""
     return sum(1 for _ in genquery.row_iterator(
                "COLL_ID",
@@ -81,7 +80,7 @@ def collection_count(ctx, path, recursive=True):
                genquery.AS_LIST, ctx))
 
 
-def subcollections(ctx, path, recursive=False):
+def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
     """Get a list of all subcollections in a collection.
 
     Note: the returned value is a generator / lazy list, so that large
@@ -97,7 +96,7 @@ def subcollections(ctx, path, recursive=False):
     :returns: List of all subcollections in a collection
     """
     # coll+subcoll name -> path
-    def to_absolute(row):
+    def to_absolute(row: List) -> str:
         return '{}/{}'.format(*row)
 
     q_root = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
@@ -105,17 +104,17 @@ def subcollections(ctx, path, recursive=False):
                                    genquery.AS_LIST, ctx)
 
     if not recursive:
-        return itertools.imap(to_absolute, q_root)
+        return map(to_absolute, q_root)
 
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
                                   "COLL_PARENT_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
 
-    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+    return map(to_absolute, itertools.chain(q_root, q_sub))
 
 
-def data_objects(ctx, path, recursive=False):
+def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
     """Get a list of all data objects in a collection.
 
     Note: the returned value is a generator / lazy list, so that large
@@ -131,7 +130,7 @@ def data_objects(ctx, path, recursive=False):
     :returns: List of all data objects in a collection
     """
     # coll+data name -> path
-    def to_absolute(row):
+    def to_absolute(row: List) -> str:
         return '{}/{}'.format(*row)
 
     q_root = genquery.row_iterator("COLL_NAME, DATA_NAME",
@@ -139,17 +138,17 @@ def data_objects(ctx, path, recursive=False):
                                    genquery.AS_LIST, ctx)
 
     if not recursive:
-        return itertools.imap(to_absolute, q_root)
+        return map(to_absolute, q_root)
 
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                   "COLL_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
 
-    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+    return map(to_absolute, itertools.chain(q_root, q_sub))
 
 
-def create(ctx, path, entire_tree=''):
+def create(ctx: rule.Context, path: str, entire_tree: str = '') -> None:
     """Create new collection.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -165,7 +164,7 @@ def create(ctx, path, entire_tree=''):
                     irods_types.BytesBuf())
 
 
-def copy(ctx, path_org, path_copy, force=True):
+def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -> None:
     """Copy a collection.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -200,7 +199,7 @@ def copy(ctx, path_org, path_copy, force=True):
     msi.touch(ctx, json.dumps(json_inp))
 
 
-def move(ctx, path_org, path_move, force=True):
+def move(ctx: rule.Context, path_org: str, path_move: str, force: bool = True) -> None:
     """Move a collection.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -218,7 +217,7 @@ def move(ctx, path_org, path_move, force=True):
                 irods_types.BytesBuf())
 
 
-def remove(ctx, path):
+def remove(ctx: rule.Context, path: str) -> None:
     """Delete a collection.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -233,7 +232,7 @@ def remove(ctx, path):
                 irods_types.BytesBuf())
 
 
-def rename(ctx, path_org, path_target):
+def rename(ctx: rule.Context, path_org: str, path_target: str) -> None:
     """Rename collection from path_org to path_target.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -250,10 +249,10 @@ def rename(ctx, path_org, path_target):
                         irods_types.BytesBuf())
 
 
-def id_from_name(ctx, coll_name):
+def id_from_name(ctx: rule.Context, coll_name: str) -> str:
     """Get collection id from collection name.
 
-    :param ctx:     Combined type of a callback and rei struct
+    :param ctx:       Combined type of a callback and rei struct
     :param coll_name: Collection name
 
     :returns: Collection id
@@ -261,7 +260,7 @@ def id_from_name(ctx, coll_name):
     return genquery.Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
 
 
-def name_from_id(ctx, coll_id):
+def name_from_id(ctx: rule.Context, coll_id: str) -> str:
     """Get collection name from collection id.
 
     :param ctx:     Combined type of a callback and rei struct

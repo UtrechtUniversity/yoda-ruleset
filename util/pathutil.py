@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with paths."""
 
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
-__copyright__ = 'Copyright (c) 2019-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from collections import namedtuple
 from enum import Enum
+from typing import List, Tuple
 
 
 class Space(Enum):
@@ -21,7 +22,7 @@ class Space(Enum):
     INTAKE      = 5
     DEPOSIT     = 6
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Space.' + self.name
 
 
@@ -29,14 +30,14 @@ class ObjectType(Enum):
     COLL = 0
     DATA = 1
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'ObjectType.' + self.name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '-d' if self is ObjectType.DATA else '-C'
 
 
-def chop(path):
+def chop(path: str) -> Tuple[str, str]:
     """Split off the rightmost path component of a path.
 
     /a/b/c -> (/a/b, c)
@@ -54,22 +55,22 @@ def chop(path):
         return '/'.join(x[:-1]), x[-1]
 
 
-def dirname(path):
+def dirname(path: str) -> str:
     """Return the dirname of a path."""
     return chop(path)[0]  # chops last component off
 
 
-def basename(path):
+def basename(path: str) -> str:
     """Return basename of a path."""
     return chop(path)[1]  # chops everything *but* the last component
 
 
-def chopext(path):
+def chopext(path: str) -> List[str]:
     """Return the extension of a path."""
     return path.rsplit('.', 1)
 
 
-def info(path):
+def info(path: str) -> Tuple[Space, str, str, str]:
     """Parse a path into a (Space, zone, group, subpath) tuple.
 
     Synopsis: space, zone, group, subpath = pathutil.info(path)
@@ -95,23 +96,21 @@ def info(path):
     :returns: Tuple with space, zone, group and subpath
     """
     # Turn empty match groups into empty strings.
-    def f(x):
+    def f(x: str) -> str:
         return '' if x is None else x
 
-    def g(m, i):
+    def g(m: re.Match, i: int) -> str:
         return '' if i > len(m.groups()) else f(m.group(i))
 
-    def result(s, m):
+    def result(s: Space, m: re.Match) -> Tuple[Space, str, str, str]:
         return (s, g(m, 1), g(m, 2), g(m, 3))
 
     # Try a pattern and report success if it matches.
-    def test(r, space):
+    def test(r: str, space: Space) -> Tuple[Space, str, str, str] | None:
         m = re.match(r, path)
         return m and result(space, m)
 
-    from collections import namedtuple
-
-    return (namedtuple('PathInfo', 'space zone group subpath'.split())
+    return (namedtuple('PathInfo', ['space', 'zone', 'group', 'subpath'])  # type: ignore[call-arg]
             (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',         Space.VAULT)
             or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',     Space.RESEARCH)
             or test('^/([^/]+)/home/(deposit-[^/]+)(?:/(.+))?$',      Space.DEPOSIT)
