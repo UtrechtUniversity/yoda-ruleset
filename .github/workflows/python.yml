@@ -5,16 +5,13 @@ on: [push, pull_request]
 jobs:
   lint:
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
