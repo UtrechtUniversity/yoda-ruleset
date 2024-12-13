@@ -123,7 +123,7 @@ def number_of_connections(ctx: 'rule.Context') -> int:
     try:
         # We don't use the -a option with the ips command, because this takes
         # significantly more time, which would significantly reduce performance.
-        ips = subprocess.check_output(["ips"])
+        ips = (subprocess.check_output(["ips"])).decode("utf-8")
         username = session_vars.get_map(ctx.rei)['client_user']['user_name']
         connections = ips.count(username)
     except Exception as e:

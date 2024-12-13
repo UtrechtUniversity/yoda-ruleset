@@ -12,24 +12,21 @@ included in the search path for ruleset imports.
 This module imports (and therefore executes) ruleset code.
 Do not run it on untrusted codebases.
 """
-from __future__ import print_function
 
 __copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-__author__    =  ('Chris Smeele')
-__author__    =  ('Lazlo Westerhof')
+__author__    = ('Chris Smeele')
+__author__    = ('Lazlo Westerhof')
 # (in alphabetical order)
 
-import sys
-import re
+import argparse
 import inspect
 import json
-
-from importlib import import_module
+import re
+import sys
 from collections import OrderedDict
-
-import argparse
+from importlib import import_module
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('ruleset', metavar='RULESET', type=str,
@@ -44,6 +41,7 @@ ruleset_name = args.ruleset
 core = args.core
 module = args.module
 
+
 # Strategy: Import the requested ruleset with an instrumented environment, and
 # apply introspection to extract API function information.
 
@@ -55,9 +53,15 @@ class Sandbag(object):
     Used as a stub for various internal irods modules so that we can import
     rulesets without errors.
     """
-    def __init__(self, *_, **kw): self._data = kw
-    def __call__(self, *_, **__): return Sandbag()
-    def __getattr__(self, k):     return self._data.get(k, Sandbag())
+    def __init__(self, *_, **kw):
+        self._data = kw
+
+    def __call__(self, *_, **__):
+        return Sandbag()
+
+    def __getattr__(self, k):
+        return self._data.get(k, Sandbag())
+
     def __setattr__(self, k, v):
         if k == '_data':
             return super(Sandbag, self).__setattr__(k, v)
@@ -79,6 +83,7 @@ class api(object):
             api.fns += [(g.__name__, g)]
             return g
         return f
+
 
 # Inject iRODS modules.
 sys.modules['irods_types']       = Sandbag()

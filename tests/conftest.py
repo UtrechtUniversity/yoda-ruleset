@@ -197,7 +197,7 @@ def login(user, password):
     p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
     found_csrf_tokens = p.findall(content)
     if len(found_csrf_tokens) == 0:
-        print(f"Error: could not find login CSRF token in response from server for login of user {user}. Response was:")
+        print(f"Error: could not find login CSRF token in response from server for login of user {user}. Response was: ")
         print(content)
         sys.exit(1)
     csrf = found_csrf_tokens[0]
@@ -215,7 +215,7 @@ def login(user, password):
     p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
     found_csrf_tokens = p.findall(content)
     if len(found_csrf_tokens) == 0:
-        print(f"Error: could not find authenticated CSRF token in response from server for login of user {user}. Response was:")
+        print(f"Error: could not find authenticated CSRF token in response from server for login of user {user}. Response was: ")
         print(content)
         sys.exit(1)
     csrf = found_csrf_tokens[0]
