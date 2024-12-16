@@ -3,7 +3,7 @@
     "zone_name": "tempZone",
     "roles": {
         "smoke_account": {
-            "username": "datamanager@yoda.test",
+            "username": "datamanager",
 	    "password": "test"
         }
     }
