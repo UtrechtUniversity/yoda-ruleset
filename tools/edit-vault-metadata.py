@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 
 """
    edit-vault-metadata : script for manually editing metadata of a data package
