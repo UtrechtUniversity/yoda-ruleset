@@ -34,7 +34,7 @@ if 'unittest' not in sys.modules:
     import group
     import avu
     import misc
-    import resource
+    import resources
     import arb_data_manager
     import cached_data_manager
     import irods_type_info
