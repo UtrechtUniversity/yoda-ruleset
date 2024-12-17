@@ -29,6 +29,7 @@ sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
 # so that they become visible to iRODS.
 
 from admin                    import *
+from arb                      import *
 from browse                   import *
 from folder                   import *
 from groups                   import *
@@ -39,10 +40,10 @@ from meta                     import *
 from meta_form                import *
 from provenance               import *
 from research                 import *
-from resources                import *
 from schema                   import *
 from schema_transformation    import *
 from schema_transformations   import *
+from stats                    import *
 from publication_troubleshoot import *
 from vault                    import *
 from datacite                 import *

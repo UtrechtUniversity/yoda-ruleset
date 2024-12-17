@@ -1,5 +1,4 @@
-"""This class contains utility functions that process names of Yoda entities (e.g. category names, user names, etc.)
-"""
+"""This class contains utility functions that process names of Yoda entities (e.g. category names, user names, etc.)"""
 
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'

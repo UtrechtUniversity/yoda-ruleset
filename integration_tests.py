@@ -17,7 +17,7 @@ import folder
 import groups
 import meta
 import schema
-from util import avu, collection, config, constants, data_object, group, jsonutil, log, msi, resource, rule, user
+from util import avu, collection, config, constants, data_object, group, jsonutil, log, msi, resources, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -41,7 +41,11 @@ def _call_msvc_json_arrayops(ctx, jsonstr, val, ops, index, argument_index):
 
 def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
     """Returns an output argument from the json_objops microservice"""
-    return ctx.msi_json_objops(jsonstr, val, ops)["arguments"][argument_index]
+    result = ctx.msi_json_objops(jsonstr, val, ops)["arguments"]
+    if ops == "get":
+        return list(result[argument_index].key), list(result[argument_index].value)
+    else:
+        return result[argument_index]
 
 
 def _create_tmp_object(ctx):
@@ -666,7 +670,7 @@ basic_integration_tests = [
      "check": lambda x: x["DATA_SIZE"].isdigit()},
     # Using the resource_id as data_id to ensure no existing data object uses this occupied identifier
     {"name":   "util.data_object.get_properties.no_data_object",
-     "test": lambda ctx: data_object.get_properties(ctx, resource.id_from_name(ctx, "irodsResc"), "irodsResc"),
+     "test": lambda ctx: data_object.get_properties(ctx, resources.id_from_name(ctx, "irodsResc"), "irodsResc"),
      "check": lambda x: x is None},
     {"name":   "util.data_object.owner",
      "test": lambda ctx: data_object.owner(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
@@ -701,29 +705,29 @@ basic_integration_tests = [
     {"name":   "util.group.members.doesnotexist",
      "test": lambda ctx: user.exists(ctx, "research-doesnotexist"),
      "check": lambda x: x is False},
-    {"name":   "util.resource.exists.yes",
-     "test": lambda ctx: resource.exists(ctx, "irodsResc"),
+    {"name":   "util.resources.exists.yes",
+     "test": lambda ctx: resources.exists(ctx, "irodsResc"),
      "check": lambda x: x},
-    {"name":   "util.resource.exists.no",
-     "test": lambda ctx: resource.exists(ctx, "bananaResc"),
+    {"name":   "util.resources.exists.no",
+     "test": lambda ctx: resources.exists(ctx, "bananaResc"),
      "check": lambda x: not x},
-    {"name":   "util.resource.get_all_resource_names",
-     "test": lambda ctx: resource.get_all_resource_names(ctx),
-     "check": lambda x: len(x) == 16},
-    {"name":   "util.resource.get_children_by_name",
-     "test": lambda ctx: resource.get_children_by_name(ctx, "dev001_p1"),
+    {"name":   "util.resources.get_all_resource_names",
+     "test": lambda ctx: resources.get_all_resource_names(ctx),
+     "check": lambda x: len(x) == 15},
+    {"name":   "util.resources.get_children_by_name",
+     "test": lambda ctx: resources.get_children_by_name(ctx, "dev001_p1"),
      "check": lambda x: x == ["dev001_1"]},
-    {"name":   "util.resource.get_parent_by_name",
-     "test": lambda ctx: resource.get_parent_by_name(ctx, "dev001_1"),
+    {"name":   "util.resources.get_parent_by_name",
+     "test": lambda ctx: resources.get_parent_by_name(ctx, "dev001_1"),
      "check": lambda x: x == "dev001_p1"},
-    {"name":   "util.resource.get_resource_names_by_type",
-     "test": lambda ctx: resource.get_resource_names_by_type(ctx, "unixfilesystem"),
-     "check": lambda x: sorted(x) == sorted(['bundleResc', 'demoResc', 'dev001_1', 'dev001_2', 'dev002_1'])},
-    {"name":   "util.resource.get_type_by_name",
-     "test": lambda ctx: resource.get_type_by_name(ctx, "dev001_1"),
+    {"name":   "util.resources.get_resource_names_by_type",
+     "test": lambda ctx: resources.get_resource_names_by_type(ctx, "unixfilesystem"),
+     "check": lambda x: sorted(x) == sorted(['bundleResc', 'dev001_1', 'dev001_2', 'dev002_1'])},
+    {"name":   "util.resources.get_type_by_name",
+     "test": lambda ctx: resources.get_type_by_name(ctx, "dev001_1"),
      "check": lambda x: x == "unixfilesystem"},
-    {"name":   "util.resource.to_from_id",
-     "test": lambda ctx: resource.name_from_id(ctx, resource.id_from_name(ctx, "irodsResc")),
+    {"name":   "util.resources.to_from_id",
+     "test": lambda ctx: resources.name_from_id(ctx, resources.id_from_name(ctx, "irodsResc")),
      "check": lambda x: x == "irodsResc"},
     {"name":   "util.user.exists.yes",
      "test": lambda ctx: user.exists(ctx, "rods"),
