@@ -4,14 +4,12 @@ Jinja2==2.11.3
 requests==2.25.1
 pyrsistent==0.15.7
 configparser==4.0.2
-zipp==1.2.0
 contextlib2==0.6.0.post1
 importlib-metadata==2.1.1
 jsonschema==4.23.0
 pathvalidate==0.29.1
 requests_cache==0.5.2
 irods-avu-json==2.2.0
-python2-secrets==1.0.5
 python-dateutil==2.7.0
 python-magic==0.4.27
 certifi==2021.10.8
