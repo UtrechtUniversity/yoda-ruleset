@@ -1,6 +1,5 @@
 setuptools==75.6.0
 MarkupSafe==1.1.1
-enum34==1.1.10
 Jinja2==2.11.3
 requests==2.25.1
 pyrsistent==0.15.7
