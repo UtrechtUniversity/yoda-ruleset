@@ -11,6 +11,7 @@ from typing import Dict, List
 
 import genquery
 import irods_types
+import jsonschema
 from deepdiff import DeepDiff
 
 import meta_form
@@ -82,6 +83,13 @@ def get_json_metadata_errors(ctx: rule.Context,
 
     :returns: List of errors in JSON object
     """
+    def transform_error(e):
+        """Turn a ValidationError into a data structure for the frontend."""
+        return {'message':     e.message,
+                'path':        list(e.path),
+                'schema_path': list(e.schema_path),
+                'validator':   e.validator}
+
     if schema is None:
         schema = schema_.get_active_schema(ctx, metadata_path)
 
@@ -89,66 +97,13 @@ def get_json_metadata_errors(ctx: rule.Context,
         metadata = jsonutil.read(ctx, metadata_path)
 
     # Perform validation and filter errors.
-    # Validation is handed to a Python 3 interpreter to validate with the Draft201909 validator.
-    # This can be removed when we can use Python 3 in the ruleset (iRODS 4.3.x).
-    # validator = jsonschema.Draft7Validator(schema)
-    #
-    # errors = validator.iter_errors(metadata)
-    #
-    # if ignore_required:
-    #     errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
-    #
-    # def transform_error(e):
-    #     """Turn a ValidationError into a data structure for the frontend."""
-    #     return {'message':     e.message,
-    #             'path':        list(e.path),
-    #             'schema_path': list(e.schema_path),
-    #             'validator':   e.validator}
-    #
-    # return map(transform_error, errors)
+    validator = jsonschema.Draft201909Validator(schema)
+    errors = validator.iter_errors(metadata)
 
-    # Can't serialize OrderedDict, so transform to dicts.
-    schema = json.loads(json.dumps(schema))
-    metadata = json.loads(json.dumps(metadata))
+    if ignore_required:
+        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
 
-    # Create gateway to Python 3.8.
-    import execnet
-    gw = execnet.makegateway("popen//python=" + config.python3_interpreter)
-
-    channel = gw.remote_exec("""
-        import jsonschema
-        errors = []
-        while 1:
-            schema, metadata, ignore_required = channel.receive()
-            if schema is None:
-                break
-
-            # Perform validation and filter errors.
-            validator = jsonschema.Draft201909Validator(schema)
-            errors = validator.iter_errors(metadata)
-
-            if ignore_required:
-                errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
-
-            def transform_error(e):
-                return {'message':     e.message,
-                        'path':        list(e.path),
-                        'schema_path': list(e.schema_path),
-                        'validator':   e.validator}
-
-            errors = list(map(transform_error, errors))
-        channel.send(errors)
-    """)
-
-    channel.send((schema, metadata, ignore_required))
-    channel.send((None, None, None))
-    errors = channel.receive()
-
-    # Log metadata errors.
-    for error in errors:
-        log.write(ctx, error)
-
-    return errors
+    return list(map(transform_error, errors))
 
 
 def is_json_metadata_valid(ctx: rule.Context,
