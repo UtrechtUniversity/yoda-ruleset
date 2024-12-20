@@ -1,7 +1,7 @@
 setuptools==75.6.0
-MarkupSafe==1.1.1
-Jinja2==2.11.3
-requests==2.25.1
+MarkupSafe==3.0.2
+Jinja2==3.1.4
+requests==2.32.3
 pyrsistent==0.15.7
 configparser==4.0.2
 contextlib2==0.6.0.post1
@@ -12,10 +12,9 @@ requests_cache==0.5.2
 irods-avu-json==2.2.0
 python-dateutil==2.7.0
 python-magic==0.4.27
-certifi==2021.10.8
 deepdiff==8.0.1
 persist-queue==0.8.1
 redis==3.5.3
-psutil==5.9.6
+psutil==6.1.1
 iteration_utilities==0.8.0
 rotki-pysqlcipher3==2024.10.1

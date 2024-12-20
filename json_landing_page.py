@@ -73,8 +73,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     template = data_object.read(ctx, landingpage_template_path)
 
     # Enable autoescaping for all templates.
-    # NOTE: autoescape is no longer an extension starting in jinja 2.9 (2017).
-    Template = jinja2.Environment(autoescape=True, extensions=["jinja2.ext.autoescape"]).from_string
+    Template = jinja2.Environment(autoescape=True).from_string
 
     # Pre work input for render process.
     # When empty landing page, take a short cut
