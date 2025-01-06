@@ -13,6 +13,7 @@ from test_schema_transformations import CorrectifyIsniTest, CorrectifyOrcidTest,
 from test_util_misc import UtilMiscTest
 from test_util_pathutil import UtilPathutilTest
 from test_util_yoda_names import UtilYodaNamesTest
+from test_vault import VaultTest
 
 
 def suite():
@@ -27,4 +28,5 @@ def suite():
     test_suite.addTest(makeSuite(UtilMiscTest))
     test_suite.addTest(makeSuite(UtilPathutilTest))
     test_suite.addTest(makeSuite(UtilYodaNamesTest))
+    test_suite.addTest(makeSuite(VaultTest))
     return test_suite
