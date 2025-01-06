@@ -22,6 +22,7 @@ import meta_form
 import policies_datamanager
 import policies_datapackage_status
 from util import *
+from vault_utils import get_copy_folder_to_vault_irsync_command
 
 __all__ = ['api_vault_submit',
            'api_vault_approve',
@@ -954,8 +955,13 @@ def copy_folder_to_vault(ctx, coll, target):
     :returns: True for successful copy
     """
     returncode = 0
+    irsync_command = get_copy_folder_to_vault_irsync_command(coll,
+                                                             target,
+                                                             config.resource_vault,
+                                                             config.vault_copy_multithread_enabled)
+
     try:
-        returncode = subprocess.call(["irsync", "-rK", "i:{}/".format(coll), "i:{}/original".format(target)])
+        returncode = subprocess.call(irsync_command)
     except Exception as e:
         log.write(ctx, "irsync failure: " + e)
         log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
