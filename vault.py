@@ -20,7 +20,7 @@ import meta_form
 import policies_datamanager
 import policies_datapackage_status
 from util import *
-from vault_utils import get_copy_folder_to_vault_irsync_command
+from vault_utils import get_copy_folder_to_vault_irsync_command, get_sanity_checks_results_copy_to_vault_paths
 
 __all__ = ['api_vault_submit',
            'api_vault_approve',
@@ -953,6 +953,12 @@ def copy_folder_to_vault(ctx: rule.Context, coll: str, target: str) -> bool:
 
     :returns: True for successful copy
     """
+    sanity_check_results = get_sanity_checks_results_copy_to_vault_paths(coll, target)
+    if len(sanity_check_results) > 0:
+        log.write(ctx, "Not copying folder to vault because of sanity check failures: "
+                  + str(sanity_check_results))
+        return False
+
     returncode = 0
     irsync_command = get_copy_folder_to_vault_irsync_command(coll,
                                                              target,
