@@ -17,6 +17,7 @@ import policies_folder_status
 import provenance
 import vault
 from util import *
+from vault_utils import get_sanity_checks_results_copy_to_vault_paths
 
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',
@@ -567,6 +568,16 @@ def set_vault_target(ctx, coll, target):
 def determine_and_set_vault_target(ctx, coll):
     """Determine and set target on coll"""
     found, target = get_existing_vault_target(ctx, coll)
+
+    # Overwrite vault target if it does not pass sanity checks. This should usually
+    # fix any wrong vault target. There's a second check in the copy_folder_to_vault
+    # function to prevent TOCTOU issues.
+    sanity_check_results = get_sanity_checks_results_copy_to_vault_paths(coll, target)
+    if len(sanity_check_results) > 0:
+        log.write(ctx, "folder_secure: overwriting previous vault target for " + coll
+                       + "(" + target + "), because it did not meet sanity checks: "
+                       + str(sanity_check_results))
+        found = False
 
     # Determine vault target if it does not exist.
     if not found:
