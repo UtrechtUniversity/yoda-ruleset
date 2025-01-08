@@ -875,12 +875,19 @@ def file_write_and_lock(ctx: rule.Context, coll_path: str, filename: str, data: 
     jsonutil.write(ctx, file_path, data)
 
     # Grant read permission to readers
+    current_user = user.full_name(ctx)  # Retrieve once
+
+    # Reorder readers: move current_user to the end if present
+    if current_user in readers:
+        readers = [reader for reader in readers if reader != current_user] + [current_user]
+
+    # Set read ACLs for each reader
     for reader in readers:
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
-    # Revoke temporary write permission (unless read permissions were set on the invoking user)
-    if user.full_name(ctx) not in readers:
-        msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
+    # Revoke temporary write permission if current_user doesn't have read access
+    if current_user not in readers:
+        msi.set_acl(ctx, "default", "null", current_user, file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
     # appropriate permissions through group membership, e.g. the project managers group)
@@ -962,12 +969,12 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
         msi.set_acl(ctx, "default", "read", user.full_name(ctx), attachments_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, dta_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, dta_path)
-        msi.set_acl(ctx, "default", "read", user.full_name(ctx), dta_path)
         msi.set_acl(ctx, "default", "own", "rods", dta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), dta_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, sigdta_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, sigdta_path)
-        msi.set_acl(ctx, "default", "read", user.full_name(ctx), sigdta_path)
         msi.set_acl(ctx, "default", "own", "rods", sigdta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), sigdta_path)
 
         # Create provenance log
         provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
@@ -1904,7 +1911,7 @@ def api_datarequest_dta_post_upload_actions(ctx: rule.Context, request_id: str, 
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
-    return api.OK()
+    return api.Result.ok()
 
 
 @api.make()
@@ -1971,7 +1978,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx: rule.Context, request_id
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
-    return api.OK()
+    return api.Result.ok()
 
 
 @api.make()
