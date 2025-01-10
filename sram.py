@@ -42,7 +42,7 @@ def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str
         "disclose_member_information": True,
         "disclose_email_information": True,
         "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]],
-        "logo": config.sram_co_logo_url,
+        "logo": config.sram_co_logo,
         "tags": [config.sram_co_default_label, group_type]
     }
 
