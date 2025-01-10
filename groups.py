@@ -574,7 +574,7 @@ def apply_data(ctx, data, allow_update, delete_users):
 
     for (category, subcategory, group_name, managers, members, viewers, schema_id, expiration_date) in data:
         new_group = False
-        users_added, users_removed = 0, 0
+        users_added, users_removed, roles_changed = 0, 0, 0
         message = ''
 
         log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
@@ -622,6 +622,7 @@ def apply_data(ctx, data, allow_update, delete_users):
                 log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, group_name))
             else:
                 response = group_user_update_role(ctx, username, group_name, role)
+                roles_changed += 1
 
                 if response:
                     log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, group_name, role))
@@ -677,9 +678,11 @@ def apply_data(ctx, data, allow_update, delete_users):
             message += ' Users added ({}).'.format(users_added)
         if users_removed > 0:
             message += ' Users removed ({}).'.format(users_removed)
+        if roles_changed > 0:
+            message += ' Roles changed ({}).'.format(roles_changed)
 
         # If no users added, no users removed and not new group created.
-        if not users_added and not users_removed and not new_group:
+        if not any((users_added, users_removed, roles_changed, new_group)):
             message += ' No changes made.'
 
     return {"status": "ok", "message": message}
