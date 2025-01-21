@@ -3,6 +3,8 @@
 __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import csv
+
 from typing import Dict, List, Set, Tuple
 
 from iteration_utilities import duplicates, unique_everseen
@@ -170,15 +172,15 @@ def parse_data(ctx: 'rule.Context', csv_header_and_data: str) -> Tuple:
     extracted_data = []
 
     csv_lines = csv_header_and_data.splitlines()
-    header = csv_lines[0]
-    import_lines = csv_lines[1:]
+    csv_reader = csv.reader(csv_lines)
+    header = next(csv_reader)
+    import_lines = list(csv_reader)
 
     # List of dicts each containing label / list of values pairs.
     lines = []
-    header_cols = header.split(',')
+    header_cols = header
     for import_line in import_lines:
-        data = import_line.split(',')
-        if len(data) != len(header_cols):
+        if len(import_line) != len(header_cols):
             return [], 'Amount of header columns differs from data columns.'
         # A kind of MultiDict
         # each key is a header column
@@ -195,8 +197,8 @@ def parse_data(ctx: 'rule.Context', csv_header_and_data: str) -> Tuple:
             if header_cols[x] not in line_dict:
                 line_dict[header_cols[x]] = []
 
-            if len(data[x]):
-                line_dict[header_cols[x]].append(data[x])
+            if len(import_line[x]):
+                line_dict[header_cols[x]].append(import_line[x])
 
         lines.append(line_dict)
 
