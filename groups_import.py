@@ -4,7 +4,6 @@ __copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import csv
-
 from typing import Dict, List, Set, Tuple
 
 from iteration_utilities import duplicates, unique_everseen
