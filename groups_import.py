@@ -172,12 +172,11 @@ def parse_data(ctx: 'rule.Context', csv_header_and_data: str) -> Tuple:
 
     csv_lines = csv_header_and_data.splitlines()
     csv_reader = csv.reader(csv_lines)
-    header = next(csv_reader)
+    header_cols = next(csv_reader)
     import_lines = list(csv_reader)
 
     # List of dicts each containing label / list of values pairs.
     lines = []
-    header_cols = header
     for import_line in import_lines:
         if len(import_line) != len(header_cols):
             return [], 'Amount of header columns differs from data columns.'
