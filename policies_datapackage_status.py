@@ -40,7 +40,7 @@ def can_transition_datapackage_status(ctx: rule.Context,
             return policy.fail('Metadata missing, unable to submit this data package for publication.')
 
         if not meta.is_json_metadata_valid(ctx, meta_path):
-            return policy.fail('Metadata is not valid, please open the metadata form for more information')
+            return policy.fail('Metadata is incomplete or invalid, please open the metadata form for more information')
 
     return policy.succeed()
 
