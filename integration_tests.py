@@ -248,26 +248,30 @@ def _test_folder_set_get_last_run(ctx):
     return result, found, last_run
 
 
-def _test_groups_data(ctx):
-    test_vaultgroup = "vault-default-3"
-    ctx.msi_add_avu('-u', test_vaultgroup, "schema_id", "default-3", "")
-    groups_data = groups.internal_api_group_data(ctx)
-    avu.rmw_from_group(ctx, test_vaultgroup, "schema_id", "default-3", "")
+def _test_groups_data(ctx, test_group, attribute, value):
+    ctx.msi_add_avu('-u', test_group, attribute, value, "")
+    try:
+        groups_data = groups.internal_api_group_data(ctx)
+    except KeyError:
+        avu.rmw_from_group(ctx, test_group, attribute, value, "")
+        raise
+
+    avu.rmw_from_group(ctx, test_group, attribute, value, "")
     group_names = [group
                    for catdata in groups_data['group_hierarchy'].values()
                    for subcatdata in catdata.values()
                    for group in subcatdata]
-    # We are checking here that the function still works if we have a
-    # vault group with a group attribute, that the vault group is not
-    # returned (since vault groups are not managed via the group manager
-    # module), and that data is returned for group manager managed groups.
+    # We check here that the function still works if the test user has a
+    # group attribute, but doesn't have all the attributes needed to be
+    # a research group. Also check that data is still returned for valid
+    # group manager managed groups.
     return ("research-default-3" in group_names
             and "datarequests-research-datamanagers" in group_names
             and "grp-vault-test" in group_names
             and "intake-test2" in group_names
             and "deposit-pilot" in group_names
             and "datamanager-test-automation" in group_names
-            and "vault-default-3" not in group_names)
+            and test_group not in group_names)
 
 
 def _test_schema_active_schema_deposit_from_default(ctx):
@@ -564,8 +568,17 @@ basic_integration_tests = [
     {"name":  "folder.determine_new_vault_target.invalid",
      "test": lambda ctx: folder.determine_new_vault_target(ctx, "/tempZone/home/not-research-group-not-exist/folder-not-exist"),
      "check": lambda x: x == ""},
-    {"name":  "groups.getGroupsData",
-     "test": lambda ctx: _test_groups_data(ctx),
+    {"name":  "groups.getGroupsData.vault",
+     "test": lambda ctx: _test_groups_data(ctx, "vault-default-3", "schema_id", "default-3"),
+     "check": lambda x: x},
+    {"name":  "groups.getGroupsData.public.category",
+     "test": lambda ctx: _test_groups_data(ctx, "public", "category", "integration-test-cat"),
+     "check": lambda x: x},
+    {"name":  "groups.getGroupsData.public.subcategory",
+     "test": lambda ctx: _test_groups_data(ctx, "public", "subcategory", "integration-test-subcat"),
+     "check": lambda x: x},
+    {"name":  "groups.getGroupsData.public.schema_id",
+     "test": lambda ctx: _test_groups_data(ctx, "public", "schema_id", "default-3"),
      "check": lambda x: x},
     {"name": "groups.rule_group_expiration_date_validate.1",
      "test": lambda ctx: ctx.rule_group_expiration_date_validate("", ""),
