@@ -382,8 +382,11 @@ def internal_api_group_data(ctx):
 
         categories = getDatamanagerCategories(ctx)
 
-        # Filter groups (only return groups user is part of), convert to json and write to stdout.
-        groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
+        # Filter groups (only return groups user is part of)
+        groups = list(filter(
+            lambda group:
+                full_name in group['read'] + group['members']
+                or ('category' in group and group['category'] in categories), groups))
 
     # Only process group types managed via group manager
     managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
