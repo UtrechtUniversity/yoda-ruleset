@@ -1,7 +1,6 @@
-"""Unit tests for the groups functionality
-"""
+"""Unit tests for the groups functionality."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import io

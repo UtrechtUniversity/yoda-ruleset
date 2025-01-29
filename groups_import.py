@@ -1,6 +1,6 @@
 """Functions related to importing group data."""
 
-__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import csv
