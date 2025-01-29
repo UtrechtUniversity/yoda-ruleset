@@ -1,7 +1,6 @@
-"""Unit tests for the groups functionality
-"""
+"""Unit tests for the groups functionality."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import io
@@ -221,3 +220,14 @@ class GroupImportTest(TestCase):
         no_duplicate_data, no_duplicate_err = self.parse_csv_file("files/without-duplicates2.csv")
         self.assertNotEqual(no_duplicate_data, [])
         self.assertEqual(no_duplicate_err, '')
+
+    def test_parse_csv_file_commas(self):
+        # CSV file with commas
+        commas_data, commas_err = self.parse_csv_file("files/with-commas.csv")
+        self.assertEqual(commas_data, [])
+        self.assertIn("Data error", commas_err)
+
+        # CSV file without duplicates
+        no_commas_data, no_commas_err = self.parse_csv_file("files/without-commas.csv")
+        self.assertNotEqual(no_commas_data, [])
+        self.assertEqual(no_commas_err, '')
