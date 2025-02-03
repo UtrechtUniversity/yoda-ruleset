@@ -83,6 +83,23 @@ Feature: Group API
             | technicaladmin      | deposit-api-test3 |
 
 
+    @deposit
+    Scenario Outline: Group creation fails for duplicates
+        # A research group can't have the same name as a deposit
+        # because they would have the same vaults
+        Given user <user> is authenticated
+        And the group "<group_name>" does not exist
+        And the user creates a new group "<group_name>"
+        Then the response status code is "400"
+
+        Examples:
+            | user                | group_name             |
+            | functionaladminpriv | deposit-api-test-group |
+            | technicaladmin      | deposit-api-test-group |
+            | functionaladminpriv | research-api-test2     |
+            | technicaladmin      | research-api-test3     |
+
+
     Scenario Outline: Datamanager group creation
         Given user <user> is authenticated
         And the group "<group_name>" does not exist
