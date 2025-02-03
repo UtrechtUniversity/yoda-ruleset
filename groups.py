@@ -411,11 +411,12 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
         for member in group['invited']:
             members[member]['sram'] = 'invited'
 
-        if not group_hierarchy.get(group['category']):
-            group_hierarchy[group['category']] = OrderedDict()
+        # This is a malformed group, ignore it
+        if 'category' not in group or 'subcategory' not in group:
+            continue
 
-        if not group_hierarchy[group['category']].get(group['subcategory']):
-            group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
+        group_hierarchy.setdefault(group['category'], OrderedDict())
+        group_hierarchy[group['category']].setdefault(group['subcategory'], OrderedDict())
 
         # Check whether schema_id is present on group level.
         # If not, collect it from the corresponding category
@@ -930,7 +931,7 @@ def rule_group_expiration_date_validate(ctx: rule.Context, expiration_date: str)
 @api.make()
 def api_group_search_users(ctx: rule.Context, pattern: str) -> api.Result:
     (username, zone_name) = user.from_str(ctx, pattern)
-    userList = list()
+    userList = []
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
                                      "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(username, zone_name),
@@ -959,6 +960,29 @@ def api_group_exists(ctx: rule.Context, group_name: str) -> api.Result:
     :returns: Boolean indicating if group exists
     """
     return group.exists(ctx, group_name)
+
+
+def group_name_conflicts(ctx: rule.Context, group_name: str) -> Tuple:
+    """Return tuple of whether there are name conflicts, and the message"""
+    msg_start = f"Group {group_name} not created"
+    if group.exists(ctx, group_name):
+        return True, f"{msg_start}, it already exists"
+
+    if group_name.startswith('deposit-'):
+        research_group_name = group_name.replace('deposit-', 'research-', 1)
+        if group.exists(ctx, research_group_name):
+            return True, f"{msg_start}, it already exists as a research group"
+    else:
+        deposit_group_name = group_name.replace("research-", "deposit-", 1)
+        if group.exists(ctx, deposit_group_name):
+            return True, f"{msg_start}, it already exists as a deposit group"
+
+    vault_group_name = group_name.replace("research-", "vault-", 1)
+
+    if group.exists(ctx, vault_group_name):
+        return True, f"{msg_start}, it already exists as a vault group"
+
+    return False, ''
 
 
 def group_create(ctx: rule.Context,
@@ -999,15 +1023,16 @@ def group_create(ctx: rule.Context,
             if not sram.sram_connect_service_collaboration(ctx, short_name):
                 return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
 
-        if group.exists(ctx, group_name):
-            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
+        name_conflicts_exist, msg = group_name_conflicts(ctx, group_name)
+        if name_conflicts_exist:
+            return api.Error('group_exists', msg)
 
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
         status = response[8]
         message = response[9]
         if status == '0':
             return api.Result.ok()
-        elif status == '-1089000' or status == '-809000' or status == '-806000':
+        elif status in {'-1089000', '-809000', '-806000'}:
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
         else:
             return api.Error('policy_error', message)
@@ -1202,9 +1227,8 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
             uid = sram.sram_get_uid(ctx, co_identifier, username)
             if uid == '':
                 return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
-            else:
-                if not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
-                    return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(username, group_name))
+            elif not sram.sram_delete_collaboration_membership(ctx, co_identifier, uid):
+                return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(username, group_name))
 
         return api.Result.ok()
     except Exception:
@@ -1321,10 +1345,9 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
                 uid = sram.sram_get_uid(ctx, co_identifier, member)
                 if uid == '':
                     log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                elif sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                    log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
                 else:
-                    if sram.sram_update_collaboration_membership(ctx, co_identifier, uid, "manager"):
-                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
-                    else:
-                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+                    log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
 
     log.write(ctx, "Finished syncing groups with SRAM")
