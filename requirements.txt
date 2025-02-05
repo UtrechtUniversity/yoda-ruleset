@@ -2,10 +2,9 @@ setuptools==75.6.0
 MarkupSafe==3.0.2
 Jinja2==3.1.5
 requests==2.32.3
-pyrsistent==0.15.7
 configparser==4.0.2
 contextlib2==0.6.0.post1
-importlib-metadata==2.1.1
+importlib-metadata==8.6.1
 jsonschema==4.23.0
 pathvalidate==0.29.1
 requests_cache==0.5.2
@@ -16,5 +15,5 @@ deepdiff==8.0.1
 persist-queue==0.8.1
 redis==3.5.3
 psutil==6.1.1
-iteration_utilities==0.8.0
-rotki-pysqlcipher3==2024.10.1
+iteration_utilities==0.13.0
+sqlcipher3-binary==0.5.4

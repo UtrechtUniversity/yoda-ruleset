@@ -9,6 +9,10 @@
 
    It is assumed that functions that use the spool subsystem take care of authorization and logging.
 """
+from __future__ import annotations
+
+__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import os
 from typing import Iterable

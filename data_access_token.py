@@ -1,6 +1,6 @@
 """Functions for token management."""
 
-__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from traceback import print_exc
 from typing import List
 
-from pysqlcipher3 import dbapi2 as sqlite3
+from sqlcipher3 import dbapi2 as sqlite3
 
 from util import *
 

@@ -1,6 +1,7 @@
 """Functions for handling schema updates within any yoda-metadata file."""
+from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2018-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',

@@ -51,9 +51,9 @@ def get_tokens(token_database, token_database_password, user=None):
         exit_with_error("Error: cannot find token database")
 
     try:
-        from pysqlcipher3 import dbapi2 as sqlite3
+        from sqlcipher3 import dbapi2 as sqlite3
     except ImportError:
-        exit_with_error("Error: pysqlcipher3 not available. It should have been installed by the Yoda playbook.")
+        exit_with_error("Error: sqlcipher3 not available. It should have been installed by the Yoda playbook.")
 
     conn = sqlite3.connect(token_database)
     result = []
