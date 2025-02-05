@@ -1,6 +1,7 @@
 """Functions for deposit module."""
+from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
