@@ -1,6 +1,7 @@
 """Yoda ruleset configuration."""
+from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from typing import List
@@ -146,8 +147,7 @@ config = Config(environment=None,
                 vault_copy_max_retries=5,
                 vault_copy_multithread_enabled=True,
                 user_max_connections_enabled=False,
-                user_max_connections_number=4,
-                python3_interpreter='/usr/local/bin/python3')
+                user_max_connections_number=4)
 
 # }}}
 

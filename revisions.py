@@ -1,6 +1,7 @@
 """Functions for revision management."""
+from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import datetime

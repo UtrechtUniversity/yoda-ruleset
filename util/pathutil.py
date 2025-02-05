@@ -1,8 +1,9 @@
 """Utility / convenience functions for dealing with paths."""
+from __future__ import annotations
 
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re

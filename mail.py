@@ -1,6 +1,7 @@
 """Rules for sending e-mails."""
+from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import email
