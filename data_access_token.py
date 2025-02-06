@@ -9,7 +9,12 @@ from datetime import datetime, timedelta
 from traceback import print_exc
 from typing import List
 
-from pysqlcipher3 import dbapi2 as sqlite3
+import sys
+if sys.version_info < (3, 10):
+    from sqlcipher3 import dbapi2 as sqlite3
+else:
+    from pysqlcipher3 import dbapi2 as sqlite3
+
 
 from util import *
 

@@ -17,3 +17,4 @@ redis==3.5.3
 psutil==6.1.1
 iteration_utilities==0.13.0
 rotki-pysqlcipher3==2024.10.1
+sqlcipher3-binary==0.5.4
