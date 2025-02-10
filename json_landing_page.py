@@ -1,6 +1,6 @@
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -198,12 +198,8 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     license_uri = json_data["System"].get("License_URI", "")
 
     # Format last modified and publication date.
-    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
-    # last_modified_date = date.fromisoformat(json_data['System']['Last_Modified_Date'])
     last_modified_date_time = parser.parse(json_data["System"]["Last_Modified_Date"])
     last_modified_date = last_modified_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
-    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
-    # publication_date = date.fromisoformat(json_data['System']['Publication_Date'])
     publication_date_time = parser.parse(json_data["System"]["Publication_Date"])
     publication_date = publication_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
 

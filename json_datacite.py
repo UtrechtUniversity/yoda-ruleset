@@ -1,6 +1,6 @@
 """Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from typing import Dict, List
@@ -299,8 +299,6 @@ def get_dates(combi: Dict) -> List:
     """Return list of dates in DataCite format."""
 
     # Format last modified date for DataCite: https://support.datacite.org/docs/schema-optional-properties-v41#8-date
-    # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
-    # last_modified_date = date.fromisoformat(last_modified_date)
     last_modified_date = combi.get('System', {}).get('Last_Modified_Date')
     last_modified_date = parser.parse(last_modified_date)
     last_modified_date = last_modified_date.strftime('%Y-%m-%dT%H:%M:%S%z')
