@@ -435,31 +435,16 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
             'members': members
         }
 
-    # order the resulting group_hierarchy and put System in as first category
-    cat_list = []
-    system_present = False
-    for cat in group_hierarchy:
-        if cat != 'System':
-            cat_list.append(cat)
-        else:
-            system_present = True
-    cat_list.sort()
-    if system_present:
-        cat_list.insert(0, 'System')
-
-    new_group_hierarchy = OrderedDict()
-    for cat in cat_list:
-        new_group_hierarchy[cat] = group_hierarchy[cat]
-
-    # Python 3 solution:
-    # Put System category as first category.
-    # if "System" in group_hierarchy:
-    #    group_hierarchy.move_to_end("System", last=False)
+    # Ensure System is the first category.
+    try:
+        group_hierarchy.move_to_end("System", last=False)
+    except KeyError:
+        pass
 
     # Per category the group data has to be ordered by subcat asc as well
     subcat_ordered_group_hierarchy = OrderedDict()
-    for cat in new_group_hierarchy:
-        subcats_data = new_group_hierarchy[cat]
+    for cat in group_hierarchy:
+        subcats_data = group_hierarchy[cat]
         # order on subcat level per category
         subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
 

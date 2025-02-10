@@ -463,8 +463,6 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     )
 
     for row in iter:
-        # Python 3: https://docs.python.org/3/library/datetime.html#datetime.date.fromisoformat
-        # modified_date = date.fromisoformat(row[0])
         modified_date = parser.parse(row[0])
         modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
         system_metadata["Modified date"] = "{}".format(modified_date_time)
