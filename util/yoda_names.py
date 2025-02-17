@@ -65,7 +65,9 @@ def _is_internal_user(username: str, external_domain_filter: List) -> bool:
         return True
 
     for domain in external_domain_filter:
-        if domain.startswith("*."):
+        if domain == "*":
+            return True
+        elif domain.startswith("*."):
             if username.endswith(domain[1:]) or username.endswith("@" + domain[2:]):
                 return True
         else:

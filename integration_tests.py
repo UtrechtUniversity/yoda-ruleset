@@ -11,6 +11,7 @@ import re
 import time
 import traceback
 import uuid
+from subprocess import PIPE, Popen
 
 import data_access_token
 import folder
@@ -769,6 +770,12 @@ basic_integration_tests = [
     {"name":   "util.user.usertype.rodsuser",
      "test": lambda ctx: user.user_type(ctx, "researcher"),
      "check": lambda x: x == "rodsuser"},
+    {"name":   "is_user_external.internal",
+     "test": lambda ctx: _test_is_user_external(ctx, "researcher@yoda.dev"),
+     "check": lambda x: x == 1},
+    {"name":   "is_user_external.external",
+     "test": lambda ctx: _test_is_user_external(ctx, "researcher@externaldomain.nl"),
+     "check": lambda x: x == 0}
 ]
 
 
@@ -860,6 +867,15 @@ def _call_dir_list(ctx, dirname, resc_name):
     ret = msi.dir_list(ctx, dirname, resc_name, "")
     print(ret['arguments'][2])
     return json.loads(ret['arguments'][2])
+
+
+def _test_is_user_external(ctx, username):
+    command = ["/etc/irods/yoda-ruleset/tools/is-user-external.py"]
+    environment = dict(os.environ)
+    environment["PAM_USER"] = username
+    process = Popen(command, stdout=PIPE, env=environment)
+    process.communicate()
+    return process.wait()
 
 
 def _call_dir_list_check_exc(ctx, dirname, resc_name):
