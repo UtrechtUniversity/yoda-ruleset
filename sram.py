@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for communicating with SRAM and some utilities."""
 
-__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import datetime
@@ -34,6 +34,11 @@ def sram_post_collaboration(ctx, group_name, description):
     if config.sram_flow == 'join_request':
         disable_join_requests = False
 
+    # Add current user as CO admin if username is a valid email.
+    # Fallback to CO default admins if username is not a valid email.
+    admin_user = user.name(ctx)
+    administrators = [admin_user] if yoda_names.is_email_username(admin_user) else config.sram_co_default_admins
+
     # Build SRAM payload.
     payload = {
         "name": 'yoda-' + group_name,
@@ -41,7 +46,7 @@ def sram_post_collaboration(ctx, group_name, description):
         "disable_join_requests": disable_join_requests,
         "disclose_member_information": True,
         "disclose_email_information": True,
-        "administrators": [session_vars.get_map(ctx.rei)["client_user"]["user_name"]],
+        "administrators": administrators,
         "logo": config.sram_co_logo,
         "tags": [config.sram_co_default_label, group_type]
     }
