@@ -31,7 +31,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
-           'rule_vault_retry_copy_to_vault',
+           'rule_vault_copy_to_vault',
            'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
@@ -913,14 +913,14 @@ def api_revoke_read_access_research_group(ctx, coll):
 
 
 @rule.make()
-def rule_vault_retry_copy_to_vault(ctx):
+def rule_vault_copy_to_vault(ctx):
     copy_to_vault(ctx, constants.CRONJOB_STATE["PENDING"])
     copy_to_vault(ctx, constants.CRONJOB_STATE["RETRY"])
 
 
 def copy_to_vault(ctx, state):
-    """ Collect all folders with a given cronjob state
-        and try to copy them to the vault.
+    """Collect all folders with a given cronjob state
+       and try to copy them to the vault.
 
     :param ctx:  Combined type of a callback and rei struct
     :param state: one of constants.CRONJOB_STATE
