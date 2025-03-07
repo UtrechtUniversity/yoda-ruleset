@@ -157,4 +157,4 @@ obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object 
 
 def kvpair(ctx: 'rule.Context', k: str, v: str) -> str:
     """Create a keyvalpair object, needed by certain msis."""
-    return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]
+    return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.KeyValPair())['arguments'][1]
