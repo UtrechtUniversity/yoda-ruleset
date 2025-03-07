@@ -2,17 +2,17 @@
 
 if [ $# -ne 1 ]
 then
-    echo usage: $0 http://combined.yoda.test:9200
+    echo usage: "$0" http://combined.yoda.test:9200
     exit 2
 fi
 
 opensearch=$1
 
-echo -n 'DELETE: '
-curl -s -XDELETE $opensearch/yoda
+printf 'DELETE: \n'
+curl -s -XDELETE "$opensearch/yoda"
 echo ''
-echo -n 'CREATE: '
-curl -s -XPUT --header 'Content-Type: application/json' $opensearch/yoda -d '{
+printf 'CREATE: \n'
+curl -s -XPUT --header 'Content-Type: application/json' "$opensearch/yoda" -d '{
   "mappings": {
     "properties": {
       "absolutePath": { "type": "text" },

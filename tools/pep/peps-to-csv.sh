@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # usage: peps-to-csv.sh dynamic_peps.json
 #
 # dynamic_peps.json is the file in the irods_docs repo:
