@@ -979,7 +979,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
 
-        avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
+        avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
 
         if "previous_version" in publication_state:
             if verbose:
@@ -1140,7 +1140,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             return publication_state["status"]
 
     # The depublication was a success
-    avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
+    avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED.value)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
     log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
@@ -1311,7 +1311,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
     # The publication was a success
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
-    avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
+    avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
     log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]

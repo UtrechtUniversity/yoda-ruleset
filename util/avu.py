@@ -109,8 +109,7 @@ def of_group(ctx: rule.Context, group: str) -> Iterable[Avu]:
 
 def set_on_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
     """Set key/value metadata on a data object."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.set_key_value_pairs_to_obj(ctx, kvp, path, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "set", a, v, "")
 
 
 def set_on_coll(ctx: rule.Context, coll: str, a: str, v: str, catch: bool = False) -> bool | None:
@@ -132,8 +131,7 @@ def set_on_coll(ctx: rule.Context, coll: str, a: str, v: str, catch: bool = Fals
 
 
 def _set_on_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
-    kvp = msi.kvpair(ctx, a, v)
-    msi.set_key_value_pairs_to_obj(ctx, kvp, coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "set", a, v, "")
 
 
 def _set_on_coll_catch(ctx: rule.Context, coll: str, a: str, v: str) -> bool | None:
@@ -149,50 +147,42 @@ def _set_on_coll_catch(ctx: rule.Context, coll: str, a: str, v: str) -> bool | N
 
 def set_on_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
     """Set key/value metadata on a resource."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.set_key_value_pairs_to_obj(ctx, kvp, resource, '-R')
+    msi.mod_avu_metadata(ctx, "-R", resource, "set", a, v, "")
 
 
 def associate_to_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
     """Associate key/value metadata to a data object."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.associate_key_value_pairs_to_obj(ctx, kvp, path, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "add", a, v, "")
 
 
 def associate_to_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     """Associate key/value metadata on a collection."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.associate_key_value_pairs_to_obj(ctx, kvp, coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "add", a, v, "")
 
 
 def associate_to_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
     """Associate key/value metadata on a group."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.associate_key_value_pairs_to_obj(ctx, kvp, group, '-u')
+    msi.mod_avu_metadata(ctx, "-u", group, "add", a, v, "")
 
 
 def associate_to_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
     """Associate key/value metadata on a group."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.associate_key_value_pairs_to_obj(ctx, kvp, resource, '-R')
+    msi.mod_avu_metadata(ctx, "-R", resource, "add", a, v, "")
 
 
 def rm_from_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
     """Remove key/value metadata from a collection."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.remove_key_value_pairs_from_obj(ctx, kvp, coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "rm", a, v, "")
 
 
-def rm_from_data(ctx: rule.Context, coll: str, a: str, v: str) -> None:
+def rm_from_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
     """Remove key/value metadata from a data object."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.remove_key_value_pairs_from_obj(ctx, kvp, coll, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "rm", a, v, "")
 
 
 def rm_from_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
     """Remove key/value metadata from a group."""
-    kvp = msi.kvpair(ctx, a, v)
-    msi.remove_key_value_pairs_from_obj(ctx, kvp, group, '-u')
+    msi.mod_avu_metadata(ctx, "-u", group, "rm", a, v, "")
 
 
 def rmw_from_coll(ctx: rule.Context, obj: str, a: str, v: str, catch: bool = False, u: str = '') -> bool:
