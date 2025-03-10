@@ -270,7 +270,7 @@ def folder_secure(ctx, coll):
         return False
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
-    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED, True):
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED.value, True):
         return False
 
     if not set_acl_check(ctx, "recursive", "admin:write", coll, 'Could not set ACL (admin:write) for collection: ' + coll):
@@ -414,7 +414,7 @@ def folder_secure_succeed_avus(ctx, coll, group_name):
 
     # Note: this is the status that must always be one of the last to be set
     # on folder, otherwise could be a problem for deposit groups
-    if not avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.FOLDER, True):
+    if not avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%', catch=True):
         return False
 
     # Remove target AVU on source folder. This should be done after all possibly failing steps
@@ -555,7 +555,7 @@ def get_existing_vault_target(ctx, coll):
 def set_vault_target(ctx, coll, target):
     """Create vault target and AVUs"""
     msi.coll_create(ctx, target, '', irods_types.BytesBuf())
-    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE, True):
+    if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE.value, True):
         return False
 
     # Note on the source the target folder in case a copy stops midway

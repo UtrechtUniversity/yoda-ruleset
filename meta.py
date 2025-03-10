@@ -363,13 +363,7 @@ def ingest_metadata_deposit(ctx, path):
 
 def ingest_metadata_staging(ctx, path):
     """Set cronjob metadata flag and triggers vault ingest."""
-    ret = msi.string_2_key_val_pair(ctx,
-                                    '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
-                                                    'cronjob_vault_ingest=',
-                                                    constants.CRONJOB_STATE['PENDING']),
-                                    irods_types.BytesBuf())
-
-    msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
+    avu.set_on_data(ctx, path, "{}cronjob_vault_ingest".format(constants.UUORGMETADATAPREFIX), constants.CRONJOB_STATE['PENDING'])
 
     # Note: Validation is triggered via ExecCmd in rule_meta_datamanager_vault_ingest.
     #
@@ -669,11 +663,8 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     if status is constants.vault_package_state.PUBLISHED:
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
-        s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + constants.CRONJOB_STATE['PENDING']
         try:
-            ret = msi.string_2_key_val_pair(ctx, s, irods_types.BytesBuf())
-            kvp = ret['arguments'][1]
-            msi.associate_key_value_pairs_to_obj(ctx, kvp, vault_pkg_path, '-C')
+            avu.set_on_coll(ctx, vault_pkg_path, "{}cronjob_vault_ingest".format(constants.UUORGMETADATAPREFIX), constants.CRONJOB_STATE['PENDING'])
             publication.set_update_publication_state(ctx, vault_pkg_path)
         except Exception:
             set_result('FailedToSetPublicationUpdateStatus',

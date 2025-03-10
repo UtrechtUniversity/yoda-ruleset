@@ -808,17 +808,24 @@ def change_read_access_group(ctx, coll, actor, group, grant=True):
     :returns: 2-Tuple of boolean successfully changed, API status if error
     """
     try:
-        acl_kv = msi.kvpair(ctx, "actor", actor)
         if grant:
-            msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
+            # Workaround for https://github.com/irods/irods/issues/8265
+            # msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
+            status = ctx.iiGrantReadAccessToResearchGroup(coll, "")['arguments'][1]
         else:
-            msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
+            # Workaround for https://github.com/irods/irods/issues/8265
+            #  msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
+            status = ctx.iiRevokeReadAccessToResearchGroup(coll, "")['arguments'][1]
     except Exception:
         policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, group, "1", "read")
         if bool(policy_error):
             return False, api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
         else:
             return False, api.Error('ErrorACLs', str(policy_error))
+
+    # Workaround for https://github.com/irods/irods/issues/8265
+    if status != "Success":
+        return False, api.Error('ErrorACLs', 'Could not set read access of {}.'.format(coll))
 
     return True, ''
 
@@ -1630,7 +1637,7 @@ def get_all_doi_versions(ctx, path):
     """
 
     iter = genquery.row_iterator(
-        "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, GROUP(COLL_NAME)",
+        "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, COLL_NAME",
         "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
         genquery.AS_LIST, ctx
     )

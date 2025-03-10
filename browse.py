@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -289,9 +289,15 @@ def api_search(ctx,
             cols = ['COLL_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
         else:
             cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
-        where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
-                status_name, status_value, "/" + zone + "/home"
-        )
+
+        if status_value != "FOLDER":
+            where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
+                    status_name, status_value, "/" + zone + "/home"
+            )
+        else:
+            where = "META_COLL_ATTR_NAME != '{}' AND COLL_NAME like '{}%%'".format(
+                    status_name, "/" + zone + "/home/research-"
+            )
 
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
