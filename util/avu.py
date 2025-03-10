@@ -9,7 +9,6 @@ import json
 from collections import namedtuple
 
 import genquery
-import irods_types
 
 import log
 import msi
@@ -108,8 +107,7 @@ def of_group(ctx, group):
 
 def set_on_data(ctx, path, a, v):
     """Set key/value metadata on a data object."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "set", a, v, "")
 
 
 def set_on_coll(ctx, coll, a, v, catch=False):
@@ -131,8 +129,7 @@ def set_on_coll(ctx, coll, a, v, catch=False):
 
 
 def _set_on_coll(ctx, coll, a, v):
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "set", a, v, "")
 
 
 def _set_on_coll_catch(ctx, coll, a, v):
@@ -148,50 +145,42 @@ def _set_on_coll_catch(ctx, coll, a, v):
 
 def set_on_resource(ctx, resource, a, v):
     """Set key/value metadata on a resource."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
+    msi.mod_avu_metadata(ctx, "-R", resource, "set", a, v, "")
 
 
 def associate_to_data(ctx, path, a, v):
     """Associate key/value metadata to a data object."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "add", a, v, "")
 
 
 def associate_to_coll(ctx, coll, a, v):
     """Associate key/value metadata on a collection."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "add", a, v, "")
 
 
 def associate_to_group(ctx, group, a, v):
     """Associate key/value metadata on a group."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], group, '-u')
+    msi.mod_avu_metadata(ctx, "-u", group, "add", a, v, "")
 
 
 def associate_to_resource(ctx, resource, a, v):
     """Associate key/value metadata on a group."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
+    msi.mod_avu_metadata(ctx, "-R", resource, "add", a, v, "")
 
 
 def rm_from_coll(ctx, coll, a, v):
     """Remove key/value metadata from a collection."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], coll, '-C')
+    msi.mod_avu_metadata(ctx, "-C", coll, "rm", a, v, "")
 
 
-def rm_from_data(ctx, coll, a, v):
+def rm_from_data(ctx, path, a, v):
     """Remove key/value metadata from a data object."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], coll, '-d')
+    msi.mod_avu_metadata(ctx, "-d", path, "rm", a, v, "")
 
 
 def rm_from_group(ctx, group, a, v):
     """Remove key/value metadata from a group."""
-    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
-    msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], group, '-u')
+    msi.mod_avu_metadata(ctx, "-u", group, "rm", a, v, "")
 
 
 def rmw_from_coll(ctx, obj, a, v, catch=False, u=''):
