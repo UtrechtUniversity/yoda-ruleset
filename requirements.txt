@@ -1,6 +1,6 @@
 setuptools==75.6.0
 MarkupSafe==3.0.2
-Jinja2==3.1.5
+Jinja2==3.1.6
 requests==2.32.3
 configparser==4.0.2
 contextlib2==0.6.0.post1
