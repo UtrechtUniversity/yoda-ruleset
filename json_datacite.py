@@ -88,7 +88,7 @@ def json_datacite_create_datacite_json(ctx: rule.Context, landing_page_url: str,
             "version": get_version(combi),
             "rightsList": get_rights_list(combi),
             "descriptions": get_descriptions(combi),
-            "geoLocations": get_geo_locations(combi),
+            "geoLocations": get_geo_locations(ctx, combi),
             "fundingReferences": get_funders(combi),
             "url": landing_page_url,
             "schemaVersion": "http://datacite.org/schema/kernel-4"    # schemaversion to be adjusted!!!!
@@ -418,7 +418,7 @@ def get_related_resources(combi: Dict) -> List:
     return related_dps
 
 
-def get_geo_locations(combi: Dict) -> List:
+def get_geo_locations(ctx: rule.Context, combi: Dict) -> List:
     """Get list of geoLocation elements in datacite format containing the information of geo locations.
 
        There are two versions of this:
@@ -429,42 +429,46 @@ def get_geo_locations(combi: Dict) -> List:
 
     :param combi: Combined JSON file that holds both user and system metadata
 
-    :returns: XML element with information of geo locations in DataCite format
+    :returns: list of dictionary elements with information of geo locations in DataCite format
     """
 
     geoLocations = []
 
     try:
-        for geoloc in combi['GeoLocation']:
-            spatial_description = geoloc['Description_Spatial']
+        if 'GeoLocation' in combi:
+            for geoloc in combi['GeoLocation']:
+                geo_location = {}
 
-            lon0 = str(geoloc['geoLocationBox']['westBoundLongitude'])
-            lat0 = str(geoloc['geoLocationBox']['northBoundLatitude'])
-            lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
-            lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
+                if 'Description_Spatial' in geoloc:
+                    geo_location['geoLocationPlace'] = geoloc['Description_Spatial']
 
-            geo_location = {}
+                if 'geoLocationBox' in geoloc:
+                    lon0 = str(geoloc['geoLocationBox']['westBoundLongitude'])
+                    lat0 = str(geoloc['geoLocationBox']['northBoundLatitude'])
+                    lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
+                    lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])       
 
-            if spatial_description:
-                geo_location['geoLocationPlace'] = spatial_description
+                    if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
+                        geo_location['geoLocationPoint'] = {'pointLongitude': lon0,
+                                                            'pointLatitude': lat0}
+                    else:
+                        geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
+                                                        'eastBoundLongitude': lon1,
+                                                        'southBoundLatitude': lat0,
+                                                        'northBoundLatitude': lat1}  
 
-            if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
-                geo_location['geoLocationPoint'] = {'pointLongitude': lon0,
-                                                    'pointLatitude': lat0}
-            else:
-                geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
-                                                  'eastBoundLongitude': lon1,
-                                                  'southBoundLatitude': lat0,
-                                                  'northBoundLatitude': lat1}
-            geoLocations.append(geo_location)
-    except KeyError:
+                geoLocations.append(geo_location)
+    except Exception:
+        log.write(ctx, "Exception while fetching geolocations for DataCite JSON, ignoring...")
         pass
 
     try:
-        for location in combi['Covered_Geolocation_Place']:
-            if location:
-                geoLocations.append({'geoLocationPlace': location})
-    except KeyError:
-        return []
+        if 'Covered_Geolocation_Place' in combi:
+            for location in combi['Covered_Geolocation_Place']:
+                if location:
+                    geoLocations.append({'geoLocationPlace': location})
+    except Exception:
+        log.write(ctx, "Exception while fetching geolocations for DataCite JSON, ignoring...")
+        pass
 
     return geoLocations
