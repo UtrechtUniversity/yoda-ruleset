@@ -40,7 +40,7 @@ def data_object_exists(collection_name: str, dataobject_name: str) -> bool:
     return "does not exist" not in checkexist_stderr
 
 
-def get_checksum(path, checksumtype):
+def get_checksum(path: str, checksumtype: str) -> str:
     if checksumtype == "md5":
         hsh = hashlib.md5()
     elif checksumtype == "sha2":
