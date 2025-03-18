@@ -56,13 +56,6 @@ def get_checksum(path: str, checksumtype: str) -> str:
             else:
                 break
 
-    while True:
-        chunk = f.read(8192)
-        if chunk:
-            hsh.update(chunk)
-        else:
-            break
-
     if hsh.name == 'md5':
         return hsh.hexdigest()
     else:
