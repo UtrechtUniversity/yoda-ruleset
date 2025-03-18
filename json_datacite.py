@@ -453,9 +453,9 @@ def get_geo_locations(combi: Dict) -> List:
                                                             'pointLatitude': lat0}
                     else:
                         geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
-                                                            'eastBoundLongitude': lon1,
-                                                            'southBoundLatitude': lat0,
-                                                            'northBoundLatitude': lat1}
+                                                          'eastBoundLongitude': lon1,
+                                                          'southBoundLatitude': lat0,
+                                                          'northBoundLatitude': lat1}
 
                 geoLocations.append(geo_location)
     except KeyError:
