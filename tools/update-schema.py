@@ -48,7 +48,13 @@ def get_checksum(path, checksumtype):
     else:
         raise ValueError(f"Checksum type {checksumtype} not supported.")
 
-    f = open(path, 'rb')
+    with open(path, 'rb') as f:
+        while True:
+            chunk = f.read(8192)
+            if chunk:
+                hsh.update(chunk)
+            else:
+                break
 
     while True:
         chunk = f.read(8192)
