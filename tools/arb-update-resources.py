@@ -193,9 +193,9 @@ def main():
     args = parse_args()
     env = get_irods_environment()
 
-    for ca_file_option in ["/etc/pki/tls/certs/chain.pem",
-                           "/etc/ssl/certs/chain.crt",
-                           "/etc/ssl/certs/localhost.crt"]:
+    for ca_file_option in ["/etc/irods/localhost_and_chain.crt",
+                           "/etc/ssl/certs/ca-certificates.crt",
+                           "/etc/pki/tls/certs/ca-bundle.crt"]:
         if os.path.isfile(ca_file_option):
             ca_file = ca_file_option
             break
