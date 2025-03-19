@@ -342,7 +342,7 @@ def get_rights_list(combi: Dict) -> List:
 
 def get_language(combi: Dict) -> str:
     """Get string in DataCite format containing language."""
-    language = "en-us"
+    language = ""
 
     try:
         if 'Language' in combi:
