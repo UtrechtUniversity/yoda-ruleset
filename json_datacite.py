@@ -429,42 +429,44 @@ def get_geo_locations(combi: Dict) -> List:
 
     :param combi: Combined JSON file that holds both user and system metadata
 
-    :returns: XML element with information of geo locations in DataCite format
+    :returns: list of dictionary elements with information of geo locations in DataCite format
     """
 
     geoLocations = []
 
     try:
-        for geoloc in combi['GeoLocation']:
-            spatial_description = geoloc['Description_Spatial']
+        if 'GeoLocation' in combi:
+            for geoloc in combi['GeoLocation']:
+                geo_location = {}
 
-            lon0 = str(geoloc['geoLocationBox']['westBoundLongitude'])
-            lat0 = str(geoloc['geoLocationBox']['northBoundLatitude'])
-            lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
-            lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
+                if 'Description_Spatial' in geoloc:
+                    geo_location['geoLocationPlace'] = geoloc['Description_Spatial']
 
-            geo_location = {}
+                if 'geoLocationBox' in geoloc:
+                    lon0 = str(geoloc['geoLocationBox']['westBoundLongitude'])
+                    lat0 = str(geoloc['geoLocationBox']['northBoundLatitude'])
+                    lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
+                    lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
 
-            if spatial_description:
-                geo_location['geoLocationPlace'] = spatial_description
+                    if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
+                        geo_location['geoLocationPoint'] = {'pointLongitude': lon0,
+                                                            'pointLatitude': lat0}
+                    else:
+                        geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
+                                                          'eastBoundLongitude': lon1,
+                                                          'southBoundLatitude': lat0,
+                                                          'northBoundLatitude': lat1}
 
-            if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
-                geo_location['geoLocationPoint'] = {'pointLongitude': lon0,
-                                                    'pointLatitude': lat0}
-            else:
-                geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
-                                                  'eastBoundLongitude': lon1,
-                                                  'southBoundLatitude': lat0,
-                                                  'northBoundLatitude': lat1}
-            geoLocations.append(geo_location)
+                geoLocations.append(geo_location)
     except KeyError:
         pass
 
     try:
-        for location in combi['Covered_Geolocation_Place']:
-            if location:
-                geoLocations.append({'geoLocationPlace': location})
+        if 'Covered_Geolocation_Place' in combi:
+            for location in combi['Covered_Geolocation_Place']:
+                if location:
+                    geoLocations.append({'geoLocationPlace': location})
     except KeyError:
-        return []
+        pass
 
     return geoLocations
