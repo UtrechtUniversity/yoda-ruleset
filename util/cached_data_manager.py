@@ -17,6 +17,10 @@ class CachedDataManager:
        on particular iRODS objects). The responses are then cached.
     """
 
+    def _get_cached_data_encoding(self) -> str:
+        """Returns encoding of data used in the cache."""
+        return "utf-8"
+
     # Internal methods to implement by subclass
     def _get_context_string(self) -> None:
         """This function should be implemented by subclasses.
@@ -97,7 +101,7 @@ class CachedDataManager:
                 self._update_cache(ctx, keyname, original_result)
             return original_result
         else:
-            return cached_result
+            return cached_result.decode(self._get_cached_data_encoding())
 
     def put(self, ctx: 'rule.Context', keyname: str, data: str) -> None:
         """Update both the original value and cached value (if cache is not available, it is not updated).
