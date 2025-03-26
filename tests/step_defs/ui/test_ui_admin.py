@@ -96,7 +96,7 @@ def ui_admin_clicks_set_banner(browser):
 @given(parsers.parse("the banner displays the message {message}"))
 @then(parsers.parse("the banner displays the message {message}"))
 def ui_admin_displays_banner(browser, message):
-    assert browser.is_element_present_by_name('banner head')
+    assert browser.is_element_present_by_id('maintenance-banner')
     assert browser.is_text_present(message)
 
 
