@@ -30,7 +30,7 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
         :returns: Data for this key (arb_status)
         """
         value = super().get(ctx, keyname)
-        return constants.arb_status[value.decode("utf-8")]
+        return constants.arb_status[value]
 
     def put(self, ctx: 'rule.Context', keyname: str, data: str) -> None:
         """Update both the original value and cached value (if cache is not available, it is not updated)
