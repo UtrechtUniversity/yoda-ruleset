@@ -5,7 +5,6 @@ import io
 import json
 
 def main(rule_args, callback, rei):
-    # Read input parameters
     data_package = global_vars["*data_package"].strip('"')
     log_loc = global_vars["*log_loc"].strip('"')
     offline = global_vars["*offline"].strip('"')
@@ -20,10 +19,9 @@ def main(rule_args, callback, rei):
         ""
     )
     
-    # Load converted results with Pass/Fail values
     results = json.loads(ret_val["arguments"][4])
 
-    # Create text buffer and CSV writer
+    # Create text buffer
     output = io.StringIO()
     writer = csv.writer(output)
 
