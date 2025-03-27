@@ -61,7 +61,7 @@ def vault_download_archive(ctx: rule.Context, coll: str) -> str:
         actor = vault_bagitor(ctx, coll)
         avu.rm_from_coll(ctx, coll, constants.IIBAGITOR, actor)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")
-        bagit.create(ctx, coll + "/download.zip", coll, "irodsResc")
+        bagit.create(ctx, coll + "/download.zip", coll, config.resource_vault)
 
         provenance.log_action(ctx, "system", coll, "creating download archive completed", False)
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "baggingit")

@@ -123,6 +123,14 @@ wrap_msi_file_checksum(*file, *resc, *sum) {
 #
 uuArchiveCreate(*archive, *coll, *resource, *status) {
 	*status = "";
+
+	# Check if user is rodsadmin
+	uuGetUserType("$userNameClient#$rodsZoneClient", *usertype);
+	if (*usertype != "rodsadmin") {
+		writeLine("stdout", "uuArchiveCreate: This funcion should only be called by a rodsadmin");
+        fail;
+	}
+
 	*status = errorcode(msiArchiveCreate(*archive, *coll, *resource, 0));
 
 	*status;
