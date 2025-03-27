@@ -337,7 +337,8 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite):
+
+def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite, mode):
     """
     Troubleshoots published data packages.
 
@@ -350,6 +351,8 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
+    log.write(ctx, f"Starting troubleshooting in {mode} mode", not api_call)
+    
     write_stdout = not api_call
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -426,14 +429,18 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
     #return None #TODO: return JSON data 
     return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
-@rule.make(inputs=[0, 1, 2, 3], outputs=[4])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite):
+@rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
+def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
+    """Entry point for rule execution with format mode"""
+    log.write(ctx, f"Received output mode: {mode}", True)
+    
     results = batch_troubleshoot_published_data_packages(
-        ctx, requested_package, 
+        ctx, requested_package,
         log_file == "True",
         offline == "True",
         False,  # api_call
-        no_datacite == "False"
+        no_datacite == "False",
+        mode
     )
     
     return json.dumps(results)

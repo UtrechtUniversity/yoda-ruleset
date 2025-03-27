@@ -5,21 +5,25 @@ import io
 import json
 
 def main(rule_args, callback, rei):
+    # Read input parameters
     data_package = global_vars["*data_package"].strip('"')
     log_loc = global_vars["*log_loc"].strip('"')
     offline = global_vars["*offline"].strip('"')
     no_datacite = global_vars["*no_datacite"].strip('"')
+    mode = global_vars["*mode"].strip('"')
+    #callback.writeLine("stdout", mode.encode('utf-8'))
 
-    # Get processed JSON results from Python rule
+    # Pass all parameters to Python rule
     ret_val = callback.rule_batch_troubleshoot_published_data_packages(
         data_package,
         log_loc,
         offline,
         no_datacite,
-        ""
+        mode,
+        "" 
     )
     
-    results = json.loads(ret_val["arguments"][4])
+    results = json.loads(ret_val["arguments"][5])
 
     # Create text buffer
     output = io.StringIO()
@@ -57,5 +61,5 @@ def main(rule_args, callback, rei):
         output.seek(0)
         output.truncate()
 
-INPUT *data_package="", *log_loc="", *offline="", *no_datacite=""
+INPUT *data_package="", *log_loc="", *offline="", *no_datacite="", *mode=""
 OUTPUT ruleExecOut
