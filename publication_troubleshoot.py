@@ -414,30 +414,20 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
+    log.write(ctx, "I am at api_batch_troubleshoot_published_data_packages")
+    #return None #TODO: return JSON data 
     return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
-
-@rule.make(inputs=[0, 1, 2, 3], outputs=[])
+@rule.make(inputs=[0, 1, 2, 3], outputs=[4])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite):
-    """
-    Troubleshoots published data packages.
-
-    Prints results of the following checks:
-        1. Metadata schema compliance.
-        2. Presence and correctness of expected AVUs.
-        3. Registration with Data Cite.
-        4. File integrity of landing page and combi JSON files.
-
-    Operates on either a single specified package or all published packages, depending on the input.
-
-    :param ctx:               Context that combines a callback and rei struct.
-    :param requested_package: A string representing a specific data package path or all packages with failed publications.
-    :param log_file:          A string boolean representing to write results in log.
-    :param offline:           A string boolean representing whether to perform all checks without connecting to external servers.
-    :param no_datacite:       A string boolean representing whether to skip the datacite checks
-    """
-    offline = offline == "True"
-    log_file = log_file == "True"
-    check_datacite = no_datacite == "False"
-
-    batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False, check_datacite)
+    # Existing logic to get results
+    results = batch_troubleshoot_published_data_packages(
+        ctx, requested_package, 
+        log_file == "True",
+        offline == "True",
+        False,  # api_call
+        no_datacite == "False"
+    )
+    
+    # Return results as JSON string
+    return json.dumps(results)
