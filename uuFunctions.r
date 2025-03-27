@@ -113,3 +113,17 @@ wrap_msi_file_checksum(*file, *resc, *sum) {
     }
     *result;
 }
+
+# \brief Workaround function for msiArchiveCreate microservice.
+#
+# \param[in] archive
+# \param[in] coll
+# \param[in] resource
+# \param[out] status
+#
+uuArchiveCreate(*archive, *coll, *resource, *status) {
+	*status = "";
+	*status = errorcode(msiArchiveCreate(*archive, *coll, *resource, 0));
+
+	*status;
+}
