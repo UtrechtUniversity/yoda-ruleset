@@ -298,17 +298,17 @@ def print_troubleshoot_result(ctx, data_package, result, datacite_check):
         log.write(ctx, "Package passed all tests.", True)
     else:
         log.write(ctx, "Package FAILED one or more tests:", True)
-        log.write(ctx, "Schema matches: {}".format(result['schema_check']), True)
-        log.write(ctx, "All expected AVUs exist: {}".format(result['no_missing_AVUs_check']), True)
-        log.write(ctx, "No unexpected AVUs: {}".format(result['no_unexpected_AVUs_check']), True)
+        log.write(ctx, "Schema matches: {}".format('Pass' if result['schema_check'] else 'Fail'), True)
+        log.write(ctx, "All expected AVUs exist: {}".format('Pass' if result['no_missing_AVUs_check'] else 'Fail'), True)
+        log.write(ctx, "No unexpected AVUs: {}".format('Pass' if result['no_unexpected_AVUs_check'] else 'Fail'), True)
 
         if datacite_check:
-            log.write(ctx, "Version DOI matches: {}".format(result['versionDOI_check']), True)
+            log.write(ctx, "Version DOI matches: {}".format('Pass' if result['versionDOI_check'] else 'Fail'), True)
             if 'baseDOI_check' in result:
-                log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
+                log.write(ctx, "Base DOI matches: {}".format('Pass' if result['baseDOI_check'] else 'Fail'), True)
 
-        log.write(ctx, "Landing page matches: {}".format(result['landingPage_check']), True)
-        log.write(ctx, "Combined JSON matches: {}".format(result['combiJson_check']), True)
+        log.write(ctx, "Landing page matches: {}".format('Pass' if result['landingPage_check'] else 'Fail'), True)
+        log.write(ctx, "Combined JSON matches: {}".format('Pass' if result['combiJson_check'] else 'Fail'), True)
 
     log.write(ctx, "", True)
 
@@ -420,7 +420,6 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
 @rule.make(inputs=[0, 1, 2, 3], outputs=[4])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite):
-    # Existing logic to get results
     results = batch_troubleshoot_published_data_packages(
         ctx, requested_package, 
         log_file == "True",
@@ -429,5 +428,12 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         no_datacite == "False"
     )
     
-    # Return results as JSON string
-    return json.dumps(results)
+    # Convert booleans to Pass/Fail strings
+    converted_results = {}
+    for pkg, res in results.items():
+        converted_results[pkg] = {
+            key: 'Pass' if value else 'Fail' if isinstance(value, bool) else value
+            for key, value in res.items()
+        }
+    
+    return json.dumps(converted_results)
