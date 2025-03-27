@@ -398,7 +398,15 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
                 json.dump(result, writer)
                 writer.writelines('\n')
 
-    return results
+    # Convert booleans to Pass/Fail strings
+    converted_results = {}
+    for pkg, res in results.items():
+        converted_results[pkg] = {
+            key: 'Pass' if value else 'Fail' if isinstance(value, bool) else value
+            for key, value in res.items()
+        }
+
+    return converted_results
 
 
 @api.make()
@@ -428,12 +436,4 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         no_datacite == "False"
     )
     
-    # Convert booleans to Pass/Fail strings
-    converted_results = {}
-    for pkg, res in results.items():
-        converted_results[pkg] = {
-            key: 'Pass' if value else 'Fail' if isinstance(value, bool) else value
-            for key, value in res.items()
-        }
-    
-    return json.dumps(converted_results)
+    return json.dumps(results)
