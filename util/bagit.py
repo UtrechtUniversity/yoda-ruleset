@@ -63,7 +63,7 @@ def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     try:
         # Create archive.
         log.write(ctx, "Creating archive file for data package <{}>".format(coll))
-        ret = msi.archive_create(ctx, archive, coll, resource, 0)
+        ret = ctx.uuArchiveCreate(archive, coll, resource, 0)['arguments'][3]
     except Exception:
         data_object.remove(ctx, coll + "/manifest-sha256.txt")
         pass
