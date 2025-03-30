@@ -289,30 +289,6 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     return True
 
 
-def print_troubleshoot_result(ctx, data_package, result, datacite_check):
-    """Print the result of troubleshooting one package in human-friendly format"""
-    pass_all_tests = all(result.values())
-
-    log.write(ctx, "Results for: {}".format(data_package), True)
-    if pass_all_tests:
-        log.write(ctx, "Package passed all tests.", True)
-    else:
-        log.write(ctx, "Package FAILED one or more tests:", True)
-        log.write(ctx, "Schema matches: {}".format('Pass' if result['schema_check'] else 'Fail'), True)
-        log.write(ctx, "All expected AVUs exist: {}".format('Pass' if result['no_missing_AVUs_check'] else 'Fail'), True)
-        log.write(ctx, "No unexpected AVUs: {}".format('Pass' if result['no_unexpected_AVUs_check'] else 'Fail'), True)
-
-        if datacite_check:
-            log.write(ctx, "Version DOI matches: {}".format('Pass' if result['versionDOI_check'] else 'Fail'), True)
-            if 'baseDOI_check' in result:
-                log.write(ctx, "Base DOI matches: {}".format('Pass' if result['baseDOI_check'] else 'Fail'), True)
-
-        log.write(ctx, "Landing page matches: {}".format('Pass' if result['landingPage_check'] else 'Fail'), True)
-        log.write(ctx, "Combined JSON matches: {}".format('Pass' if result['combiJson_check'] else 'Fail'), True)
-
-    log.write(ctx, "", True)
-
-
 def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     data_packages = []
 
@@ -372,24 +348,24 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
         # Cannot check the metadata as technicaladmin
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
-            result['schema_check'] = schema_check_dict['match_schema'] if schema_check_dict else False
+            result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
 
-        result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
+        result['Missing AVUs Check'], result['Unexpected AVUs Check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
 
         # Only check datacite if enabled
         if check_datacite:
-            result['versionDOI_check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
+            result['Version DOI Check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
             if base_doi_check is not None:
-                result['baseDOI_check'] = base_doi_check
+                result['Base DOI Check'] = base_doi_check
 
-        result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
+        result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)
-        result['combiJson_check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
+        result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
         results[data_package] = result
 
-        if not api_call:
-            print_troubleshoot_result(ctx, data_package, result, check_datacite)
+        #if not api_call:
+        #    print_troubleshoot_result(ctx, data_package, result, check_datacite)
 
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
