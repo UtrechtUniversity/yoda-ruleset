@@ -31,6 +31,7 @@ def generate_human_output(results):
     """Generate human-readable output from results"""
     output = []
     for package in sorted(results.keys()):
+        # log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout) #TODO: how to add this to output?
         res = results[package]
         section = [
             f"Results for: {package}",

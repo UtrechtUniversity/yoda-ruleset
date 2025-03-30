@@ -165,7 +165,7 @@ def get_landingpage_paths(ctx, data_package, write_stdout):
         return '', ''
 
 
-def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
+def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, write_stdout):
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
@@ -177,7 +177,6 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
 
     :returns:         True if the file contents match, False otherwise
     """
-    write_stdout = not api_call
     # Local/irods file
     if api_call:
         # If called by technicaladmin, only check that the file exists since we don't have access to the contents
@@ -217,7 +216,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
     return False
 
 
-def check_landingpage(ctx, data_package, offline, api_call):
+def check_landingpage(ctx, data_package, offline, api_call, write_stdout):
     """
     Checks the integrity of landing page by comparing the contents
 
@@ -232,7 +231,9 @@ def check_landingpage(ctx, data_package, offline, api_call):
     if len(irods_file_path) == 0 or len(landing_page_url) == 0:
         return False
 
-    return compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url, offline, api_call)
+    return compare_local_remote_landingpage(
+        ctx, irods_file_path, landing_page_url, offline, api_call, write_stdout
+    )
 
 
 def check_combi_json(ctx, data_package, publication_config, offline, write_stdout):
@@ -327,9 +328,8 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    log.write(ctx, f"Starting troubleshooting in {mode} mode", not api_call)
     
-    write_stdout = not api_call
+    write_stdout = not api_call and (mode == 'human')
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is not rodsadmin", write_stdout)
@@ -343,22 +343,15 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
     # Troubleshooting
     for data_package in data_packages:
-        log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout)
         result = {}
-        # Cannot check the metadata as technicaladmin
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
 
+        # Modified log calls to use write_stdout
         result['Missing AVUs Check'], result['Unexpected AVUs Check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
-
-        # Only check datacite if enabled
-        if check_datacite:
-            result['Version DOI Check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
-            if base_doi_check is not None:
-                result['Base DOI Check'] = base_doi_check
-
-        result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call)
+        
+        result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
         publication_config = get_publication_config(ctx)
         result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
@@ -401,14 +394,11 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    log.write(ctx, "I am at api_batch_troubleshoot_published_data_packages")
-    #return None #TODO: return JSON data 
     return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
     """Entry point for rule execution with format mode"""
-    log.write(ctx, f"Received output mode: {mode}", True)
     
     results = batch_troubleshoot_published_data_packages(
         ctx, requested_package,
