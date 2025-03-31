@@ -343,22 +343,38 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     schema_cache = {}
     results = {}
 
-    # Troubleshooting
+    # Troubleshooting steps
     for data_package in data_packages:
         result = {}
+        
+        log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout) 
+        
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
-
-        # Modified log calls to use write_stdout
         result['Missing AVUs Check'], result['Unexpected AVUs Check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
-
         result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
+
+        # Only check Version and Base DOI if check_datacite enabled
+        base_doi_check = None 
+        if check_datacite:
+            version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
+            result['Version DOI Check'] = version_doi_check
+        else:
+            result['Version DOI Check'] = False
+
+        # Handle base DOI only if present
+        if base_doi_check is not None:
+            result['Base DOI Check'] = base_doi_check
+        else:
+            result['Base DOI Check'] = False
+
         publication_config = get_publication_config(ctx)
         result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
         results[data_package] = result
 
+        # Save to log file if log_file == True
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
             with open(log_loc, "a") as writer:
@@ -398,13 +414,12 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
-    """Entry point for rule execution with format mode"""
 
     results = batch_troubleshoot_published_data_packages(
         ctx, requested_package,
         log_file == "True",
         offline == "True",
-        False,  # api_call
+        False,  # TODO: IMprove it? this is the api_call
         no_datacite == "False",
         mode
     )

@@ -16,7 +16,7 @@ HEADERS = [
 ]
 
 def generate_csv(results):
-    """Generate CSV output from results"""
+    """Generate CSV output from troubleshooting results"""
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(HEADERS)
@@ -28,10 +28,9 @@ def generate_csv(results):
     return output.getvalue().encode('utf-8')
 
 def generate_human_output(results):
-    """Generate human-readable output from results"""
+    """Generate human-readable output from troubleshooting results"""
     output = []
     for package in sorted(results.keys()):
-        # log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout) #TODO: how to add this to output?
         res = results[package]
         section = [
             f"Results for: {package}",
@@ -50,25 +49,25 @@ def generate_human_output(results):
     return '\n\n'.join(output).encode('utf-8')
 
 def main(rule_args, callback, rei):
-    try:
-        params = {
-            'data_package': global_vars["*data_package"].strip('"'),
-            'mode': global_vars["*mode"].strip('"').lower()
-        }
-        
-        if params['mode'] not in ('human', 'csv'):
-            raise ValueError("Invalid mode. Use 'human' or 'csv'")
+    # Prepare input parameters
+    params = {
+        'data_package': global_vars["*data_package"].strip('"'),
+        'mode': global_vars["*mode"].strip('"').lower()
+    }
+    
+    # Validate output format 
+    if params['mode'] not in ('human', 'csv'):
+        raise ValueError("Invalid mode. Use 'human' or 'csv'")
 
-        ret_val = callback.rule_batch_troubleshoot_published_data_packages(
-            params['data_package'], "", "", "", params['mode'], ""
-        )
-        results = json.loads(ret_val["arguments"][5])
+    # Run Python troubleshooting rule
+    ret_val = callback.rule_batch_troubleshoot_published_data_packages(
+        params['data_package'], "", "", "", params['mode'], ""
+    )
+    results = json.loads(ret_val["arguments"][5])
 
-        output = generate_csv(results) if params['mode'] == 'csv' else generate_human_output(results)
-        callback.writeLine("stdout", output)
-
-    except Exception as e:
-        callback.writeLine("stdout", f"Error: {str(e)}".encode('utf-8'))
-
+    # Generate output
+    output = generate_csv(results) if params['mode'] == 'csv' else generate_human_output(results)
+    callback.writeLine("stdout", output)
+    
 INPUT *data_package="", *log_loc="", *offline="", *no_datacite="", *mode=""
 OUTPUT ruleExecOut
