@@ -347,7 +347,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     for data_package in data_packages:
         result = {}
 
-        log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout) 
+        log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout)
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
