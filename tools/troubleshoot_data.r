@@ -49,21 +49,33 @@ def generate_human_output(results):
     return '\n\n'.join(output).encode('utf-8')
 
 def main(rule_args, callback, rei):
-    # Prepare input parameters
     params = {
         'data_package': global_vars["*data_package"].strip('"'),
+        'log_loc': global_vars["*log_loc"].strip('"'),
+        'offline': global_vars["*offline"].strip('"'),
+        'no_datacite': global_vars["*no_datacite"].strip('"'),
         'mode': global_vars["*mode"].strip('"').lower()
     }
     
-    # Run Python troubleshooting rule
-    ret_val = callback.rule_batch_troubleshoot_published_data_packages(
-        params['data_package'], "", "", "", params['mode'], ""
-    )
-    results = json.loads(ret_val["arguments"][5])
+    # Validate mode before proceeding
+    if params['mode'] not in ('human', 'csv'):
+        raise ValueError("Invalid mode. Use 'human' or 'csv'")
 
-    # Generate output
+    # Execute troubleshooting with all parameters
+    ret_val = callback.rule_batch_troubleshoot_published_data_packages(
+        params['data_package'],
+        params['log_loc'],
+        params['offline'],
+        params['no_datacite'],
+        params['mode'],
+        ""  # Output placeholder
+    )
+    
+    # Process and output results
+    results = json.loads(ret_val["arguments"][5])
     output = generate_csv(results) if params['mode'] == 'csv' else generate_human_output(results)
     callback.writeLine("stdout", output)
+
 
 INPUT *data_package="", *log_loc="", *offline="", *no_datacite="", *mode=""
 OUTPUT ruleExecOut

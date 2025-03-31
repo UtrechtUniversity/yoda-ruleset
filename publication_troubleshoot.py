@@ -414,13 +414,10 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
 
-    results = batch_troubleshoot_published_data_packages(
-        ctx, requested_package,
-        log_file == "True",
-        offline == "True",
-        False,  # api_call = False
-        no_datacite == "False",
-        mode
-    )
+    offline = offline == "True"
+    log_file = log_file == "True"
+    check_datacite = no_datacite == "False"
+
+    results = batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False, check_datacite, mode)
 
     return json.dumps(results)
