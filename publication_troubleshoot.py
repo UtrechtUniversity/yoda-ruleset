@@ -174,6 +174,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     :param url:          URL of file on remote
     :param offline:      Whether to skip requests.get call
     :param api_call:     Boolean representing whether was called by api and not a script
+    :param write_stdout: Boolean representing whether to write to stdout or rodsLog
 
     :returns:         True if the file contents match, False otherwise
     """
@@ -224,6 +225,7 @@ def check_landingpage(ctx, data_package, offline, api_call, write_stdout):
     :param data_package:       String representing the data package collection path.
     :param offline:            Whether to skip any checks that require external server access
     :param api_call:           Boolean of whether this is for an api call version of the troubleshooting script
+    :param write_stdout:       Boolean representing whether to write to stdout or rodsLog
 
     :returns:                  A tuple containing boolean results of checking
     """
@@ -314,7 +316,6 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-
 def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite, mode):
     """
     Troubleshoots published data packages.
@@ -325,10 +326,11 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
     :param api_call:          Boolean of whether this is run by a script or api test.
     :param check_datacite:    Boolean representing whether to do the datacite checks
+    :param mode               A string representing output format, either 'human' or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    
+
     write_stdout = not api_call and (mode == 'human')
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -350,15 +352,12 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
         # Modified log calls to use write_stdout
         result['Missing AVUs Check'], result['Unexpected AVUs Check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
-        
+
         result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
         publication_config = get_publication_config(ctx)
         result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
         results[data_package] = result
-
-        #if not api_call:
-        #    print_troubleshoot_result(ctx, data_package, result, check_datacite)
 
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
@@ -396,10 +395,11 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
     """
     return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
+
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
 def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
     """Entry point for rule execution with format mode"""
-    
+
     results = batch_troubleshoot_published_data_packages(
         ctx, requested_package,
         log_file == "True",
@@ -408,5 +408,5 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         no_datacite == "False",
         mode
     )
-    
+
     return json.dumps(results)
