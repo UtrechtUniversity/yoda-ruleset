@@ -55,10 +55,6 @@ def main(rule_args, callback, rei):
         'mode': global_vars["*mode"].strip('"').lower()
     }
     
-    # Validate output format 
-    if params['mode'] not in ('human', 'csv'):
-        raise ValueError("Invalid mode. Use 'human' or 'csv'")
-
     # Run Python troubleshooting rule
     ret_val = callback.rule_batch_troubleshoot_published_data_packages(
         params['data_package'], "", "", "", params['mode'], ""
@@ -68,6 +64,6 @@ def main(rule_args, callback, rei):
     # Generate output
     output = generate_csv(results) if params['mode'] == 'csv' else generate_human_output(results)
     callback.writeLine("stdout", output)
-    
+
 INPUT *data_package="", *log_loc="", *offline="", *no_datacite="", *mode=""
 OUTPUT ruleExecOut

@@ -28,7 +28,7 @@ def parse_args():
                         help="If datacite check should be skipped (needed for the Yoda team's development environment in some cases).")
     parser.add_argument("-p", "--package", type=str, required=False,
                         help="Troubleshoot a specific data package by name (default: troubleshoot all packages)")
-    parser.add_argument("-m", "--mode", choices=['human', 'csv', 'CSV'], default='human',
+    parser.add_argument("-m", "--mode", choices=['human', 'csv'], default='human',
                         help="Output format: human-readable (default) or CSV")
     return parser.parse_args()
 
@@ -40,7 +40,7 @@ def main():
         f"*log_loc={'true' if args.log_file else 'false'}",
         f"*offline={'true' if args.offline else 'false'}",
         f"*no_datacite={'true' if args.no_datacite else 'false'}",
-        f"*mode={args.mode.lower()}"  
+        f"*mode={args.mode}"  
     ]
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F', rule_name] + params)
 
