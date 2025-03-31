@@ -326,7 +326,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
     :param api_call:          Boolean of whether this is run by a script or api test.
     :param check_datacite:    Boolean representing whether to do the datacite checks
-    :param mode               A string representing output format, either 'human' or 'csv'
+    :param mode:              A string representing output format, either 'human' or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
@@ -346,9 +346,8 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     # Troubleshooting steps
     for data_package in data_packages:
         result = {}
-        
+
         log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout) 
-        
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
@@ -356,7 +355,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
         result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
 
         # Only check Version and Base DOI if check_datacite enabled
-        base_doi_check = None 
+        base_doi_check = None
         if check_datacite:
             version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
             result['Version DOI Check'] = version_doi_check
@@ -419,7 +418,7 @@ def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_
         ctx, requested_package,
         log_file == "True",
         offline == "True",
-        False,  # TODO: IMprove it? this is the api_call
+        False,  # api_call = False
         no_datacite == "False",
         mode
     )

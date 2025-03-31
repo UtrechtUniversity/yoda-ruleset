@@ -40,7 +40,7 @@ def main():
         f"*log_loc={'true' if args.log_file else 'false'}",
         f"*offline={'true' if args.offline else 'false'}",
         f"*no_datacite={'true' if args.no_datacite else 'false'}",
-        f"*mode={args.mode}"
+        f"*mode={args.mode.lower()}"  
     ]
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F', rule_name] + params)
 
