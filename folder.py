@@ -271,7 +271,8 @@ def folder_secure(ctx, coll):
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
     if not avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED.value, True):
-        return False
+        if vault.get_coll_vault_status(ctx, target) != constants.vault_package_state.UNPUBLISHED:
+            return False
 
     if not set_acl_check(ctx, "recursive", "admin:write", coll, 'Could not set ACL (admin:write) for collection: ' + coll):
         return False
@@ -399,14 +400,14 @@ def retry_attempts(ctx, coll):
 
 def folder_secure_succeed_avus(ctx, coll, group_name):
     """Set/rm AVUs on source folder when successfully secured folder"""
-    attributes = [x[0] for x in get_org_metadata(ctx, coll)]
+    org_metadata = dict(get_org_metadata(ctx, coll))
 
     # In cases where copytovault only ran once, okay that these attributes were not created
-    if constants.IICOPYRETRYCOUNT in attributes:
-        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True):
+    if constants.IICOPYRETRYCOUNT in org_metadata:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, '%', True):
             return False
-    if constants.IICOPYLASTRUN in attributes:
-        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, "%", True):
+    if constants.IICOPYLASTRUN in org_metadata:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, '%', True):
             return False
 
     # Set cronjob status to final state before deletion
@@ -418,15 +419,16 @@ def folder_secure_succeed_avus(ctx, coll, group_name):
 
     # Note: this is the status that must always be one of the last to be set
     # on folder, otherwise could be a problem for deposit groups
-    if not avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%', catch=True):
-        return False
+    if constants.IISTATUSATTRNAME in org_metadata:
+        if not avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%', catch=True):
+            return False
 
     # Remove target AVU on source folder. This should be done after all possibly failing steps
     # have occurred in folder_secure (any "return False" steps), so that if those trip a retry state,
     # on retry folder_secure can reuse the target from before.
-    if (not group_name.startswith("deposit-")
-            and not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)):
-        return False
+    if not group_name.startswith("deposit-") and constants.IICOPYPARAMSNAME in org_metadata:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True):
+            return False
 
     return True
 
