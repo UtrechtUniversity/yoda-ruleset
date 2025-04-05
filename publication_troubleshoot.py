@@ -208,7 +208,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     # Set encoding to utf-8 for the response text (otherwise will not match local_data)
     # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data.decode("utf-8")
+    local_data_uni = local_data #.decode("utf-8") # TODO: This causes error
 
     if local_data_uni == response.text:
         return True
