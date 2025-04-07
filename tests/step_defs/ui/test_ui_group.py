@@ -573,13 +573,7 @@ def ui_group_schema_properties_default_schema_correct(browser, group, category, 
 
 @when(parsers.parse("check whether deposit group properties {group}, {category} and {subcategory} for user {user}"), target_fixture="api_response")
 def ui_group_schema_properties_deposit_default_schema_correct(browser, group, category, subcategory, user):
-    # Get the default_schema_id from the yoda configuration
-    result = api_request(
-        user,
-        "schema_get_schemas",
-        {}
-    )
-    default_schema_id = list(result)[1]['data']['schema_default']
+    default_schema_id = "dag-0"
 
     assert browser.find_by_id('f-group-update-name').value == group
     assert browser.find_by_id('f-group-update-schema-id').value == default_schema_id
