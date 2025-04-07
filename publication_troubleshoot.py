@@ -208,7 +208,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     # Set encoding to utf-8 for the response text (otherwise will not match local_data)
     # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data #.decode("utf-8") # TODO: This causes error
+    local_data_uni = local_data.decode("utf-8")
 
     if local_data_uni == response.text:
         return True
@@ -355,18 +355,13 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
         result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
 
         # Only check Version and Base DOI if check_datacite enabled
-        base_doi_check = None
         if check_datacite:
             version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
             result['Version DOI Check'] = version_doi_check
-        else:
-            result['Version DOI Check'] = False
-
-        # Handle base DOI only if present
-        if base_doi_check is not None:
             result['Base DOI Check'] = base_doi_check
         else:
-            result['Base DOI Check'] = False
+            result['Version DOI Check'] = True
+            result['Base DOI Check'] = True
 
         publication_config = get_publication_config(ctx)
         result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
