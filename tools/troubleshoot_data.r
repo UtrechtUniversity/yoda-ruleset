@@ -46,7 +46,7 @@ def generate_human_output(results):
         )
         
         section = [
-            f"Results for: {package}",
+            f"Troubleshooting Results for: {package}",
             status_line
         ]
         

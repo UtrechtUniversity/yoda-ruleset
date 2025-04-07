@@ -10,6 +10,9 @@ python3 troubleshoot-published-data.py -p research-initial[1725262507]
 
 To put results into a log file and complete the checks offline:
 python3 troubleshoot-published-data.py -l -o
+
+To output result in csv format:
+python3 troubleshoot-published-data.py -m csv
 """
 import argparse
 import subprocess
