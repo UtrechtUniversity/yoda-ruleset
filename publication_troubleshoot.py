@@ -208,7 +208,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     # Set encoding to utf-8 for the response text (otherwise will not match local_data)
     # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data#.decode("utf-8")
+    local_data_uni = local_data.decode("utf-8")
 
     if local_data_uni == response.text:
         return True
@@ -316,7 +316,7 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite, mode):
+def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite, mode="human"):
     """
     Troubleshoots published data packages.
 
@@ -391,7 +391,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
 
 @api.make()
-def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, mode):
+def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
     """
     Wrapper for the batch script for troubleshooting published data packages.
     Runs a subset of the tests since "technicaladmin" is usually more restricted than "rods".
@@ -400,10 +400,11 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
     :param requested_package: A string representing a specific data package path or all packages with failed publications.
     :param log_file:          A boolean representing to write results in log.
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
+    :param mode:              A string representing output format, either 'human' or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False, mode)
+    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
