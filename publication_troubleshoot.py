@@ -208,7 +208,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     # Set encoding to utf-8 for the response text (otherwise will not match local_data)
     # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data.decode("utf-8")
+    local_data_uni = local_data#.decode("utf-8")
 
     if local_data_uni == response.text:
         return True
@@ -356,9 +356,9 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
         # Only check Version and Base DOI if check_datacite enabled
         if check_datacite:
-            version_doi_check, base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
-            result['Version DOI Check'] = version_doi_check
-            result['Base DOI Check'] = base_doi_check
+            result['Version DOI Check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
+            if base_doi_check is not None:
+                result['baseDOI_check'] = base_doi_check
         else:
             result['Version DOI Check'] = True
             result['Base DOI Check'] = True
@@ -391,7 +391,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
 
 @api.make()
-def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
+def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, mode):
     """
     Wrapper for the batch script for troubleshooting published data packages.
     Runs a subset of the tests since "technicaladmin" is usually more restricted than "rods".
@@ -403,7 +403,7 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
+    return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False, mode)
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])

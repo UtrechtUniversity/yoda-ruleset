@@ -22,7 +22,12 @@ def generate_csv(results):
     writer.writerow(HEADERS)
     
     for package in sorted(results.keys()):
-        row = [package] + [results[package].get(field, 'N/A') for field in HEADERS[1:]]
+        res = results[package]
+        row = [package]
+        for field in HEADERS[1:]:
+            # Get value or N/A if missing
+            value = res.get(field, 'N/A')
+            row.append(str(value) if value not in ('Pass', 'Fail') else value)
         writer.writerow(row)
     
     return output.getvalue().encode('utf-8')
@@ -32,17 +37,22 @@ def generate_human_output(results):
     output = []
     for package in sorted(results.keys()):
         res = results[package]
+        present_fields = [field for field in HEADERS[1:] if field in res]
+        
+        status_line = (
+            "Package passed all tests." 
+            if all(res[field] == 'Pass' for field in present_fields) 
+            else "Package FAILED one or more tests:"
+        )
+        
         section = [
             f"Results for: {package}",
-            "Package passed all tests." if all(
-                res.get(field, 'N/A') == 'Pass' 
-                for field in HEADERS[1:]  # Skip Package
-            ) else "Package FAILED one or more tests:"
+            status_line
         ]
         
-        if "FAILED" in section[-1]:
-            for field in HEADERS[1:]:  # Skip Package
-                section.append(f"{field}: {res.get(field, 'N/A')}")
+        if "FAILED" in status_line:
+            for field in present_fields:
+                section.append(f"{field}: {res[field]}")
         
         output.append('\n'.join(section))
     
