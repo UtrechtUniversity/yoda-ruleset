@@ -326,7 +326,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
     :param api_call:          Boolean of whether this is run by a script or api test.
     :param check_datacite:    Boolean representing whether to do the datacite checks
-    :param mode:              A string representing output format, either 'human' or 'csv'
+    :param mode:              A string representing output format, either 'human' (default) or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
@@ -400,7 +400,6 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
     :param requested_package: A string representing a specific data package path or all packages with failed publications.
     :param log_file:          A boolean representing to write results in log.
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
-    :param mode:              A string representing output format, either 'human' or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """

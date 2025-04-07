@@ -179,7 +179,7 @@ def api_vault_batch_troubleshoot(user, vault, data_package):
     http_status, result = api_request(
         user,
         "batch_troubleshoot_published_data_packages",
-        {"requested_package": data_package, "log_file": True, "offline": True, "mode": "human"}
+        {"requested_package": data_package, "log_file": True, "offline": True}
     )
     assert http_status == 200
     data = result['data']
