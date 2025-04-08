@@ -45,17 +45,17 @@ def lock_or_die():
 
 def process_revision_cleanup_data(strategy_name, endofcalendarday, verbose_flag):
     rule = "rule_revisions_cleanup_process('{}', '{}', '{}', *out);".format(strategy_name, endofcalendarday, verbose_flag)
-    return subprocess.check_output(_rule_command_for_rule(rule))
+    return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 
 def scan_revision_cleanup_data(strategy_name, verbose_flag):
     rule = "rule_revisions_cleanup_scan('{}', '{}', *out);".format(strategy_name, verbose_flag)
-    return subprocess.check_output(_rule_command_for_rule(rule))
+    return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 
 def collect_revision_cleanup_data(batch_size):
     rule = "rule_revisions_cleanup_collect('{}', *out);".format(str(batch_size))
-    return subprocess.check_output(_rule_command_for_rule(rule))
+    return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 
 def _rule_command_for_rule(rule_text):
