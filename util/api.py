@@ -136,20 +136,20 @@ def _api(f: Callable) -> Callable:
             if type(data) is not OrderedDict:
                 raise jsonutil.ParseError('Argument is not a JSON object')
         except base64.binascii.Error:
-            log._write(ctx, 'Error: API rule <{}> input base64 decode error'.format(f.__name__))
+            log.write(ctx, 'Error: API rule <{}> input base64 decode error'.format(f.__name__), print_module=False)
             return bad_request('API input base64 decode error').as_dict()
         except zlib.error:
-            log._write(ctx, 'Error: API rule <{}> input zlib decompression error'.format(f.__name__))
+            log.write(ctx, 'Error: API rule <{}> input zlib decompression error'.format(f.__name__), print_module=False)
             return bad_request('API input zlib decompression error').as_dict()
         except jsonutil.ParseError as e:
-            log._write(ctx, 'Error: API rule <{}> called with invalid JSON argument'.format(f.__name__))
+            log.write(ctx, 'Error: API rule <{}> called with invalid JSON argument'.format(f.__name__), print_module=False)
             return bad_request('JSON parse error: {}'.format(e)).as_dict()
 
         # Check that required arguments are present.
         for param in required:
             if param not in data:
-                log._write(ctx, 'Error: API rule <{}> called with missing <{}> argument'
-                                .format(f.__name__, param))
+                log.write(ctx, 'Error: API rule <{}> called with missing <{}> argument'.format(f.__name__, param),
+                          print_module=False)
                 return bad_request('Missing argument: {} (required: [{}]  optional: [{}])'
                                    .format(param, ', '.join(required), ', '.join(optional))).as_dict()
 
@@ -157,8 +157,8 @@ def _api(f: Callable) -> Callable:
         if not allow_extra:
             for param in data:
                 if param not in required | optional:
-                    log._write(ctx, 'Error: API rule <{}> called with unrecognized <{}> argument'
-                                    .format(f.__name__, param))
+                    log.write(ctx, 'Error: API rule <{}> called with unrecognized <{}> argument'.format(f.__name__, param),
+                              print_module=False)
                     return bad_request('Unrecognized argument: {} (required: [{}]  optional: [{}])'
                                        .format(param, ', '.join(required), ', '.join(optional))).as_dict()
 
@@ -184,14 +184,17 @@ def _api(f: Callable) -> Callable:
         except Error as e:
             # A proper caught error with name and message.
             if e.debug_info is None:
-                log._write(ctx, 'Error: API rule <{}> failed with error <{}>'.format(f.__name__, e))
+                log.write(ctx, 'Error: API rule <{}> failed with error <{}>'.format(f.__name__, e), print_module=False)
             else:
-                log._write(ctx, 'Error: API rule <{}> failed with error <{}> (debug info follows below this line)\n{}'.format(f.__name__, e, e.debug_info))
+                log.write(ctx,
+                          'Error: API rule <{}> failed with error <{}> (debug info follows below this line)\n{}'.format(f.__name__, e, e.debug_info),
+                          print_module=False)
             return e.as_dict()
         except Exception:
             # An uncaught error. Log a trace to aid debugging.
-            log._write(ctx, 'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'
-                            .format(f.__name__, traceback.format_exc()))
+            log.write(ctx,
+                      'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'.format(f.__name__, traceback.format_exc()),
+                      print_module=False)
             return error_internal(traceback.format_exc()).as_dict()
 
     return wrapper

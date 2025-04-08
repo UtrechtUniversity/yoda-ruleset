@@ -4,44 +4,31 @@ __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import inspect
-import sys
 
 import rule
 from config import config
 
-if 'unittest' not in sys.modules:
-    # We don't import the user functions when running unit tests, because then we'll have
-    # to deal with their dependencies. When running unit tests we should use a "None" ctx
-    # or some mocked object.
-    import user
 
-
-def write(ctx: rule.Context, message: str, write_stdout: bool = False) -> None:
+def write(ctx: rule.Context, message: str, write_stdout: bool = False, print_module: bool = True) -> None:
     """Write a message to the log or stdout.
     Includes client name and originating module if writing to log.
 
     :param ctx:          Combined type of a callback and rei struct
     :param message:      Message to write to log
     :param write_stdout: Whether to write to stdout (used for a few of our scripts)
+    :param print_module: Whether to print the calling module in the message (true by default)
     """
-    if write_stdout:
-        ctx.writeLine("stdout", message)
-    else:
+    if print_module:
         stack = inspect.stack()[1]
         module = inspect.getmodule(stack[0])
-        _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
-
-
-def _write(ctx: rule.Context, message: str) -> None:
-    """Write a message to the log, including the client name (intended for internal use).
-
-    :param ctx:     Combined type of a callback and rei struct
-    :param message: Message to write to log
-    """
-    if type(ctx) is rule.Context:
-        ctx.writeString('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
+        message_to_print = '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message)
     else:
-        ctx.writeString('serverLog', message)
+        message_to_print = message
+
+    if write_stdout:
+        ctx.writeLine("stdout", message_to_print)
+    else:
+        ctx.writeString("serverLog", message_to_print)
 
 
 def debug(ctx: rule.Context, message: str) -> None:
@@ -51,4 +38,4 @@ def debug(ctx: rule.Context, message: str) -> None:
     :param message: Message to write to log
     """
     if config.environment == 'development':
-        _write(ctx, 'DEBUG: {}'.format(message))
+        ctx.writeString("serverLog", 'DEBUG: {}'.format(message))
