@@ -205,10 +205,14 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
         log.write(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url), write_stdout)
         return False
 
-    # Set encoding to utf-8 for the response text (otherwise will not match local_data)
-    # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data.decode("utf-8")
+    try:
+        if isinstance(local_data, bytes):
+            local_data_uni = local_data.decode('utf-8')
+        else:
+            local_data_uni = local_data
+    except UnicodeDecodeError as e:
+        log.write(ctx, f"Decoding failed: {str(e)}", write_stdout)
 
     if local_data_uni == response.text:
         return True
