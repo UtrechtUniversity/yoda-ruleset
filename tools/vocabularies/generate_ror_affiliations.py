@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Usage: python3 generate_ror_affiliations.py > affiliations.json
 #

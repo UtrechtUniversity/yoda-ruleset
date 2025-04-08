@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """This script cleans up data object revisions, by invoking the revision cleanup rules."""
 
 import argparse

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """ This script lists all data access tokens, or all data access token of a specific user."""
 
