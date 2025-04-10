@@ -347,6 +347,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     for data_package in data_packages:
         result = {}
 
+        # Cannot check the metadata as technicaladmin
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
             result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False

@@ -40,8 +40,8 @@ def generate_human_output(results):
         present_fields = [field for field in HEADERS[1:] if field in res]
         
         status_line = (
-            "Package passed all tests." 
-            if all(res[field] == 'Pass' for field in present_fields) 
+            "Package passed all tests."
+            if all(res[field] == 'Pass' for field in present_fields)
             else "Package FAILED one or more tests:"
         )
         
@@ -67,10 +67,6 @@ def main(rule_args, callback, rei):
         'mode': global_vars["*mode"].strip('"').lower()
     }
     
-    # Validate mode before proceeding
-    if params['mode'] not in ('human', 'csv'):
-        raise ValueError("Invalid mode. Use 'human' or 'csv'")
-
     # Execute troubleshooting with all parameters
     ret_val = callback.rule_batch_troubleshoot_published_data_packages(
         params['data_package'],

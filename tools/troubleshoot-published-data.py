@@ -38,7 +38,6 @@ def parse_args():
 def main():
     args = parse_args()
     rule_name = "/etc/irods/yoda-ruleset/tools/troubleshoot_data.r"
-
     data_package = f"*data_package={args.package}"
     log_loc = f"*log_loc={args.log_file if args.log_file else ''}"
     offline = f"*offline={args.offline}"
