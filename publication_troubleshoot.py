@@ -212,7 +212,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
         else:
             local_data_uni = local_data
     except UnicodeDecodeError as e:
-        log.write(ctx, f"Decoding failed: {str(e)}", write_stdout)
+        log.write(ctx, "Decoding failed: {}".format(str(e)), write_stdout)
 
     if local_data_uni == response.text:
         return True
