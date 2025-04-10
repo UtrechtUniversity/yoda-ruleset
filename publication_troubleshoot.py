@@ -331,19 +331,21 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :returns: A dictionary of dictionaries providing the results of the job.
     """
 
+    # Only write_stdout when in human mode and api_call is not enabled
     write_stdout = not api_call and (mode == 'human')
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is not rodsadmin", write_stdout)
         return {}
 
+    # Collect data packages
     data_packages = collect_troubleshoot_data_packages(ctx, requested_package, write_stdout)
     if not data_packages:
         return {}
     schema_cache = {}
     results = {}
 
-    # Troubleshooting steps
+    # Troubleshooting packages
     for data_package in data_packages:
         result = {}
 
@@ -383,7 +385,8 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     converted_results = {}
     for pkg, res in results.items():
         converted_results[pkg] = {
-            key: 'Pass' if value else 'Fail' if isinstance(value, bool) else value
+            # All values are expected to be booleans from earlier checks
+            key: 'Pass' if value else 'Fail'
             for key, value in res.items()
         }
 

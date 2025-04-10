@@ -25,7 +25,8 @@ def generate_csv(results):
         res = results[package]
         row = [package]
         for field in HEADERS[1:]:
-            # Get value or N/A if missing
+            # Get value or N/A if headers missing in the result
+            # A check result of N/A means the check is not needed for this package
             value = res.get(field, 'N/A')
             row.append(str(value) if value not in ('Pass', 'Fail') else value)
         writer.writerow(row)
