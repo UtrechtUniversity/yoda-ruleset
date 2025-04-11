@@ -1,7 +1,7 @@
 # coding=utf-8
 """Common API folder feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -118,7 +118,7 @@ def folder_status(user, folder, status):
     if status == "FOLDER":
         status = ""
 
-    for _i in range(25):
+    for _i in range(30):
         _, body = api_request(
             user,
             "research_collection_details",
