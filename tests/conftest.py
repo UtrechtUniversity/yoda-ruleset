@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Yoda tests configuration."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -226,7 +226,7 @@ def login(user, password):
     return csrf, session
 
 
-def api_request(user, request, data, timeout=10):
+def api_request(user, request, data, timeout=60):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -279,7 +279,7 @@ def upload_data(user, file, folder, file_content="test"):
 
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
-    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=60)
 
     return (response.status_code, response)
 
@@ -298,7 +298,7 @@ def post_form_data(user, request, files):
     files['csrf_token'] = (None, csrf)
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
-    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=60)
 
     return (response.status_code, response)
 

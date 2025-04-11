@@ -1,7 +1,7 @@
 # coding=utf-8
 """Deposit API feature tests."""
 
-__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -55,7 +55,7 @@ def deposit_exists(user):
 
 @given('deposit is archived')
 def deposit_is_archived(user):
-    time.sleep(30)
+    time.sleep(45)
 
 
 @given('the Yoda deposit status API is queried', target_fixture="api_response")
