@@ -29,7 +29,7 @@ jobs:
         run: |
           cd unit-tests
           export PYTHONPATH=$(cd ../util ; pwd):$PYTHONPATH
-          coverage run --omit=test_*.py,unit_tests.py -m unittest unit_tests
+          coverage run --source=..,../util --omit=test_*.py,unit_tests.py -m unittest unit_tests
 
       - name: Report code coverage
         run: |
