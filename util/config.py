@@ -74,6 +74,7 @@ class Config:
 
 # Note: Must name all valid config items.
 config = Config(environment=None,
+                measure_coverage=False,
                 default_yoda_schema=None,
                 resource_primary=[],
                 resource_trigger_pol=[],

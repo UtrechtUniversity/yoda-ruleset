@@ -17,3 +17,4 @@ redis==3.5.3
 psutil==6.1.1
 iteration_utilities==0.13.0
 sqlcipher3-binary==0.5.4
+coverage==7.8.0
