@@ -19,6 +19,7 @@ import jsonutil
 import log
 import rule
 from config import config
+from measure_coverage import start_coverage, stop_coverage
 
 
 class Result:
@@ -165,6 +166,9 @@ def _api(f: Callable) -> Callable:
         # Try to run the function with the supplied arguments,
         # catching any error it throws.
         try:
+            if config.measure_coverage:
+                cov = start_coverage()
+
             # Time the request.
             import time
             t = time.time()
@@ -172,6 +176,9 @@ def _api(f: Callable) -> Callable:
             t = time.time() - t
 
             log.debug(ctx, '%4dms %s' % (int(t * 1000), f.__name__))
+
+            if config.measure_coverage:
+                stop_coverage(cov)
 
             if type(result) is Error:
                 raise result  # Allow api.Errors to be either raised or returned.

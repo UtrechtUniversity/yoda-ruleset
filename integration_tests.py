@@ -18,7 +18,7 @@ import folder
 import groups
 import meta
 import schema
-from util import avu, collection, config, constants, data_object, group, jsonutil, log, msi, resources, rule, user
+from util import avu, collection, config, constants, data_object, group, jsonutil, log, measure_coverage, msi, resources, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -794,6 +794,9 @@ def rule_run_integration_tests(ctx, tests):
     :returns: string with test results. Each line has one test name and its verdict.
     """
 
+    if config.measure_coverage:
+        cov = measure_coverage.start_coverage()
+
     return_value = ""
     log.write(ctx, "Running")
 
@@ -831,6 +834,9 @@ def rule_run_integration_tests(ctx, tests):
             verdict = "VERDICT_FAILED   (output '{}')".format(str(result))
 
         return_value += name + " " + verdict + "\n"
+
+    if config.measure_coverage:
+        measure_coverage.stop_coverage(cov)
 
     return return_value
 

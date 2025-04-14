@@ -7,6 +7,7 @@
 
 # Either 'production' or 'development'
 environment                = 'development'
+measure_coverage           = 'false'
 
 resource_primary               = 'irodsResc'
 resource_replica               = 'irodsRescRepl'
