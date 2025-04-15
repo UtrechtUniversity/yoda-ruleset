@@ -121,7 +121,7 @@ jobs:
     - name: Output rodsLogs
       if: failure()
       run: |
-        docker exec provider.yoda sh -c 'cat /var/log/syslog'
+        docker exec provider.yoda sh -c 'cat /var/lib/irods-log/rodsLog*'
 
     - name: Output web server logs
       if: failure()
