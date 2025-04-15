@@ -246,13 +246,18 @@ def py_acPostProcForCopy(ctx):
 #     return can_coll_delete(ctx, user.user_and_zone(ctx),
 #                            str(rm_coll_inp.collName))
 
-# Disabled: caught by acPostProcForPut
-# @policy.require()
-# def pep_api_data_obj_put_pre(ctx, instance_name, rs_comm, data_obj_inp, data_obj_inp_bbuf, portal_opr_out):
-#     # Matches data object creation/overwrite via iput.
-#     log.debug(ctx, 'pep_api_data_obj_put_pre')
-#     return can_data_create(ctx, user.user_and_zone(ctx),
-#                            str(data_obj_inp.objPath))
+@policy.require()
+def pep_api_data_obj_put_pre(ctx, instance_name, rs_comm, data_obj_inp, data_obj_inp_bbuf, portal_opr_out):
+    # Matches data object creation/overwrite via iput.
+    log.debug(ctx, 'pep_api_data_obj_put_pre')
+
+    cond_input = data_obj_inp.condInput
+    for i in range(cond_input.len):
+        if str(cond_input.key[i]) == 'filePath':
+            return policy.fail('Physical path specificaton is not allowed for put operations')
+
+    return can_data_create(ctx, user.user_and_zone(ctx),
+                           str(data_obj_inp.objPath))
 
 
 @policy.require()
@@ -277,12 +282,17 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
                            str(data_obj_inp.objPath))
 
 
-# Disabled: caught by acPostProcForCopy
-# @policy.require()
-# def pep_api_data_obj_copy_pre(ctx, instance_name, rs_comm, data_obj_copy_inp, trans_stat):
-#     log.debug(ctx, 'pep_api_data_obj_copy_pre')
-#     return can_data_create(ctx, user.user_and_zone(ctx),
-#                            str(data_obj_copy_inp.destDataObjInp.objPath))
+@policy.require()
+def pep_api_data_obj_copy_pre(ctx, instance_name, rs_comm, data_obj_copy_inp, trans_stat):
+    log.debug(ctx, 'pep_api_data_obj_copy_pre')
+
+    cond_input = data_obj_copy_inp.destDataObjInp.condInput
+    for i in range(cond_input.len):
+        if str(cond_input.key[i]) == 'filePath':
+            return policy.fail('Physical path specificaton is not allowed for put operations')
+
+    return can_data_create(ctx, user.user_and_zone(ctx),
+                           str(data_obj_copy_inp.destDataObjInp.objPath))
 
 # Disabled: caught by acPreProcForObjRename
 # @policy.require()
@@ -318,6 +328,7 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
     log.debug(ctx, 'pep_api_data_obj_truncate_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_truncate_inp.objPath))
+
 
 # Disabled: caught by acDataDeletePolicy
 # @policy.require()
