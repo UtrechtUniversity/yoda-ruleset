@@ -195,7 +195,13 @@ def get_creators(combi: Dict) -> List:
 
     for creator in combi.get('Creator', []):
         affiliations = []
-        for aff in creator.get('Affiliation', []):
+
+        aff_list = creator.get('Affiliation', [])
+        # if affiliation is string, transform it to list to process
+        if isinstance(aff_list, str):
+            aff_list = [aff_list]
+
+        for aff in aff_list:
             if isinstance(aff, dict) and len(aff) > 0:
                 if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
                     affiliations.append({"name": aff['Affiliation_Name'],
