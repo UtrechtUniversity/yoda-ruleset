@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import json
 import re
 import sys
+from datetime import datetime
 
 import pytest
 import requests
@@ -116,6 +117,13 @@ def pytest_configure(config):
         else:
             csrf, session = login(user["username"], user["password"])
         user_cookies[role] = (csrf, session)
+
+
+def pytest_runtest_logreport(report):
+    if report.failed and report.when == "call":
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        report.sections.append(("timestamp", f"\n{timestamp} [{report.nodeid}] failed."))
 
 
 def pytest_bdd_apply_tag(tag, function):
