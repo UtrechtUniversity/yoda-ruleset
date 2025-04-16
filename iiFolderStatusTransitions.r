@@ -26,17 +26,6 @@ iiScheduleCopyToVault() {
 	}
 }
 
-# \brief Schedule copy-to-vault for just one coll (asynchronously).
-#
-# \param[in]  folder	    Path of folder
-#
-iiScheduleCollCopyToVault(*coll) {
-	delay ("<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>1s</PLUSET>") {
-		msiExecCmd("scheduled-copytovault.sh", "'*coll'", "", "", 0, *out);
-	}
-}
-
-
 # \brief iiFolderDatamanagerAction
 #
 # \param[in] folder
