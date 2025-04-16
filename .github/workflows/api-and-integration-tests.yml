@@ -78,6 +78,19 @@ jobs:
         docker exec provider.yoda sh -c "set -x ; cd /etc/irods/yoda-ruleset && sudo -u irods git checkout ${{ steps.extract_branch.outputs.branch }} && sudo -u irods python3 -m pip --no-cache-dir install --user --break-system-packages -r /etc/irods/yoda-ruleset/requirements.txt && sudo -u irods make && sudo -u irods make install"
         docker exec provider.yoda sh -c 'set -x ; sudo -u irods /var/lib/irods/irodsctl restart'
 
+    - name: Enable code coverage measurements for ruleset
+      shell: bash
+      run: |
+        cd yoda/docker/compose
+        docker exec provider.yoda sh -c "set -x; sudo perl -pi -e \"s/^(measure_coverage\\s*=\\s*)'false'/\\1'true'/\" /etc/irods/yoda-ruleset/rules_uu.cfg"
+
+    # We also run the unit tests in this workflow so that code covered by the unit tests is taken
+    # into account for the total test coverage.
+    - name: Run unit tests
+      run: |
+        cd yoda/docker/compose
+        docker exec provider.yoda sudo -u irods bash -c 'set -x; cd /etc/irods/yoda-ruleset/unit-tests; export PYTHONPATH=$(cd ../util ; pwd):$PYTHONPATH; python3 -m coverage run --source=..,../util --omit=test_*.py,unit_tests.py --data-file /tmp/coverage.dat.unittests -m unittest unit_tests'
+
     - name: Pull and install latest version of portal
       shell: bash
       run: |
@@ -117,6 +130,13 @@ jobs:
         python3 -m pytest --skip-ui --deposit --datarequest -o cache_dir=mycache --environment environments/docker.json
         cat ../copytovault.log
         cat ../publication.log
+
+    - name: Print test coverage report
+      shell: bash
+      run: |
+        cd yoda/docker/compose
+        docker exec provider.yoda sh -c 'cd /tmp; sudo -u irods python3 -m coverage combine -q /tmp/coverage.dat.*'
+        docker exec provider.yoda sh -c 'cd /tmp; sudo -u irods python3 -m coverage report'
 
     - name: Output rodsLogs
       if: failure()
