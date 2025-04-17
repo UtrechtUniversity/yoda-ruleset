@@ -10,6 +10,7 @@ __all__ = [
 
 import json
 from datetime import datetime
+from typing import Dict, List, Tuple, Union
 
 import genquery
 import requests
@@ -21,7 +22,7 @@ from publication import get_publication_config
 from util import *
 
 
-def find_full_package_path(ctx, package_name, write_stdout):
+def find_full_package_path(ctx: rule.Context, package_name: str, write_stdout: bool) -> Union[str, None]:
     """
     Find the full path of a data package based on its short name.
 
@@ -45,10 +46,11 @@ def find_full_package_path(ctx, package_name, write_stdout):
             return row[0]
     except Exception as e:
         log.write(ctx, "find_full_package_path: An error occurred while executing the query: {}".format(e), write_stdout)
-        return None
+
+    return None
 
 
-def find_data_packages(ctx, write_stdout):
+def find_data_packages(ctx: rule.Context, write_stdout: bool) -> List[str]:
     """
     Find all data packages in Retry, Unrecoverable and Unknown status by matching its AVU.
 
@@ -76,7 +78,7 @@ def find_data_packages(ctx, write_stdout):
         return []
 
 
-def check_print_data_package_system_avus(ctx, data_package, write_stdout):
+def check_print_data_package_system_avus(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[bool, bool]:
     """
     Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
@@ -101,7 +103,7 @@ def check_print_data_package_system_avus(ctx, data_package, write_stdout):
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
 
-def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
+def check_one_datacite_doi_reg(ctx: rule.Context, data_package: str, doi_name: str, write_stdout: bool) -> bool:
     try:
         doi = get_val_for_attr_with_pub_prefix(ctx, data_package, doi_name)
     except ValueError as e:
@@ -112,7 +114,7 @@ def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
     return status_code == 200
 
 
-def check_datacite_doi_registration(ctx, data_package, write_stdout):
+def check_datacite_doi_registration(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[bool, Union[bool, None]]:
     """
     Check the registration status of both versionDOI and baseDOI with the DataCite API,
     ensuring that both DOIs return a 200 status code, which indicates successful registration.
@@ -138,7 +140,7 @@ def check_datacite_doi_registration(ctx, data_package, write_stdout):
     return (version_doi_check, None)
 
 
-def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
+def get_val_for_attr_with_pub_prefix(ctx: rule.Context, data_package: str, attribute_suffix: str) -> str:
     """
     Retrieves the value given the suffix of the attribute from a data package.
 
@@ -152,7 +154,7 @@ def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
     return avu.get_attr_val_of_coll(ctx, data_package, attr)
 
 
-def get_landingpage_paths(ctx, data_package, write_stdout):
+def get_landingpage_paths(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[str, str]:
     """Given a data package get what the path and remote url should be"""
     file_path = ''
     try:
@@ -165,7 +167,7 @@ def get_landingpage_paths(ctx, data_package, write_stdout):
         return '', ''
 
 
-def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, write_stdout):
+def compare_local_remote_landingpage(ctx: rule.Context, file_path: str, url: str, offline: bool, api_call: bool, write_stdout: bool) -> bool:
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
@@ -213,7 +215,7 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
     return False
 
 
-def check_landingpage(ctx, data_package, offline, api_call, write_stdout):
+def check_landingpage(ctx: rule.Context, data_package: str, offline: bool, api_call: bool, write_stdout: bool) -> bool:
     """
     Checks the integrity of landing page by comparing the contents
 
@@ -234,7 +236,7 @@ def check_landingpage(ctx, data_package, offline, api_call, write_stdout):
     )
 
 
-def check_combi_json(ctx, data_package, publication_config, offline, write_stdout):
+def check_combi_json(ctx: rule.Context, data_package: str, publication_config: Dict[str, str], offline: bool, write_stdout: bool) -> bool:
     """
     Checks the integrity of combi JSON by checking URL and existence of file.
 
@@ -288,7 +290,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     return True
 
 
-def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
+def collect_troubleshoot_data_packages(ctx: rule.Context, requested_package: str, write_stdout: bool) -> Union[List[str], None]:
     data_packages = []
 
     if requested_package == 'None':
@@ -312,7 +314,7 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite, mode="human"):
+def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, api_call: bool, check_datacite: bool, mode: str = "human") -> Dict[str, Dict[str, str]]:
     """
     Troubleshoots published data packages.
 
@@ -390,7 +392,7 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
 
 
 @api.make()
-def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
+def api_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool) -> Dict[str, Dict[str, str]]:
     """
     Wrapper for the batch script for troubleshooting published data packages.
     Runs a subset of the tests since "technicaladmin" is usually more restricted than "rods".
@@ -406,7 +408,7 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite, mode):
+def rule_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, no_datacite: bool, mode: str) -> str:
 
     offline = offline == "True"
     log_file = log_file == "True"
