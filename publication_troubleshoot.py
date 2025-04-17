@@ -358,7 +358,7 @@ def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_pack
         if check_datacite:
             result['Version DOI Check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
             if base_doi_check is not None:
-                result['baseDOI_check'] = base_doi_check
+                result['Base DOI Check'] = base_doi_check
         else:
             result['Version DOI Check'] = True
             result['Base DOI Check'] = True
