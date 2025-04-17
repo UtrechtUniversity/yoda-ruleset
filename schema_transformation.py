@@ -14,10 +14,9 @@ import json
 import os
 import re
 import time
-from typing import Callable, Dict
+from typing import Callable, Dict, Tuple
 
 import genquery
-import session_vars
 
 import meta
 import schema
@@ -95,25 +94,26 @@ def get(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> 
         return None
 
 
-# TODO: @rule.make
-def rule_get_transformation_info(rule_args, callback, rei):
+@rule.make(inputs=[0], outputs=[1, 2])
+def rule_get_transformation_info(ctx: rule.Context, json_path: str) -> Tuple[str, str]:
     """Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
 
-    :param rule_args: [0] JSON path
-                      [1] Transformation possible? true|false
-                      [2] human-readable description of the transformation
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:            Combined type of a ctx and rei struct
+    :param json_path:      metadata JSON path
+
+    :returns:              Tuple that consists of two elements:
+                           [1] Transformation possible? true|false
+                           [2] human-readable description of the transformation
 
     """
-    json_path = rule_args[0]
+    output: Tuple[str, str]  = ('false', '')
 
-    rule_args[1:3] = 'false', ''
-
-    transform = get(callback, json_path)
+    transform = get(ctx, json_path)
 
     if transform is not None:
-        rule_args[1:3] = 'true', transformation_html(transform)
+        output = ('true', html(transform))
+
+    return output
 
 
 def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> None:
@@ -154,31 +154,29 @@ def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> 
             msi.set_acl(ctx, recursive_flag, "write", user_name, path)
 
 
-# TODO: @rule.make
-def rule_batch_transform_vault_metadata(rule_args, callback, rei):
+@rule.make(inputs=[0, 1, 2, 3], outputs=[])
+def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch_s: str, pause_s: str, delay_s: str) -> None:
     """
     Transform all metadata JSON files in the vault to the active schema.
 
-    :param rule_args: [0] First COLL_ID to check - initial = 0
-                      [1] Batch size, <= 256
-                      [2] Pause between checks (float)
-                      [3] Delay between batches in seconds
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:            Combined type of a ctx and rei struct
+    :param coll_id_s:      First COLL_ID to check - initial = 0
+    :param batch_s:        Batch size, <= 256
+    :param pause_s:        Pause between checks (float)
+    :param delay_s:        Delay between batches in seconds
     """
-    coll_id = int(rule_args[0])
-    batch   = int(rule_args[1])
-    pause   = float(rule_args[2])
-    delay   = int(rule_args[3])
-    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    coll_id = int(coll_id_s)
+    batch   = int(batch_s)
+    pause   = float(pause_s)
+    delay   = int(delay_s)
 
     # Check one batch of metadata schemas.
 
     # Find all research and vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/vault-%%' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
-        genquery.AS_LIST, callback)
+        "COLL_NAME like '/%s/home/vault-%%' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (user.zone(ctx), coll_id),
+        genquery.AS_LIST, ctx)
 
     # Check each collection in batch.
     for row in iter:
@@ -196,15 +194,15 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
         try:
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
-            metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
-            log.write(callback, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
+            metadata_path = meta.get_latest_vault_metadata_path(ctx, vault_package)
+            log.write(ctx, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
             if metadata_path != '':
-                transform = get(callback, metadata_path)
+                transform = get(ctx, metadata_path)
                 if transform is not None:
-                    log.write(callback, "[METADATA] Executing transformation for: " + metadata_path)
-                    execute_transformation(callback, metadata_path, transform)
+                    log.write(ctx, "[METADATA] Executing transformation for: " + metadata_path)
+                    execute_transformation(ctx, metadata_path, transform)
         except Exception as e:
-            log.write(callback, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
+            log.write(ctx, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -214,44 +212,42 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
     else:
         # All done.
         coll_id = 0
-        log.write(callback, "[METADATA] Finished updating metadata.")
+        log.write(ctx, "[METADATA] Finished updating metadata.")
 
     if coll_id != 0:
         # Check the next batch after a delay.
-        callback.delayExec(
+        ctx.delayExec(
             "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
             "rule_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
 
 
-# TODO: @rule.make
-def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
+@rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])
+def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s: str, batch_s: str, pause_s: str, delay_s: str, dryrun_s: str) -> None:
     """
     Correct ORCID person identifier with invalid format in metadata JSON files in the vault.
 
-    :param rule_args: [0] First COLL_ID to check - initial = 0
-                      [1] Batch size, <= 256
-                      [2] Pause between checks (float)
-                      [3] Delay between batches in seconds
-                      [4] Dry-run mode ('true' or 'false'; everything else is considered 'false')
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
+    :param ctx:            Combined type of a ctx and rei struct
+    :param coll_id_s:      First COLL_ID to check - initial = 0
+    :param batch_s:        Batch size, <= 256
+    :param pause_s:        Pause between checks (float)
+    :param delay_s:        Delay between batches in seconds
+    :param dryrun_s:       Dry-run mode ('true' or 'false'; everything else is considered 'false')
     """
 
-    coll_id = int(rule_args[0])
-    batch   = int(rule_args[1])
-    pause   = float(rule_args[2])
-    delay   = int(rule_args[3])
-    dryrun_mode = rule_args[4] == "true"
-    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    coll_id = int(coll_id_s)
+    batch   = int(batch_s)
+    pause   = float(pause_s)
+    delay   = int(delay_s)
+    dryrun_mode = dryrun_s == "true"
 
     # Check one batch of metadata schemas.
 
     # Find all vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
-        genquery.AS_LIST, callback)
+        "COLL_NAME like '/%s/home/vault-%%' AND COLL_NAME not like '%%/original' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (user.zone(ctx), coll_id),
+        genquery.AS_LIST, ctx)
 
     # Check each collection in batch.
     for row in iter:
@@ -262,37 +258,37 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
         try:
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
-            metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
-            if metadata_path  != '':
-                metadata = jsonutil.read(callback, metadata_path)
+            metadata_path = meta.get_latest_vault_metadata_path(ctx, vault_package)
+            if metadata_path is not None:
+                metadata = jsonutil.read(ctx, metadata_path)
 
                 # We only need to transform metadata with schemas that do not constrain ORCID format
                 license_url = metadata.get("links", {})[0].get("href", "")
                 license = license_url.replace("https://yoda.uu.nl/schemas/", "").replace("/metadata.json", "")
                 if license not in ['core-1', 'core-2', 'default-1', 'default-2', 'default-3', 'hptlab-1', 'teclab-1', 'dag-0', 'vollmer-0']:
-                    log.write(callback, "Skipping data package '%s' for ORCID transformation because license '%s' is excluded."
+                    log.write(ctx, "Skipping data package '%s' for ORCID transformation because license '%s' is excluded."
                               % (vault_package, license))
                     continue
 
                 # Correct the incorrect orcid(s) if possible
                 # result is a dict containing 'data_changed' 'metadata'
-                result = transform_orcid(callback, metadata)
+                result = transform_orcid(ctx, metadata)
 
                 # In order to minimize changes within the vault only save a new metadata.json if there actually has been at least one orcid correction.
                 if result['data_changed'] and not dryrun_mode:
                     # orcid('s) has/have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
                     coll, data = os.path.split(metadata_path)
                     new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
-                    log.write(callback, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
-                    jsonutil.write(callback, new_path, result['metadata'])
-                    copy_acls_from_parent(callback, new_path, "default")
-                    callback.rule_provenance_log_action("system", coll, "updated person identifier metadata")
-                    log.write(callback, "Transformed ORCIDs for: %s" % (new_path))
+                    log.write(ctx, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+                    jsonutil.write(ctx, new_path, result['metadata'])
+                    copy_acls_from_parent(ctx, new_path, "default")
+                    ctx.rule_provenance_log_action("system", coll, "updated person identifier metadata")
+                    log.write(ctx, "Transformed ORCIDs for: %s" % (new_path))
                 elif result['data_changed']:
-                    log.write(callback, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
+                    log.write(ctx, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
 
         except Exception as e:
-            log.write(callback, "Exception occurred during ORCID transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
+            log.write(ctx, "Exception occurred during ORCID transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -302,11 +298,11 @@ def rule_batch_vault_metadata_correct_orcid_format(rule_args, callback, rei):
     else:
         # All done.
         coll_id = 0
-        log.write(callback, "[METADATA] Finished correcting ORCID's within vault metadata.")
+        log.write(ctx, "[METADATA] Finished correcting ORCID's within vault metadata.")
 
     if coll_id != 0:
         # Check the next batch after a delay.
-        callback.delayExec(
+        ctx.delayExec(
             "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
             "rule_batch_vault_metadata_correct_orcid_format('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
