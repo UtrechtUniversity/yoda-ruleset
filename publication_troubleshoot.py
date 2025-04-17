@@ -205,12 +205,8 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call, wri
         log.write(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url), write_stdout)
         return False
 
-    # Set encoding to utf-8 for the response text (otherwise will not match local_data)
-    # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data.decode("utf-8")
-
-    if local_data_uni == response.text:
+    if local_data == response.text:
         return True
 
     log.write(ctx, "compare_local_remote_landingpage: File contents at irods path <{}> and remote landing page <{}> do not match.".format(file_path, url), write_stdout)
