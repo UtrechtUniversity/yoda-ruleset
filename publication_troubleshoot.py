@@ -10,6 +10,7 @@ __all__ = [
 
 import json
 from datetime import datetime
+from typing import Dict, List, Tuple, Union
 
 import genquery
 import requests
@@ -21,7 +22,7 @@ from publication import get_publication_config
 from util import *
 
 
-def find_full_package_path(ctx, package_name, write_stdout):
+def find_full_package_path(ctx: rule.Context, package_name: str, write_stdout: bool) -> Union[str, None]:
     """
     Find the full path of a data package based on its short name.
 
@@ -45,10 +46,11 @@ def find_full_package_path(ctx, package_name, write_stdout):
             return row[0]
     except Exception as e:
         log.write(ctx, "find_full_package_path: An error occurred while executing the query: {}".format(e), write_stdout)
-        return None
+
+    return None
 
 
-def find_data_packages(ctx, write_stdout):
+def find_data_packages(ctx: rule.Context, write_stdout: bool) -> List[str]:
     """
     Find all data packages in Retry, Unrecoverable and Unknown status by matching its AVU.
 
@@ -76,7 +78,7 @@ def find_data_packages(ctx, write_stdout):
         return []
 
 
-def check_print_data_package_system_avus(ctx, data_package, write_stdout):
+def check_print_data_package_system_avus(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[bool, bool]:
     """
     Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
@@ -101,7 +103,7 @@ def check_print_data_package_system_avus(ctx, data_package, write_stdout):
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
 
-def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
+def check_one_datacite_doi_reg(ctx: rule.Context, data_package: str, doi_name: str, write_stdout: bool) -> bool:
     try:
         doi = get_val_for_attr_with_pub_prefix(ctx, data_package, doi_name)
     except ValueError as e:
@@ -112,7 +114,7 @@ def check_one_datacite_doi_reg(ctx, data_package, doi_name, write_stdout):
     return status_code == 200
 
 
-def check_datacite_doi_registration(ctx, data_package, write_stdout):
+def check_datacite_doi_registration(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[bool, Union[bool, None]]:
     """
     Check the registration status of both versionDOI and baseDOI with the DataCite API,
     ensuring that both DOIs return a 200 status code, which indicates successful registration.
@@ -138,7 +140,7 @@ def check_datacite_doi_registration(ctx, data_package, write_stdout):
     return (version_doi_check, None)
 
 
-def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
+def get_val_for_attr_with_pub_prefix(ctx: rule.Context, data_package: str, attribute_suffix: str) -> str:
     """
     Retrieves the value given the suffix of the attribute from a data package.
 
@@ -152,7 +154,7 @@ def get_val_for_attr_with_pub_prefix(ctx, data_package, attribute_suffix):
     return avu.get_attr_val_of_coll(ctx, data_package, attr)
 
 
-def get_landingpage_paths(ctx, data_package, write_stdout):
+def get_landingpage_paths(ctx: rule.Context, data_package: str, write_stdout: bool) -> Tuple[str, str]:
     """Given a data package get what the path and remote url should be"""
     file_path = ''
     try:
@@ -165,7 +167,7 @@ def get_landingpage_paths(ctx, data_package, write_stdout):
         return '', ''
 
 
-def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
+def compare_local_remote_landingpage(ctx: rule.Context, file_path: str, url: str, offline: bool, api_call: bool, write_stdout: bool) -> bool:
     """
     Compares file contents between a file in irods and its remote version to verify their integrity.
 
@@ -174,10 +176,10 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
     :param url:          URL of file on remote
     :param offline:      Whether to skip requests.get call
     :param api_call:     Boolean representing whether was called by api and not a script
+    :param write_stdout: Boolean representing whether to write to stdout or rodsLog
 
     :returns:         True if the file contents match, False otherwise
     """
-    write_stdout = not api_call
     # Local/irods file
     if api_call:
         # If called by technicaladmin, only check that the file exists since we don't have access to the contents
@@ -205,19 +207,15 @@ def compare_local_remote_landingpage(ctx, file_path, url, offline, api_call):
         log.write(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url), write_stdout)
         return False
 
-    # Set encoding to utf-8 for the response text (otherwise will not match local_data)
-    # response.text is then returned as unicode
     response.encoding = 'utf-8'
-    local_data_uni = local_data.decode("utf-8")
-
-    if local_data_uni == response.text:
+    if local_data == response.text:
         return True
 
     log.write(ctx, "compare_local_remote_landingpage: File contents at irods path <{}> and remote landing page <{}> do not match.".format(file_path, url), write_stdout)
     return False
 
 
-def check_landingpage(ctx, data_package, offline, api_call):
+def check_landingpage(ctx: rule.Context, data_package: str, offline: bool, api_call: bool, write_stdout: bool) -> bool:
     """
     Checks the integrity of landing page by comparing the contents
 
@@ -225,6 +223,7 @@ def check_landingpage(ctx, data_package, offline, api_call):
     :param data_package:       String representing the data package collection path.
     :param offline:            Whether to skip any checks that require external server access
     :param api_call:           Boolean of whether this is for an api call version of the troubleshooting script
+    :param write_stdout:       Boolean representing whether to write to stdout or rodsLog
 
     :returns:                  A tuple containing boolean results of checking
     """
@@ -232,10 +231,12 @@ def check_landingpage(ctx, data_package, offline, api_call):
     if len(irods_file_path) == 0 or len(landing_page_url) == 0:
         return False
 
-    return compare_local_remote_landingpage(ctx, irods_file_path, landing_page_url, offline, api_call)
+    return compare_local_remote_landingpage(
+        ctx, irods_file_path, landing_page_url, offline, api_call, write_stdout
+    )
 
 
-def check_combi_json(ctx, data_package, publication_config, offline, write_stdout):
+def check_combi_json(ctx: rule.Context, data_package: str, publication_config: Dict[str, str], offline: bool, write_stdout: bool) -> bool:
     """
     Checks the integrity of combi JSON by checking URL and existence of file.
 
@@ -289,31 +290,7 @@ def check_combi_json(ctx, data_package, publication_config, offline, write_stdou
     return True
 
 
-def print_troubleshoot_result(ctx, data_package, result, datacite_check):
-    """Print the result of troubleshooting one package in human-friendly format"""
-    pass_all_tests = all(result.values())
-
-    log.write(ctx, "Results for: {}".format(data_package), True)
-    if pass_all_tests:
-        log.write(ctx, "Package passed all tests.", True)
-    else:
-        log.write(ctx, "Package FAILED one or more tests:", True)
-        log.write(ctx, "Schema matches: {}".format(result['schema_check']), True)
-        log.write(ctx, "All expected AVUs exist: {}".format(result['no_missing_AVUs_check']), True)
-        log.write(ctx, "No unexpected AVUs: {}".format(result['no_unexpected_AVUs_check']), True)
-
-        if datacite_check:
-            log.write(ctx, "Version DOI matches: {}".format(result['versionDOI_check']), True)
-            if 'baseDOI_check' in result:
-                log.write(ctx, "Base DOI matches: {}".format(result['baseDOI_check']), True)
-
-        log.write(ctx, "Landing page matches: {}".format(result['landingPage_check']), True)
-        log.write(ctx, "Combined JSON matches: {}".format(result['combiJson_check']), True)
-
-    log.write(ctx, "", True)
-
-
-def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
+def collect_troubleshoot_data_packages(ctx: rule.Context, requested_package: str, write_stdout: bool) -> Union[List[str], None]:
     data_packages = []
 
     if requested_package == 'None':
@@ -337,7 +314,7 @@ def collect_troubleshoot_data_packages(ctx, requested_package, write_stdout):
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, api_call, check_datacite):
+def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, api_call: bool, check_datacite: bool, mode: str = "human") -> Dict[str, Dict[str, str]]:
     """
     Troubleshoots published data packages.
 
@@ -347,47 +324,51 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
     :param offline:           A boolean representing whether to perform all checks without connecting to external servers.
     :param api_call:          Boolean of whether this is run by a script or api test.
     :param check_datacite:    Boolean representing whether to do the datacite checks
+    :param mode:              A string representing output format, either 'human' (default) or 'csv'
 
     :returns: A dictionary of dictionaries providing the results of the job.
     """
-    write_stdout = not api_call
+
+    # Only write_stdout when in human mode and api_call is not enabled
+    write_stdout = not api_call and (mode == 'human')
     # Check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is not rodsadmin", write_stdout)
         return {}
 
+    # Collect data packages
     data_packages = collect_troubleshoot_data_packages(ctx, requested_package, write_stdout)
     if not data_packages:
         return {}
     schema_cache = {}
     results = {}
 
-    # Troubleshooting
+    # Troubleshooting packages
     for data_package in data_packages:
-        log.write(ctx, "Troubleshooting data package: {}".format(data_package), write_stdout)
         result = {}
+
         # Cannot check the metadata as technicaladmin
         if not api_call:
             schema_check_dict = vault_metadata_matches_schema(ctx, data_package, schema_cache, "troubleshoot-publications", write_stdout)
-            result['schema_check'] = schema_check_dict['match_schema'] if schema_check_dict else False
+            result['Schema Check'] = schema_check_dict['match_schema'] if schema_check_dict else False
+        result['Missing AVUs Check'], result['Unexpected AVUs Check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
+        result['Landing Page Check'] = check_landingpage(ctx, data_package, offline, api_call, write_stdout)
 
-        result['no_missing_AVUs_check'], result['no_unexpected_AVUs_check'] = check_print_data_package_system_avus(ctx, data_package, write_stdout)
-
-        # Only check datacite if enabled
+        # Only check Version and Base DOI if check_datacite enabled
         if check_datacite:
-            result['versionDOI_check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
+            result['Version DOI Check'], base_doi_check = check_datacite_doi_registration(ctx, data_package, write_stdout)
             if base_doi_check is not None:
-                result['baseDOI_check'] = base_doi_check
+                result['Base DOI Check'] = base_doi_check
+        else:
+            result['Version DOI Check'] = True
+            result['Base DOI Check'] = True
 
-        result['landingPage_check'] = check_landingpage(ctx, data_package, offline, api_call)
         publication_config = get_publication_config(ctx)
-        result['combiJson_check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
+        result['Combi JSON Check'] = check_combi_json(ctx, data_package, publication_config, offline, write_stdout)
 
         results[data_package] = result
 
-        if not api_call:
-            print_troubleshoot_result(ctx, data_package, result, check_datacite)
-
+        # Save to log file if log_file == True
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
             with open(log_loc, "a") as writer:
@@ -398,11 +379,20 @@ def batch_troubleshoot_published_data_packages(ctx, requested_package, log_file,
                 json.dump(result, writer)
                 writer.writelines('\n')
 
-    return results
+    # Convert booleans to Pass/Fail strings
+    converted_results = {}
+    for pkg, res in results.items():
+        converted_results[pkg] = {
+            # All values are expected to be booleans from earlier checks
+            key: 'Pass' if value else 'Fail'
+            for key, value in res.items()
+        }
+
+    return converted_results
 
 
 @api.make()
-def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline):
+def api_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool) -> Dict[str, Dict[str, str]]:
     """
     Wrapper for the batch script for troubleshooting published data packages.
     Runs a subset of the tests since "technicaladmin" is usually more restricted than "rods".
@@ -417,27 +407,13 @@ def api_batch_troubleshoot_published_data_packages(ctx, requested_package, log_f
     return batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, True, False)
 
 
-@rule.make(inputs=[0, 1, 2, 3], outputs=[])
-def rule_batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, no_datacite):
-    """
-    Troubleshoots published data packages.
+@rule.make(inputs=[0, 1, 2, 3, 4], outputs=[5])
+def rule_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, no_datacite: bool, mode: str) -> str:
 
-    Prints results of the following checks:
-        1. Metadata schema compliance.
-        2. Presence and correctness of expected AVUs.
-        3. Registration with Data Cite.
-        4. File integrity of landing page and combi JSON files.
-
-    Operates on either a single specified package or all published packages, depending on the input.
-
-    :param ctx:               Context that combines a callback and rei struct.
-    :param requested_package: A string representing a specific data package path or all packages with failed publications.
-    :param log_file:          A string boolean representing to write results in log.
-    :param offline:           A string boolean representing whether to perform all checks without connecting to external servers.
-    :param no_datacite:       A string boolean representing whether to skip the datacite checks
-    """
     offline = offline == "True"
     log_file = log_file == "True"
     check_datacite = no_datacite == "False"
 
-    batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False, check_datacite)
+    results = batch_troubleshoot_published_data_packages(ctx, requested_package, log_file, offline, False, check_datacite, mode)
+
+    return json.dumps(results)

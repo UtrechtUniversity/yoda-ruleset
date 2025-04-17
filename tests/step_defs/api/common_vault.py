@@ -186,7 +186,7 @@ def api_vault_batch_troubleshoot(user, vault, data_package):
     assert len(data) == 1
     # Confirm that all checks passed for this data package
     for checks in data.values():
-        assert all(checks.values())
+        assert all(value == "Pass" for value in checks.values())
 
 
 @then('preservable formats lists are returned')

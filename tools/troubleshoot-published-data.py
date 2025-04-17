@@ -10,6 +10,9 @@ python3 troubleshoot-published-data.py -p research-initial[1725262507]
 
 To put results into a log file and complete the checks offline:
 python3 troubleshoot-published-data.py -l -o
+
+To output result in csv format:
+python3 troubleshoot-published-data.py -m csv
 """
 import argparse
 import subprocess
@@ -28,8 +31,9 @@ def parse_args():
                         help="If datacite check should be skipped (needed for the Yoda team's development environment in some cases).")
     parser.add_argument("-p", "--package", type=str, required=False,
                         help="Troubleshoot a specific data package by name (default: troubleshoot all packages)")
+    parser.add_argument("-m", "--mode", choices=['human', 'csv'], default='human',
+                        help="Output format: human-readable (default) or CSV")
     return parser.parse_args()
-
 
 def main():
     args = parse_args()
@@ -38,9 +42,10 @@ def main():
     log_loc = f"*log_loc={args.log_file if args.log_file else ''}"
     offline = f"*offline={args.offline}"
     no_datacite = f"*no_datacite={args.no_datacite}"
+    mode = f"*mode={args.mode}"
+    
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F',
-                    rule_name, data_package, log_loc, offline, no_datacite])
-
+                    rule_name, data_package, log_loc, offline, no_datacite, mode])
 
 if __name__ == '__main__':
     main()
