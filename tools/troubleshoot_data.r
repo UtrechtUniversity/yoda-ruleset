@@ -5,7 +5,7 @@ import io
 import json
 
 HEADERS = [
-    "Package", 
+    "Package",
     "Schema Check",
     "Missing AVUs Check",
     "Unexpected AVUs Check",
@@ -15,12 +15,13 @@ HEADERS = [
     "Combi JSON Check"
 ]
 
+
 def generate_csv(results):
     """Generate CSV output from troubleshooting results"""
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(HEADERS)
-    
+
     for package in sorted(results.keys()):
         res = results[package]
         row = [package]
@@ -30,8 +31,9 @@ def generate_csv(results):
             value = res.get(field, 'N/A')
             row.append(str(value) if value not in ('Pass', 'Fail') else value)
         writer.writerow(row)
-    
+
     return output.getvalue().encode('utf-8')
+
 
 def generate_human_output(results):
     """Generate human-readable output from troubleshooting results"""
@@ -39,25 +41,26 @@ def generate_human_output(results):
     for package in sorted(results.keys()):
         res = results[package]
         present_fields = [field for field in HEADERS[1:] if field in res]
-        
+
         status_line = (
             "Package passed all tests."
             if all(res[field] == 'Pass' for field in present_fields)
             else "Package FAILED one or more tests:"
         )
-        
+
         section = [
             f"Troubleshooting Results for: {package}",
             status_line
         ]
-        
+
         if "FAILED" in status_line:
             for field in present_fields:
                 section.append(f"{field}: {res[field]}")
-        
+
         output.append('\n'.join(section))
-    
+
     return '\n\n'.join(output).encode('utf-8')
+
 
 def main(rule_args, callback, rei):
     params = {
@@ -67,7 +70,7 @@ def main(rule_args, callback, rei):
         'no_datacite': global_vars["*no_datacite"].strip('"'),
         'mode': global_vars["*mode"].strip('"').lower()
     }
-    
+
     # Execute troubleshooting with all parameters
     ret_val = callback.rule_batch_troubleshoot_published_data_packages(
         params['data_package'],
@@ -77,7 +80,7 @@ def main(rule_args, callback, rei):
         params['mode'],
         ""  # Output placeholder
     )
-    
+
     # Process and output results
     results = json.loads(ret_val["arguments"][5])
     output = generate_csv(results) if params['mode'] == 'csv' else generate_human_output(results)
