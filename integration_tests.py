@@ -743,6 +743,15 @@ basic_integration_tests = [
     {"name":   "util.resources.to_from_id",
      "test": lambda ctx: resources.name_from_id(ctx, resources.id_from_name(ctx, "irodsResc")),
      "check": lambda x: x == "irodsResc"},
+    {"name":   "util.resources.get_children_by_id",
+     "test": lambda ctx: resources.get_children_by_id(ctx, resources.id_from_name(ctx, "dev001_p1")),
+     "check": lambda ctx, x: x == [resources.id_from_name(ctx, "dev001_1")]},
+    {"name":   "util.resources.get_parent_by_id",
+     "test": lambda ctx: resources.get_parent_by_id(ctx, resources.id_from_name(ctx, "dev001_1")),
+     "check": lambda ctx, x: x == resources.id_from_name(ctx, "dev001_p1")},
+    {"name":   "util.resources.get_type_by_id",
+     "test": lambda ctx: resources.get_type_by_id(ctx, resources.id_from_name(ctx, "dev001_1")),
+     "check": lambda x: x == "unixfilesystem"},
     {"name":   "util.user.exists.yes",
      "test": lambda ctx: user.exists(ctx, "rods"),
      "check": lambda x: x},
@@ -828,8 +837,10 @@ def rule_run_integration_tests(ctx, tests):
 
         if exception:
             verdict = "VERDICT_EXCEPTION"
-        elif check(result):
-            verdict = "VERDICT_OK       "
+        elif check.__code__.co_argcount == 1 and check(result):
+            verdict = "VERDICT_OK"
+        elif check.__code__.co_argcount == 2 and check(ctx, result):
+            verdict = "VERDICT_OK"
         else:
             verdict = "VERDICT_FAILED   (output '{}')".format(str(result))
 
