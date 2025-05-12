@@ -599,7 +599,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
 
     This function is called when (re)publishing a vault package.
     The embargo date of a package is essential determining access.
-    If current date < embargo end date, then set end date in `ord_lift_embargo_date`
+    If current date < embargo end date, then set end date in `org_lift_embargo_date`
     to be picked up by lift embargo cronjob.
 
     :param ctx:                Combined type of a callback and rei struct
