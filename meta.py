@@ -664,7 +664,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
         try:
-            avu.set_on_coll(ctx, vault_pkg_path, "{}cronjob_vault_ingest".format(constants.UUORGMETADATAPREFIX), constants.CRONJOB_STATE['PENDING'])
+            avu.set_on_coll(ctx, vault_pkg_path, "{}cronjob_publication_update".format(constants.UUORGMETADATAPREFIX), constants.CRONJOB_STATE['PENDING'])
             publication.set_update_publication_state(ctx, vault_pkg_path)
         except Exception:
             set_result('FailedToSetPublicationUpdateStatus',
