@@ -710,5 +710,35 @@ def pep_database_gen_query_pre(ctx: rule.Context,
         # We can't use log here, because the REI is not (always) available.
         print("Refused unsafe query: " + str(genquery_inp))
         ctx.msiOprDisallowed()
+
+
+@policy.require()
+def pep_api_phy_path_reg_pre(ctx: rule.Context,
+                             instance_name: str,
+                             rs_comm: object,
+                             data_object: object) -> policy.Succeed | policy.Fail:
+    # This policy blocks mounting and unmounting collections on the zone,
+    # e.g. mounting structured tar files or physical volumes using
+    # "imcoll -m". It also blocks creation of collection soft links.
+    # This is disabled as part of application hardening, since these operations are
+    # not used in any legitimate feature and involve potential security risks.
+    log.debug(ctx, 'check phy_path_reg_pre for <{}>'.format(data_object.objPath))
+    return policy.fail('Mounting, soft linking or unmounting collections on the server is not allowed.')
+
+
+@policy.require()
+def pep_api_sync_mounted_coll_pre(ctx: rule.Context,
+                                  instance_name: str,
+                                  rs_comm: object,
+                                  data_object: object) -> policy.Succeed | policy.Fail:
+    # This policy blocks synchronizing mounted collections on the zone,
+    # e.g. synchronizing mounted tar files using
+    # "imcoll -s".
+    # This is disabled as part of application hardening, since this these operations are
+    # not used in any legitimate feature and involve potential security risks.
+    log.debug(ctx, 'check sync_mounted_coll_pre for <{}>'.format(data_object.objPath))
+    return policy.fail("Synchronizing mounted collections on the server is not allowed.")
+
+
 # }}}
 # }}}
