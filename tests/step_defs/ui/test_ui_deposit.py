@@ -45,7 +45,7 @@ def ui_deposit_open_search_data_access_type_visible(browser, data_access):
     assert browser.is_text_present(data_access)
 
 
-@when('all fields contain correct data')
+@when('all fields contain correct open data')
 def ui_deposit_open_search_contains_correct_data(browser):
     required_text = ['María José Carreño Quiñones (Group Leader)',
                      'UI test',
@@ -58,9 +58,24 @@ def ui_deposit_open_search_contains_correct_data(browser):
                      '2000-01-01 - 2010-01-01',
                      'Reference to a publication',
                      'Another reference to a publication']
-    # Retention not fully / correctly implemented in open_search
-    # '2022-03-10',
-    # '2042-03-10 (20 years)']
+
+    for text in required_text:
+        if not browser.is_text_present(text):
+            assert False
+    assert True
+
+
+@when('all fields contain correct restricted data')
+def ui_deposit_restricted_search_contains_correct_data(browser):
+    required_text = ['María José Carreño Quiñones',
+                     'UI test',
+                     'Aut aspernatur quia perferendis et',
+                     'Keyword1',
+                     'Earth sciences - Geochemistry',
+                     'Project1',
+                     'Борис Николаевич Ельцин',
+                     'Tấn Dũng Nguyễn']
+
     for text in required_text:
         if not browser.is_text_present(text):
             assert False
