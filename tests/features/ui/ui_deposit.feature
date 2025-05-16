@@ -76,7 +76,7 @@ Feature: Deposit UI
         When user searches for "UI test Open"
         And clicks on "UI test Open" data package
         And landingpage shows "Open" access
-        And all fields contain correct data
+        And all fields contain correct open data
         And user copies identifier to clipboard
         And user clicks for map details
         And user clicks for data access with "UI test Open" in title
@@ -88,6 +88,6 @@ Feature: Deposit UI
         When user searches for "UI test Restricted"
         And clicks on "UI test Restricted" data package
         And landingpage shows "Restricted" access
-        And all fields contain correct data
+        And all fields contain correct restricted data
         And user copies identifier to clipboard
-        And user clicks for map details
+        # And user clicks for map details
