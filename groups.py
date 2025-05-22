@@ -410,7 +410,8 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
 
         # Invited SRAM users
         for member in group['invited']:
-            members[member]['sram'] = 'invited'
+            if member in members.keys():
+                members[member]['sram'] = 'invited'
 
         # This is a malformed group, ignore it
         if 'category' not in group or 'subcategory' not in group:
