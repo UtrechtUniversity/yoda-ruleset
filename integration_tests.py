@@ -784,7 +784,16 @@ basic_integration_tests = [
      "check": lambda x: x == 1},
     {"name":   "is_user_external.external",
      "test": lambda ctx: _test_is_user_external(ctx, "researcher@externaldomain.nl"),
-     "check": lambda x: x == 0}
+     "check": lambda x: x == 0},
+    {"name": "hashes_collection.script",
+     "test": lambda ctx: _test_hashes_collection_script(ctx),
+     "check": lambda x: x == '7cddf28c9cb43a0fbe6fe386baee6f5a25dbab9c500d497be1d87e14f3b74fd6'},
+    {"name": "hashes_collection.trailing_slash",
+     "test": lambda ctx: _test_hashes_collection_trailing_slash(ctx),
+     "check": lambda x: x is True},
+    {"name": "hashes_collection.identical_collections",
+     "test": lambda ctx: test_hashes_on_identical_collections(ctx),
+     "check": lambda x: x is True}
 ]
 
 
@@ -901,3 +910,133 @@ def _call_dir_list_check_exc(ctx, dirname, resc_name):
         return False
     except Exception:
         return True
+
+
+def _get_hash(ctx, coll_path):
+    """Run hashes_collection.sh on a collection path and return the SHA256 hash.
+
+    :param ctx: combined type of a callback and rei struct
+    :param coll_path: path to collection to hash
+
+    :returns: the calculated SHA256 hash of the collection
+
+    :raises RuntimeError: if script fails
+    """
+    script_path = "/etc/irods/yoda-ruleset/tools/hashes_collection.sh"
+
+    if not os.access(script_path, os.X_OK):
+        raise RuntimeError(f"Script {script_path} is not executable")
+
+    cmd = [script_path, coll_path]
+    environment = dict(os.environ)
+
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=environment)
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        raise RuntimeError(f"hashes_collection.sh failed: {stderr.decode()}")
+
+    return stdout.decode().split()[0]
+
+
+def _test_hashes_collection_script(ctx):
+    """Verifies that the hashes_collection.sh script produces a consistent hash.
+    This is useful for testing during iRODS upgrades, as the `hashes_collection.sh`
+    script utilizes `iquest`.
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: the calculated SHA256 hash of the collection.
+    """
+    # Create collection
+    coll_path = "/{}/home/rods/{}-test".format(user.zone(ctx), "hash")
+    collection.create(ctx, coll_path)
+
+    # Add data objects to collection
+    data_object.write(ctx, f"{coll_path}/file1.txt", b"contentA")
+    data_object.write(ctx, f"{coll_path}/file2.txt", b"contentB")
+
+    # Create subcollection
+    subcoll_path = coll_path + '/{}-test'.format("subhash")
+    collection.create(ctx, subcoll_path)
+
+    # Add data objects in subcollection
+    data_object.write(ctx, f"{subcoll_path}/file3.txt", b"contentC")
+    data_object.write(ctx, f"{subcoll_path}/file4.txt", b"contentD")
+
+    hash_ = _get_hash(ctx, coll_path)
+
+    collection.remove(ctx, subcoll_path)
+    collection.remove(ctx, coll_path)
+
+    return hash_
+
+
+def _test_hashes_collection_trailing_slash(ctx):
+    """Verifies that adding or omitting a trailing slash in the collection
+    path does not affect the hash.
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: true if the same hash is returned else false
+    """
+    base_path = "/{}/home/rods".format(user.zone(ctx))
+    path = f"{base_path}/collection-trailing-slash"
+
+    collection.create(ctx, path)
+    data_object.write(ctx, f"{path}/file1.txt", b"abc")
+    collection.create(ctx, f"{path}/sub")
+    data_object.write(ctx, f"{path}/sub/file2.txt", b"123")
+
+    # Compare hashes with and without trailing slash
+    hash_no_slash = _get_hash(ctx, path)
+    hash_with_slash = _get_hash(ctx, path + "/")
+
+    data_object.remove(ctx, f"{path}/file1.txt")
+    data_object.remove(ctx, f"{path}/sub/file2.txt")
+    collection.remove(ctx, f"{path}/sub")
+    collection.remove(ctx, path)
+
+    return hash_no_slash == hash_with_slash
+
+
+def test_hashes_on_identical_collections(ctx):
+    """Verifies that two collections with the same structure
+    produce identical hashes.
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: true if the same hash is returned else false
+    """
+
+    base_path = f"/{user.zone(ctx)}/home/rods"
+    coll1 = f"{base_path}/project"
+    coll2 = f"{base_path}/project_copy"
+
+    # Create first collection and add files + subcollection
+    collection.create(ctx, coll1)
+    data_object.write(ctx, f"{coll1}/file1.txt", b"contentA")
+    collection.create(ctx, f"{coll1}/subdir")
+    data_object.write(ctx, f"{coll1}/subdir/file2.txt", b"contentB")
+
+    # Create second collection with the same structure and contents
+    collection.create(ctx, coll2)
+    data_object.write(ctx, f"{coll2}/file1.txt", b"contentA")
+    collection.create(ctx, f"{coll2}/subdir")
+    data_object.write(ctx, f"{coll2}/subdir/file2.txt", b"contentB")
+
+    # Get hashes
+    hash1 = _get_hash(ctx, coll1)
+    hash2 = _get_hash(ctx, coll2)
+
+    data_object.remove(ctx, f"{coll1}/file1.txt")
+    data_object.remove(ctx, f"{coll1}/subdir/file2.txt")
+    collection.remove(ctx, f"{coll1}/subdir")
+    collection.remove(ctx, coll1)
+
+    data_object.remove(ctx, f"{coll2}/file1.txt")
+    data_object.remove(ctx, f"{coll2}/subdir/file2.txt")
+    collection.remove(ctx, f"{coll2}/subdir")
+    collection.remove(ctx, coll2)
+
+    return hash1 == hash2
