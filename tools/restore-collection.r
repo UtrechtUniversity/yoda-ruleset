@@ -60,7 +60,7 @@ restoreCollection {
                         if (*restorePath != "") {
                                 *coll = *restorePath;
 
-                                # Retrieve elemements.
+                                # Retrieve elements.
                                 *origPathElems = split(*originalPath, "/");
                                 *pathElems = split(*path, "/");
 

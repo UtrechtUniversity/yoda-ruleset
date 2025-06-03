@@ -28,8 +28,6 @@ def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: st
     :param body:    Body of mail
     :param cc:      Comma-separated list of CC recipient(s) of email (optional)
 
-    :raises: When smtp is not configer correctly
-
     :returns: API status
     """
     if not config.notifications_enabled:

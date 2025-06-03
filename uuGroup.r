@@ -31,7 +31,7 @@ uuGetUserType(*user, *userType) {
 # \param[in] user       name of the irods user
 #                       username can optionally include zone ('user#zone')
 #                       default is to use the local zone
-# \param[out] userName  name of user exclusing zone information
+# \param[out] userName  name of user excluding zone information
 # \param[out] userZone  name of the zone of the user
 #
 uuGetUserAndZone(*user,*userName,*userZone) {

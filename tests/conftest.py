@@ -191,7 +191,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
 
 def login(user, password):
     """Login portal and retrieve CSRF and session cookies."""
-    # Disable unsecure connection warning.
+    # Disable insecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     url = "{}/user/login".format(portal_url)
@@ -265,7 +265,7 @@ def upload_data(user, file, folder, file_content="test"):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
-    # Disable unsecure connection warning.
+    # Disable insecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Make POST request.

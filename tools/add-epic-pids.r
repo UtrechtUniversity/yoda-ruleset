@@ -1,6 +1,6 @@
 #!/usr/bin/irule -F
 #
-# Add persistent EPIC identifiers to vault packages that don't hav one.
+# Add persistent EPIC identifiers to vault packages that don't have one.
 #
 addEpicPids {
 	# search through vault packages

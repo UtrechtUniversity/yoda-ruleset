@@ -41,7 +41,7 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> Dict | Non
         "COLL_ID", "DATA_RESC_HIER", "DATA_NAME", "COLL_NAME",
     ]
 
-    # Retrieve data obejct with default properties
+    # Retrieve data object with default properties
     query_fields = ", ".join(properties)
     iter = genquery.row_iterator(
         query_fields,

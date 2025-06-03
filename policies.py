@@ -254,7 +254,7 @@ def pep_api_data_obj_put_pre(ctx, instance_name, rs_comm, data_obj_inp, data_obj
     cond_input = data_obj_inp.condInput
     for i in range(cond_input.len):
         if str(cond_input.key[i]) == 'filePath':
-            return policy.fail('Physical path specificaton is not allowed for put operations')
+            return policy.fail('Physical path specification is not allowed for put operations')
 
     return can_data_create(ctx, user.user_and_zone(ctx),
                            str(data_obj_inp.objPath))
@@ -296,7 +296,7 @@ def pep_api_data_obj_copy_pre(ctx, instance_name, rs_comm, data_obj_copy_inp, tr
     cond_input = data_obj_copy_inp.destDataObjInp.condInput
     for i in range(cond_input.len):
         if str(cond_input.key[i]) == 'filePath':
-            return policy.fail('Physical path specificaton is not allowed for put operations')
+            return policy.fail('Physical path specification is not allowed for put operations')
 
     return can_data_create(ctx, user.user_and_zone(ctx),
                            str(data_obj_copy_inp.destDataObjInp.objPath))

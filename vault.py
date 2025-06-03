@@ -623,7 +623,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         return {'member_type': member_type, 'is_datamanager': is_datamanager}
     else:
         metadata = True
-        # Retreive all published versions
+        # Retrieve all published versions
         base_doi, package_doi, all_versions = get_all_published_versions(ctx, path)
 
     # Check if a vault action is pending.
