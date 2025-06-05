@@ -803,7 +803,7 @@ basic_integration_tests = [
      "check": lambda x: x == 0},
     {"name": "hashes_collection.script",
      "test": lambda ctx: _test_hashes_collection_script(ctx),
-     "check": lambda x: x == '7cddf28c9cb43a0fbe6fe386baee6f5a25dbab9c500d497be1d87e14f3b74fd6'},
+     "check": lambda x: x == '3d87794f290780e470a90b6f2a545144838577395d13d95ca3899fdb4fd705fb'},
     {"name": "hashes_collection.trailing_slash",
      "test": lambda ctx: _test_hashes_collection_trailing_slash(ctx),
      "check": lambda x: x is True},
@@ -952,7 +952,8 @@ def _get_hash(ctx, coll_path):
     if process.returncode != 0:
         raise RuntimeError(f"hashes_collection.sh failed: {stderr.decode()}")
 
-    return stdout.decode().split()[0]
+    # output example: "v2:<sha256hash>"
+    return stdout.decode().strip().split(':', 1)[1]
 
 
 def _test_hashes_collection_script(ctx):
