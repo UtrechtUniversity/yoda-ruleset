@@ -1,6 +1,6 @@
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from typing import Tuple
@@ -332,8 +332,15 @@ def api_research_list_temporary_files(ctx: rule.Context, coll: str) -> api.Resul
 
     :returns: List of files that possibly require cleaning up
     """
-    list_cleanup_files = []
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
 
+    # Check if collection is a research group.
+    space, _, group, _ = pathutil.info(coll)
+    if space != pathutil.Space.RESEARCH:
+        return []
+
+    list_cleanup_files = []
     for uw_file in config.temporary_files:
         if "?" in uw_file or "*" in uw_file:
             wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
@@ -642,10 +649,10 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is a research group.
+    # Check if collection is in a research space.
     space, _, group, _ = pathutil.info(path)
     if space != pathutil.Space.RESEARCH:
-        return {}
+        return api.Error('invalidpath', 'The given path is not in a research space ')
 
     basename = pathutil.chop(path)[1]
 
@@ -671,15 +678,22 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
             "is_locked": is_locked}
 
 
-@api.make()
-def api_research_manifest(ctx: rule.Context, coll: str) -> api.Result:
-    """Produce a manifest of data objects in a collection
+def research_manifest(ctx: rule.Context, coll: str) -> api.Result:
+    """Produce a manifest of data objects in a collection.
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Parent collection of data objects to include
 
     :returns: List of json objects with name and checksum
     """
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
+
+    # Check if collection is in a research/deposit/vault space.
+    space, _, group, _ = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
+        return api.Error('invalidpath', 'The given path is not in a research, deposit or vault space ')
+
     iter = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         "COLL_NAME = '{}'".format(coll),
@@ -696,3 +710,15 @@ def api_research_manifest(ctx: rule.Context, coll: str) -> api.Result:
     checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
 
     return checksums + checksums_sub
+
+
+@api.make()
+def api_research_manifest(ctx: rule.Context, coll: str) -> api.Result:
+    """Produce a manifest of data objects in a collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+
+    :returns: List of json objects with name and checksum
+    """
+    return research_manifest(ctx, coll)

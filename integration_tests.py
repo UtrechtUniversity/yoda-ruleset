@@ -1,6 +1,6 @@
 """Integration tests for the development environment."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
@@ -17,8 +17,9 @@ import data_access_token
 import folder
 import groups
 import meta
+import research
 import schema
-from util import avu, collection, config, constants, data_object, group, jsonutil, log, measure_coverage, msi, resources, rule, user
+from util import api, avu, collection, config, constants, data_object, group, jsonutil, log, measure_coverage, msi, resources, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -615,6 +616,21 @@ basic_integration_tests = [
      "test": lambda ctx: ctx.rule_check_max_connections_exceeded(""),
      # This rule should always return 'false' for user 'rods'
      "check": lambda x: x['arguments'][0] == 'false'},
+    {"name":  "research.api_research_manifest.research",
+     "test": lambda ctx: research.research_manifest(ctx, "/tempZone/home/research-initial"),
+     "check": lambda x: len(x) > 1},
+    {"name":  "research.api_research_manifest.vault",
+     "test": lambda ctx: research.research_manifest(ctx, "/tempZone/home/vault-initial"),
+     "check": lambda x: x == []},
+    {"name":  "research.api_research_manifest.deposit",
+     "test": lambda ctx: research.research_manifest(ctx, "/tempZone/home/deposit-pilot"),
+     "check": lambda x: x == []},
+    {"name":  "research.api_research_manifest.invalid_path",
+     "test": lambda ctx: research.research_manifest(ctx, "/tempZone/does/not/exist"),
+     "check": lambda x: type(x) is api.Error},
+    {"name":  "research.api_research_manifest.no_space",
+     "test": lambda ctx: research.research_manifest(ctx, "/tempZone/yoda/schemas"),
+     "check": lambda x: type(x) is api.Error},
     {"name":  "schema.get_active_schema_path.deposit",
      "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot"),
      "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
