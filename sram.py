@@ -163,6 +163,29 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     epoch = datetime.datetime.utcfromtimestamp(0)
     epoch_date = int((date - epoch).total_seconds()) * 1000
 
+    # Request SRAM to lookup poosible existing invitation for this user
+    response = requests.get(
+        "{}/api/invitations/v1/invitations/{}".format(
+            co_identifier
+        ),
+        headers=headers, timeout=30, verify=config.sram_tls_verify
+    )
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "get {}: {}".format(url, response.status_code))
+
+    if response.status != 200:
+        log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
+        return False
+
+    if response.status_code == 200:
+        for invite in response.json():
+            if invite['invitation']['email'] == username and invite['status'] == 'open':
+                if config.sram_verbose_logging:
+                    log.write(ctx, "Invitation for {} already exists".format(username))
+                    
+                return True 
+
     # Build SRAM payload.
     payload = {
         "collaboration_identifier": co_identifier,
