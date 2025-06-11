@@ -158,7 +158,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     url = "{}/api/invitations/v1/invitations/{}".format(config.sram_rest_api_url, co_identifier)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "get {}: {}".format(url, response.status_code))
+        log.write(ctx, "get: {}".format(url))
 
     response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
 
