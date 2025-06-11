@@ -164,7 +164,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
 
     if config.sram_verbose_logging:
         log.write(ctx, "response: {}".format(response.status_code))
-        
+
     if response.status != 200:
         log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
         return False
@@ -174,8 +174,8 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
             if invite['invitation']['email'] == username and invite['status'] == 'open':
                 if config.sram_verbose_logging:
                     log.write(ctx, "Invitation for {} already exists".format(username))
-                return True 
-    
+                return True
+
     # Now plus a year.
     expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
 
