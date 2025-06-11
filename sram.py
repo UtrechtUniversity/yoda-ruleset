@@ -152,28 +152,19 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
 
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
-    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
-    # Now plus a year.
-    expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
-
-    # Get epoch expiry date.
-    date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    epoch_date = int((date - epoch).total_seconds()) * 1000
-
-    # Request SRAM to lookup poosible existing invitation for this user
-    response = requests.get(
-        "{}/api/invitations/v1/invitations/{}".format(
-            co_identifier
-        ),
-        headers=headers, timeout=30, verify=config.sram_tls_verify
-    )
+    # Request SRAM to lookup poosible existing invitation for this user.
+    url = "{}/api/invitations/v1/invitations/{}".format(config.sram_rest_api_url, co_identifier)
 
     if config.sram_verbose_logging:
         log.write(ctx, "get {}: {}".format(url, response.status_code))
 
+    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(response.status_code))
+        
     if response.status != 200:
         log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
         return False
@@ -183,8 +174,15 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
             if invite['invitation']['email'] == username and invite['status'] == 'open':
                 if config.sram_verbose_logging:
                     log.write(ctx, "Invitation for {} already exists".format(username))
-                    
                 return True 
+    
+    # Now plus a year.
+    expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
+
+    # Get epoch expiry date.
+    date = datetime.datetime.strptime(expiration_date, "%Y-%m-%d")
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    epoch_date = int((date - epoch).total_seconds()) * 1000
 
     # Build SRAM payload.
     payload = {
@@ -197,7 +195,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
         ],
         "groups": []
     }
-
+    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
     if config.sram_verbose_logging:
         log.write(ctx, "put {}: {}".format(url, payload))
 
