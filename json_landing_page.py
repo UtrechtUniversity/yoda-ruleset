@@ -196,7 +196,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     ############################################################################
     persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
     open_access_link = json_data["System"].get("Open_access_Link", "")
-    open_access_link = urllib.parse.quote(open_access_link, safe=":/?&=")
+    open_access_link = urllib.parse.quote(open_access_link, safe=":/=")
     license_uri = json_data["System"].get("License_URI", "")
 
     # Format last modified and publication date.
