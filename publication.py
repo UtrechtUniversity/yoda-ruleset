@@ -1381,7 +1381,7 @@ def update_publication(ctx: rule.Context,
         # unexpected publication status, and log a message for troubleshooting
         # purposes.
         if publication_state["status"] in return_statuses:
-            log.write("update_publication: returned with error status from location '{}' (status: '{}')".format(location, publication_state["status"]))
+            log.write(ctx, "update_publication: returned with error status from location '{}' (status: '{}')".format(location, publication_state["status"]))
             return True
         else:
             return False
