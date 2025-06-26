@@ -179,7 +179,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
             data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
         collection.rename(ctx, coll + "/original", coll + "/archive/data")
         create_archive(ctx, coll)
-        collection.remove(ctx, coll + "/archive")
+        collection.remove(ctx, coll + "/archive", force=True)
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
         provenance.log_action(ctx, "system", coll, "archive completed", False)
@@ -238,8 +238,8 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
         extract_archive(ctx, coll)
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
         ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
-        collection.remove(ctx, coll + "/archive")
-        data_object.remove(ctx, coll + "/archive.tar")
+        collection.remove(ctx, coll + "/archive", force=True)
+        data_object.remove(ctx, coll + "/archive.tar", force=True)
 
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
         provenance.log_action(ctx, "system", coll, "unarchive completed", False)
@@ -266,10 +266,10 @@ def vault_update_archive(ctx: rule.Context, coll: str) -> str:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
 
         extract_archive(ctx, coll)
-        data_object.remove(ctx, coll + "/archive.tar")
+        data_object.remove(ctx, coll + "/archive.tar", force=True)
 
         create_archive(ctx, coll)
-        collection.remove(ctx, coll + "/archive")
+        collection.remove(ctx, coll + "/archive", force=True)
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
         log.write(ctx, "Finished update of archived data package <{}>".format(coll))

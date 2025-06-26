@@ -218,18 +218,19 @@ def move(ctx: rule.Context, path_org: str, path_move: str, force: bool = True) -
                 irods_types.BytesBuf())
 
 
-def remove(ctx: rule.Context, path: str) -> None:
+def remove(ctx: rule.Context, path: str, force: bool = False) -> None:
     """Delete a collection.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path of collection to be deleted
+    :param ctx:   Combined type of a callback and rei struct
+    :param path:  Path of collection to be deleted
+    :param force: Applies "forceFlag"
 
     This may raise a error.UUError if the file does not exist, or when the user
     does not have write permission.
     """
     msi.rm_coll(ctx,
                 path,
-                '',
+                'forceFlag=' if force else '',
                 irods_types.BytesBuf())
 
 
