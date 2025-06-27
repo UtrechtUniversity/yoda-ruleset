@@ -63,7 +63,7 @@ def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     try:
         # Create archive.
         log.write(ctx, "Creating archive file for data package <{}>".format(coll))
-        ret = ctx.uuArchiveCreate(archive, coll, resource, 0)['arguments'][3]
+        ret = msi.archive_create(ctx, archive, coll, resource, 0)
     except Exception:
         data_object.remove(ctx, coll + "/manifest-sha256.txt")
         pass
@@ -71,13 +71,13 @@ def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     # Remove manifest file.
     data_object.remove(ctx, coll + "/manifest-sha256.txt")
 
-    if ret < 0:
+    if ret.get("code", -1) < 0:
         raise Exception("Archive creation failed: {}".format(ret))
     ctx.iiCopyACLsFromParent(archive, "default")
 
 
 def extract(ctx: rule.Context, archive: str, coll: str, resource: str = '0') -> None:
     ret = msi.archive_extract(ctx, archive, coll, 0, resource, 0)
-    if ret < 0:
+    if ret.get("code", -1) < 0:
         log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))
         raise Exception("Archive extraction failed: {}".format(ret))

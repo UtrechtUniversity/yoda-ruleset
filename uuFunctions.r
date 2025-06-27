@@ -113,25 +113,3 @@ wrap_msi_file_checksum(*file, *resc, *sum) {
     }
     *result;
 }
-
-# \brief Workaround function for msiArchiveCreate microservice.
-#
-# \param[in] archive
-# \param[in] coll
-# \param[in] resource
-# \param[out] status
-#
-uuArchiveCreate(*archive, *coll, *resource, *status) {
-	*status = "";
-
-	# Check if user is rodsadmin
-	uuGetUserType("$userNameClient#$rodsZoneClient", *usertype);
-	if (*usertype != "rodsadmin") {
-		writeLine("stdout", "uuArchiveCreate: This function should only be called by a rodsadmin");
-        fail;
-	}
-
-	*status = errorcode(msiArchiveCreate(*archive, *coll, *resource, 0));
-
-	*status;
-}
