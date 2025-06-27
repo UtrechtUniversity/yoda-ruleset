@@ -57,3 +57,16 @@ Feature: Vault Archive API
             | /tempZone/home/vault-default-1 |
             | /tempZone/home/vault-core-1    |
             | /tempZone/home/vault-default-2 |
+
+
+      Scenario Outline: Vault unarchived
+        Given user datamanager is authenticated
+        And data package exists in <vault>
+        Then data package in <vault> archival status is "unarchived"
+
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |

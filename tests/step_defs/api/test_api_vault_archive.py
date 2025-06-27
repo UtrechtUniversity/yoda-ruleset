@@ -81,6 +81,8 @@ def data_package_archival_status(user, vault, data_package, status):
 
         if body["data"]["archive"]["status"] == status:
             return True
+        if status == "unarchived" and body["data"]["archive"]["archivable"] and not body["data"]["archive"]["status"]:
+            return True
         time.sleep(10)
 
     raise AssertionError()
