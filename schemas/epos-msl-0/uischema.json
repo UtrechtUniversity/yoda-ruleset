@@ -45,7 +45,7 @@
     }
   },
   "TreeKeyword": {
-    "ui:description": "Adding (searchable) keywords to your data package.",
+    "ui:description": "Adding multiple keywords makes your data easier to find for reuse by others. Predefined keywords are from internationally used vocabularies developed by EPOS Multi-Scale Laboratories. Other keywords can be added as free text.",
     "ui:field": "tree_keyword_selector",
     "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/msl_vocabularies/refs/heads/main/vocabularies/combined/editor/1.3/editor_1-3.json",
     "ui:subjectScheme": "EPOS MSL"
