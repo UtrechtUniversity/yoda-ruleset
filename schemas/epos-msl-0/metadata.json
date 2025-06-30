@@ -918,7 +918,7 @@
     "Version": {
       "$ref": "#/definitions/stringNormal",
       "title": "Version",
-      "default": "Version 1.0"
+      "default": "1.0"
     },
     "Language": {
       "$ref": "#/definitions/optionsISO639-1",
