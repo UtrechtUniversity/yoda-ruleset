@@ -13,8 +13,7 @@
     "ui:widget": "textarea"
   },
   "Discipline": {
-    "ui:description": "Predefined disciplines refer to those that are part of EPOS Multi-Scale Laboratories.",
-    "ui:placeholder": "Add research discipline"
+    "ui:description": "Predefined disciplines refer to those that are part of EPOS Multi-Scale Laboratories."
   },
   "Lab": {
     "ui:description": "The laboratory where data, model or code were acquired or developed. Predefined laboratories refer to those that are part of EPOS Multi-Scale Laboratories."
