@@ -13,10 +13,16 @@
     "ui:widget": "textarea"
   },
   "Discipline": {
-    "ui:description": "Predefined disciplines refer to those that are part of EPOS Multi-Scale Laboratories."
+    "ui:description": "Predefined disciplines refer to those that are part of EPOS Multi-Scale Laboratories.",
+    "items": {
+      "ui:placeholder": "Add research discipline"
+    }
   },
   "Lab": {
-    "ui:description": "The laboratory where data, model or code were acquired or developed. Predefined laboratories refer to those that are part of EPOS Multi-Scale Laboratories."
+    "ui:description": "The laboratory where data, model or code were acquired or developed. Predefined laboratories refer to those that are part of EPOS Multi-Scale Laboratories.",
+    "items": {
+      "ui:placeholder": "Add originating laboratory"
+    }
   },
   "Additional_Lab": {
     "ui:description": "facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. This laboratory has a minor role compared to the originating laboratory or is not mentioned in the pre-defined vocabulary of laboratories."
