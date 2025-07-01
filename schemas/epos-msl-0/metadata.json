@@ -903,16 +903,6 @@
         "title": "Originating laboratory"
       }
     },
-    "Additional_Lab": {
-      "type": "array",
-      "minItems": 1,
-      "title": "Additional laboratory",
-      "items": {
-        "$ref": "#/definitions/stringNormalNullable",
-        "title": "Additional laboratory",
-        "default": ""
-      }
-    },
     "Version": {
       "$ref": "#/definitions/stringNormal",
       "title": "Version",

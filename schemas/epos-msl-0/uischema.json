@@ -24,9 +24,6 @@
       "ui:placeholder": "Add originating laboratory"
     }
   },
-  "Additional_Lab": {
-    "ui:description": "facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. This laboratory has a minor role compared to the originating laboratory or is not mentioned in the pre-defined vocabulary of laboratories."
-  },
   "Version": {
     "ui:help": "A version number for the data package"
   },
