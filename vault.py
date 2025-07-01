@@ -744,7 +744,7 @@ def api_vault_get_landingpage_data(ctx: rule.Context, coll: str) -> api.Result:
         return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
     except msi.Error as e:
         if str(e).find("-818000") > -1:
-            return api.Error('permission_error', 'Action not permitted: no access permission on this file.')
+            return api.Error('permission_error', 'Action not permitted: no access permission on the metadata file.')
         else:
             return api.Error('internal', 'The metadata file could not be read.', e)
 
