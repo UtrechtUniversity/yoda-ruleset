@@ -165,7 +165,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     if config.sram_verbose_logging:
         log.write(ctx, "response: {}".format(response.status_code))
 
-    if response.status != 200:
+    if response.status_code != 200:
         log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
         return False
 
