@@ -8,13 +8,14 @@ Feature: Vault API
         Then the response status code is "200"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
     Scenario Outline: Vault submit
@@ -25,13 +26,14 @@ Feature: Vault API
         And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
     Scenario Outline: Vault cancel
@@ -42,13 +44,14 @@ Feature: Vault API
         And data package in <vault> status is "UNPUBLISHED"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
     Scenario Outline: Vault submit after cancel
@@ -59,13 +62,14 @@ Feature: Vault API
         And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
     Scenario Outline: Vault approve
@@ -76,29 +80,31 @@ Feature: Vault API
         And data package in <vault> status is "APPROVED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
-    Scenario Outline: Vault secured
+    Scenario Outline: Vault published
         Given user datamanager is authenticated
         And data package exists in <vault>
         Then data package in <vault> status is "PUBLISHED"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
-    
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
+
 
     Scenario Outline: Published vault package passes troubleshooting script checks
         Given user technicaladmin is authenticated
@@ -106,9 +112,10 @@ Feature: Vault API
         Then data package in <vault> passes troubleshooting script checks
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |
 
 
     Scenario Outline: Vault preservable formats lists
@@ -118,13 +125,13 @@ Feature: Vault API
         And preservable formats lists are returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
 
 
     Scenario Outline: Vault unpreservable files
@@ -152,13 +159,13 @@ Feature: Vault API
         And system metadata is returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
 
 
     Scenario Outline: Vault collection details
@@ -223,10 +230,11 @@ Feature: Vault API
         And published packages are returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |
-            | /tempZone/home/vault-core-2    |
-            | /tempZone/home/vault-default-3 |
+            | vault                           |
+            | /tempZone/home/vault-core-0     |
+            | /tempZone/home/vault-default-1  |
+            | /tempZone/home/vault-core-1     |
+            | /tempZone/home/vault-default-2  |
+            | /tempZone/home/vault-core-2     |
+            | /tempZone/home/vault-default-3  |
+            | /tempZone/home/vault-epos-msl-0 |

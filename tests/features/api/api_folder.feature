@@ -8,13 +8,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status |
-            | /tempZone/home/research-core-0    | LOCKED |
-            | /tempZone/home/research-default-1 | LOCKED |
-            | /tempZone/home/research-core-1    | LOCKED |
-            | /tempZone/home/research-default-2 | LOCKED |
-            | /tempZone/home/research-core-2    | LOCKED |
-            | /tempZone/home/research-default-3 | LOCKED |
+            | folder                             | status |
+            | /tempZone/home/research-core-0     | LOCKED |
+            | /tempZone/home/research-default-1  | LOCKED |
+            | /tempZone/home/research-core-1     | LOCKED |
+            | /tempZone/home/research-default-2  | LOCKED |
+            | /tempZone/home/research-core-2     | LOCKED |
+            | /tempZone/home/research-default-3  | LOCKED |
+            | /tempZone/home/research-epos-msl-0 | LOCKED |
 
 
     Scenario Outline: Folder get locks
@@ -24,13 +25,14 @@ Feature: Folder API
         And folder locks contains <folder>
 
         Examples:
-            | folder                            |
-            | /tempZone/home/research-core-0    |
-            | /tempZone/home/research-default-1 |
-            | /tempZone/home/research-core-1    |
-            | /tempZone/home/research-default-2 |
-            | /tempZone/home/research-core-2    |
-            | /tempZone/home/research-default-3 |
+            | folder                             |
+            | /tempZone/home/research-core-0     |
+            | /tempZone/home/research-default-1  |
+            | /tempZone/home/research-core-1     |
+            | /tempZone/home/research-default-2  |
+            | /tempZone/home/research-core-2     |
+            | /tempZone/home/research-default-3  |
+            | /tempZone/home/research-epos-msl-0 |
 
 
     Scenario Outline: Folder unlock
@@ -40,13 +42,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status |
-            | /tempZone/home/research-core-0    | FOLDER |
-            | /tempZone/home/research-default-1 | FOLDER |
-            | /tempZone/home/research-core-1    | FOLDER |
-            | /tempZone/home/research-default-2 | FOLDER |
-            | /tempZone/home/research-core-2    | FOLDER |
-            | /tempZone/home/research-default-3 | FOLDER |
+            | folder                             | status |
+            | /tempZone/home/research-core-0     | FOLDER |
+            | /tempZone/home/research-default-1  | FOLDER |
+            | /tempZone/home/research-core-1     | FOLDER |
+            | /tempZone/home/research-default-2  | FOLDER |
+            | /tempZone/home/research-core-2     | FOLDER |
+            | /tempZone/home/research-default-3  | FOLDER |
+            | /tempZone/home/research-epos-msl-0 | FOLDER |
 
 
     Scenario Outline: Folder submit
@@ -57,13 +60,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
-            | /tempZone/home/research-default-3 | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-core-0     | SUBMITTED |
+            | /tempZone/home/research-default-1  | SUBMITTED |
+            | /tempZone/home/research-core-1     | SUBMITTED |
+            | /tempZone/home/research-default-2  | SUBMITTED |
+            | /tempZone/home/research-core-2     | SUBMITTED |
+            | /tempZone/home/research-default-3  | SUBMITTED |
+            | /tempZone/home/research-epos-msl-0 | SUBMITTED |
 
 
     Scenario Outline: Folder unsubmit
@@ -73,13 +77,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status |
-            | /tempZone/home/research-core-0    | FOLDER |
-            | /tempZone/home/research-default-1 | FOLDER |
-            | /tempZone/home/research-core-1    | FOLDER |
-            | /tempZone/home/research-default-2 | FOLDER |
-            | /tempZone/home/research-core-2    | FOLDER |
-            | /tempZone/home/research-default-3 | FOLDER |
+            | folder                             | status |
+            | /tempZone/home/research-core-0     | FOLDER |
+            | /tempZone/home/research-default-1  | FOLDER |
+            | /tempZone/home/research-core-1     | FOLDER |
+            | /tempZone/home/research-default-2  | FOLDER |
+            | /tempZone/home/research-core-2     | FOLDER |
+            | /tempZone/home/research-default-3  | FOLDER |
+            | /tempZone/home/research-epos-msl-0 | FOLDER |
 
 
     Scenario Outline: Folder resubmit after unsubmit
@@ -89,13 +94,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
-            | /tempZone/home/research-default-3 | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-core-0     | SUBMITTED |
+            | /tempZone/home/research-default-1  | SUBMITTED |
+            | /tempZone/home/research-core-1     | SUBMITTED |
+            | /tempZone/home/research-default-2  | SUBMITTED |
+            | /tempZone/home/research-core-2     | SUBMITTED |
+            | /tempZone/home/research-default-3  | SUBMITTED |
+            | /tempZone/home/research-epos-msl-0 | SUBMITTED |
 
 
     Scenario Outline: Folder reject
@@ -105,13 +111,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-core-0    | REJECTED |
-            | /tempZone/home/research-default-1 | REJECTED |
-            | /tempZone/home/research-core-1    | REJECTED |
-            | /tempZone/home/research-default-2 | REJECTED |
-            | /tempZone/home/research-core-2    | REJECTED |
-            | /tempZone/home/research-default-3 | REJECTED |
+            | folder                             | status   |
+            | /tempZone/home/research-core-0     | REJECTED |
+            | /tempZone/home/research-default-1  | REJECTED |
+            | /tempZone/home/research-core-1     | REJECTED |
+            | /tempZone/home/research-default-2  | REJECTED |
+            | /tempZone/home/research-core-2     | REJECTED |
+            | /tempZone/home/research-default-3  | REJECTED |
+            | /tempZone/home/research-epos-msl-0 | REJECTED |
 
 
     Scenario Outline: Folder resubmit after reject
@@ -121,13 +128,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-core-0    | SUBMITTED |
-            | /tempZone/home/research-default-1 | SUBMITTED |
-            | /tempZone/home/research-core-1    | SUBMITTED |
-            | /tempZone/home/research-default-2 | SUBMITTED |
-            | /tempZone/home/research-core-2    | SUBMITTED |
-            | /tempZone/home/research-default-3 | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-core-0     | SUBMITTED |
+            | /tempZone/home/research-default-1  | SUBMITTED |
+            | /tempZone/home/research-core-1     | SUBMITTED |
+            | /tempZone/home/research-default-2  | SUBMITTED |
+            | /tempZone/home/research-core-2     | SUBMITTED |
+            | /tempZone/home/research-default-3  | SUBMITTED |
+            | /tempZone/home/research-epos-msl-0 | SUBMITTED |
 
 
     Scenario Outline: Folder accept
@@ -137,13 +145,14 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-core-0    | ACCEPTED |
-            | /tempZone/home/research-default-1 | ACCEPTED |
-            | /tempZone/home/research-core-1    | ACCEPTED |
-            | /tempZone/home/research-default-2 | ACCEPTED |
-            | /tempZone/home/research-core-2    | ACCEPTED |
-            | /tempZone/home/research-default-3 | ACCEPTED |
+            | folder                             | status   |
+            | /tempZone/home/research-core-0     | ACCEPTED |
+            | /tempZone/home/research-default-1  | ACCEPTED |
+            | /tempZone/home/research-core-1     | ACCEPTED |
+            | /tempZone/home/research-default-2  | ACCEPTED |
+            | /tempZone/home/research-core-2     | ACCEPTED |
+            | /tempZone/home/research-default-3  | ACCEPTED |
+            | /tempZone/home/research-epos-msl-0 | ACCEPTED |
 
 
     Scenario Outline: Folder secured
@@ -151,10 +160,11 @@ Feature: Folder API
         Then folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-core-0    | FOLDER   |
-            | /tempZone/home/research-default-1 | FOLDER   |
-            | /tempZone/home/research-core-1    | FOLDER   |
-            | /tempZone/home/research-default-2 | FOLDER   |
-            | /tempZone/home/research-core-2    | FOLDER   |
-            | /tempZone/home/research-default-3 | FOLDER   |
+            | folder                             | status |
+            | /tempZone/home/research-core-0     | FOLDER |
+            | /tempZone/home/research-default-1  | FOLDER |
+            | /tempZone/home/research-core-1     | FOLDER |
+            | /tempZone/home/research-default-2  | FOLDER |
+            | /tempZone/home/research-core-2     | FOLDER |
+            | /tempZone/home/research-default-3  | FOLDER |
+            | /tempZone/home/research-epos-msl-0 | FOLDER |

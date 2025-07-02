@@ -8,19 +8,21 @@ Feature: Schema API
         And schema <schema> exists
 
         Examples:
-            | user        | schema    |
-            | researcher  | core-0    |
-            | researcher  | core-1    |
-            | researcher  | default-0 |
-            | researcher  | default-1 |
-            | researcher  | default-2 |
-            | researcher  | default-3 |
-            | datamanager | core-0    |
-            | datamanager | core-1    |
-            | datamanager | default-0 |
-            | datamanager | default-1 |
-	          | datamanager | default-2 |
-            | datamanager | default-3 |
+            | user        | schema     |
+            | researcher  | core-0     |
+            | researcher  | core-1     |
+            | researcher  | default-0  |
+            | researcher  | default-1  |
+            | researcher  | default-2  |
+            | researcher  | default-3  |
+            | researcher  | epos-msl-0 |
+            | datamanager | core-0     |
+            | datamanager | core-1     |
+            | datamanager | default-0  |
+            | datamanager | default-1  |
+            | datamanager | default-2  |
+            | datamanager | default-3  |
+            | datamanager | epos-msl-0 |
 
 
     Scenario Outline: Schema get schemas and default schema
