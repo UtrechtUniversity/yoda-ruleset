@@ -152,8 +152,29 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
 
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
-    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+
+    # Request SRAM to lookup poosible existing invitation for this user.
+    url = "{}/api/invitations/v1/invitations/{}".format(config.sram_rest_api_url, co_identifier)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "get: {}".format(url))
+
+    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, "response: {}".format(response.status_code))
+
+    if response.status_code != 200:
+        log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
+        return False
+
+    if response.status_code == 200:
+        for invite in response.json():
+            if invite['invitation']['email'] == username and invite['status'] == 'open':
+                if config.sram_verbose_logging:
+                    log.write(ctx, "Invitation for {} already exists".format(username))
+                return True
 
     # Now plus a year.
     expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
@@ -174,7 +195,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
         ],
         "groups": []
     }
-
+    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
     if config.sram_verbose_logging:
         log.write(ctx, "put {}: {}".format(url, payload))
 
