@@ -175,7 +175,10 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
             except jsonutil.ParseError:
                 return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
             except msi.Error as e:
-                return api.Error('internal', 'The metadata file could not be read.', e)
+                if str(e).find("-818000") > -1:
+                    return api.Error('permission_error', 'Action not permitted: no access permission on the metadata file.')
+                else:
+                    return api.Error('internal', 'The metadata file could not be read.', e)
 
             # Looks like a valid metadata file.
             # See if its schema is up to date.
@@ -250,7 +253,10 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
         except jsonutil.ParseError:
             return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
         except msi.Error as e:
-            return api.Error('internal', 'The metadata file could not be read.', e)
+            if str(e).find("-818000") > -1:
+                return api.Error('permission_error', 'Action not permitted: no access permission on the metadata file.')
+            else:
+                return api.Error('internal', 'The metadata file could not be read.', e)
 
         if current_schema_id == schema['$id']:
             # Metadata matches active schema, see if it validates.
