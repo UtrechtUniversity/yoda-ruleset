@@ -888,11 +888,10 @@
     "Discipline": {
       "type": "array",
       "minItems": 1,
-      "title": "Subdomain",
+      "title": "Research discipline",
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
-        "title": "Subdomain",
-        "default": "Analogue modelling of geologic processes"
+        "title": "Research discipline"
       }
     },
     "Lab": {
@@ -901,24 +900,13 @@
       "title": "Originating laboratory",
       "items": {
         "$ref": "#/definitions/optionsLabs",
-        "title": "Originating laboratory",
-        "default": "aa45f98e5c098237d0c57b58e5f953e1"
-      }
-    },
-    "Additional_Lab": {
-      "type": "array",
-      "minItems": 1,
-      "title": "Additional laboratory",
-      "items": {
-        "$ref": "#/definitions/stringNormalNullable",
-        "title": "Additional laboratory",
-        "default": ""
+        "title": "Originating laboratory"
       }
     },
     "Version": {
       "$ref": "#/definitions/stringNormal",
       "title": "Version",
-      "default": "Version 1.0"
+      "default": "1.0"
     },
     "Language": {
       "$ref": "#/definitions/optionsISO639-1",
