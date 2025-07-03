@@ -62,6 +62,14 @@ def can_transition_folder_status(ctx: rule.Context,
     transition = (constants.research_package_state(status_from),
                   constants.research_package_state(status_to))
     if transition not in constants.folder_transitions:
+        # YDA-6337: Users sometimes try to resubmit a collection.
+        # In both research and deposit, it is helpful to show that a package has already been submitted
+        # if it is in the 'submitted' or 'accepted' state. Note that in deposit, the package typically
+        # stays in the 'submitted' state only briefly, since the system accepts it automatically
+        # without requiring a data manager.
+        if (status_from in [constants.research_package_state.SUBMITTED, constants.research_package_state.ACCEPTED]
+                and status_to is constants.research_package_state.SUBMITTED):
+            return policy.fail('This data package has already been submitted')
         return policy.fail('Illegal status transition')
 
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
