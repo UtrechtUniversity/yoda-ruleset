@@ -129,14 +129,14 @@ def create_archive(ctx: rule.Context, coll: str) -> None:
     # create bagit archive
     bagit.create(ctx, coll + "/archive.tar", coll + "/archive", config.data_package_archive_resource)
     msi.data_obj_chksum(ctx, coll + "/archive.tar", "", irods_types.BytesBuf())
-    log.write(ctx, "Move archive of data package <{}> to tape".format(coll))
-    ctx.dmput(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "REG")
+    log.write(ctx, "Finished creating archive of data package <{}>, ready to move to tape".format(coll))
 
 
 def extract_archive(ctx: rule.Context, coll: str) -> None:
     while True:
-        state = ctx.dmattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
-        if state not in ("UNM", "MIG"):
+        state = ctx.daattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
+        # File queued for staging from tape or being staged from tape.
+        if state not in ("QUE", "STG"):
             break
         time.sleep(10)
 
@@ -211,7 +211,7 @@ def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
         provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
         log.write(ctx, "Request retrieval of data package <{}> from tape".format(coll))
-        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
+        ctx.daget(package_archive_path(ctx, coll), config.data_package_archive_fqdn)
 
         # Send notifications to datamanagers.
         datamanagers = folder.get_datamanagers(ctx, coll)
@@ -257,7 +257,7 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
 def update(ctx: rule.Context, coll: str, attr: str | None) -> None:
     if pathutil.info(coll).space == pathutil.Space.VAULT and attr not in (constants.IIARCHIVEATTRNAME, constants.UUPROVENANCELOG) and vault_archival_status(ctx, coll) == "archived":
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
-        ctx.dmget(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "OFL")
+        ctx.daget(package_archive_path(ctx, coll), config.data_package_archive_fqdn)
 
 
 def vault_update_archive(ctx: rule.Context, coll: str) -> str:
