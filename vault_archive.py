@@ -136,7 +136,7 @@ def extract_archive(ctx: rule.Context, coll: str) -> None:
     while True:
         state = ctx.daattr(package_archive_path(ctx, coll), config.data_package_archive_fqdn, "")["arguments"][2]
         # File queued for staging from tape or being staged from tape.
-        if state not in ("QUE", "STG"):
+        if state not in ("NA", "OFL", "QUE", "STG"):
             break
         time.sleep(10)
 
