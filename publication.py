@@ -1,6 +1,6 @@
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -16,6 +16,7 @@ import json_datacite
 import json_landing_page
 import meta
 import provenance
+import research
 import schema
 import vault
 from util import *
@@ -518,12 +519,12 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
     :param publish:            Publication or depublication
     """
     combiJsonPath = publication_state["combiJsonPath"]
-    randomId = publication_state["randomId"]
+    random_id = publication_state["randomId"]
     vaultPackage = publication_state["vaultPackage"]
 
     json_schema = schema.get_active_schema(ctx, vaultPackage)
     temp_coll, coll = pathutil.chop(combiJsonPath)
-    landing_page_path = temp_coll + "/" + randomId + ".html"
+    landing_page_path = temp_coll + "/" + random_id + ".html"
 
     # Get all DOI versions
     if "baseDOI" in publication_state:
@@ -538,7 +539,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
     else:
         template_name = 'emptylandingpage.html.j2'
 
-    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema, base_doi, versions)
+    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema, random_id, base_doi, versions)
 
     data_object.write(ctx, landing_page_path, landing_page_html)
 
@@ -567,7 +568,7 @@ def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publicati
         publication_state["landingPageUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
-        log.write(ctx, "copy_landingpage_to_public: " + error)
+        log.write(ctx, "copy_landingpage_to_public_host: " + error)
 
 
 def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
@@ -591,7 +592,54 @@ def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config:
         publication_state["oaiUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
-        log.write(ctx, "copy_metadata_to_public: " + error)
+        log.write(ctx, "copy_metadata_to_moai: " + error)
+
+
+def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
+    """Generate a manifest of data package.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param publication_state:  Dict with state of the publication process
+    """
+    temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
+
+    vault_package = publication_state["vaultPackage"]
+    random_id = publication_state["randomId"]
+    manifest_path = temp_coll + "/" + random_id + "-manifest.json"
+
+    # Only retrieve manifest for open access vault packages.
+    if publication_state["accessRestriction"].startswith("Open"):
+        manifest = research.research_manifest(ctx, vault_package)
+    else:
+        manifest = []
+    data_object.write(ctx, manifest_path, json.dumps(manifest))
+
+    publication_state["manifestPath"] = manifest_path
+
+
+def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+    """Copy the manifest JSON to configured public host.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of DOI used for landingpage file
+    :param publication_config: Dict with publication configuration
+    :param publication_state:  Dict with state of the publication process
+    """
+    publicHost = publication_config["publicHost"]
+    manifest_path = publication_state["manifestPath"]
+    yodaInstance = publication_config["yodaInstance"]
+    yodaPrefix = publication_config["yodaPrefix"]
+    publicPath = yodaInstance + "/" + yodaPrefix + "/" + random_id + "-manifest.json"
+
+    argv = publicHost + " inbox /var/www/landingpages/" + publicPath
+
+    copy_result = ctx.iiGenericSecureCopy(argv, manifest_path, '')
+    error = copy_result['arguments'][2]
+    if int(error) >= 0:
+        publication_state["manifestUploaded"] = "yes"
+    else:
+        publication_state["status"] = "Retry"
+        log.write(ctx, "copy_manifest_to_public_host: " + error)
 
 
 def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
@@ -924,6 +972,42 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         if publication_state["status"] == "Retry":
             log.write(ctx, "Error status after uploading landing page:" + publication_state["status"])
+            return publication_state["status"]
+
+    # Create manifest JSON.
+    if "manifestPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Creating manifest JSON.")
+        # Create landing page
+        try:
+            generate_manifest(ctx, publication_state)
+        except Exception as e:
+            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+            publication_state["status"] = "Unrecoverable"
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if publication_state["status"] == "Unrecoverable":
+            log.write(ctx, "Error status after creating manifest JSON: " + publication_state["status"])
+            return publication_state["status"]
+
+    # Use secure copy to push manifest JSON to the public host.
+    if "manifestUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading manifest JSON.")
+        random_id = publication_state["randomId"]
+        copy_manifest_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            base_random_id = publication_state["baseRandomId"]
+            if verbose:
+                log.write(ctx, "Updating base DOI manifest JSON.")
+            copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if publication_state["status"] == "Retry":
+            log.write(ctx, "Error status after uploading manifest JSON:" + publication_state["status"])
             return publication_state["status"]
 
     # Use secure copy to push combi JSON to MOAI server
@@ -1282,6 +1366,42 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
+    # Create manifest JSON.
+    if "manifestPath" not in publication_state:
+        if verbose:
+            log.write(ctx, "Creating manifest JSON.")
+        # Create landing page
+        try:
+            generate_manifest(ctx, publication_state)
+        except Exception as e:
+            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+            publication_state["status"] = "Unrecoverable"
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if publication_state["status"] == "Unrecoverable":
+            log.write(ctx, "Error status after creating manifest JSON: " + publication_state["status"])
+            return publication_state["status"]
+
+    # Use secure copy to push manifest JSON to the public host.
+    if "manifestUploaded" not in publication_state:
+        if verbose:
+            log.write(ctx, "Uploading manifest JSON.")
+        random_id = publication_state["randomId"]
+        copy_manifest_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            base_random_id = publication_state["baseRandomId"]
+            if verbose:
+                log.write(ctx, "Updating base DOI manifest JSON.")
+            copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if publication_state["status"] == "Retry":
+            log.write(ctx, "Error status after uploading manifest JSON:" + publication_state["status"])
+            return publication_state["status"]
+
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
         if verbose:
@@ -1495,6 +1615,30 @@ def update_publication(ctx: rule.Context,
         if update_base_doi:
             base_random_id = publication_state["baseRandomId"]
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if _check_return_if_publication_status(["Retry"], "before update manifest"):
+            return publication_state["status"]
+
+        try:
+            generate_manifest(ctx, publication_state)
+        except Exception as e:
+            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+            publication_state["status"] = "Unrecoverable"
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if _check_return_if_publication_status(["Unrecoverable"], "before upload manifest"):
+            return publication_state["status"]
+
+        # Use secure copy to push manifest JSON to the public host.
+        random_id = publication_state["randomId"]
+        if verbose:
+            log.write(ctx, "Uploading manifest JSON.")
+        copy_manifest_to_public_host(ctx, random_id, publication_config, publication_state)
+        if update_base_doi:
+            base_random_id = publication_state["baseRandomId"]
+            copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if _check_return_if_publication_status(["Retry"], "before update MOAI"):

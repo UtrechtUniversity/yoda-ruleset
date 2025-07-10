@@ -48,6 +48,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
                                                template_name: str,
                                                combi_json_path: str,
                                                json_schema: Dict,
+                                               random_id: str,
                                                base_doi: str,
                                                versions: Dict) -> str:
     """Get the landing page of published YoDa metadata as a string.
@@ -57,6 +58,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     :param template_name:   Name of landingpage template
     :param combi_json_path: Path to combined metadata JSON file
     :param json_schema:     Dict holding entire contents of metadata.json for the category involved
+    :param random_id:       Random ID of the publication
     :param base_doi:        Base DOI of the publication
     :param versions:        Dict containing all the versions of the publication
 
@@ -238,6 +240,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
         geolocations=geolocations,
         covered_geolocation_place=covered_geolocation_place,
+        random_id=random_id,
         base_doi=base_doi,
         versions=versions,
     )
