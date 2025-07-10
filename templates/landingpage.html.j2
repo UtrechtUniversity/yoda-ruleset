@@ -31,6 +31,9 @@
             [1.0, 1.0]
         ]; // initialization of coordinate pairs with arbitrary values. These will be overwritten
     </script>
+    {%if no_active_embargo and data_access_restriction.startswith('Open') %}
+        <script src="/static/js/download.js" type="module"></script>
+    {% endif %}
 </head>
 
 <body vocab="http://purl.org/dc/terms/">
@@ -104,8 +107,12 @@
                 </div>
                 <hr>
                 {%if no_active_embargo and data_access_restriction.startswith('Open') %}
-                <a class="btn btn-primary access-btn view-contents" target="_blank" href="{{ open_access_link }}">
+                <a class="btn btn-primary access-btn view-contents" target="_blank" id="viewContents" data-random-id="{{ random_id }}" href="{{ open_access_link }}">
                     View contents
+                </a>
+
+                <a class="btn btn-primary ml-2 invisible" id="downloadZip" href="#">
+                    Download as zip
                 </a>
                 {% endif %}
             </div>
@@ -626,5 +633,4 @@
         </footer>
     </div>
 </body>
-
 </html>
