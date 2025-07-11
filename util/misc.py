@@ -1,6 +1,6 @@
 """Miscellaneous util functions."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import math
@@ -38,7 +38,8 @@ def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
         'vaultPackage', 'submission_actor', 'status',
         'lastModifiedDateTime', 'combiJsonPath',
         'landingPageUploaded', 'oaiUploaded',
-        'landingPageUrl', 'dataCiteMetadataPosted'
+        'landingPageUrl', 'dataCiteMetadataPosted',
+        'manifestPath', 'manifestUploaded'
     }
 
     # If the license is not Custom, it must have a licenseUri
