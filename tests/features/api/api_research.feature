@@ -205,3 +205,14 @@ Feature: Research API
         Examples:
             | collection                      |
             | /tempZone/home/research-initial |
+
+
+    Scenario Outline: Research manifest empty collections
+        Given user researcher is authenticated
+        And the Yoda research manifest API with empty collections is queried with <collection>
+        Then the response status code is "200"
+        And checksum manifest with empty collections is returned
+
+        Examples:
+            | collection                      |
+            | /tempZone/home/research-initial |
