@@ -678,21 +678,23 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
             "is_locked": is_locked}
 
 
-def research_manifest(ctx: rule.Context, coll: str) -> api.Result:
+def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -> api.Result:
     """Produce a manifest of data objects in a collection.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Parent collection of data objects to include
+    :param ctx:         Combined type of a callback and rei struct
+    :param coll:        Parent collection of data objects to include
+    :param empty_colls: Include mepty collections in manifest
 
     :returns: List of json objects with name and checksum
     """
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'The given path does not exist')
 
-    # Check if collection is in a research/deposit/vault space.
-    space, _, group, _ = pathutil.info(coll)
-    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
-        return api.Error('invalidpath', 'The given path is not in a research, deposit or vault space ')
+    # Validate the space type.
+    space, _, _, _ = pathutil.info(coll)
+    valid_spaces = {pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT}
+    if space not in valid_spaces:
+        return api.Error('invalidpath', 'The given path is not in a research, deposit, or vault space.')
 
     iter = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
@@ -707,18 +709,33 @@ def research_manifest(ctx: rule.Context, coll: str) -> api.Result:
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
+    coll_names = [row[0] for row in iter_sub]
     checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
+
+    if empty_colls:
+        iter_sub = genquery.row_iterator(
+            "ORDER(COLL_NAME)",
+            "COLL_PARENT_NAME like '{}%'".format(coll),
+            genquery.AS_LIST, ctx
+        )
+        checksums_sub_coll = [
+            {"name": (row[0] + "/")[length:], "size": "", "checksum": ""}
+            for row in iter_sub
+            if row[0] not in coll_names
+        ]
+        return checksums + checksums_sub + checksums_sub_coll
 
     return checksums + checksums_sub
 
 
 @api.make()
-def api_research_manifest(ctx: rule.Context, coll: str) -> api.Result:
+def api_research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -> api.Result:
     """Produce a manifest of data objects in a collection.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Parent collection of data objects to include
+    :param ctx:         Combined type of a callback and rei struct
+    :param coll:        Parent collection of data objects to include
+    :param empty_colls: Include mepty collections in manifest
 
     :returns: List of json objects with name and checksum
     """
-    return research_manifest(ctx, coll)
+    return research_manifest(ctx, coll, empty_colls)

@@ -98,6 +98,15 @@ def api_research_manifest(user, collection):
     )
 
 
+@given(parsers.parse("the Yoda research manifest API with empty collections is queried with {collection}"), target_fixture="api_response")
+def api_research_manifest_empty(user, collection):
+    return api_request(
+        user,
+        "research_manifest",
+        {"coll": collection, "empty_colls": True}
+    )
+
+
 @given(parsers.parse("a file {file} is uploaded in {folder}"), target_fixture="api_response")
 def api_research_file_upload(user, file, folder):
     return upload_data(
@@ -217,3 +226,40 @@ def research_manifest_checksums(api_response):
     _, body = api_response
 
     assert len(body['data']) > 0
+
+    # List of names to check.
+    expected_names = [
+        "testdata/creatures.json",
+        "testdata/image.txt",
+        "testdata/large-file.html",
+        "testdata/lorem.txt",
+        "testdata/SIPI_Jelly_Beans_4.1.07.tiff"
+    ]
+
+    # Assert that all expected names are in the data.
+    actual_names = [item["name"] for item in body["data"]]
+    for name in expected_names:
+        assert name in actual_names, f"{name} is not present in the manifest data"
+
+
+@then("checksum manifest with empty collections is returned")
+def research_manifest_checksum_empty(api_response):
+    _, body = api_response
+
+    assert len(body['data']) > 0
+
+    # List of names to check.
+    expected_names = [
+        "testdata/creatures.json",
+        "testdata/image.txt",
+        "testdata/large-file.html",
+        "testdata/lorem.txt",
+        "testdata/SIPI_Jelly_Beans_4.1.07.tiff",
+        "clone/",
+        "folder space/"
+    ]
+
+    # Assert that all expected names are in the data.
+    actual_names = [item["name"] for item in body["data"]]
+    for name in expected_names:
+        assert name in actual_names, f"{name} is not present in the manifest data"
