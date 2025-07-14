@@ -1,0 +1,6 @@
+# Allow lines to be as long as 127.
+line-length = 127
+
+[lint]
+extend-select = ["E", "B", "F", "SIM", "W", "C4", "PLE", "FURB"]
+ignore = ["E221", "E241", "E501", "F403", "F401", "F405", "F633", "B011", "B034", "B904", "SIM102", "SIM103", "SIM105", "SIM108", "SIM110", "SIM113", "SIM114"]
