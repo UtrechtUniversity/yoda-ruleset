@@ -80,7 +80,7 @@ def get_tokens(token_database, token_database_password, user=None):
 
 def print_tokens(data, args):
     if args.name_only:
-        usernames = sorted(list(set(map(lambda d: d["user"], data))))
+        usernames = sorted({d["user"] for d in data})
         for username in usernames:
             print(username)
     else:

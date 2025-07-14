@@ -1369,7 +1369,7 @@ def datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> List:
 
     :returns: List of DAC members
     """
-    dac_members = list(map(lambda member: member[0], group.members(ctx, GROUP_DAC)))
+    dac_members = [member[0] for member in group.members(ctx, GROUP_DAC)]
     request_owner = datarequest_owner_get(ctx, request_id)
     if request_owner in dac_members:
         dac_members.remove(request_owner)
@@ -1456,9 +1456,9 @@ def assign_request(ctx: rule.Context, assignees: str, request_id: str) -> None:
 
     # Grant read permissions on relevant files of data request
     attachments = datarequest_attachments_get(ctx, request_id)
-    attachments = list(map(lambda attachment: ATTACHMENTS_PATHNAME + "/" + attachment, attachments))
+    attachments = [ATTACHMENTS_PATHNAME + "/" + attachment for attachment in attachments]
     for assignee in json.loads(assignees):
-        for doc in list(map(lambda filename: filename + JSON_EXT, [DATAREQUEST, PR_REVIEW, DM_REVIEW])) + attachments:
+        for doc in [filename + JSON_EXT for filename in [DATAREQUEST, PR_REVIEW, DM_REVIEW]] + attachments:
             file_path = "{}/{}".format(coll_path, doc)
             ctx.adminTempWritePermission(file_path, "grantread", "{}#{}".format(assignee, user.zone(ctx)))
 
@@ -1538,8 +1538,7 @@ def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str
 
     # Write form data to disk
     try:
-        readers = [GROUP_PM] + list(map(lambda reviewer: reviewer + "#" + user.zone(ctx),
-                                        datarequest_reviewers_get(ctx, request_id)))
+        readers = [GROUP_PM] + [reviewer + "#" + user.zone(ctx) for reviewer in datarequest_reviewers_get(ctx, request_id)]
         file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
@@ -1645,8 +1644,7 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id:
 
     # Write form data to disk
     try:
-        readers = [GROUP_PM] + list(map(lambda reviewer: reviewer + "#" + user.zone(ctx),
-                                        datarequest_reviewers_get(ctx, request_id)))
+        readers = [GROUP_PM] + [reviewer + "#" + user.zone(ctx) for reviewer in datarequest_reviewers_get(ctx, request_id)]
         file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')

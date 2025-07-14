@@ -43,7 +43,7 @@ def main():
     offline = f"*offline={args.offline}"
     no_datacite = f"*no_datacite={args.no_datacite}"
     mode = f"*mode={args.mode}"
-    
+
     subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-python-instance', '-F',
                     rule_name, data_package, log_loc, offline, no_datacite, mode])
 

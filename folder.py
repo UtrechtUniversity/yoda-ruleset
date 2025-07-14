@@ -686,12 +686,11 @@ def get_org_metadata(ctx: rule.Context, path: str, object_type: pathutil.ObjectT
     """Obtain a (k,v) list of all organisation metadata on a given collection or data object."""
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
-    return [(k, v) for k, v
-            in genquery.Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
-                              "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
-                              + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
-                                 if object_type is pathutil.ObjectType.DATA
-                                 else " AND COLL_NAME = '{}'".format(path)))]
+    return list(genquery.Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
+                               "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
+                               + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
+                               if object_type is pathutil.ObjectType.DATA
+                               else " AND COLL_NAME = '{}'".format(path))))
 
 
 def get_locks(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]] | None = None, object_type: pathutil.ObjectType = pathutil.ObjectType.COLL) -> List[str]:

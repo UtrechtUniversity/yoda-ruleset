@@ -41,8 +41,7 @@ irods_types.InxValPair.__repr__ = lambda self: repr(pyify(self))
 irods_types.GenQueryInp.__repr__ = \
     lambda self: 'GenQuery(select {} where {})'.format(
         ', '.join(map(col_name, pyify(self.selectInp))),
-        ' and '.join(map(lambda kv: '{} {}'.format(col_name(kv[0]), kv[1]),
-                     pyify(self.sqlCondInp))))
+        ' and '.join(('{} {}'.format(col_name(kv[0]), kv[1]) for kv in pyify(self.sqlCondInp))))
 
 # (add more as needed)
 

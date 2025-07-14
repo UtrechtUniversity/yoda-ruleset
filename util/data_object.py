@@ -53,7 +53,7 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> Dict | Non
     prop_dict = None
 
     for row in iter:
-        prop_dict = {prop: value for prop, value in zip(properties, row)}
+        prop_dict = dict(zip(properties, row))
         break
 
     return prop_dict
