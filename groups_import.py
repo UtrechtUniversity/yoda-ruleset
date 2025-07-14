@@ -83,7 +83,7 @@ def process_csv_line(ctx: 'rule.Context', line: Dict) -> Tuple:
 
 def column_name_is_role_label(column_name: str) -> bool:
     return (column_name.lower() in get_role_labels()
-            or column_name.lower().startswith(tuple(map(lambda s: s + ":", get_role_labels()))))
+            or column_name.lower().startswith(tuple((s + ":" for s in get_role_labels()))))
 
 
 def get_role_labels() -> List[str]:
@@ -156,7 +156,7 @@ def parse_csv_file(ctx):
 
 
 def get_duplicate_groups(row_data: List) -> List:
-    group_names = list(map(lambda r: r[2], row_data))
+    group_names = [r[2] for r in row_data]
     return list(unique_everseen(duplicates(group_names)))
 
 

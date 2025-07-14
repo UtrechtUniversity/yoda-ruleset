@@ -213,8 +213,8 @@ def login(user, password):
     # Login as user.
     if verbose_test:
         print("Login for user {} (main login) ...".format(user))
-    login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
-    response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    login_data = {'csrf_token': csrf, 'username': user, 'password': password, 'next': '/'}
+    response = client.post(url, data=login_data, headers={'Referer': url}, verify=False)
     session = client.cookies['__Host-session']
     client.close()
 

@@ -666,7 +666,7 @@ def revision_cleanup_scan_revision_objects(ctx: rule.Context, revision_list: Lis
 
     while len(ids) > 0:
         batch_ids = ids[:QUERY_BATCH_SIZE]
-        batch_id_string = "({})".format(",".join(map(lambda e: "'{}'".format(e), batch_ids)))
+        batch_id_string = "({})".format(",".join(("'{}'".format(e) for e in batch_ids)))
         ids = ids[QUERY_BATCH_SIZE:]
 
         # first, get original_path and ids for every revision

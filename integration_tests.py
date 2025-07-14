@@ -731,7 +731,7 @@ basic_integration_tests = [
      "check": lambda x: not x},
     {"name":   "util.group.members.normal",
      "test": lambda ctx: group.members(ctx, "research-initial"),
-     "check": lambda x: sorted([member for member in x]) == sorted([('functionaladminpriv', 'tempZone'), ('functionaladminpriv@yoda.test', 'tempZone'), ('groupmanager', 'tempZone'), ('groupmanager@yoda.test', 'tempZone'), ('researcher', 'tempZone'), ('researcher@yoda.test', 'tempZone')])},
+     "check": lambda x: sorted(x) == sorted([('functionaladminpriv', 'tempZone'), ('functionaladminpriv@yoda.test', 'tempZone'), ('groupmanager', 'tempZone'), ('groupmanager@yoda.test', 'tempZone'), ('researcher', 'tempZone'), ('researcher@yoda.test', 'tempZone')])},
     {"name":   "util.group.members.doesnotexist",
      "test": lambda ctx: user.exists(ctx, "research-doesnotexist"),
      "check": lambda x: x is False},

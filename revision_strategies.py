@@ -23,10 +23,10 @@ class RevisionStrategy:
         return self._buckets
 
     def get_minimum_bucket_size(self) -> int:
-        return min(map(lambda bucket_timespan_bucket_size_offset: bucket_timespan_bucket_size_offset[1], self.get_buckets()))
+        return min((bucket_timespan_bucket_size_offset[1] for bucket_timespan_bucket_size_offset in self.get_buckets()))
 
     def get_total_bucket_timespan(self) -> int:
-        return sum(map(lambda bucket_timespan_bucket_size_offset1: bucket_timespan_bucket_size_offset1[0], self.get_buckets()))
+        return sum((bucket_timespan_bucket_size_offset1[0] for bucket_timespan_bucket_size_offset1 in self.get_buckets()))
 
 
 def get_revision_strategy(strategy_name: str) -> RevisionStrategy:

@@ -310,7 +310,7 @@ def get_api_function_data(ruleset_dir: str, core: bool, module: str) -> OrderedD
 
                     return argdata
 
-                function_properties: dict[str, Any] = dict()
+                function_properties: dict[str, Any] = {}
                 function_properties["doc"] = ast.get_docstring(node)
                 function_properties["args"] = _get_argument_data(node)
                 function_properties["tag"] = os.path.basename(source_file)[:-3]

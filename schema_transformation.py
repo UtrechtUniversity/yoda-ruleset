@@ -323,7 +323,7 @@ def transform_orcid(ctx: rule.Context, m: Dict) -> Dict:
     for pi_holder in ['Creator', 'Contributor']:
         if m.get(pi_holder, False):
             for holder in m[pi_holder]:
-                for pi in holder.get('Person_Identifier', dict()):
+                for pi in holder.get('Person_Identifier', {}):
                     if pi.get('Name_Identifier_Scheme', None)  == 'ORCID':
                         # If incorrect ORCID format => try to correct.
                         if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", pi.get('Name_Identifier', None)):
@@ -367,11 +367,8 @@ def html(f: Callable) -> str:
     :returns: Human-readable HTML description of a transformation function
     """
     docstring = "" if f.__doc__ is None else f.__doc__
-    description = '\n'.join(map(lambda paragraph:
-                            '<p>{}</p>'.format(  # Trim whitespace.
-                                re.sub(r'\s+', ' ', paragraph).strip()),
-                                # Docstring paragraphs are separated by blank lines.
-                                re.split('\n{2,}', docstring)))
+    description = '\n'.join(('<p>{}</p>'.format(  # Trim whitespace.
+                            re.sub(r'\s+', ' ', paragraph).strip()) for paragraph in re.split('\n{2,}', docstring)))
 
     # Remove docstring.
     return re.sub('((:param).*)|((:returns:).*)', ' ', description)

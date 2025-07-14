@@ -109,7 +109,7 @@ def get_local_ufs_resources(session):
     results = session.query(Resource.name).filter(
         In(Resource.type, ["unixfilesystem", "unix file system"])).filter(
         Resource.location == get_hostname()).all()
-    return sorted(list(map(lambda g: g[Resource.name], results)))
+    return sorted((g[Resource.name] for g in results))
 
 
 def process_ufs_resources(session, resource_names, override_free_dict, override_total_dict, verbose_mode):

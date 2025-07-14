@@ -65,7 +65,7 @@ class RevisionTest(TestCase):
 
     def test_revision_cleanup_prefilter_empty(self):
         empty_input = []
-        empty_output = revision_cleanup_prefilter(None, empty_input, "B", dict(), False)
+        empty_output = revision_cleanup_prefilter(None, empty_input, "B", {}, False)
         self.assertEqual(empty_output, [])
 
     def test_revision_cleanup_prefilter_single_exists(self):

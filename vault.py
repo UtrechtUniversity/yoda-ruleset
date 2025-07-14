@@ -282,14 +282,13 @@ def api_vault_unpreservable_files(ctx: rule.Context, coll: str, list_name: str) 
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
-    data_names = map(lambda x: pathutil.chop(x)[1],
-                     collection.data_objects(ctx, coll, recursive=True))
+    data_names = (pathutil.chop(x)[1] for x in collection.data_objects(ctx, coll, recursive=True))
 
     # Exclude Yoda metadata files
     data_names_filtered = filter(lambda x: not re.match(r"yoda\-metadata(\[\d+\])?\.(xml|json)", x), data_names)
 
     # Data names -> lowercase extensions, without the dot.
-    exts  = set(list(map(lambda x: os.path.splitext(x)[1][1:].lower(), data_names_filtered)))
+    exts  = {os.path.splitext(x)[1][1:].lower() for x in data_names_filtered}
     exts -= {''}
 
     # Return any ext that is not in the preservable list.
@@ -1550,7 +1549,7 @@ def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List
         org_publ_info.append([row[0], row[1], row[2]])
 
     # Group by collection name
-    coll_names = set(map(lambda x: x[2], org_publ_info))
+    coll_names = {x[2] for x in org_publ_info}
     grouped_coll_name = [[y[1] for y in org_publ_info if y[2] == x] + [x] for x in coll_names]
 
     # If base DOI does not exist, remove from the list and add it in the data package
@@ -1563,7 +1562,7 @@ def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List
     grouped_coll_name = [grouped_coll_name[i] for i, e in enumerate(grouped_coll_name) if i not in indices]
 
     # Group by base DOI
-    base_dois = set(map(lambda x: x[0], grouped_coll_name))
+    base_dois = {x[0] for x in grouped_coll_name}
     grouped_base_dois = [[y for y in grouped_coll_name if y[0] == x] for x in base_dois]
 
     return org_publ_info, data_packages, grouped_base_dois
@@ -1586,7 +1585,7 @@ def api_vault_get_published_packages(ctx: rule.Context, path: str) -> Dict:
 
     # Sort by publication date
     sorted_publ = [sorted(x, key=lambda x: datetime.strptime(x[1], "%Y-%m-%dT%H:%M:%S.%f")) for x in grouped_base_dois]
-    latest_publ = list(map(lambda x: x[-1], sorted_publ))
+    latest_publ = [x[-1] for x in sorted_publ]
 
     # Append to data package
     for items in latest_publ:
