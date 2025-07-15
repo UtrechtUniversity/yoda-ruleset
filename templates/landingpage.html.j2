@@ -6,24 +6,25 @@
     <meta name="description" content="Data Publication platform of Utrecht University">
     <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI">
     <meta name="DC.title" content="{{ title }}">
-    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}">
+
+    {% for creator in creators %}
+        <meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}">
     {% endfor %}
+
     <meta name="DC.publisher" content="Utrecht University">
     <meta name="DC.date" content="{{ publication_date }}" scheme="DCTERMS.W3CDTF">
     <meta name="DC.type" content="{{ datatype }}">
-    {%if no_active_embargo and data_access_restriction.startswith('Open') %}
+
+    {% if no_active_embargo and data_access_restriction.startswith('Open') %}
         <link rel="item" href="{{ open_access_link }}">
     {% endif %}
-    <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
-    <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet">
-    <link href="/static/css/landingpage.css?v=1559637767" rel="stylesheet">
+    <title>{{ title }} - Data Publication Platform of Utrecht University</title>
+
+    <link href="/static/css/bootstrap.min.css?v=1752566642" rel="stylesheet">
+    <link href="/static/css/landingpage.css?v=1752566642" rel="stylesheet">
     <link href="/static/css/leaflet-1.5.1.css" rel="stylesheet" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==">
-    <style>
-        .map {height: 450px; width: 600px;}
-        a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {text-decoration: none ! important;}
-        .indented {padding-left: 10px;}
-    </style>
+
     <script src="/static/js/leaflet-1.5.1.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="></script>
     <script>
         let bounds = [
@@ -31,7 +32,8 @@
             [1.0, 1.0]
         ]; // initialization of coordinate pairs with arbitrary values. These will be overwritten
     </script>
-    {%if no_active_embargo and data_access_restriction.startswith('Open') %}
+
+    {% if no_active_embargo and data_access_restriction.startswith('Open') %}
         <script src="/static/js/download.js" type="module"></script>
     {% endif %}
 </head>
@@ -40,18 +42,21 @@
     <div class="container bg-white no-padding">
         <header>
             <div class="logo pt-2">
-                <img src="/static/img/logo.svg">
-                </div>
-                <div class="header-title">
-                    <h1 property="dc:title">Data publication platform of Utrecht University</h1>
-                </div>
+                <img src="/static/img/logo.svg" alt="Utrecht University Logo">
+            </div>
+            <div class="header-title">
+                <h1 property="dc:title">Data Publication Platform of Utrecht University</h1>
+            </div>
         </header>
+
         <main>
             <div>
                 <div class="row content">
                     <div class="col-lg-8">
                         <div class="creators">
-                            {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
+                            {% for creator in creators %}
+                                {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }}
+                            {% endfor %}
                         </div>
                         <section>
                             <h2 property="dc:title">{{ title }}</h2>
@@ -65,17 +70,18 @@
                             <div class="keywords">
                                 <label>Keywords</label>
                                 {% for keyword in keywords %}
-                                    {% if "valueUri" in keyword %}
-                                        <span class="keyword" property="dc:subject">
-                                            <a href="{{keyword.valueUri}}">{{ keyword.subject }}</a>
-                                        </span>
-                                    {% else %}
-                                        <span class="keyword" property="dc:subject">{{ keyword.subject }}</span>
-                                    {% endif %}
+                                    <span class="keyword" property="dc:subject">
+                                        {% if "valueUri" in keyword %}
+                                            <a href="{{ keyword.valueUri }}">{{ keyword.subject }}</a>
+                                        {% else %}
+                                            {{ keyword.subject }}
+                                        {% endif %}
+                                    </span>
                                 {% endfor %}
                             </div>
                         </section>
                     </div>
+
                     {% if base_doi %}
                         <div class="col-lg-4 mt-4">
                             <div class="p-3 version">
@@ -86,10 +92,10 @@
                                             {% for version in versions %}
                                                 <tr>
                                                     <td>
-                                                        <a href="https://doi.org/{{version[1]}}">https://doi.org/{{version[1]}}</a>
+                                                        <a href="https://doi.org/{{ version[1] }}">https://doi.org/{{ version[1] }}</a>
                                                     </td>
                                                     <td>
-                                                        <small title="{{version[2]}}">{{version[0]}}</small>
+                                                        <small title="{{ version[2] }}">{{ version[0] }}</small>
                                                     </td>
                                                 </tr>
                                             {% endfor %}
@@ -97,80 +103,88 @@
                                     </table>
                                     <small>
                                         <b>Base DOI:</b>
-                                        <a href="https://doi.org/{{base_doi}}">https://doi.org/{{base_doi}}</a><br>
+                                        <a href="https://doi.org/{{ base_doi }}">https://doi.org/{{ base_doi }}</a><br>
                                         This DOI represents all versions of this publication and will resolve to the latest publication.
                                     </small>
                                 </div>
                             </div>
                         </div>
-                    {% endif%}
+                    {% endif %}
                 </div>
-                <hr>
-                {%if no_active_embargo and data_access_restriction.startswith('Open') %}
-                <a class="btn btn-primary access-btn view-contents" target="_blank" id="viewContents" data-random-id="{{ random_id }}" href="{{ open_access_link }}">
-                    View contents
-                </a>
 
-                <a class="btn btn-primary ml-2 invisible" id="downloadZip" href="#">
-                    Download as zip
-                </a>
+                <hr>
+
+                {% if no_active_embargo and data_access_restriction.startswith('Open') %}
+                    <a class="btn btn-primary access-btn view-contents" target="_blank" id="viewContents" data-random-id="{{ random_id }}" href="{{ open_access_link }}">
+                        View contents
+                    </a>
+                    <a class="btn btn-primary ml-2 invisible" id="downloadZip" href="#">
+                        Download as zip
+                    </a>
                 {% endif %}
             </div>
+
             <section class="metadata">
                 <h2>Metadata</h2>
                 <div class="list">
                     <div class="group">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Disciplines</label>
                             </div>
-                            <div class="col-sm-10">
-                                <span>{% for discipline in disciplines %}
-                                               {{ discipline }}{{ ", " if not loop.last }}
-                                           {% endfor %}
+                            <div class="col-sm-9">
+                                <span>
+                                    {% for discipline in disciplines %}
+                                        {{ discipline }}{{ ", " if not loop.last }}
+                                    {% endfor %}
                                 </span>
                             </div>
                         </div>
+
                         {% if labs %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Originating laboratories</label>
                             </div>
-                            <div class="col-sm-10">
-                                <span>{% for lab in labs %}
-                                               {{ lab }}{{ ", " if not loop.last }}
-                                           {% endfor %}
+                            <div class="col-sm-9">
+                                <span>
+                                    {% for lab in labs %}
+                                        {{ lab }}{{ ", " if not loop.last }}
+                                    {% endfor %}
                                 </span>
                             </div>
                         </div>
                         {% endif %}
+
                         {% if additional_labs %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Additional laboratories</label>
                             </div>
-                            <div class="col-sm-10">
-                                <span>{% for lab in additional_labs %}
-                                               {{ lab }}{{ ", " if not loop.last }}
-                                           {% endfor %}
+                            <div class="col-sm-9">
+                                <span>
+                                    {% for lab in additional_labs %}
+                                        {{ lab }}{{ ", " if not loop.last }}
+                                    {% endfor %}
                                 </span>
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Version</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:hasVersion">{{ version }}</span>
                             </div>
                         </div>
+
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Language</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:language">{{ language }}</span>
                             </div>
                         </div>
@@ -178,144 +192,144 @@
 
                     <div class="group">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Data classification</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ data_classification }}</span>
                             </div>
                         </div>
                     </div>
 
                     {% for loc in covered_geolocation_place if not ((covered_geolocation_place|length == 1) and (loc == "" or loc == None)) %}
-                    {% if loop.first %}
-                    <div class="group">
+                        {% if loop.first %}
+                        <div class="group">
                         {% endif %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Geolocation</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:coverage">{{ loc }}</span>
                             </div>
                         </div>
 
                         {% if loop.last %}
-                    </div>
-                    {% endif %}
+                        </div>
+                        {% endif %}
                     {% endfor %}
 
                     {% for loc in geolocations %}
-                    {% if loop.first %}
-                    <div class="group">
+                        {% if loop.first %}
+                        <div class="group">
                         {% endif %}
+
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Geolocation</label>
                             </div>
-                            <div class="col-sm-10">
-                            {% if loc.geoLocationBox and loc.geoLocationBox | length >= 4 %}
+                            <div class="col-sm-9">
+                                {% if loc.geoLocationBox and loc.geoLocationBox | length >= 4 %}
                                 <span>
-                                        <div class='map' id='map{{ loop.index }}'></div>
-                                                <script>
+                                    <div class='map' id='map{{ loop.index }}'></div>
+                                    <script>
+                                        lon0 = {{ loc.geoLocationBox.westBoundLongitude }};
+                                        lat0  = {{ loc.geoLocationBox.southBoundLatitude }};
+                                        lon1 = {{ loc.geoLocationBox.eastBoundLongitude }};
+                                        lat1  = {{ loc.geoLocationBox.northBoundLatitude }};
 
-                lon0 = {{ loc.geoLocationBox.westBoundLongitude }};
-                lat0  = {{ loc.geoLocationBox.southBoundLatitude }};
-                lon1 = {{ loc.geoLocationBox.eastBoundLongitude }};
-                lat1  = {{ loc.geoLocationBox.northBoundLatitude }};
+                                        bounds = [[lat0, lon0], [lat1, lon1]];
 
-                bounds = [[lat0, lon0], [lat1, lon1]];
+                                        var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'maxZoom': 5});
 
-                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'maxZoom': 5});
+                                        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+                                            maxZoom: 18
+                                        }).addTo(mymap);
 
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-                        maxZoom: 18
-                }).addTo(mymap);
-
-                if (lat0==lat1 && lon0==lon1) {
-                    var marker = L.marker([lat0, lon0]).addTo(mymap);
-                } else {
-                    var rectangle = L.rectangle([[lat0, lon0],[lat1, lon1]]).addTo(mymap);
-                }
-                                                </script>
-                                    </span>
-                            {% endif %}
+                                        if (lat0 == lat1 && lon0 == lon1) {
+                                            var marker = L.marker([lat0, lon0]).addTo(mymap);
+                                        } else {
+                                            var rectangle = L.rectangle([[lat0, lon0], [lat1, lon1]]).addTo(mymap);
+                                        }
+                                    </script>
+                                </span>
+                                {% endif %}
                                 <span>
-                                {% if loc.Description_Temporal %}
-                                    {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} |
-                                {% endif %}
-                                {% if loc.Description_Spatial %}
-                                    {{ loc.Description_Spatial }}
-                                {% endif %}
+                                    {% if loc.Description_Temporal %}
+                                        {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} |
+                                    {% endif %}
+                                    {% if loc.Description_Spatial %}
+                                        {{ loc.Description_Spatial }}
+                                    {% endif %}
                                 </span>
                             </div>
                         </div>
-                        {% if loop.last %}
-                    </div>
-                    {% endif %}
 
+                        {% if loop.last %}
+                        </div>
+                        {% endif %}
                     {% endfor %}
 
                     {% for funder in funding_reference %}
-                    {% if funder.Funder_Name %}
-                    {% if loop.first %}
-                    <div class="group">
+                        {% if funder.Funder_Name %}
+                        {% if loop.first %}
+                        <div class="group">
                         {% endif %}
 
                         {% if funder.Funder_Reference %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Funder reference</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ funder.Funder_Reference }}</span>
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Funder</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ funder.Funder_Name }}</span>
                             </div>
                         </div>
+
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Award/grant Number</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ funder.Award_Number }}</span>
                             </div>
                         </div>
 
                         {% if funder.Award_Name %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Award/grant name</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ funder.Award_Name }}</span>
                             </div>
                         </div>
                         {% endif %}
 
-
                         {% if loop.last %}
-                    </div>
-                    {% endif %}
-                    {% endif %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
                     {% endfor %}
 
                     <div class="group">
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Persistent Identifier</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>
                                 <a href="{{ persistent_identifier_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}" target="_blank">
                                   {{ persistent_identifier_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}
@@ -325,27 +339,27 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Publication Date</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:date">{{ publication_date }}</span>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Last Modification</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:modified">{{ last_modified_date }}</span>
                             </div>
                         </div>
                         {% if embargo_end_date %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Embargo End Date</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:available">{{ embargo_end_date }}</span>
                             </div>
                         </div>
@@ -359,29 +373,29 @@
                         {% endif %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Related resource</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:references" content="{{ pack.Title }}">{{ pack.Title }}</span>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Type of relation</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ pack.Relation_Type }}</span>
                             </div>
                         </div>
 
                         {% if pack.Persistent_Identifier is defined %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Persistent Identifier</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>
                                 <a href="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
                                   {{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
@@ -401,19 +415,19 @@
                         {% for creator in creators %}
                         {% if 'Name' in creator %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Name</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="creator">{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
                             </div>
                         </div>
                         {% endif %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Person Identifier</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:identifier">
                                             {% for id in creator.Person_Identifier %}
                                                 {{ id.Name_Identifier_Scheme }}:
@@ -429,10 +443,10 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Affiliation</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>
                                     {% if creator.Affiliation is string %}
                                         {{ creator.Affiliation }}
@@ -458,19 +472,19 @@
                         {% for contributor in contributors %}
                         {% if 'Name' in contributor %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Name</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="contributor">{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Person Identifier</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:identifier">
                                             {% for id in contributor.Person_Identifier %}
                                                 {{ id.Name_Identifier_Scheme }}:
@@ -486,10 +500,10 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Affiliation</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>
                                     {% if contributor.Affiliation is string %}
                                         {{ contributor.Affiliation }}
@@ -516,40 +530,40 @@
                         {% for contact in contacts %}
                         {% if 'Name' in contact %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Name</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ contact.Name.Family_Name }}, {{ contact.Name.Given_Name }}</span>
                             </div>
                         </div>
 
                         {% if contact.Position %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Position</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ contact.Position }}</span>
                             </div>
                         </div>
                         {% endif %}
                         {% if contact.Email %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">E-mail</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>{{ contact.Email }}</span>
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Person Identifier</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:identifier">
                                             {% for id in contact.Person_Identifier %}
                                                 <a href="{{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
@@ -562,10 +576,10 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label class="indented">Affiliation</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span>
                                     {% if contact.Affiliation is string %}
                                         {{ contact.Affiliation }}
@@ -590,10 +604,10 @@
                         {% endfor %}
 
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>License</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:license">
                                     {% if license_uri|length>1 %}
                                         <a href="{{ license_uri }}" target="blank">{{ license }}</a>
@@ -605,10 +619,10 @@
                         </div>
                         {% if collection_name|length>1 %}
                         <div class="row">
-                            <div class="col-sm-2">
+                            <div class="col-sm-3">
                                 <label>Collection name</label>
                             </div>
-                            <div class="col-sm-10">
+                            <div class="col-sm-9">
                                 <span property="dc:collection">{{ collection_name }}</span>
                             </div>
                         </div>
@@ -621,16 +635,18 @@
                 <h2>Questions?</h2>
                 <div class="col text-center">
                     <a href="https://www.uu.nl/en/research/research-data-management" class="btn btn-secondary support-btn" target="_blank">
-                            Research data management support
-                        </a>
+                        Research Data Management Support
+                    </a>
                 </div>
             </section>
-        </main>
-        <footer>
-            <div class="logo">
-                <img src="/static/img/logo_footer.svg">
-            </div>
-        </footer>
-    </div>
-</body>
+
+            </main>
+
+            <footer>
+                <div class="logo">
+                    <img src="/static/img/logo_footer.svg" alt="Utrecht University Logo">
+                </div>
+            </footer>
+        </div>
+    </body>
 </html>
