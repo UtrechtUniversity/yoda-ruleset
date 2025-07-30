@@ -1067,9 +1067,4 @@ def remove_revision_creation_avu_from_deleted_data_objects(ctx: rule.Context, pr
 
     for coll_name, data_name in iter:
         path = coll_name + '/' + data_name
-        try:
-            avu.rmw_from_data(ctx, path, revision_avu_name, "%")  # use wildcard cause rm_from_data causes problems
-            if print_verbose:
-                log.write(ctx, 'Removed revision creation AVUs from data object: {}'.format(path))
-        except Exception as e:
-            log.write(ctx, "Error processing data object {}: {}".format(path, str(e)))
+        remove_revision_scheduled_flag(ctx, print_verbose, path, revision_avu_name)
