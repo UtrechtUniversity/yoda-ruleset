@@ -3,7 +3,7 @@
 # \author    Chris Smeele
 # \author    Ton Smeele
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2015 - 2021, Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015 - 2025, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 # For every Group Management action (GroupAdd, GroupUserChangeRole, etc.) there
@@ -549,11 +549,12 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager || *actorUserType == "rodsadmin") {
-		if (*member == *actor) {
-			# This also ensures that groups always have at least one manager.
-			*reason = "You cannot remove yourself from group *groupName.";
-		} else {
+		uuGroupGetManagers(*groupName, *managers);
+		# This ensures that groups always have at least one manager.
+		if (size(*managers) > 1) {
 			*allowed = 1;
+		} else {
+			*reason = "You cannot remove the last manager in group *groupName.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
@@ -582,10 +583,12 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 
 			uuGroupUserIsManager(*groupName, *actor, *isManager);
 			if (*isManager || *actorUserType == "rodsadmin") {
-				if (*member == *actor) {
-					*reason = "You cannot change your own role in group *groupName.";
-				} else {
+				uuGroupGetManagers(*groupName, *managers);
+				# This ensures that groups always have at least one manager.
+				if (size(*managers) > 1 || *newRole == "manager") {
 					*allowed = 1;
+				} else {
+					*reason = "You cannot demote the last manager in group *groupName.";
 				}
 			} else {
 				*reason = "You are not a manager of group *groupName.";

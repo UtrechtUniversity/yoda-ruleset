@@ -2,7 +2,7 @@
 # \brief     Sudo microservices policies.
 # \author    Chris Smeele
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2021, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2025, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # Sudo policies {{{
@@ -71,8 +71,7 @@ acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
 
 acPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 	writeString("serverLog", "In acPreSudoGroupMemberRemove, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin") { fail; }
+	fail;
 }
 
 acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
@@ -95,8 +94,7 @@ acPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
 acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
 	writeString("serverLog", "In acPreSudoObjMetaRemove, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin") { fail; }
+	fail;
 }
 
 # }}}
