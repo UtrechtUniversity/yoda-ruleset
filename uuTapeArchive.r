@@ -9,7 +9,8 @@
 # \param[in] hostAddress Host where to execute command
 #
 daget(*data, *hostAddress) {
-    msiExecCmd("daget", *data, *hostAddress, "", "", *daRes);
+    *dataArg = execCmdArg(*data);
+    msiExecCmd("daget", *dataArg, *hostAddress, "", "", *daRes);
     msiGetStdoutInExecCmdOut(*daRes, *dmStat);
     writeString("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive daget started: *data. Returned Status - *dmStat.");
 }
@@ -22,7 +23,8 @@ daget(*data, *hostAddress) {
 # \param[out] state       Current DA state of data object
 #
 daattr(*data, *hostAddress, *state) {
-    msiExecCmd("daattr", *data, *hostAddress, "", "", *daRes);
+    *dataArg = execCmdArg(*data);
+    msiExecCmd("daattr", *dataArg, *hostAddress, "", "", *daRes);
     msiGetStdoutInExecCmdOut(*daRes, *state);
     *state = trimr(*state, "\n");
 
