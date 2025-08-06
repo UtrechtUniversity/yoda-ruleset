@@ -1165,17 +1165,6 @@ def group_user_update_role(ctx: rule.Context, username: str, group_name: str, ne
     :returns: API status result
     """
     try:
-        if config.enable_sram:
-            # Only call SRAM when changing between normal and manager roles.
-            if new_role == "reader" and user_role(ctx, username, group_name) != "normal":
-                sram_group, co_identifier = sram_enabled(ctx, group_name)
-                if sram_group:
-                    uid = sram.sram_get_uid(ctx, co_identifier, username)
-                    if uid == '':
-                        return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
-                    elif not sram.sram_update_collaboration_membership(ctx, co_identifier, uid, new_role):
-                        return api.Error('sram_error', 'Something went wrong updating role for {} user.'.format(username))
-
         response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
         status = response[3]
         message = response[4]
