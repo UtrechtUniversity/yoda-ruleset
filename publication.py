@@ -1460,7 +1460,7 @@ def rule_update_publication(ctx: rule.Context,
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
         "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
-        "AND META_COLL_ATTR_VALUE = '{}'".format(str(constants.vault_package_state.PUBLISHED)),
+        "AND META_COLL_ATTR_VALUE in ('{}', '{}')".format(str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)),
         genquery.AS_LIST,
         ctx
     )
