@@ -210,11 +210,12 @@ uuGroupPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 	);
 
 	if (*allowed == 1) {
+		# The manager attribute only grants a user group manager rights if they are
+		# also a member of the group. As such it is not a critical error if this
+		# call fails.
+		errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *userName, "", ""));
 		succeed;
-		# Any remaining 'manager' metadata needs to be removed in the
-		# postprocessing rule.
 	}
-
 	fail;
 }
 
@@ -611,15 +612,7 @@ uuPostSudoGroupRemove(*groupName, *policyKv) {
 
 #uuPostSudoGroupMemberAdd(*groupName, *userName, *policyKv) { }
 
-uuPostSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
-
-	# Remove the user's manager attr on this group, if it exists.
-
-	# The manager attribute only grants a user group manager rights if they are
-	# also a member of the group. As such it is not a critical error if this
-	# call fails.
-	errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *userName, "", ""));
-}
+#uuPostSudoGroupMemberRemove(*groupName, *userName, *policyKv) { }
 
 #uuPostSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) { }
 
