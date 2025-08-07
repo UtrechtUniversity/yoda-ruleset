@@ -1468,7 +1468,6 @@ def rule_update_publication(ctx: rule.Context,
     packages_found = False
     for collection in collections:
         coll_name = collection[0]
-        log.write(ctx, coll_name)
         if ((vault_package == '*' and re.match(r'/[^/]+/home/vault-.*', coll_name)) or (vault_package != '*' and re.match(r'/[^/]+/home/vault-.*', coll_name) and coll_name == vault_package)):
             packages_found = True
             output = update_publication(ctx, coll_name, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
