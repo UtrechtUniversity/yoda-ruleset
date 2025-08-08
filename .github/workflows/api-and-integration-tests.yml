@@ -4,8 +4,7 @@ on:
   push:
     branches:
     - development
-    - release-1.9
-    - release-1.10
+    - 'release-[0-9]+.[0-9]+'
     - "**-atr"
     # We can force an integration/API test run without opening a PR by pushing to a branch name that ends with "-atr"
   pull_request:
@@ -32,14 +31,13 @@ jobs:
       run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
       id: extract_branch
 
-    # For release branches that have a Docker setup, we use the Docker setup version of that release.
+    # For release branches, we use the Docker setup version of that release.
     # For other branches, we use the Docker setup of the development branch.
     - name: Determine Yoda repository branch
+      shell: bash
       run: |
-        if [ "${{ steps.extract_branch.outputs.branch }}" = "release-1.9" ]; then
-          echo "branch=release-1.9" >> $GITHUB_OUTPUT
-        elif [ "${{ steps.extract_branch.outputs.branch }}" = "release-1.10" ]; then
-          echo "branch=release-1.10" >> $GITHUB_OUTPUT
+        if [ "${{ steps.extract_branch.outputs.branch }}" =~ ^"release-" ]; then
+          echo "branch=${{ steps.extract_branch.outputs.branch }}" >> $GITHUB_OUTPUT
         else
           echo "branch=development" >> $GITHUB_OUTPUT
         fi
