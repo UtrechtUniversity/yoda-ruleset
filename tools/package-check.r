@@ -5,39 +5,86 @@
 import genquery
 
 
+# Get user name from user ID
+def get_user_name(id, ctx):
+    user_query = genquery.row_iterator(
+        "USER_NAME",
+        "USER_ID = '{}'".format(id),
+        genquery.AS_LIST,
+        ctx)
+
+    user_name = ""
+    if user_query.total_rows() > 0:
+        for result in user_query:
+            user_name = result[0]
+    return user_name
+
+
 # Determine existence of collection
 def coll_exists(coll, ctx):
-    try:
-        exists_query = genquery.row_iterator(
-            "COLL_ID",
-            "COLL_NAME like '{}'".format(coll),
-            genquery.AS_LIST,
-            ctx)
-
-        if exists_query.total_rows() > 0:
-            return True
-        else:
-            return False
-
-    except Exception:
-        ctx.writeString("queryError", "Error determining existence of data package {}".format(coll))
-
-
-# Get parent of collection
-def get_coll_parent(coll, ctx):
-    parent_query = genquery.row_iterator(
-        "COLL_PARENT_NAME",
+    exists_query = genquery.row_iterator(
+        "COLL_ID",
         "COLL_NAME like '{}'".format(coll),
         genquery.AS_LIST,
         ctx)
 
-    for result in parent_query:
-        try:
-            parent = result[0]
-            if 'vault-' in parent: # TODO: check if path ends in "vault-*"
-                return parent
-        except Exception:
-            ctx.writeString("queryError", "Error retrieving parent collection of data package {}".format(coll))
+    if exists_query.total_rows() > 0:
+        return True
+    else:
+        return False
+
+
+# Get group collection
+def get_group_coll(coll, ctx):
+    group_coll = ""
+    if coll.rsplit('/', 1)[-1].startswith("vault-"):
+        group_coll = coll
+    else:
+        group_query = genquery.row_iterator(
+            "COLL_PARENT_NAME",
+            "COLL_NAME like '{}'".format(coll),
+            genquery.AS_LIST,
+            ctx)
+
+        if group_query.total_rows() > 0:
+            for result in group_query:
+                if result[0].rsplit('/', 1)[-1].startswith("vault-"):
+                    group_coll = result[0]
+                else:   # If parent collection is not group collection, go up another level
+                    group_coll = get_group_coll(group_coll, ctx)
+    return group_coll
+
+
+# Get collection's subcollections
+def get_subcolls(coll, ctx):
+    subcoll_query = genquery.row_iterator(
+            "COLL_NAME",
+            "COLL_NAME like '{}/%'".format(coll),
+            genquery.AS_LIST,
+            ctx)
+
+    subcolls = []
+    if subcoll_query.total_rows() > 0:
+        for result in subcoll_query:
+            subcolls.append(result[0])
+        
+    return subcolls
+
+
+# Get collection's data objects
+def get_dataobjs(coll, ctx):
+    data_query = genquery.row_iterator(
+        "DATA_NAME",
+        "COLL_NAME like '{}'".format(coll),
+        genquery.AS_LIST,
+        ctx)
+
+    dataobjs = []
+    if data_query.total_rows() > 0:
+        for result in data_query:
+            dataobjs.append(result[0])
+
+    return dataobjs            
 
 
 # Get ACLs of collection
@@ -49,76 +96,205 @@ def get_coll_acls(coll, ctx):
         ctx)
 
     acl = []
-    for (user, access) in access_query:
-        try:
+    if access_query.total_rows() > 0:
+        for (user, access) in access_query:
             user_access = {}
 
-            user_access['user'] = user
-            user_access['access'] = access
+            user_access['user_id'] = user
+            user_access['user_name'] = get_user_name(user, ctx)
+    
+            if access == "read_object":
+                user_access['access'] = "read"
+            elif access == "modify_object":
+                user_access['access'] = "write"
+            else:
+                user_access['access'] = access
+    
 
             acl.append(user_access)
-        except Exception:
-            ctx.writeString("queryError", "Error retrieving ACLs of data package {}".format(coll))
-
-    # for item in acl:
-    #     for key, value in item.items():
-    #         ctx.writeLine("stdout", "{}, {}".format(key, value))
-
+        # for item in acl:
+        #     for key, value in item.items():
+        #         ctx.writeLine("stdout", "{}, {}".format(key, value))
     return acl
 
 
-# Get inheritance of collection
-def get_coll_inheritance(coll, ctx):
+# Get ACLs of data
+def get_data_acls(coll, data, ctx):
+    access_query = genquery.row_iterator(
+        "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
+        "COLL_NAME like '{}' AND DATA_NAME like '{}'".format(coll, data),
+        genquery.AS_LIST,
+        ctx)
+
+    acl = []
+    if access_query.total_rows() > 0:    
+        for (user, access) in access_query:
+            user_access = {}
+
+            user_access['user_id'] = user
+            user_access['user_name'] = get_user_name(user, ctx)
+
+            if access == "read_object":
+                user_access['access'] = "read"
+            elif access == "modify_object":
+                user_access['access'] = "write"
+            else:
+                user_access['access'] = access
+    
+
+            acl.append(user_access)
+
+        # for item in acl:
+        #     for key, value in item.items():
+        #         ctx.writeLine("stdout", "{}, {}".format(key, value))
+    return acl
+
+
+# Compare ACLs
+def compare_acls(acls, g_acls, path, mode, ctx):
+    if len(g_acls) > 0 and len(acls) > 0:
+        if (acls == g_acls): # TODO: ensure check makes sense?
+            ctx.writeLine("stdout", "OK: ACLs of current collection/data object match group ACLs. (Path: {})".format(path))
+        else:
+            ctx.writeLine("stdout", "WARN: ACLs of current collection/data object do not match group ACLs. (Path: {})".format(path))
+
+            acls_to_remove = []
+            acls_to_add = []            
+            for acl in acls + g_acls:
+                if acl not in acls:
+                    ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to group collection, but not to this collection/data object.".format(acl['user_name'], acl['access']))
+                    acls_to_add.append(acl)
+                elif acl not in g_acls:
+                    ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to this collection/data object, but not to group collection.".format(acl['user_name'], acl['access']))
+                    acls_to_remove.append(acl)
+            
+            if mode == "write":
+                if len(acls_to_add) > 0:
+                    ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
+                    
+                    for acl in acls_to_add:
+                        ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
+                    
+                    ctx.writeLine("stdout", "\t...Done.".format(mode))
+                if len(acls_to_remove) > 0:
+                    ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
+                    
+                    for acl in acls_to_remove:
+                        user_name = acl['user_name']
+                        access = acl['access']
+
+                        if user_name == "rods" or user_name == "anonymous":
+                            ctx.writeLine("stdout", "\tUser is '{}', skipping...".format(user_name))
+                        else:                        
+                            ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
+                    
+                    ctx.writeLine("stdout", "\t...Done.".format(mode))                    
+            
+    else:
+        ctx.writeLine("stdout", "ERROR: No ACLs found for this collection/data object. (Path: {})".format(path))
+
+
+# Check inheritance of collection
+def check_coll_inheritance(coll, mode, ctx):
     inherit_query = genquery.row_iterator(
         "COLL_INHERITANCE",
         "COLL_NAME like '{}'".format(coll),
         genquery.AS_LIST,
         ctx)
 
-    for result in inherit_query:
-        try:
+    inheritance = ""
+    if inherit_query.total_rows() > 0:
+        for result in inherit_query:
             inheritance = "Disabled" if result[0] == "0" else "Enabled"
-            return inheritance
-        except Exception:
-            ctx.writeString("queryError", "Error retrieving inheritance info of data package {}".format(coll))
+    
+    if inheritance == "Disabled":
+        ctx.writeLine("stdout", "OK: Inheritance is {}. (Collection: {})".format(inheritance, coll))
+    elif inheritance == "Enabled":
+        ctx.writeLine("stdout", "WARN: inheritance is {}, should be Disabled. (Collection: {})".format(inheritance, coll))
+
+        if mode == "write":
+                ctx.writeLine("stdout", "Running in {} mode, fixing...".format(mode))
+                ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
+                ctx.writeLine("stdout", "...Fixed.".format(mode))
+    else:
+        ctx.writeLine("stdout", "ERROR: Error retrieving collection's inheritance. (Collection: {})".format(coll))
+
+
+# Check ACLs
+def check_acls(coll, mode, ctx):
+    # Get group collection
+    group_coll = get_group_coll(coll, ctx)
+
+    if group_coll != "": 
+        # Check ACLs of provided collection
+        group_acls = get_coll_acls(group_coll, ctx)
+        coll_acls = get_coll_acls(coll, ctx)
+        compare_acls(coll_acls, group_acls, coll, mode, ctx)
+
+        # Check ACLs of provided collection's data objects
+        dataobjs = get_dataobjs(coll, ctx)
+
+        if len(dataobjs) > 0:
+            for data_obj in dataobjs:
+                dataobj_acls = get_data_acls(coll, data_obj, ctx)
+                compare_acls(dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode, ctx)             
+
+        # Check ACLs of provided collection's subcollections
+        subcolls = get_subcolls(coll, ctx)
+
+        if len(subcolls) > 0:
+            for subcoll in subcolls:
+                subcoll_acls = get_coll_acls(subcoll, ctx)
+                compare_acls(subcoll_acls, group_acls, subcoll, mode, ctx)
+        
+            # Check ACLs of provided collection's subcollections' data objects
+            subcoll_dataobjs = get_dataobjs(subcoll, ctx)
+            
+            if len(subcoll_dataobjs) > 0:
+                for subcoll_dataobj in subcoll_dataobjs:
+                    subcoll_dataobj_acls = get_data_acls(subcoll, subcoll_dataobj, ctx)
+                    compare_acls(subcoll_dataobj_acls, group_acls, "{}/{}".format(subcoll, subcoll_dataobj), mode, ctx)
+    else:
+        ctx.writeLine("stdout", "ERROR: Error retrieving group collection.")          
+
+
+# Check inheritance
+def check_inheritance(coll, mode, ctx):
+    # If space is vault space, then inheritance should be disabled
+    if 'vault-' in coll:
+        # Check inheritance of collection
+        coll_inherit = check_coll_inheritance(coll, mode, ctx)
+
+        # Check inheritance of collection's subcollections
+        subcolls = get_subcolls(coll, ctx)
+
+        if len(subcolls) > 0:
+            for subcoll in subcolls:
+                subcoll_inherit = check_coll_inheritance(subcoll, mode, ctx)
 
 
 def main(rule_args, ctx, rei):
     coll = global_vars["*coll"]
     mode = global_vars["*mode"]
+    logged_user = ctx.uuClientFullNameWrapper("")['arguments'][0]
+    logged_user_type = ctx.uuGetUserType(logged_user, "")['arguments'][1]
 
-    # TODO: check if user running script is rodsadmin
+    if logged_user_type == 'rodsadmin':    
+        if coll_exists(coll,ctx):
+            ctx.writeLine("stdout", "Executing package check rule for collection: {} (mode: {})".format(coll, mode))
+            ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
-    if coll_exists(coll, ctx):
-        parent_coll = get_coll_parent(coll, ctx)
+            # Check if collection ACLs match group ACLs
+            check_acls(coll, mode, ctx)
+            ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
-        coll_acl = get_coll_acls(coll, ctx)
-        parent_acl = get_coll_acls(parent_coll, ctx)
-
-        coll_inherit = get_coll_inheritance(coll, ctx)
-        parent_inherit = get_coll_inheritance(parent_coll, ctx)
-
-        # Check if data packge ACLs match group ACLs
-        if (coll_acl == parent_acl):
-            ctx.writeLine("stdout", "Data package ACLs match group ACLs.") # TODO: ensure check makes sense?
+            # Check collection inheritance        
+            check_inheritance(coll, mode, ctx)
+            ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")            
         else:
-            ctx.writeLine("stdout", "Data package ACLs do NOT match group ACLs.")
-            # TODO: show ACLs that need fixing
-
-            if mode == "write":
-                ctx.writeLine("stdout", "Fixing...")
-
-        # Check if data packge inheritance matches group inheritance            
-        if (coll_inherit == parent_inherit): # TODO: this check or just "if package is in vault then must be disabled"?
-            ctx.writeLine("stdout", "Data package inheritance matches group inheritance.")
-        else:
-            ctx.writeLine("stdout", "Data package inheritance does NOT match group inheritance.")
-            # TODO: show inheritance differences
-
-            if mode == "write":
-                ctx.writeLine("stdout", "Fixing...")                
+            ctx.writeLine("stdout", "ERROR: Collection does not exist, try again.")
     else:
-        ctx.writeLine("stdout", "Collection does not exist, try again.")
+        ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")    
 
 INPUT *coll=, *mode=read
 OUTPUT ruleExecOut
