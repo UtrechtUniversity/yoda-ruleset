@@ -3,6 +3,7 @@
 # irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/package-check.r '*coll=' '*mode='
 #
 import genquery
+import irods_types
 import os
 
 
@@ -330,7 +331,7 @@ def check_metadata(coll, mode, user, ctx):
                                 ctx.msiSetACL("recursive", "admin:write", str(user), str(coll))
 
                                 # Update zone
-                                out = ctx.msiString2KeyValPair("{}={}".format(str(attr), str(new_value)), 0)
+                                out = ctx.msiString2KeyValPair("{}={}".format(str(attr), str(new_value)), irods_types.KeyValPair())
                                 kvp = out['arguments'][1]
                                 ctx.msiSetKeyValuePairsToObj(kvp, coll, '-C')
 
