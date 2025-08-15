@@ -8,7 +8,7 @@ import os
 
 
 # Determine existence of collection
-def coll_exists(coll, ctx):
+def coll_exists(ctx, coll):
     exists_query = genquery.row_iterator(
         "COLL_ID",
         "COLL_NAME like '{}'".format(coll),
@@ -22,7 +22,7 @@ def coll_exists(coll, ctx):
 
 
 # Get user name from user ID
-def get_user_name(id, ctx):
+def get_user_name(ctx, id):
     user_query = genquery.row_iterator(
         "USER_NAME",
         "USER_ID = '{}'".format(id),
@@ -37,7 +37,7 @@ def get_user_name(id, ctx):
 
 
 # Get group collection
-def get_group_coll(coll, ctx):
+def get_group_coll(ctx, coll):
     group_coll = ""
     if coll.rsplit('/', 1)[-1].startswith("vault-"):
         group_coll = coll
@@ -53,12 +53,12 @@ def get_group_coll(coll, ctx):
                 if result[0].rsplit('/', 1)[-1].startswith("vault-"):
                     group_coll = result[0]
                 else:   # If parent collection is not group collection, go up another level
-                    group_coll = get_group_coll(group_coll, ctx)
+                    group_coll = get_group_coll(ctx, group_coll)
     return group_coll
 
 
 # Get AVUs from collection
-def get_avus(coll, avu, ctx):
+def get_avus(ctx, coll, avu):
     avu_query = genquery.row_iterator(
         "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
         "META_COLL_ATTR_NAME like '{}' AND COLL_NAME = '{}'".format(avu, coll),
@@ -73,7 +73,7 @@ def get_avus(coll, avu, ctx):
 
 
 # Get collection's subcollections
-def get_subcolls(coll, ctx):
+def get_subcolls(ctx, coll):
     subcoll_query = genquery.row_iterator(
             "COLL_NAME",
             "COLL_NAME like '{}/%'".format(coll),
@@ -89,7 +89,7 @@ def get_subcolls(coll, ctx):
 
 
 # Get collection's data objects
-def get_dataobjs(coll, ctx):
+def get_dataobjs(ctx, coll):
     data_query = genquery.row_iterator(
         "DATA_NAME",
         "COLL_NAME like '{}'".format(coll),
@@ -105,7 +105,7 @@ def get_dataobjs(coll, ctx):
 
 
 # Get ACLs of collection
-def get_coll_acls(coll, ctx):
+def get_coll_acls(ctx, coll):
     access_query = genquery.row_iterator(
         "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
         "COLL_NAME like '{}'".format(coll),
@@ -118,7 +118,7 @@ def get_coll_acls(coll, ctx):
             user_access = {}
 
             user_access['user_id'] = user
-            user_access['user_name'] = get_user_name(user, ctx)
+            user_access['user_name'] = get_user_name(ctx, user)
 
             if access == "read_object":
                 user_access['access'] = "read"
@@ -136,7 +136,7 @@ def get_coll_acls(coll, ctx):
 
 
 # Get ACLs of data
-def get_data_acls(coll, data, ctx):
+def get_data_acls(ctx, coll, data):
     access_query = genquery.row_iterator(
         "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
         "COLL_NAME like '{}' AND DATA_NAME like '{}'".format(coll, data),
@@ -149,7 +149,7 @@ def get_data_acls(coll, data, ctx):
             user_access = {}
 
             user_access['user_id'] = user
-            user_access['user_name'] = get_user_name(user, ctx)
+            user_access['user_name'] = get_user_name(ctx, user)
 
             if access == "read_object":
                 user_access['access'] = "read"
@@ -168,7 +168,7 @@ def get_data_acls(coll, data, ctx):
 
 
 # Compare ACLs
-def compare_acls(acls, g_acls, path, mode, ctx):
+def compare_acls(ctx, acls, g_acls, path, mode):
     if len(g_acls) > 0 and len(acls) > 0:
         if (acls == g_acls): # TODO: ensure check makes sense?
             ctx.writeLine("stdout", "OK: ACLs of current collection/data object match group ACLs. (Path: {})".format(path))
@@ -217,7 +217,7 @@ def compare_acls(acls, g_acls, path, mode, ctx):
 
 
 # Check inheritance of collection
-def check_coll_inheritance(coll, mode, ctx):
+def check_coll_inheritance(ctx, coll, mode):
     inherit_query = genquery.row_iterator(
         "COLL_INHERITANCE",
         "COLL_NAME like '{}'".format(coll),
@@ -246,64 +246,64 @@ def check_coll_inheritance(coll, mode, ctx):
 
 
 # Check ACLs
-def check_acls(coll, mode, ctx):
+def check_acls(ctx, coll, mode):
     # Get group collection
-    group_coll = get_group_coll(coll, ctx)
+    group_coll = get_group_coll(ctx, coll)
 
     if group_coll != "":
         # Check ACLs of provided collection
-        group_acls = get_coll_acls(group_coll, ctx)
-        coll_acls = get_coll_acls(coll, ctx)
-        compare_acls(coll_acls, group_acls, coll, mode, ctx)
+        group_acls = get_coll_acls(ctx, group_coll)
+        coll_acls = get_coll_acls(ctx, coll)
+        compare_acls(ctx, coll_acls, group_acls, coll, mode)
 
         # Check ACLs of provided collection's data objects
-        dataobjs = get_dataobjs(coll, ctx)
+        dataobjs = get_dataobjs(ctx, coll)
 
         if len(dataobjs) > 0:
             for data_obj in dataobjs:
-                dataobj_acls = get_data_acls(coll, data_obj, ctx)
-                compare_acls(dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode, ctx)
+                dataobj_acls = get_data_acls(ctx, coll, data_obj)
+                compare_acls(ctx, dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode)
 
         # Check ACLs of provided collection's subcollections
-        subcolls = get_subcolls(coll, ctx)
+        subcolls = get_subcolls(ctx, coll)
 
         if len(subcolls) > 0:
             for subcoll in subcolls:
-                subcoll_acls = get_coll_acls(subcoll, ctx)
-                compare_acls(subcoll_acls, group_acls, subcoll, mode, ctx)
+                subcoll_acls = get_coll_acls(ctx, subcoll)
+                compare_acls(ctx, subcoll_acls, group_acls, subcoll, mode)
 
             # Check ACLs of provided collection's subcollections' data objects
-            subcoll_dataobjs = get_dataobjs(subcoll, ctx)
+            subcoll_dataobjs = get_dataobjs(ctx, subcoll)
 
             if len(subcoll_dataobjs) > 0:
                 for subcoll_dataobj in subcoll_dataobjs:
-                    subcoll_dataobj_acls = get_data_acls(subcoll, subcoll_dataobj, ctx)
-                    compare_acls(subcoll_dataobj_acls, group_acls, "{}/{}".format(subcoll, subcoll_dataobj), mode, ctx)
+                    subcoll_dataobj_acls = get_data_acls(ctx, subcoll, subcoll_dataobj)
+                    compare_acls(ctx, subcoll_dataobj_acls, group_acls, "{}/{}".format(subcoll, subcoll_dataobj), mode)
     else:
         ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
 
 
 # Check inheritance
-def check_inheritance(coll, mode, ctx):
+def check_inheritance(ctx, coll, mode):
     # Inheritance should be disabled on vault packages
     # Check inheritance of collection
-    coll_inherit = check_coll_inheritance(coll, mode, ctx)
+    coll_inherit = check_coll_inheritance(ctx, coll, mode)
 
     # Check inheritance of collection's subcollections
-    subcolls = get_subcolls(coll, ctx)
+    subcolls = get_subcolls(ctx, coll)
 
     if len(subcolls) > 0:
         for subcoll in subcolls:
-            subcoll_inherit = check_coll_inheritance(subcoll, mode, ctx)
+            subcoll_inherit = check_coll_inheritance(ctx, subcoll, mode)
 
 
-def check_metadata(coll, mode, user, ctx):
+def check_metadata(ctx, coll, mode, user):
     # if vault status "PUBLISHED" or "DEPUBLISHED"
         # if AVU refers to Yoda collection, update zone name
         # if DOI record exists at DataCite, update URL
         # call update-publications.r on package
 
-    coll_avus = get_avus(coll, "org_%", ctx)
+    coll_avus = get_avus(ctx, coll, "org_%")
 
     if bool(coll_avus):
         vault_status = coll_avus['org_vault_status']
@@ -357,21 +357,21 @@ def main(rule_args, ctx, rei):
         ctx.writeString("serverLog", "Something went wrong while retrieving user information.")
 
     if current_user_type == 'rodsadmin':
-        if coll_exists(coll,ctx):
+        if coll_exists(ctx, coll):
             if 'vault-' in coll:
                 ctx.writeLine("stdout", "Executing package check rule for collection: {} (mode: {})".format(coll, mode))
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
                 # Check if collection ACLs match group ACLs
-                check_acls(coll, mode, ctx)
+                check_acls(ctx, coll, mode)
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
                 # Check collection inheritance
-                check_inheritance(coll, mode, ctx)
+                check_inheritance(ctx, coll, mode)
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
                 # Update metadata
-                check_metadata(coll, mode, current_user, ctx)
+                check_metadata(ctx, coll, mode, current_user)
             else:
                 ctx.writeLine("stdout", "ERROR: This rule should be run on vault collections only.")
         else:
@@ -386,6 +386,6 @@ OUTPUT ruleExecOut
 # TODO: Add sanity check (double check ACLs for specific users)
 # TODO: Add sanity check (rerun check after fix)
 # (DONE) TODO: Add a check so that it only runs on vault packages
-# TODO: Reorder arguments so that ctx is always the first argument (similar to the ruleset), except for main
+# (DONE) TODO: Reorder arguments so that ctx is always the first argument (similar to the ruleset), except for main
 # TODO: Use the same docstyle (Sphinx) for function comments
 # TODO: Run flake8 / ruff on the script for linting
