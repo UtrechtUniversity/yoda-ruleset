@@ -190,6 +190,9 @@ def compare_acls(acls, g_acls, path, mode, ctx):
                     ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
 
                     for acl in acls_to_add:
+                        user_name = acl['user_name']
+                        access = acl['access']
+
                         try:
                             ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                         except Exception:
