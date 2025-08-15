@@ -83,7 +83,7 @@ def get_subcolls(coll, ctx):
     if subcoll_query.total_rows() > 0:
         for result in subcoll_query:
             subcolls.append(result[0])
-        
+
     return subcolls
 
 
@@ -100,7 +100,7 @@ def get_dataobjs(coll, ctx):
         for result in data_query:
             dataobjs.append(result[0])
 
-    return dataobjs            
+    return dataobjs
 
 
 # Get ACLs of collection
@@ -118,14 +118,14 @@ def get_coll_acls(coll, ctx):
 
             user_access['user_id'] = user
             user_access['user_name'] = get_user_name(user, ctx)
-    
+
             if access == "read_object":
                 user_access['access'] = "read"
             elif access == "modify_object":
                 user_access['access'] = "write"
             else:
                 user_access['access'] = access
-    
+
 
             acl.append(user_access)
         # for item in acl:
@@ -143,7 +143,7 @@ def get_data_acls(coll, data, ctx):
         ctx)
 
     acl = []
-    if access_query.total_rows() > 0:    
+    if access_query.total_rows() > 0:
         for (user, access) in access_query:
             user_access = {}
 
@@ -156,7 +156,7 @@ def get_data_acls(coll, data, ctx):
                 user_access['access'] = "write"
             else:
                 user_access['access'] = access
-    
+
 
             acl.append(user_access)
 
@@ -175,7 +175,7 @@ def compare_acls(acls, g_acls, path, mode, ctx):
             ctx.writeLine("stdout", "WARN: ACLs of current collection/data object do not match group ACLs. (Path: {})".format(path))
 
             acls_to_remove = []
-            acls_to_add = []            
+            acls_to_add = []
             for acl in acls + g_acls:
                 if acl not in acls:
                     ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to group collection, but not to this collection/data object.".format(acl['user_name'], acl['access']))
@@ -183,31 +183,31 @@ def compare_acls(acls, g_acls, path, mode, ctx):
                 elif acl not in g_acls:
                     ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to this collection/data object, but not to group collection.".format(acl['user_name'], acl['access']))
                     acls_to_remove.append(acl)
-            
+
             if mode == "write":
                 if len(acls_to_add) > 0:
                     ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
-                    
+
                     for acl in acls_to_add:
                         try:
                             ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                         except Exception:
                             ctx.writeString("serverLog", "Something went wrong while setting ACL.")
-                    
+
                 if len(acls_to_remove) > 0:
                     ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
-                    
+
                     for acl in acls_to_remove:
                         user_name = acl['user_name']
                         access = acl['access']
 
                         if user_name == "rods" or user_name == "anonymous":
                             ctx.writeLine("stdout", "\tUser is '{}', skipping...".format(user_name))
-                        else:                        
-                            try: 
+                        else:
+                            try:
                                 ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
                             except Exception:
-                                ctx.writeString("serverLog", "Something went wrong while setting ACL.")                    
+                                ctx.writeString("serverLog", "Something went wrong while setting ACL.")
     else:
         ctx.writeLine("stdout", "ERROR: No ACLs found for this collection/data object. (Path: {})".format(path))
 
@@ -223,8 +223,8 @@ def check_coll_inheritance(coll, mode, ctx):
     inheritance = ""
     if inherit_query.total_rows() > 0:
         for result in inherit_query:
-            inheritance = "Disabled" if result[0] == "0" else "Enabled"
-    
+            inheritance = "Enabled" if result[0] == "1" else "Disabled"
+
     if inheritance == "Disabled":
         ctx.writeLine("stdout", "OK: Inheritance is {}. (Collection: {})".format(inheritance, coll))
     elif inheritance == "Enabled":
@@ -246,7 +246,7 @@ def check_acls(coll, mode, ctx):
     # Get group collection
     group_coll = get_group_coll(coll, ctx)
 
-    if group_coll != "": 
+    if group_coll != "":
         # Check ACLs of provided collection
         group_acls = get_coll_acls(group_coll, ctx)
         coll_acls = get_coll_acls(coll, ctx)
@@ -258,7 +258,7 @@ def check_acls(coll, mode, ctx):
         if len(dataobjs) > 0:
             for data_obj in dataobjs:
                 dataobj_acls = get_data_acls(coll, data_obj, ctx)
-                compare_acls(dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode, ctx)             
+                compare_acls(dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode, ctx)
 
         # Check ACLs of provided collection's subcollections
         subcolls = get_subcolls(coll, ctx)
@@ -267,16 +267,16 @@ def check_acls(coll, mode, ctx):
             for subcoll in subcolls:
                 subcoll_acls = get_coll_acls(subcoll, ctx)
                 compare_acls(subcoll_acls, group_acls, subcoll, mode, ctx)
-        
+
             # Check ACLs of provided collection's subcollections' data objects
             subcoll_dataobjs = get_dataobjs(subcoll, ctx)
-            
+
             if len(subcoll_dataobjs) > 0:
                 for subcoll_dataobj in subcoll_dataobjs:
                     subcoll_dataobj_acls = get_data_acls(subcoll, subcoll_dataobj, ctx)
                     compare_acls(subcoll_dataobj_acls, group_acls, "{}/{}".format(subcoll, subcoll_dataobj), mode, ctx)
     else:
-        ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")          
+        ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
 
 
 # Check inheritance
@@ -333,9 +333,9 @@ def check_metadata(coll, mode, user, ctx):
                                 out = ctx.msiString2KeyValPair("{}={}".format(str(attr), str(new_value)), 0)
                                 kvp = out['arguments'][1]
                                 ctx.msiSetKeyValuePairsToObj(kvp, coll, '-C')
-                                
+
                                 # Remove write permissions
-                                ctx.msiSetACL("recursive", "null", str(user), str(coll))                        
+                                ctx.msiSetACL("recursive", "null", str(user), str(coll))
 
                             except Exception:
                                 ctx.writeLine("stdout", "Something went wrong while setting AVU.")
@@ -345,14 +345,14 @@ def check_metadata(coll, mode, user, ctx):
 def main(rule_args, ctx, rei):
     coll = global_vars["*coll"]
     mode = global_vars["*mode"]
-    
+
     try:
         current_user = ctx.uuClientFullNameWrapper("")['arguments'][0]
         current_user_type = ctx.uuGetUserType(current_user, "")['arguments'][1]
     except Exception:
         ctx.writeString("serverLog", "Something went wrong while retrieving user information.")
 
-    if current_user_type == 'rodsadmin':    
+    if current_user_type == 'rodsadmin':
         if coll_exists(coll,ctx):
             if 'vault-' in coll:
                 ctx.writeLine("stdout", "Executing package check rule for collection: {} (mode: {})".format(coll, mode))
@@ -362,18 +362,18 @@ def main(rule_args, ctx, rei):
                 check_acls(coll, mode, ctx)
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
-                # Check collection inheritance        
+                # Check collection inheritance
                 check_inheritance(coll, mode, ctx)
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
                 # Update metadata
-                check_metadata(coll, mode, current_user, ctx)            
+                check_metadata(coll, mode, current_user, ctx)
             else:
                 ctx.writeLine("stdout", "ERROR: This rule should be run on vault collections only.")
         else:
             ctx.writeLine("stdout", "ERROR: Collection does not exist, try again.")
     else:
-        ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")    
+        ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")
 
 INPUT *coll=, *mode=read
 OUTPUT ruleExecOut
