@@ -170,48 +170,58 @@ def get_data_acls(ctx, coll, data):
 # Compare ACLs
 def compare_acls(ctx, acls, g_acls, path, mode):
     if len(g_acls) > 0 and len(acls) > 0:
-        if (acls == g_acls): # TODO: ensure check makes sense?
-            ctx.writeLine("stdout", "OK: ACLs of current collection/data object match group ACLs. (Path: {})".format(path))
+        if (acls == g_acls):
+            ctx.writeLine("stdout", "OK: ACLs of current collection/data object are correct. (Path: {})".format(path))
         else:
-            ctx.writeLine("stdout", "WARN: ACLs of current collection/data object do not match group ACLs. (Path: {})".format(path))
-
             acls_to_remove = []
             acls_to_add = []
-            for acl in acls + g_acls:
+
+            join_acls = [acl for i, acl in enumerate(acls + g_acls) if acl not in (acls + g_acls)[:i]]
+            for acl in join_acls:
+                user_name = acl['user_name']
+                access = acl['access']
+
                 if acl not in acls:
-                    ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to group collection, but not to this collection/data object.".format(acl['user_name'], acl['access']))
-                    acls_to_add.append(acl)
+                    if access != "own": # Any own rights from group collection can be skipped
+                        acls_to_add.append(acl)
                 elif acl not in g_acls:
-                    ctx.writeLine("stdout", "\tUser '{}' has '{}' rights to this collection/data object, but not to group collection.".format(acl['user_name'], acl['access']))
+                    if user_name != "rods" and (user_name != "anonymous" and access == "read"): # If rods has any rights or anonymous has read rights, they don't have to be removed
+                        acls_to_remove.append(acl)
+                elif user_name in path and access == "own": # If group already has own rights on collection/data package, they should be removed
                     acls_to_remove.append(acl)
 
-            if mode == "write":
-                if len(acls_to_add) > 0:
-                    ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
+            if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
+                ctx.writeLine("stdout", "WARN: ACLs of current collection/data object have issues. (Path: {})".format(path))
 
+                if len(acls_to_add) > 0:
                     for acl in acls_to_add:
                         user_name = acl['user_name']
                         access = acl['access']
 
-                        try:
-                            ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
-                        except Exception:
-                            ctx.writeString("serverLog", "Something went wrong while setting ACL.")
+                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to the group collection but not to this collection/data object, and should have those rights.".format(acl['user_name'], acl['access']))                    
+
+                        if mode == "write":
+                            ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
+                            try:
+                                ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
+                            except Exception:
+                                ctx.writeString("serverLog", "Something went wrong while setting ACL.")
 
                 if len(acls_to_remove) > 0:
-                    ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
-
                     for acl in acls_to_remove:
                         user_name = acl['user_name']
                         access = acl['access']
-
-                        if user_name == "rods" or user_name == "anonymous":
-                            ctx.writeLine("stdout", "\tUser is '{}', skipping...".format(user_name))
-                        else:
+                        
+                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to this collection/data object, but should not have those rights.".format(acl['user_name'], acl['access']))
+                        
+                        if mode == "write":
+                            ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
                             try:
                                 ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
                             except Exception:
                                 ctx.writeString("serverLog", "Something went wrong while setting ACL.")
+            else:
+                ctx.writeLine("stdout", "OK: ACLs of current collection/data object are correct. (Path: {})".format(path))
     else:
         ctx.writeLine("stdout", "ERROR: No ACLs found for this collection/data object. (Path: {})".format(path))
 
@@ -316,18 +326,10 @@ def check_metadata(ctx, coll, mode, user):
                         ctx.writeLine("stdout", "WARN: AVU '{}' contains zone that does not match current zone. (AVU zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
 
                         if (mode == "write"):
-                            ctx.writeLine("stdout", "Running in {} mode, fixing...".format(mode))
-                            # ctx.writeLine("stdout", "...Done.")
+                            ctx.writeLine("stdout", "\tRunning in {} mode, fixing...".format(mode))
+                            new_value = value.replace(avu_zone, current_zone)
 
-                    else:
-                        ctx.writeLine("stdout", "OK: AVU '{}' contains zone that matches current zone. (AVU zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
-
-                        # TODO: move this to the other check once done testing
-                        ctx.writeLine("stdout", "Old value: {}".format(value))
-                        if (mode == "write"):
-                            ctx.writeLine("stdout", "Running in {} mode, fixing...".format(mode))
-                            new_value = value.replace(avu_zone, "newZone")
-                            ctx.writeLine("stdout", "New value: {}".format(new_value))
+                            ctx.writeLine("stdout", "attr: {} | new_value: {} | coll: {}".format(str(attr), str(new_value), coll))
 
                             try:
                                 # Set write permissions first to be able to modify AVU
@@ -336,14 +338,16 @@ def check_metadata(ctx, coll, mode, user):
                                 # Update zone
                                 out = ctx.msiString2KeyValPair("{}={}".format(str(attr), str(new_value)), irods_types.KeyValPair())
                                 kvp = out['arguments'][1]
-                                ctx.msiSetKeyValuePairsToObj(kvp, coll, '-C')
+                                ctx.writeLine("stdout", str(type(kvp)))
+                                ctx.msiSetKeyValuePairsToObj(kvp, str(coll), "-C")
 
                                 # Remove write permissions
                                 ctx.msiSetACL("recursive", "null", str(user), str(coll))
 
                             except Exception:
-                                ctx.writeLine("stdout", "Something went wrong while setting AVU.")
-                                # ctx.writeString("serverLog", "Something went wrong while setting AVU.")
+                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting AVU.")
+                    else:
+                        ctx.writeLine("stdout", "OK: AVU '{}' contains zone that matches current zone. (AVU zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
 
 
 def main(rule_args, ctx, rei):
@@ -382,6 +386,7 @@ def main(rule_args, ctx, rei):
 INPUT *coll=, *mode=read
 OUTPUT ruleExecOut
 
+# (DONE) TODO: Add exception to write mode for "own" rights of group
 # TODO: Test another user
 # TODO: Add sanity check (double check ACLs for specific users)
 # TODO: Add sanity check (rerun check after fix)
