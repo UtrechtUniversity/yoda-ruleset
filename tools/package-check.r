@@ -256,20 +256,19 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                         user_name = acl['user_name']
                         access = acl['access']
 
-                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to the group collection but not to this collection/data object, and should have those rights.".format(acl['user_name'], acl['access']))
+                        ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to the group collection but not to this collection/data object, and should have those rights.")
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
                             try:
                                 ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                             except Exception:
-                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting ACLs.")
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
                             if ensure_fix(ctx, "acl-add", path, user_id=user_id, access=access):
-                                ctx.writeLine("stdout", f"\tDone.")
+                                ctx.writeLine("stdout", "\tDone.")
                             else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs.") 
-
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
                 if len(acls_to_remove) > 0:
                     for acl in acls_to_remove:
@@ -277,19 +276,19 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                         user_name = acl['user_name']
                         access = acl['access']
 
-                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to this collection/data object, but should not have those rights.".format(acl['user_name'], acl['access']))
+                        ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to this collection/data object, but should not have those rights.")
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
                             try:
                                 ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
                             except Exception:
-                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting ACL.")
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
                             if ensure_fix(ctx, "acl-remove", path, user_id=user_id, access=access):
-                                ctx.writeLine("stdout", f"\tDone.")
+                                ctx.writeLine("stdout", "\tDone.")
                             else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACL.") 
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
             else:
                 ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
     else:
@@ -315,9 +314,9 @@ def check_coll_inheritance(ctx, coll, mode):
             inheritance = "Enabled" if result[0] == "1" else "Disabled"
 
     if inheritance == "Disabled":
-        ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Collection: {coll})")
+        ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Path: {coll})")
     elif inheritance == "Enabled":
-        ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Collection: {coll})")
+        ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Path: {coll})")
 
         if mode == "write":
             ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
@@ -325,14 +324,14 @@ def check_coll_inheritance(ctx, coll, mode):
             try:
                 ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
             except Exception:
-                ctx.writeLine("stdout", "ERROR: Something went wrong while setting inheritance.")
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
 
             if ensure_fix(ctx, "inheritance", coll):
-                ctx.writeLine("stdout", f"\tDone.")
+                ctx.writeLine("stdout", "\tDone.")
             else:
-                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance.")            
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
     else:
-        ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Collection: {coll})")
+        ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Path: {coll})")
 
 
 def check_acls(ctx, coll, mode):
@@ -424,14 +423,16 @@ def check_metadata(ctx, coll, mode, user):
                                 # Update zone
                                 ctx.msiModAVUMetadata("-C", str(coll), "set", str(attr), str(new_value), "")
                             except Exception:
-                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting AVU.")
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU '{attr}'.")
 
                             if ensure_fix(ctx, "avu", coll, attr=attr, value=new_value):
-                                ctx.writeLine("stdout", f"\tDone.")
+                                ctx.writeLine("stdout", "\tDone.")
                             else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU.")  
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU '{attr}'.")
                     else:
                         ctx.writeLine("stdout", f"OK: AVU '{attr}' contains zone that matches current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
+    else:
+        ctx.writeLine("stdout", "ERROR: Could not retrieve collection's metadata.")
 
 
 def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
@@ -472,10 +473,10 @@ def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
             ensured = True
     elif op == "inheritance":
         query = genquery.row_iterator(
-                "COLL_INHERITANCE",
-                f"COLL_NAME like '{coll}'",
-                genquery.AS_LIST,
-                ctx)
+            "COLL_INHERITANCE",
+            f"COLL_NAME like '{coll}'",
+            genquery.AS_LIST,
+            ctx)
 
         if query.total_rows() > 0:
             for result in query:
