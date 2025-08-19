@@ -23,7 +23,7 @@ def coll_exists(ctx, coll):
     """
     exists_query = genquery.row_iterator(
         "COLL_ID",
-        "COLL_NAME like '{}'".format(coll),
+        f"COLL_NAME like '{coll}'",
         genquery.AS_LIST,
         ctx)
 
@@ -43,7 +43,7 @@ def get_user_name(ctx, id):
     """
     user_query = genquery.row_iterator(
         "USER_NAME",
-        "USER_ID = '{}'".format(id),
+        f"USER_ID = '{id}'",
         genquery.AS_LIST,
         ctx)
 
@@ -68,7 +68,7 @@ def get_group_coll(ctx, coll):
     else:
         group_query = genquery.row_iterator(
             "COLL_PARENT_NAME",
-            "COLL_NAME like '{}'".format(coll),
+            f"COLL_NAME like '{coll}'",
             genquery.AS_LIST,
             ctx)
 
@@ -78,6 +78,7 @@ def get_group_coll(ctx, coll):
                     group_coll = result[0]
                 else:   # If parent collection is not group collection, go up another level
                     group_coll = get_group_coll(ctx, group_coll)
+
     return group_coll
 
 
@@ -92,7 +93,7 @@ def get_avus(ctx, coll, avu):
     """
     avu_query = genquery.row_iterator(
         "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME like '{}' AND COLL_NAME = '{}'".format(avu, coll),
+        f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'",
         genquery.AS_LIST,
         ctx)
 
@@ -113,7 +114,7 @@ def get_subcolls(ctx, coll):
     """
     subcoll_query = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_NAME like '{}/%'".format(coll),
+        f"COLL_NAME like '{coll}/%'",
         genquery.AS_LIST,
         ctx)
 
@@ -135,7 +136,7 @@ def get_dataobjs(ctx, coll):
     """
     data_query = genquery.row_iterator(
         "DATA_NAME",
-        "COLL_NAME like '{}'".format(coll),
+        f"COLL_NAME like '{coll}'",
         genquery.AS_LIST,
         ctx)
 
@@ -157,7 +158,7 @@ def get_coll_acls(ctx, coll):
     """
     access_query = genquery.row_iterator(
         "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-        "COLL_NAME like '{}'".format(coll),
+        f"COLL_NAME like '{coll}'",
         genquery.AS_LIST,
         ctx)
 
@@ -177,9 +178,7 @@ def get_coll_acls(ctx, coll):
                 user_access['access'] = access
 
             acl.append(user_access)
-        # for item in acl:
-        #     for key, value in item.items():
-        #         ctx.writeLine("stdout", "{}, {}".format(key, value))
+
     return acl
 
 
@@ -194,7 +193,7 @@ def get_data_acls(ctx, coll, data):
     """
     access_query = genquery.row_iterator(
         "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
-        "COLL_NAME like '{}' AND DATA_NAME like '{}'".format(coll, data),
+        f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
         genquery.AS_LIST,
         ctx)
 
@@ -215,9 +214,6 @@ def get_data_acls(ctx, coll, data):
 
             acl.append(user_access)
 
-        # for item in acl:
-        #     for key, value in item.items():
-        #         ctx.writeLine("stdout", "{}, {}".format(key, value))
     return acl
 
 
@@ -232,7 +228,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
     """
     if len(g_acls) > 0 and len(acls) > 0:
         if (acls == g_acls):
-            ctx.writeLine("stdout", "OK: ACLs of current collection/data object are correct. (Path: {})".format(path))
+            ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
         else:
             acls_to_remove = []
             acls_to_add = []
@@ -252,7 +248,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                     acls_to_remove.append(acl)
 
             if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
-                ctx.writeLine("stdout", "WARN: ACLs of current collection/data object have issues. (Path: {})".format(path))
+                ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
 
                 if len(acls_to_add) > 0:
                     for acl in acls_to_add:
@@ -262,7 +258,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                         ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to the group collection but not to this collection/data object, and should have those rights.".format(acl['user_name'], acl['access']))
 
                         if mode == "write":
-                            ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
+                            ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
                             try:
                                 ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                             except Exception:
@@ -276,15 +272,15 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                         ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to this collection/data object, but should not have those rights.".format(acl['user_name'], acl['access']))
 
                         if mode == "write":
-                            ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
+                            ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
                             try:
                                 ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
                             except Exception:
                                 ctx.writeString("serverLog", "Something went wrong while setting ACL.")
             else:
-                ctx.writeLine("stdout", "OK: ACLs of current collection/data object are correct. (Path: {})".format(path))
+                ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
     else:
-        ctx.writeLine("stdout", "ERROR: No ACLs found for this collection/data object. (Path: {})".format(path))
+        ctx.writeLine("stdout", f"ERROR: No ACLs found for this collection/data object. (Path: {path})")
 
 
 def check_coll_inheritance(ctx, coll, mode):
@@ -296,7 +292,7 @@ def check_coll_inheritance(ctx, coll, mode):
     """
     inherit_query = genquery.row_iterator(
         "COLL_INHERITANCE",
-        "COLL_NAME like '{}'".format(coll),
+        f"COLL_NAME like '{coll}'",
         genquery.AS_LIST,
         ctx)
 
@@ -306,19 +302,19 @@ def check_coll_inheritance(ctx, coll, mode):
             inheritance = "Enabled" if result[0] == "1" else "Disabled"
 
     if inheritance == "Disabled":
-        ctx.writeLine("stdout", "OK: Inheritance is {}. (Collection: {})".format(inheritance, coll))
+        ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Collection: {coll})")
     elif inheritance == "Enabled":
-        ctx.writeLine("stdout", "WARN: inheritance is {}, should be Disabled. (Collection: {})".format(inheritance, coll))
+        ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Collection: {coll})")
 
         if mode == "write":
-            ctx.writeLine("stdout", "Running in {} mode, fixing...".format(mode))
+            ctx.writeLine("stdout", f"Running in {mode} mode, fixing...")
 
             try:
                 ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
             except Exception:
                 ctx.writeString("serverLog", "Something went wrong while setting inheritance.")
     else:
-        ctx.writeLine("stdout", "ERROR: Could not retrieve collection's inheritance. (Collection: {})".format(coll))
+        ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Collection: {coll})")
 
 
 def check_acls(ctx, coll, mode):
@@ -343,7 +339,7 @@ def check_acls(ctx, coll, mode):
         if len(dataobjs) > 0:
             for data_obj in dataobjs:
                 dataobj_acls = get_data_acls(ctx, coll, data_obj)
-                compare_acls(ctx, dataobj_acls, group_acls, "{}/{}".format(coll, data_obj), mode)
+                compare_acls(ctx, dataobj_acls, group_acls, f"{coll}/{data_obj}", mode)
 
         # Check ACLs of provided collection's subcollections
         subcolls = get_subcolls(ctx, coll)
@@ -359,7 +355,7 @@ def check_acls(ctx, coll, mode):
             if len(subcoll_dataobjs) > 0:
                 for subcoll_dataobj in subcoll_dataobjs:
                     subcoll_dataobj_acls = get_data_acls(ctx, subcoll, subcoll_dataobj)
-                    compare_acls(ctx, subcoll_dataobj_acls, group_acls, "{}/{}".format(subcoll, subcoll_dataobj), mode)
+                    compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
     else:
         ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
 
@@ -400,10 +396,10 @@ def check_metadata(ctx, coll, mode, user):
                     current_zone = ctx.uuClientZone("")['arguments'][0]
                     avu_zone = value.split('/')[1]
                     if avu_zone != current_zone:
-                        ctx.writeLine("stdout", "WARN: AVU '{}' contains zone that does not match current zone. (Metadata zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
+                        ctx.writeLine("stdout", f"WARN: AVU '{attr}' contains zone that does not match current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
 
                         if (mode == "write"):
-                            ctx.writeLine("stdout", "\tRunning in {} mode, fixing...".format(mode))
+                            ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
                             new_value = value.replace(avu_zone, current_zone)
 
                             try:
@@ -412,7 +408,7 @@ def check_metadata(ctx, coll, mode, user):
                             except Exception:
                                 ctx.writeLine("stdout", "ERROR: Something went wrong while setting AVU.")
                     else:
-                        ctx.writeLine("stdout", "OK: AVU '{}' contains zone that matches current zone. (Metadata zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
+                        ctx.writeLine("stdout", f"OK: AVU '{attr}' contains zone that matches current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
 
 
 def main(rule_args, ctx, rei):
@@ -434,7 +430,7 @@ def main(rule_args, ctx, rei):
     if current_user_type == 'rodsadmin':
         if coll_exists(ctx, coll):
             if 'vault-' in coll:
-                ctx.writeLine("stdout", "Executing package check rule for collection: {} (mode: {})".format(coll, mode))
+                ctx.writeLine("stdout", f"Executing package check rule for collection: {coll} (mode: {mode})")
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
                 # Check if collection ACLs match group ACLs
