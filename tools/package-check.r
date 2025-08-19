@@ -2,14 +2,15 @@
 #
 # Checks data package for incorrect ACLs and/or AVUs after migration.
 #
-# Usage: 
+# Usage:
 # $ irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/package-check.r '*coll=/example/package' '*mode=read/write'
 #
 # *coll: path of the collection to be checked
 # *mode: read (report only), write (report and fix)
 #
-import genquery
 import os
+
+import genquery
 
 
 def coll_exists(ctx, coll):
@@ -111,10 +112,10 @@ def get_subcolls(ctx, coll):
     :returns: List of subcollection names, empty list if none found
     """
     subcoll_query = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_NAME like '{}/%'".format(coll),
-            genquery.AS_LIST,
-            ctx)
+        "COLL_NAME",
+        "COLL_NAME like '{}/%'".format(coll),
+        genquery.AS_LIST,
+        ctx)
 
     subcolls = []
     if subcoll_query.total_rows() > 0:
@@ -175,7 +176,6 @@ def get_coll_acls(ctx, coll):
             else:
                 user_access['access'] = access
 
-
             acl.append(user_access)
         # for item in acl:
         #     for key, value in item.items():
@@ -213,7 +213,6 @@ def get_data_acls(ctx, coll, data):
             else:
                 user_access['access'] = access
 
-
             acl.append(user_access)
 
         # for item in acl:
@@ -244,12 +243,12 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                 access = acl['access']
 
                 if acl not in acls:
-                    if access != "own": # Any own rights from group collection can be skipped
+                    if access != "own":  # Any own rights from group collection can be skipped
                         acls_to_add.append(acl)
                 elif acl not in g_acls:
-                    if user_name != "rods" and (user_name != "anonymous" and access == "read"): # If rods has any rights or anonymous has read rights, they don't have to be removed
+                    if user_name != "rods" and (user_name != "anonymous" and access == "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
                         acls_to_remove.append(acl)
-                elif user_name in path and access == "own": # If group already has own rights on collection/data package, they should be removed
+                elif user_name in path and access == "own":  # If group already has own rights on collection/data package, they should be removed
                     acls_to_remove.append(acl)
 
             if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
@@ -260,7 +259,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                         user_name = acl['user_name']
                         access = acl['access']
 
-                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to the group collection but not to this collection/data object, and should have those rights.".format(acl['user_name'], acl['access']))                    
+                        ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to the group collection but not to this collection/data object, and should have those rights.".format(acl['user_name'], acl['access']))
 
                         if mode == "write":
                             ctx.writeLine("stdout", "\tRunning in {} mode, adding missing ACLs...".format(mode))
@@ -273,9 +272,9 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                     for acl in acls_to_remove:
                         user_name = acl['user_name']
                         access = acl['access']
-                        
+
                         ctx.writeLine("stdout", "\tUser/group '{}' has '{}' rights to this collection/data object, but should not have those rights.".format(acl['user_name'], acl['access']))
-                        
+
                         if mode == "write":
                             ctx.writeLine("stdout", "\tRunning in {} mode, removing extra ACLs...".format(mode))
                             try:
@@ -373,14 +372,14 @@ def check_inheritance(ctx, coll, mode):
     :param mode: Mode of operation (read or write)
     """
     # Check inheritance of collection
-    coll_inherit = check_coll_inheritance(ctx, coll, mode)
+    check_coll_inheritance(ctx, coll, mode)
 
     # Check inheritance of collection's subcollections
     subcolls = get_subcolls(ctx, coll)
 
     if len(subcolls) > 0:
         for subcoll in subcolls:
-            subcoll_inherit = check_coll_inheritance(ctx, subcoll, mode)
+            check_coll_inheritance(ctx, subcoll, mode)
 
 
 def check_metadata(ctx, coll, mode, user):
@@ -397,7 +396,7 @@ def check_metadata(ctx, coll, mode, user):
         vault_status = coll_avus['org_vault_status']
         if vault_status == "PUBLISHED" or vault_status == "DEPUBLISHED":
             for (attr, value) in coll_avus.items():
-                if os.path.isabs(value): # Filter AVUs that refer to a path
+                if os.path.isabs(value):  # Filter AVUs that refer to a path
                     current_zone = ctx.uuClientZone("")['arguments'][0]
                     avu_zone = value.split('/')[1]
                     if avu_zone != current_zone:
@@ -466,4 +465,4 @@ OUTPUT ruleExecOut
 # (DONE) TODO: Add a check so that it only runs on vault packages
 # (DONE) TODO: Reorder arguments so that ctx is always the first argument (similar to the ruleset), except for main
 # (DONE) TODO: Use the same docstyle (Sphinx) for function comments
-# TODO: Run flake8 / ruff on the script for linting
+# (DONE) TODO: Run flake8 / ruff on the script for linting
