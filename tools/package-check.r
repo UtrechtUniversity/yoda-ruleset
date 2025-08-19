@@ -233,23 +233,25 @@ def compare_acls(ctx, acls, g_acls, path, mode):
             acls_to_remove = []
             acls_to_add = []
 
+            # Join ACLs of both lists
             join_acls = [acl for i, acl in enumerate(acls + g_acls) if acl not in (acls + g_acls)[:i]]
             for acl in join_acls:
                 user_name = acl['user_name']
                 access = acl['access']
 
-                if acl not in acls:
+                if acl not in acls:  # If ACL is in group collection's ACLs but not collection/data object's ACLs, it might need to be added
                     if access != "own":  # Any own rights from group collection can be skipped
                         acls_to_add.append(acl)
-                elif acl not in g_acls:
+                elif acl not in g_acls:  # If ACL is in collection/data object's ACLs but not in group collection's ACLs, it might need to be removed
                     if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
                         acls_to_remove.append(acl)
-                elif user_name in path and access == "own":  # If group already has own rights on collection/data package, they should be removed
+                elif user_name in path and access == "own":  # If group already has own rights on collection/data object, they should be removed
                     acls_to_remove.append(acl)
 
             if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
                 ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
 
+                # Add missing ACLs
                 if len(acls_to_add) > 0:
                     for acl in acls_to_add:
                         user_id = acl['user_id']
@@ -265,11 +267,13 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                             except Exception:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
+                            # Ensure write operation was successful
                             if ensure_fix(ctx, "acl-add", path, user_id=user_id, access=access):
                                 ctx.writeLine("stdout", "\tDone.")
                             else:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
+                # Remove extra ACLs
                 if len(acls_to_remove) > 0:
                     for acl in acls_to_remove:
                         user_id = acl['user_id']
@@ -285,6 +289,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                             except Exception:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
+                            # Ensure write operation was successful
                             if ensure_fix(ctx, "acl-remove", path, user_id=user_id, access=access):
                                 ctx.writeLine("stdout", "\tDone.")
                             else:
@@ -313,6 +318,7 @@ def check_coll_inheritance(ctx, coll, mode):
         for result in inherit_query:
             inheritance = "Enabled" if result[0] == "1" else "Disabled"
 
+    # Vault packages should have inheritance disabled
     if inheritance == "Disabled":
         ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Path: {coll})")
     elif inheritance == "Enabled":
@@ -326,6 +332,7 @@ def check_coll_inheritance(ctx, coll, mode):
             except Exception:
                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
 
+            # Ensure write operation was successful
             if ensure_fix(ctx, "inheritance", coll):
                 ctx.writeLine("stdout", "\tDone.")
             else:
@@ -409,7 +416,8 @@ def check_metadata(ctx, coll, mode, user):
         vault_status = coll_avus['org_vault_status']
         if vault_status == "PUBLISHED" or vault_status == "DEPUBLISHED":
             for (attr, value) in coll_avus.items():
-                if os.path.isabs(value):  # Filter AVUs that refer to a path
+                # Filter AVUs that refer to a path
+                if os.path.isabs(value):
                     current_zone = ctx.uuClientZone("")['arguments'][0]
                     avu_zone = value.split('/')[1]
                     if avu_zone != current_zone:
@@ -419,12 +427,13 @@ def check_metadata(ctx, coll, mode, user):
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
                             new_value = value.replace(avu_zone, current_zone)
 
+                            # Update zone name
                             try:
-                                # Update zone
                                 ctx.msiModAVUMetadata("-C", str(coll), "set", str(attr), str(new_value), "")
                             except Exception:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU '{attr}'.")
 
+                            # Ensure write operation was successful
                             if ensure_fix(ctx, "avu", coll, attr=attr, value=new_value):
                                 ctx.writeLine("stdout", "\tDone.")
                             else:
@@ -507,11 +516,11 @@ def main(rule_args, ctx, rei):
         current_user = ctx.uuClientFullNameWrapper("")['arguments'][0]
         current_user_type = ctx.uuGetUserType(current_user, "")['arguments'][1]
     except Exception:
-        ctx.writeString("serverLog", "Something went wrong while retrieving user information.")
+        ctx.writeLine("stdout", "ERROR: Something went wrong while retrieving user information.")
 
-    if current_user_type == 'rodsadmin':
+    if current_user_type == 'rodsadmin':  # Only rodsadmin users can run this script
         if coll_exists(ctx, coll):
-            if 'vault-' in coll:
+            if 'vault-' in coll:  # Script should be run on vault collections only
                 ctx.writeLine("stdout", f"Executing package check rule for collection: {coll} (mode: {mode})")
                 ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
