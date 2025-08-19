@@ -1,9 +1,14 @@
 #!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
 #
-# irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/package-check.r '*coll=' '*mode='
+# Checks data package for incorrect ACLs and/or AVUs after migration.
+#
+# Usage: 
+# $ irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/package-check.r '*coll=/example/package' '*mode=read/write'
+#
+# *coll: path of the collection to be checked
+# *mode: read (report only), write (report and fix)
 #
 import genquery
-import irods_types
 import os
 
 
@@ -54,7 +59,7 @@ def get_group_coll(ctx, coll):
     :param ctx: Combined type of a callback and rei struct
     :param coll: Collection to determine group of
 
-    :returns: Name of the group of the collection
+    :returns: Name of the group of the collection, empty string if not found
     """
     group_coll = ""
     if coll.rsplit('/', 1)[-1].startswith("vault-"):
@@ -82,7 +87,7 @@ def get_avus(ctx, coll, avu):
     :param coll: Collection to retrieve AVUs from
     :param avu:  Attribute to filter AVUs
 
-    :returns: Dictionary of AVUs for the specified collection.
+    :returns: Dictionary of AVUs for the specified collection, empty dictionary if none found
     """
     avu_query = genquery.row_iterator(
         "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
@@ -103,7 +108,7 @@ def get_subcolls(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to retrieve subcollections from
 
-    :returns: List of subcollection names
+    :returns: List of subcollection names, empty list if none found
     """
     subcoll_query = genquery.row_iterator(
             "COLL_NAME",
@@ -125,7 +130,7 @@ def get_dataobjs(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to retrieve data objects from
 
-    :returns: List of data object names
+    :returns: List of data object names, empty list if none found
     """
     data_query = genquery.row_iterator(
         "DATA_NAME",
@@ -147,7 +152,7 @@ def get_coll_acls(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to retrieve ACLs from
 
-    :returns: List of user access details for the collection
+    :returns: List of user access details for the collection, empty list if none found
     """
     access_query = genquery.row_iterator(
         "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
@@ -185,7 +190,7 @@ def get_data_acls(ctx, coll, data):
     :param coll: Collection containing the data object
     :param data: Name of the data object to retrieve ACLs for
 
-    :returns: List of user access details for the data object
+    :returns: List of user access details for the data object, empty list if none found
     """
     access_query = genquery.row_iterator(
         "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
@@ -367,7 +372,6 @@ def check_inheritance(ctx, coll, mode):
     :param coll: Collection to check inheritance for
     :param mode: Mode of operation (read or write)
     """
-    # Inheritance should be disabled on vault packages
     # Check inheritance of collection
     coll_inherit = check_coll_inheritance(ctx, coll, mode)
 
@@ -387,46 +391,29 @@ def check_metadata(ctx, coll, mode, user):
     :param mode: Mode of operation (read or write)
     :param user: User performing the operation
     """
-    # if vault status "PUBLISHED" or "DEPUBLISHED"
-        # if AVU refers to Yoda collection, update zone name
-        # if DOI record exists at DataCite, update URL
-        # call update-publications.r on package
-
     coll_avus = get_avus(ctx, coll, "org_%")
 
     if bool(coll_avus):
         vault_status = coll_avus['org_vault_status']
         if vault_status == "PUBLISHED" or vault_status == "DEPUBLISHED":
             for (attr, value) in coll_avus.items():
-                if os.path.isabs(value):
+                if os.path.isabs(value): # Filter AVUs that refer to a path
                     current_zone = ctx.uuClientZone("")['arguments'][0]
                     avu_zone = value.split('/')[1]
                     if avu_zone != current_zone:
-                        ctx.writeLine("stdout", "WARN: AVU '{}' contains zone that does not match current zone. (AVU zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
+                        ctx.writeLine("stdout", "WARN: AVU '{}' contains zone that does not match current zone. (Metadata zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
 
                         if (mode == "write"):
                             ctx.writeLine("stdout", "\tRunning in {} mode, fixing...".format(mode))
                             new_value = value.replace(avu_zone, current_zone)
 
-                            ctx.writeLine("stdout", "attr: {} | new_value: {} | coll: {}".format(str(attr), str(new_value), coll))
-
                             try:
-                                # Set write permissions first to be able to modify AVU
-                                ctx.msiSetACL("recursive", "admin:write", str(user), str(coll))
-
                                 # Update zone
-                                out = ctx.msiString2KeyValPair("{}={}".format(str(attr), str(new_value)), irods_types.KeyValPair())
-                                kvp = out['arguments'][1]
-                                ctx.writeLine("stdout", str(type(kvp)))
-                                ctx.msiSetKeyValuePairsToObj(kvp, str(coll), "-C")
-
-                                # Remove write permissions
-                                ctx.msiSetACL("recursive", "null", str(user), str(coll))
-
+                                ctx.msiModAVUMetadata("-C", str(coll), "set", str(attr), str(new_value), "")
                             except Exception:
                                 ctx.writeLine("stdout", "ERROR: Something went wrong while setting AVU.")
                     else:
-                        ctx.writeLine("stdout", "OK: AVU '{}' contains zone that matches current zone. (AVU zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
+                        ctx.writeLine("stdout", "OK: AVU '{}' contains zone that matches current zone. (Metadata zone: '{}', current zone: '{}')".format(attr, avu_zone, current_zone))
 
 
 def main(rule_args, ctx, rei):
@@ -461,6 +448,7 @@ def main(rule_args, ctx, rei):
 
                 # Update metadata
                 check_metadata(ctx, coll, mode, current_user)
+                ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
             else:
                 ctx.writeLine("stdout", "ERROR: This rule should be run on vault collections only.")
         else:
