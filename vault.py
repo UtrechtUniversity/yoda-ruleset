@@ -59,7 +59,8 @@ def api_vault_submit(ctx: rule.Context, coll: str, previous_version: str | None 
 
     :returns: API status
     """
-    space, _, _, _ = pathutil.info(coll)
+    # E.g /tempZone/home/vault-x/y       => Space.VAULT,       'tempZone', 'vault-x',       'y'
+    space, _, _, _ = pathutil.info(coll) #Parse a path into a (Space, zone, group, subpath) tuple
     if space is not pathutil.Space.VAULT:
         return api.Error('invalid_path', 'Invalid vault path.')
 
@@ -173,7 +174,7 @@ def api_vault_republish(ctx: rule.Context, coll: str) -> api.Result:
 
 
 @api.make()
-def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str) -> api.Result:
+def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str) -> api.Result: # FIXME: Highlight
     """Copy data package from vault to research space.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -182,6 +183,50 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
 
     :returns: API status
     """
+    # Add cronjob avu about pending.
+
+
+    log.write(ctx, "copy_to_research: from <{}> to <{}>".format(coll_origin, coll_target))
+
+    # TODO: Below is Copied from post_status_transition. 
+    # TODO: Other steps to be done before setting cronjob state? See post_status_transition
+    #if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
+    #actor = "system"
+
+    # Log action at least one second after previous action, to ensure correct order of provenance log.
+    #time.sleep(1)
+    #provenance.log_action(ctx, actor, path, "accepted for vault")
+
+    # Store actor of accepted for vault.
+    #folder.set_accepter(ctx, path, actor)
+
+    # TODO: NEED?
+    # Send notifications to submitter.
+    #if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+    #    submitter = folder.get_submitter(ctx, path)
+    #    message = "Data package accepted for vault"
+    #    notifications.set(ctx, actor, submitter, path, message)
+
+    # Set state to tell CopyToResearch cronjobs to pick packages up
+    attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research" 
+    # FIXME: Permission error, who is the right actor?
+    # actor = "system" # Failed modAVU
+    # actor = user.full_name(ctx)
+    # actor = user.user_and_zone(ctx)
+    # FIXME: Error somehow, perhaps permission issue? Or can vault package AVU be changed?
+    # avu.set_on_coll(ctx, coll_origin, attribute, constants.CRONJOB_STATE['PENDING'], actor)
+    # TODO: Confirmed, vault package avu can't be chagned, successful example from research area 
+    # coll = "/tempZone/home/research-initial/data-package-dylan"
+    # folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['PENDING'], coll)
+    folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['PENDING'], coll_origin)
+    # TODO: update the returned message?
+    return {"status": "ok",
+        "target": coll_target,
+        "origin": coll_origin}
+    """
+    # TODO: Below are the legacy codes, will be reused TBD. :w
+    
+    # Check where to reuse later
     zone = user.zone(ctx)
 
     # API error introduces post-error in requesting application.
@@ -189,7 +234,7 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
         return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage')
 
     # Check if target is a research folder. I.e. none-vault folder.
-    parts = coll_target.split('/')
+    parts = coll_target.split('/') #FIXME: Can be replaced by util func
     group_name = parts[3]
     if group_name.startswith('vault-'):
         return api.Error('RequiredIsResearchArea', 'Please select a specific research folder for your datapackage')
@@ -241,7 +286,7 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
     return {"status": "ok",
             "target": coll_target,
             "origin": coll_origin}
-
+    """
 
 @api.make()
 def api_vault_preservable_formats_lists(ctx: rule.Context) -> api.Result:
@@ -915,12 +960,55 @@ def api_revoke_read_access_research_group(ctx: rule.Context, coll: str) -> api.R
 
 
 @rule.make()
+def rule_vault_copy_to_research(ctx: rule.Context) -> None:
+    # TODO: Periodically runs this rule, but no yet set the Cronjob config in ansible tasks (?)
+    # Run it manually for testing purpose
+    copy_to_research(ctx, constants.CRONJOB_STATE["PENDING"]) #FIXME: Avoided Naming conflict with CopyToVault
+    copy_to_research(ctx, constants.CRONJOB_STATE["RETRY"]) #FIXME: IMprove Cronjob_state Constants?
+
+
+def copy_to_research(ctx: rule.Context, state: str) -> None: #FIXME: Highlight
+    """Collect all folders with a given cronjob state
+       and try to copy them to the research.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param state: One of constants.CRONJOB_STATE
+    """
+    # TODO: What if no cronjob avu found?
+    iter = get_copy_to_research_colls(ctx, state)
+    for row in iter:
+        coll = row[0]
+        log.write(ctx, "copy_to_research {}: {}".format(state, coll))
+        if not folder.precheck_folder_secure(ctx, coll): # If precheck fails, go to the next package
+            # FIXME: is it possible to accumulate the folders in this indefinite loop?
+            # FIXME: Still necessary for CtR?
+            continue
+
+        # TODO: Not completed the CtR logic yet
+        # failed copy #FIXME: Could this be misleading? this handles securing and then failed_copy
+        if not folder.folder_secure(ctx, coll): 
+            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            folder.folder_secure_set_retry(ctx, coll)
+
+
+def get_copy_to_research_colls(ctx: rule.Context, cronjob_state: str) -> List:
+    # TODO: Add cronjob_copy_to_research to AVU somewhere
+    iter = list(genquery.Query(ctx,
+                ['COLL_NAME'],
+                "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
+                    constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research",
+                    cronjob_state),
+                output=genquery.AS_LIST))
+    return iter
+
+
+@rule.make()
 def rule_vault_copy_to_vault(ctx: rule.Context) -> None:
     copy_to_vault(ctx, constants.CRONJOB_STATE["PENDING"])
     copy_to_vault(ctx, constants.CRONJOB_STATE["RETRY"])
 
 
-def copy_to_vault(ctx: rule.Context, state: str) -> None:
+def copy_to_vault(ctx: rule.Context, state: str) -> None: #FIXME: Highlight
     """Collect all folders with a given cronjob state
        and try to copy them to the vault.
 
@@ -931,11 +1019,12 @@ def copy_to_vault(ctx: rule.Context, state: str) -> None:
     for row in iter:
         coll = row[0]
         log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
-        if not folder.precheck_folder_secure(ctx, coll):
+        if not folder.precheck_folder_secure(ctx, coll): # If precheck fails, go to the next package
+            # FIXME: is it possible to accumulate the folders in this indefinite loop?
             continue
 
-        # failed copy
-        if not folder.folder_secure(ctx, coll):
+        # failed copy #FIXME: Could this be misleading? this handles securing and then failed_copy
+        if not folder.folder_secure(ctx, coll): 
             log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
             folder.folder_secure_set_retry(ctx, coll)
 

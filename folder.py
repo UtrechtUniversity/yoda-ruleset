@@ -521,7 +521,10 @@ def set_cronjob_status(ctx: rule.Context, status: str, coll: str) -> bool:
 
     :returns: True when successfully set
     """
-    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
+    # FIXME: 
+    # return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
+
+    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research", status, True)
 
 
 def set_acl_parents(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: str) -> None:
