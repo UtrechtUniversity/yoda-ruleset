@@ -242,7 +242,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                     if access != "own":  # Any own rights from group collection can be skipped
                         acls_to_add.append(acl)
                 elif acl not in g_acls:
-                    if user_name != "rods" and (user_name != "anonymous" and access == "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
+                    if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
                         acls_to_remove.append(acl)
                 elif user_name in path and access == "own":  # If group already has own rights on collection/data package, they should be removed
                     acls_to_remove.append(acl)
@@ -252,6 +252,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
 
                 if len(acls_to_add) > 0:
                     for acl in acls_to_add:
+                        user_id = acl['user_id']
                         user_name = acl['user_name']
                         access = acl['access']
 
@@ -262,10 +263,17 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                             try:
                                 ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                             except Exception:
-                                ctx.writeString("serverLog", "Something went wrong while setting ACL.")
+                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting ACLs.")
+
+                            if ensure_fix(ctx, "acl-add", path, user_id=user_id, access=access):
+                                ctx.writeLine("stdout", f"\tDone.")
+                            else:
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs.") 
+
 
                 if len(acls_to_remove) > 0:
                     for acl in acls_to_remove:
+                        user_id = acl['user_id']
                         user_name = acl['user_name']
                         access = acl['access']
 
@@ -276,7 +284,12 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                             try:
                                 ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
                             except Exception:
-                                ctx.writeString("serverLog", "Something went wrong while setting ACL.")
+                                ctx.writeLine("stdout", "ERROR: Something went wrong while setting ACL.")
+
+                            if ensure_fix(ctx, "acl-remove", path, user_id=user_id, access=access):
+                                ctx.writeLine("stdout", f"\tDone.")
+                            else:
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACL.") 
             else:
                 ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
     else:
@@ -307,12 +320,17 @@ def check_coll_inheritance(ctx, coll, mode):
         ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Collection: {coll})")
 
         if mode == "write":
-            ctx.writeLine("stdout", f"Running in {mode} mode, fixing...")
+            ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
 
             try:
                 ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
             except Exception:
-                ctx.writeString("serverLog", "Something went wrong while setting inheritance.")
+                ctx.writeLine("stdout", "ERROR: Something went wrong while setting inheritance.")
+
+            if ensure_fix(ctx, "inheritance", coll):
+                ctx.writeLine("stdout", f"\tDone.")
+            else:
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance.")            
     else:
         ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Collection: {coll})")
 
@@ -407,8 +425,71 @@ def check_metadata(ctx, coll, mode, user):
                                 ctx.msiModAVUMetadata("-C", str(coll), "set", str(attr), str(new_value), "")
                             except Exception:
                                 ctx.writeLine("stdout", "ERROR: Something went wrong while setting AVU.")
+
+                            if ensure_fix(ctx, "avu", coll, attr=attr, value=new_value):
+                                ctx.writeLine("stdout", f"\tDone.")
+                            else:
+                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU.")  
                     else:
                         ctx.writeLine("stdout", f"OK: AVU '{attr}' contains zone that matches current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
+
+
+def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
+    """Ensures write operation was successful.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param op:      Type of operation
+    :param coll:    Collection to check
+    :param user_id: User ID of the user (ACL)
+    :param access:  Access type (ACL)
+    :param attr:    Attribute name (AVU)
+    :param value:   Value of attribute (AVU)
+    """
+    ensured = False
+
+    if access == "read":
+        access = ['read', 'read_object']
+    elif access == "write":
+        access = ['write', 'write_object']
+
+    if op == "acl-add":
+        query = genquery.row_iterator(
+            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
+            genquery.AS_LIST,
+            ctx)
+
+        if query.total_rows() > 0:
+            ensured = True
+    elif op == "acl-remove":
+        query = genquery.row_iterator(
+            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
+            genquery.AS_LIST,
+            ctx)
+
+        if not (query.total_rows() > 0):
+            ensured = True
+    elif op == "inheritance":
+        query = genquery.row_iterator(
+                "COLL_INHERITANCE",
+                f"COLL_NAME like '{coll}'",
+                genquery.AS_LIST,
+                ctx)
+
+        if query.total_rows() > 0:
+            for result in query:
+                ensured = True if result[0] == "0" else False
+    elif op == "avu":
+        query = genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'",
+            genquery.AS_LIST,
+            ctx)
+
+        if query.total_rows() > 0:
+            ensured = True
+    return ensured
 
 
 def main(rule_args, ctx, rei):
@@ -418,8 +499,8 @@ def main(rule_args, ctx, rei):
     :param ctx:       iRODS context
     :param rei:       Rule execution information
     """
-    coll = global_vars["*coll"]
-    mode = global_vars["*mode"]
+    coll = global_vars["*coll"].strip('"')
+    mode = global_vars["*mode"].strip('"')
 
     try:
         current_user = ctx.uuClientFullNameWrapper("")['arguments'][0]
@@ -453,12 +534,3 @@ def main(rule_args, ctx, rei):
 
 INPUT *coll=, *mode=read
 OUTPUT ruleExecOut
-
-# (DONE) TODO: Add exception to write mode for "own" rights of group
-# TODO: Test another user
-# TODO: Add sanity check (double check ACLs for specific users)
-# TODO: Add sanity check (rerun check after fix)
-# (DONE) TODO: Add a check so that it only runs on vault packages
-# (DONE) TODO: Reorder arguments so that ctx is always the first argument (similar to the ruleset), except for main
-# (DONE) TODO: Use the same docstyle (Sphinx) for function comments
-# (DONE) TODO: Run flake8 / ruff on the script for linting
