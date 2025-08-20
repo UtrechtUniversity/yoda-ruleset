@@ -454,6 +454,8 @@ def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
     :param access:  Access type (ACL)
     :param attr:    Attribute name (AVU)
     :param value:   Value of attribute (AVU)
+
+    :returns: Boolean indicating if write operation was successful
     """
     ensured = False
 
@@ -489,7 +491,7 @@ def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
 
         if query.total_rows() > 0:
             for result in query:
-                ensured = True if result[0] == "0" else False
+                ensured = result[0] == "0"
     elif op == "avu":
         query = genquery.row_iterator(
             "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
@@ -542,5 +544,5 @@ def main(rule_args, ctx, rei):
     else:
         ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")
 
-INPUT *coll=, *mode=read
-OUTPUT ruleExecOut
+#INPUT *coll=, *mode=read
+#OUTPUT ruleExecOut
