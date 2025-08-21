@@ -207,26 +207,21 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
     #    message = "Data package accepted for vault"
     #    notifications.set(ctx, actor, submitter, path, message)
 
+    # TODO: Cronjob version, to be dropped.
     # Set state to tell CopyToResearch cronjobs to pick packages up
-    attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research" 
+    #attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research" 
     # FIXME: Permission error, who is the right actor?
     # actor = "system" # Failed modAVU
     # actor = user.full_name(ctx)
     # actor = user.user_and_zone(ctx)
     # FIXME: Error somehow, perhaps permission issue? Or can vault package AVU be changed?
     # avu.set_on_coll(ctx, coll_origin, attribute, constants.CRONJOB_STATE['PENDING'], actor)
-    # TODO: Confirmed, vault package avu can't be chagned, successful example from research area 
+    # TODO: Confirmed, vault package avu can't be changed, successful counterexample from research area
     # coll = "/tempZone/home/research-initial/data-package-dylan"
     # folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['PENDING'], coll)
-    folder.set_cronjob_status(ctx, constants.CRONJOB_STATE['PENDING'], coll_origin)
     # TODO: update the returned message?
-    return {"status": "ok",
-        "target": coll_target,
-        "origin": coll_origin}
-    """
-    # TODO: Below are the legacy codes, will be reused TBD. :w
-    
-    # Check where to reuse later
+
+    # TODO: Below are the legacy codes
     zone = user.zone(ctx)
 
     # API error introduces post-error in requesting application.
@@ -245,7 +240,7 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
     new_package_collection = coll_target + '/' + parts[-1]
 
     # Now check whether target collection already exist.
-    if collection.exists(ctx, new_package_collection):
+    if collection.exists(ctx, new_package_collection): #TODO: All error catching and reporting are not done
         return api.Error('PackageAlreadyPresentInTarget', 'This datapackage is already present at the specified place')
 
     # Check if target path exists.
@@ -274,19 +269,90 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
     if groups.user_role(ctx, user_full_name, group_name) not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
+    # TODO: Add retry mechnism
+    # TODO: folder.py precheck needed?  (precheck_folder_secure)
     # Register to delayed rule queue.
-    delay = 10
+    
+    # TODO: Legacy delay codes, as references
+    #delay = 10
+    #ctx.delayExec(
+    #    "<PLUSET>%ds</PLUSET>" % delay,
+    #    "iiCopyFolderToResearch('{}', '{}')".format(coll_origin, coll_target),
+    #    "")
 
-    ctx.delayExec(
-        "<PLUSET>%ds</PLUSET>" % delay,
-        "iiCopyFolderToResearch('{}', '{}')".format(coll_origin, coll_target),
-        "")
-
-    # TODO: response nog veranderen
+    max_retry = 5 #FIXME: Replace by config #TODO: Also add timeout
+    copy_folder_to_research(ctx, coll_origin, coll_target)
     return {"status": "ok",
-            "target": coll_target,
-            "origin": coll_origin}
+        "target": coll_target,
+        "origin": coll_origin}
+
+
+def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
+    """Copy folder and all its contents to target in research space using irsync.
+
+    The data will reside under folder '/original' within the research space.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param coll:   Path of a folder in the research space
+    :param target: Path of a package in the research space
+
+    :returns: True for successful copy
     """
+    #FIXME: Revise to CtR sanity check
+    #sanity_check_results = get_sanity_checks_results_copy_to_vault_paths(coll, target)
+
+    #if len(sanity_check_results) > 0:
+    #    log.write(ctx, "Not copying folder to vault because of sanity check failures: "
+    #              + str(sanity_check_results))
+    #    return False
+
+    returncode = 0
+    #target = "/tempZone/home/research-core-0/core-CtR-backup/data-package-dylan[1755542663]"
+    irsync_command = get_copy_folder_to_research_irsync_command(coll,
+                                                             target,
+                                                             config.resource_vault,
+                                                             config.vault_copy_multithread_enabled)
+
+    try:
+        returncode = subprocess.call(irsync_command)
+    except Exception as e:
+        log.write(ctx, "irsync failure: " + str(e))
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    if returncode != 0:
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    return True
+
+
+
+def get_copy_folder_to_research_irsync_command(coll: str, target: str, vault_resource: Union[str, None], multi_threading: bool) -> List[str]:
+    """Internal function to determine rsync command for copy-to-vault
+
+       :param coll: source collection
+       :param target: target collection
+       :param vault_resource: resource to store vault data on (can be None)
+       :param multi_threading: if set to false, disable multi threading,
+                               otherwise use server default
+
+       :returns: irsync command with parameters in list format
+    """
+    #TODO: Investigate irsync cmd and improve the CtR
+    #TODO: Add permission check or error handling if the actor is not in the ACL or the target folder
+    irsync_command: List[str] = ["irsync", "-rK"]
+
+    if vault_resource is not None:
+        irsync_command.extend(["-R", vault_resource])
+
+    if not multi_threading:
+        irsync_command.extend(["-N", "0"])  # 0 means no multi threading
+
+    #irsync_command.extend(["i:{}/".format(coll), "i:{}/original".format(target)])
+    irsync_command.extend(["i:{}/".format(coll), "i:{}/original".format(target)])
+    return irsync_command
+
 
 @api.make()
 def api_vault_preservable_formats_lists(ctx: rule.Context) -> api.Result:

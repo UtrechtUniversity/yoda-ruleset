@@ -39,13 +39,15 @@ def can_coll_create(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed 
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
     if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
+        log.debug(ctx, 'folder.is_locked <{}>'.format(folder.is_locked(ctx, pathutil.dirname(coll))))
+        log.debug(ctx, 'user.is_admin <{}>'.format(user.is_admin(ctx, actor)))
         if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_admin(ctx, actor):
             return policy.fail('Parent folder is locked')
 
     if pathutil.info(coll).space is pathutil.Space.INTAKE:
         if policies_intake.is_coll_in_locked_dataset(ctx, user.user_and_zone(ctx), pathutil.chop(coll)[0]):
             return policy.fail('Collection part of a locked dataset')
-
+    log.debug(ctx, 'cpolicy.succeed() <{}>'.format(policy.succeed()))
     return policy.succeed()
 
 

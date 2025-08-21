@@ -174,7 +174,7 @@ def api_folder_reject(ctx: rule.Context, coll: str) -> api.Result:
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_folder_secure(ctx: rule.Context, coll: str) -> str:
+def rule_folder_secure(ctx: rule.Context, coll: str) -> str: #FIXME: Highlight
     """Rule interface for processing vault status transition request.
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
@@ -203,10 +203,13 @@ def precheck_folder_secure(ctx: rule.Context, coll: str) -> bool:
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "folder_secure: User is not rodsadmin")
         return False
-
-    found, last_run = get_last_run_time(ctx, coll)
-    if (not correct_copytovault_start_status(ctx, coll)
-            or not correct_copytovault_start_location(coll)
+    # To get the last_run_time, you need to set the lastruntime first
+    found, last_run = get_last_run_time(ctx, coll) 
+    # Check if avu is pending or retry
+    # Reusable: Check if the location of coll is in research or deposit area (FIXME: to be reused in CtR, maybe good to check if the coll still the same coll path? aka not moved away during the retry time)
+    # Backoff time for duplicated transition, maybe use randomized backoff_time?NOT in the scope of this project
+    if (not correct_copytovault_start_status(ctx, coll) 
+            or not correct_copytovault_start_location(coll) 
             or not misc.last_run_time_acceptable(found, last_run, config.vault_copy_backoff_time)):
         return False
 
@@ -522,9 +525,9 @@ def set_cronjob_status(ctx: rule.Context, status: str, coll: str) -> bool:
     :returns: True when successfully set
     """
     # FIXME: 
-    # return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
+    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
 
-    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research", status, True)
+    #return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_research", status, True)
 
 
 def set_acl_parents(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: str) -> None:
@@ -580,7 +583,7 @@ def set_vault_target(ctx: rule.Context, coll: str, target: str) -> bool:
 def determine_and_set_vault_target(ctx: rule.Context, coll: str) -> str:
     """Determine and set target on coll"""
     found, target = get_existing_vault_target(ctx, coll)
-
+    log.write(ctx, "coll: <{}> and target <{}>".format(coll, target))
     # Overwrite vault target if it does not pass sanity checks. This should usually
     # fix any wrong vault target. There's a second check in the copy_folder_to_vault
     # function to prevent TOCTOU issues.
