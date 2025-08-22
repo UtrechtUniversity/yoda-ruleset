@@ -121,7 +121,7 @@ elapsed_time() {
 start_time=$(date +%s)
 
 # Start elapsed time counter in background
-elapsed_time $start_time &
+elapsed_time "$start_time" &
 timer_pid=$!
 
 # Execute rule and capture output
@@ -151,9 +151,8 @@ $irule_output
 
 Troubleshooting:
 1. Verify source collection exists: ils '$source_collection'
-2. Check target does not exist and its parent directory exists
-3. Ensure adequate storage space
-4. Confirm proper permissions on both paths
+2. Check target's parent directory exists
+3. Confirm proper permissions on both paths
 EOF
     exit $exit_code
 else
