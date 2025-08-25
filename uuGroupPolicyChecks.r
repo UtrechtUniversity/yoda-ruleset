@@ -550,8 +550,10 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager || *actorUserType == "rodsadmin") {
 		uuGroupGetManagers(*groupName, *managers);
-		# This ensures that groups always have at least one manager.
-		if (size(*managers) > 1) {
+		# These two conditions ensure that groups always have at least one manager.
+		if (*member == *actor && size(*managers) > 1) {
+			*allowed = 1;
+		} else if (*member != *actor && size(*managers) >= 1) {
 			*allowed = 1;
 		} else {
 			*reason = "You cannot remove the last manager in group *groupName.";
@@ -584,8 +586,10 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 			uuGroupUserIsManager(*groupName, *actor, *isManager);
 			if (*isManager || *actorUserType == "rodsadmin") {
 				uuGroupGetManagers(*groupName, *managers);
-				# This ensures that groups always have at least one manager.
-				if (size(*managers) > 1 || *newRole == "manager") {
+				if (*member != *actor || *newRole == "manager") {
+					*allowed = 1;
+				} else if (*member == *actor && size(*managers) > 1) {
+					# This ensures that groups always have at least one manager.
 					*allowed = 1;
 				} else {
 					*reason = "You cannot demote the last manager in group *groupName.";
