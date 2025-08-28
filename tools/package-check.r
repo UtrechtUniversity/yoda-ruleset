@@ -122,10 +122,10 @@ def get_acls(ctx, coll, data="", item=""):
             ctx)
     elif item == "dataobj" and data != "":
         access_query = genquery.row_iterator(
-        "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
-        f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
-        genquery.AS_LIST,
-        ctx)
+            "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
+            f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
+            genquery.AS_LIST,
+            ctx)
     else:
         return acl
 
