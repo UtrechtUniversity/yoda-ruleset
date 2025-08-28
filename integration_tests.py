@@ -20,6 +20,7 @@ import meta
 import research
 import schema
 from util import api, avu, collection, config, constants, data_object, diff_data, group, jsonutil, log, measure_coverage, msi, resources, rule, user
+from vault import copy_folder_to_research
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -866,6 +867,9 @@ basic_integration_tests = [
      "check": lambda x: x is True},
     {"name": "hashes_collection.identical_collections",
      "test": lambda ctx: test_hashes_on_identical_collections(ctx),
+     "check": lambda x: x is True},
+    {"name": "copy_folder_to_research.copied_correctly",
+     "test": lambda ctx: _test_copy_folder_to_research(ctx),
      "check": lambda x: x is True}
 ]
 
@@ -1114,3 +1118,50 @@ def test_hashes_on_identical_collections(ctx):
     collection.remove(ctx, coll2)
 
     return hash1 == hash2
+
+
+def _test_copy_folder_to_research(ctx):
+    """Test for copy-to-research's irsync function. Verify
+    if files are copied correctly to research space.
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: true if collection is copied to desinated research space
+                and permissions are correctly set, else false
+    """
+
+    # Generate unique test identifiers
+    test_id = str(uuid.uuid4())
+    zone = user.zone(ctx)
+
+    # Create test collections
+    vault_origin = f"/{zone}/home/vault-initial/test_{test_id}"
+    research_target = f"/{zone}/home/research-initial/test_{test_id}"
+
+    try:
+        # Setup origin in vault
+        collection.create(ctx, vault_origin)
+        data_object.write(ctx, f"{vault_origin}/test_file.txt", "TEST_CONTENT")
+
+        # Execute the copy operation
+        success = copy_folder_to_research(ctx, vault_origin, research_target)
+        # Verify results
+        results = {
+            "success": success,
+            "target_exists": collection.exists(ctx, f"{research_target}"),
+            "file_copied": data_object.exists(ctx, f"{research_target}/test_file.txt"),
+        }
+
+        return all(results.values())
+
+    except Exception as e:
+        log.write(ctx, f"Test exception: {str(e)}")
+        return False
+    finally:
+        # Cleanup regardless of test outcome
+        for path in [vault_origin, research_target]:
+            try:
+                if collection.exists(ctx, path):
+                    collection.remove(ctx, path)
+            except Exception as e:
+                log.write(ctx, f"Clean up test files exception: {str(e)}")

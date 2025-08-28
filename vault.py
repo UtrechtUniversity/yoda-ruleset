@@ -18,10 +18,11 @@ import folder
 import groups
 import meta
 import meta_form
+import notifications
 import policies_datamanager
 import policies_datapackage_status
 from util import *
-from vault_utils import get_copy_folder_to_vault_irsync_command, get_sanity_checks_results_copy_to_vault_paths
+from vault_utils import get_copy_irsync_command, get_sanity_checks_results_copy_to_research_paths, get_sanity_checks_results_copy_to_vault_paths
 
 __all__ = ['api_vault_submit',
            'api_vault_approve',
@@ -30,6 +31,7 @@ __all__ = ['api_vault_submit',
            'api_vault_republish',
            'api_vault_preservable_formats_lists',
            'api_vault_unpreservable_files',
+           'rule_vault_copy_to_research',
            'rule_vault_copy_to_vault',
            'rule_vault_copy_numthreads',
            'rule_vault_copy_original_metadata_to_vault',
@@ -182,42 +184,38 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
 
     :returns: API status
     """
-    zone = user.zone(ctx)
+    coll_target = coll_target.rstrip('/')
+    coll_origin = coll_origin.rstrip('/')
 
-    # API error introduces post-error in requesting application.
-    if coll_target == "/" + zone + "/home":
-        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage')
+    # Validate origin location.
+    space, _, _, _ = pathutil.info(coll_origin)
+    if space is not pathutil.Space.VAULT:
+        return api.Error('RequiredVaultOrigin', 'Please select a specific vault datapackage to copy')
 
-    # Check if target is a research folder. I.e. none-vault folder.
-    parts = coll_target.split('/')
-    group_name = parts[3]
-    if group_name.startswith('vault-'):
+    # Validate target location.
+    space, _, group_name, _ = pathutil.info(coll_target)
+    if space is not pathutil.Space.RESEARCH:
         return api.Error('RequiredIsResearchArea', 'Please select a specific research folder for your datapackage')
 
-    # Check whether datapackage folder already present in target folder.
-    # Get package name from origin path
-    parts = coll_origin.split('/')
-    new_package_collection = coll_target + '/' + parts[-1]
+    # Concatenate coll_target with package name to create sub_coll_target.
+    _, package_name = pathutil.chop(coll_origin)
+    sub_coll_target = f'{coll_target}/{package_name}'
 
-    # Now check whether target collection already exist.
-    if collection.exists(ctx, new_package_collection):
-        return api.Error('PackageAlreadyPresentInTarget', 'This datapackage is already present at the specified place')
-
-    # Check if target path exists.
+    # Verify target collection exists (parent of sub_coll_target).
     if not collection.exists(ctx, coll_target):
         return api.Error('TargetPathNotExists', 'The target you specified does not exist')
 
-    # Check if user has READ ACCESS to specific vault package in collection coll_origin.
+    # Verify sub_coll_target package NOT already exists.
+    if collection.exists(ctx, sub_coll_target):
+        return api.Error('PackageAlreadyPresentInTarget', 'This datapackage is already present at the specified location')
+
+    # Check user permissions.
     user_full_name = user.full_name(ctx)
-    category = groups.group_category(ctx, group_name)
-    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+    category       = groups.group_category(ctx, group_name)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user_full_name)
 
-    if not is_datamanager:
-        # Check if research group has access by checking of research-group exists for this user.
-        research_group_access = collection.exists(ctx, coll_origin)
-
-        if not research_group_access:
-            return api.Error('NoPermissions', 'Insufficient rights to perform this action')
+    if not is_datamanager and not collection.exists(ctx, coll_origin):
+        return api.Error('NoPermissions', 'Insufficient rights to perform this action')
 
     # Check for possible locks on target collection.
     lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
@@ -226,21 +224,145 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if groups.user_role(ctx, user_full_name, group_name) not in ['normal', 'manager']:
+    user_role = groups.user_role(ctx, user_full_name, group_name)
+    if user_role not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
-    # Register to delayed rule queue.
-    delay = 10
+    # Schedule immediate execution
+    # This uses delay server to run irule in backend
+    # Which ensures the initial copy and following retry calls are consistent in behavior
+    # Also to avoid timeout issues with large data copies, counterexample: run with rule.call directly
+    retry_count  = 1
+    wait_seconds = 0
 
+    schedule_copy_to_research(ctx, coll_origin, sub_coll_target, user_full_name, retry_count, wait_seconds)
+
+    return {
+        "status": "ok",
+        "target": sub_coll_target,
+        "origin": coll_origin
+    }
+
+
+def schedule_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str, actor: str, retry_count: int, wait_seconds: int) -> None:
+    """
+    A help function to call `msiExecCmd("admin-copy-to-research.sh", …)` job
+    through the delay server.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param coll_origin:  Origin data collection in vault space
+    :param coll_target:  Target collection path in research space
+    :param actor:        User to notify of success/failure
+    :param retry_count:  Current retry attempt as int
+    :param wait_seconds: Delay in seconds
+    """
     ctx.delayExec(
-        "<PLUSET>%ds</PLUSET>" % delay,
-        "iiCopyFolderToResearch('{}', '{}')".format(coll_origin, coll_target),
+        f"<PLUSET>{wait_seconds}s</PLUSET>",
+        f"iiAdminVaultCopyToResearch('{coll_origin}', '{coll_target}', '{actor}', '{retry_count}')",
         "")
 
-    # TODO: response nog veranderen
-    return {"status": "ok",
-            "target": coll_target,
-            "origin": coll_origin}
+
+@rule.make(inputs=[0, 1, 2, 3], outputs=[])
+def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str, actor: str, retry_str: str) -> None:
+    """Orchestrate vault copy-to-research operation with retry handling.
+    If the copy operation fails, it will be retried up to a maximum number of times.
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param coll_origin: Origin data collection in vault space
+    :param coll_target: Target collection in research space
+    :param actor:       User to notify of success/failure
+    :param retry_str:   Current retry attempt as string
+
+    :returns:           True if operation succeeded or entered retry logic, False if target already existed
+    """
+    log.write(ctx, f"Starting vault copy to research: {coll_origin} -> {coll_target}, attempt #{retry_str}")
+
+    # Check target already existed during the retry process, to prevent double clicking
+    if collection.exists(ctx, coll_target):
+        log.write(ctx, f"Target collection already exists: {coll_target}")
+        return None
+
+    # Execute copy operation through irsync cmd
+    success = copy_folder_to_research(ctx, coll_origin, coll_target)
+
+    # Handle result
+    if success:
+        notifications.set(ctx, "system", actor, coll_target, "Copy data package to research space finished")
+        log.write(ctx, f"Copy successful: {coll_origin}")
+        return None
+
+    # Copy failed and enter retry logic
+    retry_count = int(retry_str)
+    handle_retry_operation(ctx, coll_origin, coll_target, actor, retry_count)
+
+
+def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
+    """Copy vault data package and all its contents to target in research using irsync.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param coll:   Path of a folder in the vault space
+    :param target: Path of a package in the research space
+
+    :returns: True for successful copy
+    """
+    sanity_check_results = get_sanity_checks_results_copy_to_research_paths(coll, target)
+    if len(sanity_check_results) > 0:
+        log.write(ctx, "Not copying folder to research because of sanity check failures: "
+                  + str(sanity_check_results))
+        return False
+
+    admin = user.full_name(ctx)
+    parent, _ = pathutil.chop(target)
+    msi.set_acl(ctx, "recursive", "admin:write", admin, parent)
+
+    returncode = 0
+    irsync_command = get_copy_irsync_command(coll,
+                                             target,
+                                             config.resource_vault,
+                                             config.vault_copy_multithread_enabled)
+
+    try:
+        returncode = subprocess.call(irsync_command)
+    except Exception as e:
+        log.write(ctx, "irsync failure: " + str(e))
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    if returncode != 0:
+        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        return False
+
+    return True
+
+
+def handle_retry_operation(ctx: rule.Context, coll_origin: str, coll_target: str, actor: str, retry_count: int) -> bool:
+    """Manage retry logic with delays for copy-to-research workflow
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param coll_origin: Origin data collection in vault space
+    :param coll_target: Target data collection in research space
+    :param actor:       User to notify of success/failure
+    :param retry_count: Current retry attempt as integer
+
+    :returns:           True if retry scheduled, False if max retries exceeded or scheduling failed
+    """
+    log.write(ctx, f"Copy failed: {coll_origin} for {actor}, entering retry logic, attempt #{retry_count}")
+
+    max_retries = config.vault_copy_max_retries
+    wait_seconds = config.vault_copy_backoff_time  # in seconds
+
+    if retry_count >= max_retries:
+        log.write(ctx, f"Max retries exceeded for copy_to_research: {coll_origin}")
+        notifications.set(ctx, "system", actor, coll_target, "Copy data package to research space failed, max retries exceeded")
+        return False
+
+    next_attempt  = retry_count + 1
+    log.write(ctx, f"Scheduled attempt #{next_attempt} in {wait_seconds}s for: {coll_origin}")
+
+    # one single call, identical path through the delay server
+    schedule_copy_to_research(ctx, coll_origin, coll_target, actor, next_attempt, wait_seconds)
+
+    return True
 
 
 @api.make()
@@ -968,10 +1090,10 @@ def copy_folder_to_vault(ctx: rule.Context, coll: str, target: str) -> bool:
         return False
 
     returncode = 0
-    irsync_command = get_copy_folder_to_vault_irsync_command(coll,
-                                                             target,
-                                                             config.resource_vault,
-                                                             config.vault_copy_multithread_enabled)
+    irsync_command = get_copy_irsync_command(coll,
+                                             f"{target}/original",
+                                             config.resource_vault,
+                                             config.vault_copy_multithread_enabled)
 
     try:
         returncode = subprocess.call(irsync_command)

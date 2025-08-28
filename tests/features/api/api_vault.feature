@@ -238,3 +238,15 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+
+
+    Scenario Outline: Vault copy to research space
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault copy to research space API is queried with <vault> and <research>
+        Then the response status code is "200"
+        And data package exists in <research>
+
+        Examples:
+            | vault                         | research                       |
+            | /tempZone/home/vault-core-0   | /tempZone/home/research-core-0 |
