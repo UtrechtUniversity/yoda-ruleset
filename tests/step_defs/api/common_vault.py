@@ -158,6 +158,15 @@ def api_meta_form_save_vault(user, vault, data_package):
     )
 
 
+@given(parsers.parse('the Yoda vault copy to research space API is queried with {vault} and {research}'), target_fixture="api_response")
+def api_vault_copy_to_research_space(user, vault, data_package, research):
+    return api_request(
+        user,
+        "vault_copy_to_research",
+        {"coll_origin": vault + "/" + data_package, "coll_target": research}
+    )
+
+
 @then(parsers.parse('data package in {vault} status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
     for _i in range(25):
@@ -223,3 +232,21 @@ def published_packages(api_response):
     http_status, body = api_response
     assert http_status == 200
     assert len(body["data"]) > 0
+
+
+@then(parsers.parse("data package exists in {research}"))
+def api_research_data_package(user, data_package, research):
+    for _i in range(30):
+        http_status, body = api_request(
+            user,
+            "browse_collections",
+            {"coll": research, "sort_order": "desc"}
+        )
+        assert http_status == 200
+
+        for item in body["data"]["items"]:
+            if item["name"] == data_package:
+                return True
+        time.sleep(5)
+    # If we reach this point, the data package was not found
+    raise AssertionError()

@@ -2,7 +2,7 @@
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2022, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2025, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -287,4 +287,10 @@ iiAdminVaultActions() {
 #
 iiAdminVaultArchive(*coll, *action) {
 	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *action, "", "", 0, *out);
+}
+
+# \brief Perform copy to research from vault
+#
+iiAdminVaultCopyToResearch(*coll, *target, *receiver, *retryCount) {
+	msiExecCmd("admin-copy-to-research.sh", uuClientFullName  ++ " " ++ *coll  ++ " " ++ *target  ++ " " ++ *receiver  ++ " " ++ *retryCount, "", "", 0, *out);
 }
