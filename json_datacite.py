@@ -335,12 +335,16 @@ def get_version(combi: Dict) -> str:
 
 def get_rights_list(combi: Dict) -> List:
     """Get list in DataCite format containing rights related information."""
+    data_access_restriction = combi['Data_Access_Restriction']
     options = {'Open':       'info:eu-repo/semantics/openAccess',
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    rights_list = [{'rights': combi['Data_Access_Restriction'], 'rightsUri': options[combi['Data_Access_Restriction'].split()[0]]}]
-    if combi['License'] != 'Custom':
+    rights_list = [{'rights': data_access_restriction, 'rightsUri': options[data_access_restriction.split()[0]]}]
+
+    if combi['License'] == 'Custom' and data_access_restriction.startswith('Open'):
+        rights_list.append({'rights': combi['License'], 'rightsUri': f"{combi['System']['Open_access_Link']}"})
+    elif combi['License'] != 'Custom':
         rights_list.append({'rights': combi['License'], 'rightsUri': combi['System']['License_URI']})
 
     return rights_list
