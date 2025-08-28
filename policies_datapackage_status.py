@@ -76,7 +76,7 @@ def post_status_transition(ctx: rule.Context,
             # and new status is UNPUBLISHED action is canceled publication.
             provenance.log_action(ctx, actor, path, "canceled publication")
 
-        elif provenance_log[0][1] != "canceled publication" :
+        elif provenance_log[0][1] != "canceled publication":
             # If previous action was not "canceled publication"
             # and new status is UNPUBLISHED action is secured in vault.
             provenance.log_action(ctx, "system", path, "secured in vault")
