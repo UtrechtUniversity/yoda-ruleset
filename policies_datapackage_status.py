@@ -71,15 +71,14 @@ def post_status_transition(ctx: rule.Context,
     if status is constants.vault_package_state.UNPUBLISHED:
         provenance_log = provenance.get_provenance_log(ctx, path)
 
-        if provenance_log[0][1] == "submitted for publication":
-            # If previous action was "submitted for publication"
-            # and new status is UNPUBLISHED action is canceled publication.
-            provenance.log_action(ctx, actor, path, "canceled publication")
-
-        elif provenance_log[0][1] != "canceled publication":
-            # If previous action was not "canceled publication"
-            # and new status is UNPUBLISHED action is secured in vault.
-            provenance.log_action(ctx, "system", path, "secured in vault")
+        if provenance_log[0][1] != "canceled publication":
+            if provenance_log[0][1] == "submitted for publication":
+                # If previous action was "submitted for publication"
+                # and new status is UNPUBLISHED action is canceled publication
+                # else action is secured in vault.
+                provenance.log_action(ctx, actor, path, "canceled publication")
+            else:
+                provenance.log_action(ctx, "system", path, "secured in vault")
 
     elif status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "submitted for publication")
