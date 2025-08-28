@@ -111,43 +111,24 @@ def get_dataobjs(ctx, coll):
     return dataobjs
 
 
-# Get ACLs of a collection
-def get_coll_acls(ctx, coll):
-    access_query = genquery.row_iterator(
-        "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
+# Get ACLs of a collection/data object
+def get_acls(ctx, coll, data="", item=""):
     acl = []
-    if access_query.total_rows() > 0:
-        for (user, access) in access_query:
-            user_access = {}
-
-            user_access['user_id'] = user
-            user_access['user_name'] = get_user_name(ctx, user)
-
-            if access == "read_object":
-                user_access['access'] = "read"
-            elif access == "modify_object":
-                user_access['access'] = "write"
-            else:
-                user_access['access'] = access
-
-            acl.append(user_access)
-
-    return acl
-
-
-# Get ACLs of a data object
-def get_data_acls(ctx, coll, data):
-    access_query = genquery.row_iterator(
+    if item == "coll" and data == "":
+        access_query = genquery.row_iterator(
+            "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
+            f"COLL_NAME like '{coll}'",
+            genquery.AS_LIST,
+            ctx)
+    elif item == "dataobj" and data != "":
+        access_query = genquery.row_iterator(
         "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
         f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
         genquery.AS_LIST,
         ctx)
+    else:
+        return acl
 
-    acl = []
     if access_query.total_rows() > 0:
         for (user, access) in access_query:
             user_access = {}
@@ -285,8 +266,8 @@ def check_acls(ctx, coll, mode):
 
     if group_coll != "":
         # Check ACLs of provided collection
-        group_acls = get_coll_acls(ctx, group_coll)
-        coll_acls = get_coll_acls(ctx, coll)
+        group_acls = get_acls(ctx, group_coll, item="coll")
+        coll_acls = get_acls(ctx, coll, item="coll")
         compare_acls(ctx, coll_acls, group_acls, coll, mode)
 
         # Check ACLs of provided collection's data objects
@@ -294,7 +275,7 @@ def check_acls(ctx, coll, mode):
 
         if len(dataobjs) > 0:
             for data_obj in dataobjs:
-                dataobj_acls = get_data_acls(ctx, coll, data_obj)
+                dataobj_acls = get_acls(ctx, coll, data=data_obj, item="dataobj")
                 compare_acls(ctx, dataobj_acls, group_acls, f"{coll}/{data_obj}", mode)
 
         # Check ACLs of provided collection's subcollections
@@ -302,7 +283,7 @@ def check_acls(ctx, coll, mode):
 
         if len(subcolls) > 0:
             for subcoll in subcolls:
-                subcoll_acls = get_coll_acls(ctx, subcoll)
+                subcoll_acls = get_acls(ctx, subcoll, item="coll")
                 compare_acls(ctx, subcoll_acls, group_acls, subcoll, mode)
 
             # Check ACLs of provided collection's subcollections' data objects
@@ -310,7 +291,7 @@ def check_acls(ctx, coll, mode):
 
             if len(subcoll_dataobjs) > 0:
                 for subcoll_dataobj in subcoll_dataobjs:
-                    subcoll_dataobj_acls = get_data_acls(ctx, subcoll, subcoll_dataobj)
+                    subcoll_dataobj_acls = get_acls(ctx, subcoll, data=subcoll_dataobj, item="dataobj")
                     compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
     else:
         ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
