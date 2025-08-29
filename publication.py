@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 import json
 import re
 from datetime import datetime
+from traceback import format_exc
 from typing import Dict, List, Tuple
 
 import genquery
@@ -697,8 +698,8 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
 
     try:
         msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-    except Exception as e:
-        log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, str(e)))
+    except Exception:
+        log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
         publication_state["status"] = "Unrecoverable"
         return
 
@@ -808,8 +809,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                 # Set the link to previous publication state
                 previous_publication_state["baseDOI"] = publication_state["baseDOI"]
                 previous_publication_state["baseRandomId"] = publication_state["baseRandomId"]
-            except Exception as e:
-                log.write(ctx, "Error while checking version DOI availability: " + str(e))
+            except Exception:
+                log.write(ctx, "Error while checking version DOI availability: " + format_exc())
                 publication_state["status"] = "Retry"
 
             save_publication_state(ctx, previous_vault_package, previous_publication_state)
@@ -857,8 +858,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while generating combi JSON: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating combi JSON: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -879,8 +880,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while generating Datacite JSON: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating Datacite JSON: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -896,8 +897,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         try:
             check_doi_availability(ctx, publication_state, 'version')
-        except Exception as e:
-            log.write(ctx, "Error while checking DOI availability: " + str(e))
+        except Exception:
+            log.write(ctx, "Error while checking DOI availability: " + format_exc())
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -928,8 +929,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                     log.write(ctx, "Updating base DOI.")
                 base_doi = publication_state['baseDOI']
                 post_metadata_to_datacite(ctx, publication_state, base_doi, datacite_action, base_doi=True)
-        except Exception as e:
-            log.write(ctx, "Exception while sending metadata to Datacite: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while sending metadata to Datacite: " + format_exc())
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -945,8 +946,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception as e:
-            log.write(ctx, "Error while creating landing page: " + str(e))
+        except Exception:
+            log.write(ctx, "Error while creating landing page: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -981,8 +982,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         # Create landing page
         try:
             generate_manifest(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+        except Exception:
+            log.write(ctx, "Error while creating manifest JSON: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1139,8 +1140,8 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             log.write(ctx, "Generating combi JSON.")
         try:
             generate_system_json(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while trying to generate system JSON during depublication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while trying to generate system JSON during depublication: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1156,8 +1157,8 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             remove_metadata_from_datacite(ctx, publication_state, 'version')
             if update_base_doi:
                 remove_metadata_from_datacite(ctx, publication_state, 'base')
-        except Exception as e:
-            log.write(ctx, "Exception while trying to remove metadata from Datacite during depublication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while trying to remove metadata from Datacite during depublication: " + format_exc())
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1172,8 +1173,8 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "depublish")
-        except Exception as e:
-            log.write(ctx, "Exception while generating landing page during depublication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating landing page during depublication: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1292,8 +1293,8 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             log.write(ctx, "Generating combi JSON.")
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while generating combi JSON during republication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating combi JSON during republication: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1307,8 +1308,8 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             log.write(ctx, "Generating Datacite JSON.")
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while generating DataCite JSON for republication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating DataCite JSON for republication: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1325,8 +1326,8 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state['baseDOI'], 'put', base_doi=True)
-        except Exception as e:
-            log.write(ctx, "Exception while posting metadata to Datacite during republication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while posting metadata to Datacite during republication: " + format_exc())
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1341,8 +1342,8 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         # Create landing page
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception as e:
-            log.write(ctx, "Exception while creating landing page during republication: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while creating landing page during republication: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1373,8 +1374,8 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         # Create landing page
         try:
             generate_manifest(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+        except Exception:
+            log.write(ctx, "Error while creating manifest JSON: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1554,8 +1555,8 @@ def update_publication(ctx: rule.Context,
         log.write(ctx, "Generating combi JSON.")
     try:
         generate_combi_json(ctx, publication_config, publication_state)
-    except Exception as e:
-        log.write(ctx, "Exception while generating combi JSON after metadata update: " + str(e))
+    except Exception:
+        log.write(ctx, "Exception while generating combi JSON after metadata update: " + format_exc())
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1568,8 +1569,8 @@ def update_publication(ctx: rule.Context,
         log.write(ctx, 'Update datacite for package {}'.format(vault_package))
         try:
             generate_datacite_json(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Exception while generating DataCite JSON after metadata update: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while generating DataCite JSON after metadata update: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1584,8 +1585,8 @@ def update_publication(ctx: rule.Context,
             post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put', base_doi=True)
-        except Exception as e:
-            log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + format_exc())
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1598,8 +1599,8 @@ def update_publication(ctx: rule.Context,
         log.write(ctx, 'Update landing page for package {}'.format(vault_package))
         try:
             generate_landing_page(ctx, publication_state, "publish")
-        except Exception as e:
-            log.write(ctx, "Exception while updating landing page after metadata update: " + str(e))
+        except Exception:
+            log.write(ctx, "Exception while updating landing page after metadata update: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1622,8 +1623,8 @@ def update_publication(ctx: rule.Context,
 
         try:
             generate_manifest(ctx, publication_state)
-        except Exception as e:
-            log.write(ctx, "Error while creating manifest JSON: " + str(e))
+        except Exception:
+            log.write(ctx, "Error while creating manifest JSON: " + format_exc())
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
