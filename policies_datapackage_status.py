@@ -16,11 +16,7 @@ def pre_status_transition(ctx: rule.Context,
                           coll: str,
                           current: constants.research_package_state,
                           new: constants.research_package_state) -> policy.Succeed | policy.Fail:
-    """Action taken before status transition."""
-    if current is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION \
-       and new is constants.vault_package_state.UNPUBLISHED:
-        action_actor = provenance.latest_action_actor(ctx, coll)
-        provenance.log_action(ctx, action_actor, coll, "canceled publication")
+    """Placeholder for action taken before status transition."""
 
     return policy.succeed()
 
@@ -73,12 +69,16 @@ def post_status_transition(ctx: rule.Context,
     actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]
 
     if status is constants.vault_package_state.UNPUBLISHED:
-        actor = "system"
-        # If previous action was not "canceled publication"
-        # and new status is UNPUBLISHED action is secured in vault.
         provenance_log = provenance.get_provenance_log(ctx, path)
+
         if provenance_log[0][1] != "canceled publication":
-            provenance.log_action(ctx, actor, path, "secured in vault")
+            if provenance_log[0][1] == "submitted for publication":
+                # If previous action was "submitted for publication"
+                # and new status is UNPUBLISHED action is canceled publication
+                # else action is secured in vault.
+                provenance.log_action(ctx, actor, path, "canceled publication")
+            else:
+                provenance.log_action(ctx, "system", path, "secured in vault")
 
     elif status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "submitted for publication")
