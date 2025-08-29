@@ -14,6 +14,7 @@ import cached_data_manager
 import constants
 import log
 import msi
+
 if TYPE_CHECKING:
     import rule
 
