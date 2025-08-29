@@ -2,12 +2,11 @@
 ###############################################################################
 # Archive Data Collection Script
 # 
-# Archives a given iRODS collection to a archive file within iRODS 
+# Archives a given iRODS collection to an archive file within iRODS 
 # Using msiArchiveCreate.
 ###############################################################################
 
 DEFAULT_RULE_ENGINE="irods_rule_engine_plugin-irods_rule_language-instance"
-RULE_FILE="msi_archive_create.r" 
 
 # Helper function
 usage() {
@@ -43,7 +42,7 @@ validate_arguments() {
     fi
     
     if [[ -z "$archive_target_path" ]]; then
-        echo "ERROR: Archive target path is required" >&2>&2
+        echo "ERROR: Archive target path is required" >&2
         errors=$((errors+1))
     fi
     
@@ -111,9 +110,9 @@ elapsed_time() {
     while true; do
         current_time=$(date +%s)
         elapsed=$((current_time - start))
-        printf "\rElapsed time per 10 sec: %02d:%02d:%02d" \
+        printf "\rElapsed time: %02d:%02d:%02d" \
                $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
-        sleep 10
+        sleep 1
     done
 }
 
@@ -125,16 +124,15 @@ elapsed_time "$start_time" &
 timer_pid=$!
 
 # Execute rule and capture output
-/bin/irule -r "$DEFAULT_RULE_ENGINE" -F "$RULE_FILE" \
-    "*sourceCollection='$source_collection'" \
-    "*archiveTargetPath='$archive_target_path'" \
-    "*targetResource='$target_resource'" > "$TEMP_OUTPUT" 2>&1
+irule -r "$DEFAULT_RULE_ENGINE" \
+    'msiArchiveCreate(*archiveTargetPath, *sourceCollection, *targetResource, *status=0)' \
+    "*archiveTargetPath=$archive_target_path%*sourceCollection=$source_collection%*targetResource=$target_resource%*status=0" \
+    'ruleExecOut' > "$TEMP_OUTPUT" 2>&1
 exit_code=$?
 
 # Stop and clean up the timer
 kill $timer_pid 2>/dev/null
 printf "\n"  # Move to new line after timer output
-
 
 # Read captured output
 irule_output=$(cat "$TEMP_OUTPUT")
