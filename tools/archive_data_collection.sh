@@ -110,9 +110,9 @@ elapsed_time() {
     while true; do
         current_time=$(date +%s)
         elapsed=$((current_time - start))
-        printf "\rElapsed time: %02d:%02d:%02d" \
+        printf "\rElapsed time for bulk archiving: %02d:%02d:%02d (per 10s)" \
                $((elapsed/3600)) $(((elapsed%3600)/60)) $((elapsed%60))
-        sleep 1
+        sleep 10
     done
 }
 
@@ -125,9 +125,9 @@ timer_pid=$!
 
 # Execute rule and capture output
 irule -r "$DEFAULT_RULE_ENGINE" \
-    'msiArchiveCreate(*archiveTargetPath, *sourceCollection, *targetResource, *status=0)' \
+    "msiArchiveCreate(*archiveTargetPath, *sourceCollection, *targetResource, *status=0)" \
     "*archiveTargetPath=$archive_target_path%*sourceCollection=$source_collection%*targetResource=$target_resource%*status=0" \
-    'ruleExecOut' > "$TEMP_OUTPUT" 2>&1
+    "ruleExecOut" > "$TEMP_OUTPUT" 2>&1
 exit_code=$?
 
 # Stop and clean up the timer
