@@ -13,157 +13,93 @@ import os
 import genquery
 
 
+# Determine existence of a collection
 def coll_exists(ctx, coll):
-    """Determine existence of a collection.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to determine existence of
-
-    :returns: Boolean indicating existence of the collection
-    """
-    exists_query = genquery.row_iterator(
-        "COLL_ID",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
-    if exists_query.total_rows() > 0:
-        return True
-    else:
-        return False
+    return len(list(genquery.Query(ctx, "COLL_ID", f"COLL_NAME = '{coll}'"))) > 0
 
 
+# Get user name from user ID
 def get_user_name(ctx, id):
-    """Get user name from user ID.
+    user_query = list(genquery.Query(ctx,
+                                     "USER_NAME",
+                                     f"USER_ID = '{id}'"))
 
-    :param ctx: Combined type of a callback and rei struct
-    :param id:  User ID of the user
-
-    :returns: User name matching with user ID, empty string if not found
-    """
-    user_query = genquery.row_iterator(
-        "USER_NAME",
-        f"USER_ID = '{id}'",
-        genquery.AS_LIST,
-        ctx)
-
-    user_name = ""
-    if user_query.total_rows() > 0:
-        for result in user_query:
-            user_name = result[0]
-    return user_name
+    if len(user_query) > 0:
+        return user_query[0]
+    else:
+        return ""
 
 
+# Get group from collection
 def get_group_coll(ctx, coll):
-    """Get group from collection.
-
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: Collection to determine group of
-
-    :returns: Name of the group of the collection, empty string if not found
-    """
     group_coll = ""
     if coll.rsplit('/', 1)[-1].startswith("vault-"):
         group_coll = coll
     else:
-        group_query = genquery.row_iterator(
-            "COLL_PARENT_NAME",
-            f"COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
+        group_query = list(genquery.Query(ctx,
+                                          "COLL_PARENT_NAME",
+                                          f"COLL_NAME = '{coll}'"))
 
-        if group_query.total_rows() > 0:
-            for result in group_query:
-                if result[0].rsplit('/', 1)[-1].startswith("vault-"):
-                    group_coll = result[0]
-                else:   # If parent collection is not group collection, go up another level
-                    group_coll = get_group_coll(ctx, group_coll)
+        if len(group_query) > 0:
+            if group_query[0].rsplit('/', 1)[-1].startswith("vault-"):
+                group_coll = group_query[0]
+            else:   # If parent collection is not group collection, go up another level
+                group_coll = get_group_coll(ctx, group_coll)
 
     return group_coll
 
 
+# Get AVUs from a collection
 def get_avus(ctx, coll, avu):
-    """Get AVUs from a collection.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to retrieve AVUs from
-    :param avu:  Attribute to filter AVUs
-
-    :returns: Dictionary of AVUs for the specified collection, empty dictionary if none found
-    """
-    avu_query = genquery.row_iterator(
-        "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
-        f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'",
-        genquery.AS_LIST,
-        ctx)
+    avu_query = list(genquery.Query(ctx,
+                                    "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
+                                    f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'"))
 
     avus = {}
-    if avu_query.total_rows() > 0:
+    if len(avu_query) > 0:
         for (attribute, value) in avu_query:
             avus[attribute] = value
     return avus
 
 
+# Get subcollections of a collection
 def get_subcolls(ctx, coll):
-    """Get subcollections of a collection.
+    subcoll_query = list(genquery.Query(ctx,
+                                        "COLL_NAME",
+                                        f"COLL_NAME like '{coll}/%'"))
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to retrieve subcollections from
-
-    :returns: List of subcollection names, empty list if none found
-    """
-    subcoll_query = genquery.row_iterator(
-        "COLL_NAME",
-        f"COLL_NAME like '{coll}/%'",
-        genquery.AS_LIST,
-        ctx)
-
-    subcolls = []
-    if subcoll_query.total_rows() > 0:
-        for result in subcoll_query:
-            subcolls.append(result[0])
-
-    return subcolls
+    if len(subcoll_query) > 0:
+        return subcoll_query
+    return []
 
 
+# Get data objects in a collection
 def get_dataobjs(ctx, coll):
-    """Get data objects in a collection.
+    data_query = list(genquery.Query(ctx,
+                                     "DATA_NAME",
+                                     f"COLL_NAME = '{coll}'"))
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to retrieve data objects from
-
-    :returns: List of data object names, empty list if none found
-    """
-    data_query = genquery.row_iterator(
-        "DATA_NAME",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
-    dataobjs = []
-    if data_query.total_rows() > 0:
-        for result in data_query:
-            dataobjs.append(result[0])
-
-    return dataobjs
+    if len(data_query) > 0:
+        return data_query
+    else:
+        return []
 
 
-def get_coll_acls(ctx, coll):
-    """Get ACLs of a collection.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to retrieve ACLs from
-
-    :returns: List of user access details for the collection, empty list if none found
-    """
-    access_query = genquery.row_iterator(
-        "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
+# Get ACLs of a collection/data object
+def get_acls(ctx, coll, data="", item=""):
     acl = []
-    if access_query.total_rows() > 0:
+    if item == "coll" and data == "":
+        access_query = list(genquery.Query(ctx,
+                                           "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
+                                           f"COLL_NAME = '{coll}'"))
+    elif item == "dataobj" and data != "":
+        access_query = list(genquery.Query(ctx,
+                                           "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
+                                           f"COLL_NAME = '{coll}' AND DATA_NAME like '{data}'"))
+    else:
+        return acl
+
+    if len(access_query) > 0:
         for (user, access) in access_query:
             user_access = {}
 
@@ -182,50 +118,8 @@ def get_coll_acls(ctx, coll):
     return acl
 
 
-def get_data_acls(ctx, coll, data):
-    """Get ACLs of a data object.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection containing the data object
-    :param data: Name of the data object to retrieve ACLs for
-
-    :returns: List of user access details for the data object, empty list if none found
-    """
-    access_query = genquery.row_iterator(
-        "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
-        f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
-        genquery.AS_LIST,
-        ctx)
-
-    acl = []
-    if access_query.total_rows() > 0:
-        for (user, access) in access_query:
-            user_access = {}
-
-            user_access['user_id'] = user
-            user_access['user_name'] = get_user_name(ctx, user)
-
-            if access == "read_object":
-                user_access['access'] = "read"
-            elif access == "modify_object":
-                user_access['access'] = "write"
-            else:
-                user_access['access'] = access
-
-            acl.append(user_access)
-
-    return acl
-
-
+# Compare ACLs of a collection/data object with group ACLs
 def compare_acls(ctx, acls, g_acls, path, mode):
-    """Compare ACLs of a collection/data object with group ACLs.
-
-    :param ctx:    Combined type of a callback and rei struct
-    :param acls:   ACLs of the current collection/data object
-    :param g_acls: ACLs of the group collection
-    :param path:   Path of the collection/data object being checked
-    :param mode:   Mode of operation (read or write)
-    """
     if len(g_acls) > 0 and len(acls) > 0:
         if (acls == g_acls):
             ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
@@ -245,8 +139,9 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                 elif acl not in g_acls:  # If ACL is in collection/data object's ACLs but not in group collection's ACLs, it might need to be removed
                     if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
                         acls_to_remove.append(acl)
-                elif user_name in path and access == "own":  # If group already has own rights on collection/data object, they should be removed
-                    acls_to_remove.append(acl)
+                    if user_name in path:  # Vault group should have no permissions on data package
+                        if not path.endswith(user_name):  # Do not remove if current collection is the group collection itself
+                            acls_to_remove.append(acl)
 
             if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
                 ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
@@ -262,6 +157,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
+
                             try:
                                 ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                             except Exception:
@@ -284,8 +180,9 @@ def compare_acls(ctx, acls, g_acls, path, mode):
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
+
                             try:
-                                ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
+                                ctx.msiSetACL("default", "admin:null", str(user_name), str(path))
                             except Exception:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
@@ -300,23 +197,51 @@ def compare_acls(ctx, acls, g_acls, path, mode):
         ctx.writeLine("stdout", f"ERROR: No ACLs found for this collection/data object. (Path: {path})")
 
 
+# Check ACLs of a collection and its data objects
+def check_acls(ctx, coll, mode):
+    group_coll = get_group_coll(ctx, coll)
+
+    if group_coll != "":
+        # Check ACLs of provided collection
+        group_acls = get_acls(ctx, group_coll, item="coll")
+        coll_acls = get_acls(ctx, coll, item="coll")
+        compare_acls(ctx, coll_acls, group_acls, coll, mode)
+
+        # Check ACLs of provided collection's data objects
+        dataobjs = get_dataobjs(ctx, coll)
+
+        if len(dataobjs) > 0:
+            for data_obj in dataobjs:
+                dataobj_acls = get_acls(ctx, coll, data=data_obj, item="dataobj")
+                compare_acls(ctx, dataobj_acls, group_acls, f"{coll}/{data_obj}", mode)
+
+        # Check ACLs of provided collection's subcollections
+        subcolls = get_subcolls(ctx, coll)
+
+        if len(subcolls) > 0:
+            for subcoll in subcolls:
+                subcoll_acls = get_acls(ctx, subcoll, item="coll")
+                compare_acls(ctx, subcoll_acls, group_acls, subcoll, mode)
+
+                # Check ACLs of provided collection's subcollections' data objects
+                subcoll_dataobjs = get_dataobjs(ctx, subcoll)
+
+                if len(subcoll_dataobjs) > 0:
+                    for subcoll_dataobj in subcoll_dataobjs:
+                        subcoll_dataobj_acls = get_acls(ctx, subcoll, data=subcoll_dataobj, item="dataobj")
+                        compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
+    else:
+        ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
+
+
+# Check inheritance of a collection
 def check_coll_inheritance(ctx, coll, mode):
-    """Check inheritance of a collection.
+    inherit_query = list(genquery.Query(ctx,
+                                        "COLL_INHERITANCE",
+                                        f"COLL_NAME = '{coll}'"))
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to check inheritance for
-    :param mode: Mode of operation (read or write)
-    """
-    inherit_query = genquery.row_iterator(
-        "COLL_INHERITANCE",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
-    inheritance = ""
-    if inherit_query.total_rows() > 0:
-        for result in inherit_query:
-            inheritance = "Enabled" if result[0] == "1" else "Disabled"
+    if len(inherit_query) > 0:
+        inheritance = "Enabled" if inherit_query[0] == "1" else "Disabled"
 
     # Vault packages should have inheritance disabled
     if inheritance == "Disabled":
@@ -328,7 +253,7 @@ def check_coll_inheritance(ctx, coll, mode):
             ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
 
             try:
-                ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
+                ctx.msiSetACL("default", "admin:noinherit", "", str(coll))
             except Exception:
                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
 
@@ -341,56 +266,8 @@ def check_coll_inheritance(ctx, coll, mode):
         ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Path: {coll})")
 
 
-def check_acls(ctx, coll, mode):
-    """Check ACLs of a collection and its data objects.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to check ACLs for
-    :param mode: Mode of operation (read or write)
-    """
-    # Get group collection
-    group_coll = get_group_coll(ctx, coll)
-
-    if group_coll != "":
-        # Check ACLs of provided collection
-        group_acls = get_coll_acls(ctx, group_coll)
-        coll_acls = get_coll_acls(ctx, coll)
-        compare_acls(ctx, coll_acls, group_acls, coll, mode)
-
-        # Check ACLs of provided collection's data objects
-        dataobjs = get_dataobjs(ctx, coll)
-
-        if len(dataobjs) > 0:
-            for data_obj in dataobjs:
-                dataobj_acls = get_data_acls(ctx, coll, data_obj)
-                compare_acls(ctx, dataobj_acls, group_acls, f"{coll}/{data_obj}", mode)
-
-        # Check ACLs of provided collection's subcollections
-        subcolls = get_subcolls(ctx, coll)
-
-        if len(subcolls) > 0:
-            for subcoll in subcolls:
-                subcoll_acls = get_coll_acls(ctx, subcoll)
-                compare_acls(ctx, subcoll_acls, group_acls, subcoll, mode)
-
-            # Check ACLs of provided collection's subcollections' data objects
-            subcoll_dataobjs = get_dataobjs(ctx, subcoll)
-
-            if len(subcoll_dataobjs) > 0:
-                for subcoll_dataobj in subcoll_dataobjs:
-                    subcoll_dataobj_acls = get_data_acls(ctx, subcoll, subcoll_dataobj)
-                    compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
-    else:
-        ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
-
-
+# Check inheritance of a collection and its subcollections
 def check_inheritance(ctx, coll, mode):
-    """Check inheritance of a collection and its subcollections.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to check inheritance for
-    :param mode: Mode of operation (read or write)
-    """
     # Check inheritance of collection
     check_coll_inheritance(ctx, coll, mode)
 
@@ -402,14 +279,8 @@ def check_inheritance(ctx, coll, mode):
             check_coll_inheritance(ctx, subcoll, mode)
 
 
+# Check and update metadata for a collection
 def check_metadata(ctx, coll, mode, user):
-    """Check and update metadata for a collection.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to check metadata for
-    :param mode: Mode of operation (read or write)
-    :param user: User performing the operation
-    """
     coll_avus = get_avus(ctx, coll, "org_%")
 
     if bool(coll_avus):
@@ -444,73 +315,43 @@ def check_metadata(ctx, coll, mode, user):
         ctx.writeLine("stdout", "ERROR: Could not retrieve collection's metadata.")
 
 
+# Ensures write operation was successful
 def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
-    """Ensures write operation was successful.
-
-    :param ctx:     Combined type of a callback and rei struct
-    :param op:      Type of operation
-    :param coll:    Collection to check
-    :param user_id: User ID of the user (ACL)
-    :param access:  Access type (ACL)
-    :param attr:    Attribute name (AVU)
-    :param value:   Value of attribute (AVU)
-
-    :returns: Boolean indicating if write operation was successful
-    """
     ensured = False
 
     if access == "read":
         access = ['read', 'read_object']
     elif access == "write":
         access = ['write', 'write_object']
+    else:
+        access = [access]
 
     if op == "acl-add":
-        query = genquery.row_iterator(
-            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
+        if len(list(genquery.Query(ctx,
+                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) > 0:
             ensured = True
     elif op == "acl-remove":
-        query = genquery.row_iterator(
-            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if not (query.total_rows() > 0):
+        if len(list(genquery.Query(ctx,
+                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) == 0:
             ensured = True
     elif op == "inheritance":
-        query = genquery.row_iterator(
-            "COLL_INHERITANCE",
-            f"COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
-            for result in query:
-                ensured = result[0] == "0"
+        query = list(genquery.Query(ctx,
+                                    "COLL_INHERITANCE",
+                                    f"COLL_NAME = '{coll}'"))
+        if len(query) > 0:
+            ensured = (query[0] == "0")
     elif op == "avu":
-        query = genquery.row_iterator(
-            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
+        if len(list(genquery.Query(ctx,
+                                   "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                   f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'"))) > 0:
             ensured = True
     return ensured
 
 
+# Main function to execute the package check rule
 def main(rule_args, ctx, rei):
-    """Main function to execute the package check rule.
-
-    :param rule_args: Arguments passed to the rule
-    :param ctx:       iRODS context
-    :param rei:       Rule execution information
-    """
     coll = global_vars["*coll"].strip('"')
     mode = global_vars["*mode"].strip('"')
 
@@ -544,5 +385,5 @@ def main(rule_args, ctx, rei):
     else:
         ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")
 
-#INPUT *coll=, *mode=read
-#OUTPUT ruleExecOut
+INPUT *coll=, *mode=read
+OUTPUT ruleExecOut
