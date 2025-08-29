@@ -15,9 +15,7 @@ import genquery
 
 # Determine existence of a collection
 def coll_exists(ctx, coll):
-    return True if len(list(genquery.Query(ctx,
-                                           "COLL_ID",
-                                           f"COLL_NAME = '{coll}'"))) > 0 else False
+    return len(list(genquery.Query(ctx, "COLL_ID", f"COLL_NAME = '{coll}'"))) > 0
 
 
 # Get user name from user ID
