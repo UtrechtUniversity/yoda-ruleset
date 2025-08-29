@@ -20,10 +20,10 @@ Usage: $0 -s SOURCE_COLLECTION -a ARCHIVE_TARGET_PATH [-r TARGET_RESOURCE]
 
 Required Arguments:
   -s, --source-collection    Full iRODS path to source collection
-  -a, --archive-target-path  Full iRODS path for archive output (.tar file suggested)
+  -a, --archive-target-path  Full iRODS path for archive output (.zip or .tar file suggested)
 
 Optional Arguments:
-  -r, --target-resource      Target iRODS storage resource (default: none)
+  -r, --target-resource      Target iRODS storage resource (default: null)
   -h, --help                 Show this help message
 
 Example:
@@ -126,7 +126,7 @@ timer_pid=$!
 # Execute rule and capture output
 irule -r "$DEFAULT_RULE_ENGINE" \
     "msiArchiveCreate(*archiveTargetPath, *sourceCollection, *targetResource, *status=0)" \
-    "*archiveTargetPath=$archive_target_path%*sourceCollection=$source_collection%*targetResource=$target_resource%*status=0" \
+    "*archiveTargetPath=$archive_target_path%*sourceCollection=$source_collection%*targetResource=${target_resource:-null}%*status=0" \
     "ruleExecOut" > "$TEMP_OUTPUT" 2>&1
 exit_code=$?
 
