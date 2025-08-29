@@ -15,31 +15,21 @@ import genquery
 
 # Determine existence of a collection
 def coll_exists(ctx, coll):
-    exists_query = genquery.row_iterator(
-        "COLL_ID",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
-    if exists_query.total_rows() > 0:
-        return True
-    else:
-        return False
+    return True if len(list(genquery.Query(ctx,
+                                           "COLL_ID",
+                                           f"COLL_NAME = '{coll}'"))) > 0 else False
 
 
 # Get user name from user ID
 def get_user_name(ctx, id):
-    user_query = genquery.row_iterator(
-        "USER_NAME",
-        f"USER_ID = '{id}'",
-        genquery.AS_LIST,
-        ctx)
+    user_query = list(genquery.Query(ctx,
+                                     "USER_NAME",
+                                     f"USER_ID = '{id}'"))
 
-    user_name = ""
-    if user_query.total_rows() > 0:
-        for result in user_query:
-            user_name = result[0]
-    return user_name
+    if len(user_query) > 0:
+        return user_query[0]
+    else:
+        return ""
 
 
 # Get group from collection
@@ -48,32 +38,27 @@ def get_group_coll(ctx, coll):
     if coll.rsplit('/', 1)[-1].startswith("vault-"):
         group_coll = coll
     else:
-        group_query = genquery.row_iterator(
-            "COLL_PARENT_NAME",
-            f"COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
+        group_query = list(genquery.Query(ctx,
+                                          "COLL_PARENT_NAME",
+                                          f"COLL_NAME = '{coll}'"))
 
-        if group_query.total_rows() > 0:
-            for result in group_query:
-                if result[0].rsplit('/', 1)[-1].startswith("vault-"):
-                    group_coll = result[0]
-                else:   # If parent collection is not group collection, go up another level
-                    group_coll = get_group_coll(ctx, group_coll)
+        if len(group_query) > 0:
+            if group_query[0].rsplit('/', 1)[-1].startswith("vault-"):
+                group_coll = group_query[0]
+            else:   # If parent collection is not group collection, go up another level
+                group_coll = get_group_coll(ctx, group_coll)
 
     return group_coll
 
 
 # Get AVUs from a collection
 def get_avus(ctx, coll, avu):
-    avu_query = genquery.row_iterator(
-        "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
-        f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'",
-        genquery.AS_LIST,
-        ctx)
+    avu_query = list(genquery.Query(ctx,
+                                    "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
+                                    f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'"))
 
     avus = {}
-    if avu_query.total_rows() > 0:
+    if len(avu_query) > 0:
         for (attribute, value) in avu_query:
             avus[attribute] = value
     return avus
@@ -81,55 +66,42 @@ def get_avus(ctx, coll, avu):
 
 # Get subcollections of a collection
 def get_subcolls(ctx, coll):
-    subcoll_query = genquery.row_iterator(
-        "COLL_NAME",
-        f"COLL_NAME like '{coll}/%'",
-        genquery.AS_LIST,
-        ctx)
+    subcoll_query = list(genquery.Query(ctx,
+                                        "COLL_NAME",
+                                        f"COLL_NAME like '{coll}/%'"))
 
-    subcolls = []
-    if subcoll_query.total_rows() > 0:
-        for result in subcoll_query:
-            subcolls.append(result[0])
-
-    return subcolls
+    if len(subcoll_query) > 0:
+        return subcoll_query
+    return []
 
 
 # Get data objects in a collection
 def get_dataobjs(ctx, coll):
-    data_query = genquery.row_iterator(
-        "DATA_NAME",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
+    data_query = list(genquery.Query(ctx,
+                                     "DATA_NAME",
+                                     f"COLL_NAME = '{coll}'"))
 
-    dataobjs = []
-    if data_query.total_rows() > 0:
-        for result in data_query:
-            dataobjs.append(result[0])
-
-    return dataobjs
+    if len(data_query) > 0:
+        return data_query
+    else:
+        return []
 
 
 # Get ACLs of a collection/data object
 def get_acls(ctx, coll, data="", item=""):
     acl = []
     if item == "coll" and data == "":
-        access_query = genquery.row_iterator(
-            "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-            f"COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
+        access_query = list(genquery.Query(ctx,
+                                           "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
+                                           f"COLL_NAME = '{coll}'"))
     elif item == "dataobj" and data != "":
-        access_query = genquery.row_iterator(
-            "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
-            f"COLL_NAME like '{coll}' AND DATA_NAME like '{data}'",
-            genquery.AS_LIST,
-            ctx)
+        access_query = list(genquery.Query(ctx,
+                                           "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
+                                           f"COLL_NAME = '{coll}' AND DATA_NAME like '{data}'"))
     else:
         return acl
 
-    if access_query.total_rows() > 0:
+    if len(access_query) > 0:
         for (user, access) in access_query:
             user_access = {}
 
@@ -169,8 +141,9 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                 elif acl not in g_acls:  # If ACL is in collection/data object's ACLs but not in group collection's ACLs, it might need to be removed
                     if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
                         acls_to_remove.append(acl)
-                elif user_name in path and access == "own":  # If group already has own rights on collection/data object, they should be removed
-                    acls_to_remove.append(acl)
+                    if user_name in path:  # Vault group should have no permissions on data package
+                        if not path.endswith(user_name):  # Do not remove if current collection is the group collection itself
+                            acls_to_remove.append(acl)
 
             if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
                 ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
@@ -186,6 +159,7 @@ def compare_acls(ctx, acls, g_acls, path, mode):
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
+
                             try:
                                 ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
                             except Exception:
@@ -208,8 +182,9 @@ def compare_acls(ctx, acls, g_acls, path, mode):
 
                         if mode == "write":
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
+
                             try:
-                                ctx.msiSetACL("default", "null", str(acl['user_name']), str(path))
+                                ctx.msiSetACL("default", "admin:null", str(user_name), str(path))
                             except Exception:
                                 ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
 
@@ -222,42 +197,6 @@ def compare_acls(ctx, acls, g_acls, path, mode):
                 ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
     else:
         ctx.writeLine("stdout", f"ERROR: No ACLs found for this collection/data object. (Path: {path})")
-
-
-# Check inheritance of a collection
-def check_coll_inheritance(ctx, coll, mode):
-    inherit_query = genquery.row_iterator(
-        "COLL_INHERITANCE",
-        f"COLL_NAME like '{coll}'",
-        genquery.AS_LIST,
-        ctx)
-
-    inheritance = ""
-    if inherit_query.total_rows() > 0:
-        for result in inherit_query:
-            inheritance = "Enabled" if result[0] == "1" else "Disabled"
-
-    # Vault packages should have inheritance disabled
-    if inheritance == "Disabled":
-        ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Path: {coll})")
-    elif inheritance == "Enabled":
-        ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Path: {coll})")
-
-        if mode == "write":
-            ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
-
-            try:
-                ctx.msiSetACL("recursive", "admin:noinherit", "", str(coll))
-            except Exception:
-                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
-
-            # Ensure write operation was successful
-            if ensure_fix(ctx, "inheritance", coll):
-                ctx.writeLine("stdout", "\tDone.")
-            else:
-                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
-    else:
-        ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Path: {coll})")
 
 
 # Check ACLs of a collection and its data objects
@@ -286,15 +225,47 @@ def check_acls(ctx, coll, mode):
                 subcoll_acls = get_acls(ctx, subcoll, item="coll")
                 compare_acls(ctx, subcoll_acls, group_acls, subcoll, mode)
 
-            # Check ACLs of provided collection's subcollections' data objects
-            subcoll_dataobjs = get_dataobjs(ctx, subcoll)
+                # Check ACLs of provided collection's subcollections' data objects
+                subcoll_dataobjs = get_dataobjs(ctx, subcoll)
 
-            if len(subcoll_dataobjs) > 0:
-                for subcoll_dataobj in subcoll_dataobjs:
-                    subcoll_dataobj_acls = get_acls(ctx, subcoll, data=subcoll_dataobj, item="dataobj")
-                    compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
+                if len(subcoll_dataobjs) > 0:
+                    for subcoll_dataobj in subcoll_dataobjs:
+                        subcoll_dataobj_acls = get_acls(ctx, subcoll, data=subcoll_dataobj, item="dataobj")
+                        compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
     else:
         ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
+
+
+# Check inheritance of a collection
+def check_coll_inheritance(ctx, coll, mode):
+    inherit_query = list(genquery.Query(ctx,
+                                        "COLL_INHERITANCE",
+                                        f"COLL_NAME = '{coll}'"))
+
+    if len(inherit_query) > 0:
+        inheritance = "Enabled" if inherit_query[0] == "1" else "Disabled"
+
+    # Vault packages should have inheritance disabled
+    if inheritance == "Disabled":
+        ctx.writeLine("stdout", f"OK: Inheritance is {inheritance}. (Path: {coll})")
+    elif inheritance == "Enabled":
+        ctx.writeLine("stdout", f"WARN: inheritance is {inheritance}, should be Disabled. (Path: {coll})")
+
+        if mode == "write":
+            ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
+
+            try:
+                ctx.msiSetACL("default", "admin:noinherit", "", str(coll))
+            except Exception:
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
+
+            # Ensure write operation was successful
+            if ensure_fix(ctx, "inheritance", coll):
+                ctx.writeLine("stdout", "\tDone.")
+            else:
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
+    else:
+        ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Path: {coll})")
 
 
 # Check inheritance of a collection and its subcollections
@@ -354,43 +325,29 @@ def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
         access = ['read', 'read_object']
     elif access == "write":
         access = ['write', 'write_object']
+    else:
+        access = [access]
 
     if op == "acl-add":
-        query = genquery.row_iterator(
-            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
+        if len(list(genquery.Query(ctx,
+                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) > 0:
             ensured = True
     elif op == "acl-remove":
-        query = genquery.row_iterator(
-            "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-            f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if not (query.total_rows() > 0):
+        if len(list(genquery.Query(ctx,
+                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) == 0:
             ensured = True
     elif op == "inheritance":
-        query = genquery.row_iterator(
-            "COLL_INHERITANCE",
-            f"COLL_NAME like '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
-            for result in query:
-                ensured = result[0] == "0"
+        query = list(genquery.Query(ctx,
+                                    "COLL_INHERITANCE",
+                                    f"COLL_NAME = '{coll}'"))
+        if len(query) > 0:
+            ensured = (query[0] == "0")
     elif op == "avu":
-        query = genquery.row_iterator(
-            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'",
-            genquery.AS_LIST,
-            ctx)
-
-        if query.total_rows() > 0:
+        if len(list(genquery.Query(ctx,
+                                   "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                   f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'"))) > 0:
             ensured = True
     return ensured
 
