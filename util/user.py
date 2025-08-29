@@ -12,6 +12,7 @@ import genquery
 import session_vars
 
 import log
+
 if TYPE_CHECKING:
     import rule
 

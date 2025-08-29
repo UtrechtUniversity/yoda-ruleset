@@ -13,6 +13,7 @@ from typing import Callable, Tuple, TYPE_CHECKING
 import irods_types
 
 import error
+
 if TYPE_CHECKING:
     import rule
 

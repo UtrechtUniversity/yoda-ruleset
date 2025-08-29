@@ -9,6 +9,7 @@ from typing import List, TYPE_CHECKING
 import genquery
 
 import user
+
 if TYPE_CHECKING:
     import rule
 

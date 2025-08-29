@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 from typing import List, TYPE_CHECKING
 
 import genquery
+
 if TYPE_CHECKING:
     import rule
 
