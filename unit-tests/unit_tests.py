@@ -9,6 +9,7 @@ from test_revisions import RevisionTest
 from test_schema_transformations import CorrectifyIsniTest, CorrectifyOrcidTest, CorrectifyScopusTest
 from test_util_misc import UtilMiscTest
 from test_util_pathutil import UtilPathutilTest
+from test_util_schema_utils import SchemaUtilsTest
 from test_util_yoda_names import UtilYodaNamesTest
 from test_vault import VaultTest
 
@@ -21,6 +22,7 @@ def suite():
     test_suite.addTest(makeSuite(GroupImportTest))
     test_suite.addTest(makeSuite(PoliciesTest))
     test_suite.addTest(makeSuite(RevisionTest))
+    test_suite.addTest(makeSuite(SchemaUtilsTest))
     test_suite.addTest(makeSuite(UtilMiscTest))
     test_suite.addTest(makeSuite(UtilPathutilTest))
     test_suite.addTest(makeSuite(UtilYodaNamesTest))

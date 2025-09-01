@@ -1536,6 +1536,29 @@ def update_publication(ctx: rule.Context,
         log.write(ctx, "update_publication: Not processing vault package, because initial status is " + status)
         return status
 
+    # Abort if data packages has a known unsupported metadata schema
+    try:
+        metadata_schema = vault.get_current_metadata_schema_data_package(ctx, vault_package)
+    except ValueError as e:
+        log.write(ctx, "update_publication: Not processing vault package, because its metadata schema cannot be determined: " + str(e))
+        publication_state["status"] = "Unrecoverable"
+
+    save_publication_state(ctx, vault_package, publication_state)
+    if _check_return_if_publication_status(["Unrecoverable", "Retry"], "after retrieving metadata schema"):
+        return publication_state["status"]
+
+    if metadata_schema is None:
+        log.write(ctx, "update_publication: Not processing vault package, because it has no metadata schema.")
+        publication_state["status"] = "Unrecoverable"
+    elif schema_utils.is_unsupported_schema(metadata_schema):
+        log.write(ctx,
+                  f"update_publication: Not processing vault package, because it has an unsupported metadata schema: {metadata_schema}")
+        publication_state["status"] = "Unrecoverable"
+
+    save_publication_state(ctx, vault_package, publication_state)
+    if _check_return_if_publication_status(["Unrecoverable", "Retry"], "after checking metadata schema"):
+        return publication_state["status"]
+
     update_base_doi = False
     if "baseDOI" in publication_state:
         if verbose:
