@@ -1614,3 +1614,25 @@ def update_archive(ctx: rule.Context, coll: str, attr: str | None = None) -> Non
 @rule.make(inputs=[], outputs=[0])
 def rule_vault_copy_numthreads(ctx: rule.Context) -> int:
     return get_vault_copy_numthreads(ctx)
+
+
+def get_current_metadata_schema_data_package(ctx: rule.Context, coll: str) -> str | None:
+    (space, _, _, _) = pathutil.info(coll)
+    """Get metadata schema of archived data package
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+
+    :raises ValueError: if path does not appear to refer to an archived data package
+    :returns: Current metadata schema (None if there is no schema definition in the metadata)
+    """
+    if space is not pathutil.Space.VAULT:
+        raise ValueError("Data package path is not in vault space: " + coll)
+
+    metadata_path = meta.get_latest_vault_metadata_path(ctx, coll)
+    if metadata_path is None:
+        raise ValueError("Data package metadata not found. Path probably does not refer to a data package: " + coll)
+
+    metadata = jsonutil.read(ctx, metadata_path)
+
+    return meta.metadata_get_schema_id(metadata)
