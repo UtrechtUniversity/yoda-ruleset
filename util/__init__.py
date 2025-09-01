@@ -38,6 +38,7 @@ if 'unittest' not in sys.modules:
     import arb_data_manager
     import cached_data_manager
     import irods_type_info
+    import schema_utils
 
     # Config items can be accessed directly as 'config.foo' by any module
     # that imports * from util.
