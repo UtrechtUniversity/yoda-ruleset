@@ -462,10 +462,15 @@ def folder_secure_fail(ctx: rule.Context, coll: str) -> None:
 def send_folder_secure_notification(ctx: rule.Context, coll: str, message: str) -> None:
     """Send notification about folder secure to relevant datamanagers"""
     if datamanager_exists(ctx, coll):
-        datamanagers = get_datamanagers(ctx, coll)
+        try:
+            datamanagers = get_datamanagers(ctx, coll)
+        except ValueError as e:
+            log.write(ctx, f"Unable to send folder secure notifications for <{coll}>: cannot get data managers: {str(e)}")
+            datamanagers = []
+
         for datamanager in datamanagers:
-            datamanager = '{}#{}'.format(*datamanager)
-            notifications.set(ctx, "system", datamanager, coll, message)
+            datamanager_name = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, "system", datamanager_name, coll, message)
 
 
 def set_epic_pid(ctx: rule.Context, target: str) -> bool:
@@ -765,19 +770,47 @@ def get_status(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]]
 
 
 def datamanager_exists(ctx: rule.Context, coll: str) -> bool:
-    """Check if a datamanager exists for a given collection."""
-    group_name = collection_group_name(ctx, coll)
-    category = group.get_category(ctx, group_name)
+    """Check if a datamanager exists for a given collection.
 
+    :param ctx:          Combined type of a callback and rei struct
+    :param coll:         Collection of group (e.g. /tempZone/home/research-foo)
+
+    :raises ValueError: If collection does not match a group or the group
+                        is invalid.
+    :returns: Boolean indicating if datamanager group exists for group of collection
+
+       """
+    group_name = collection_group_name(ctx, coll)
+    if group_name == "":
+        raise ValueError(f"Error: cannot determine group of collection {coll}.")
+    category = group.get_category(ctx, group_name)
+    if category is None:
+        # Group without category is invalid.
+        raise ValueError(f"Error: group for collection {coll} is invalid. It has no category.")
     return group.exists(ctx, "datamanager-" + category)
 
 
-def get_datamanagers(ctx: rule.Context, coll: str) -> List[str]:
-    """Retrieve datamanagers for a given collection."""
+def get_datamanagers(ctx: rule.Context, coll: str) -> List[Tuple[str, str]]:
+    """Retrieve datamanagers for a given collection.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param coll:         Collection of group (e.g. /tempZone/home/research-foo)
+
+    :raises ValueError: If collection does not match a group or refers to an
+                        invalid group.
+    :returns: List of data manager users for research collection. Each
+              user item in the list is a tuple of username and zone.
+    """
     group_name = collection_group_name(ctx, coll)
+    if group_name == "":
+        raise ValueError(f"Error: cannot determine group of collection {coll}.")
     category = group.get_category(ctx, group_name)
 
-    return group.members(ctx, "datamanager-" + category)
+    if category is None:
+        # Group without category is invalid.
+        raise ValueError(f"Error: group for collection {coll} is invalid. It has no category.")
+    else:
+        return group.members(ctx, "datamanager-" + category)
 
 
 def set_submitter(ctx: rule.Context, path: str, actor: str) -> None:

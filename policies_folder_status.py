@@ -133,20 +133,31 @@ def post_status_transition(ctx: rule.Context,
         # Store actor of submitted for vault.
         folder.set_submitter(ctx, path, actor)
 
-        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+        if pathutil.info(path).space is pathutil.Space.RESEARCH:
+            try:
+                datamanagers = folder.get_datamanagers(ctx, path)
+            except ValueError as e:
+                log.write(ctx, f"Unable to send submitted to vault notifications for <{path}>: cannot get data managers: {str(e)}")
+                datamanagers = []
+
             # Send notifications to datamanagers
-            datamanagers = folder.get_datamanagers(ctx, path)
             message = "Data package submitted for the vault"
             for datamanager in datamanagers:
-                datamanager = '{}#{}'.format(*datamanager)
-                notifications.set(ctx, actor, datamanager, path, message)
+                datamanager_name = '{}#{}'.format(*datamanager)
+                notifications.set(ctx, actor, datamanager_name, path, message)
         else:
             # Set status to accepted for deposit groups or if research group has no datamanager.
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
         # Actor is system for deposit groups or if research group has no datamanager.
-        if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
+        try:
+            datamanager_exists = folder.datamanager_exists(ctx, path)
+        except ValueError as e:
+            log.write(ctx, f"Unable to determine whether <{path}> has data managers: {str(e)}")
+            datamanager_exists = False
+
+        if pathutil.info(path).space is pathutil.Space.DEPOSIT or not datamanager_exists:
             actor = "system"
 
         # Log action at least one second after previous action, to ensure correct order of provenance log.
@@ -157,7 +168,7 @@ def post_status_transition(ctx: rule.Context,
         folder.set_accepter(ctx, path, actor)
 
         # Send notifications to submitter.
-        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+        if pathutil.info(path).space is pathutil.Space.RESEARCH and datamanager_exists:
             submitter = folder.get_submitter(ctx, path)
             message = "Data package accepted for vault"
             notifications.set(ctx, actor, submitter, path, message)
