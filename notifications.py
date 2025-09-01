@@ -229,6 +229,10 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
         dp_coll = row[0]
         meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
 
+        if meta_path is None:
+            log.write(ctx, f"retention - No metadata found for data package <{dp_coll}>. Skipping it")
+            continue
+
         # Try to load the metadata file.
         try:
             metadata = jsonutil.read(ctx, meta_path)
