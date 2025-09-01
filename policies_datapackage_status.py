@@ -86,13 +86,18 @@ def post_status_transition(ctx: rule.Context,
         # Store actor of submitted for publication.
         vault.set_submitter(ctx, path, actor)
 
-        if folder.datamanager_exists(ctx, path):
-            # Send notifications to datamanagers.
+        try:
             datamanagers = folder.get_datamanagers(ctx, path)
+        except ValueError as e:
+            log.write(ctx, f"Unable to send submitted for publication notifications for <{path}>: cannot get data managers: {str(e)}")
+            datamanagers = []
+
+        if len(datamanagers) > 0:
+            # Send notifications to datamanagers.
             message = "Data package submitted for publication"
             for datamanager in datamanagers:
-                datamanager = '{}#{}'.format(*datamanager)
-                notifications.set(ctx, actor, datamanager, path, message)
+                datamanager_name = '{}#{}'.format(*datamanager)
+                notifications.set(ctx, actor, datamanager_name, path, message)
 
     elif status is constants.vault_package_state.APPROVED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "approved for publication")

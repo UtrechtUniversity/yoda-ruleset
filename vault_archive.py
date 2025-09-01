@@ -154,11 +154,16 @@ def vault_archive(ctx: rule.Context, actor: str, coll: str) -> str:
         provenance.log_action(ctx, actor, coll, "archive scheduled", False)
 
         # Send notifications to datamanagers.
-        datamanagers = folder.get_datamanagers(ctx, coll)
+        try:
+            datamanagers = folder.get_datamanagers(ctx, coll)
+        except ValueError as e:
+            log.write(ctx, f"Unable to send vault archive notifications for <{coll}>: cannot get data managers: {str(e)}")
+            datamanagers = []
+
         message = "Data package scheduled for archival"
         for datamanager in datamanagers:
-            datamanager = '{}#{}'.format(*datamanager)
-            notifications.set(ctx, actor, datamanager, coll, message)
+            datamanager_name = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, actor, datamanager_name, coll, message)
 
         log.write(ctx, "Data package <{}> scheduled for archiving by <{}>".format(coll, actor))
 
@@ -217,8 +222,8 @@ def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
         datamanagers = folder.get_datamanagers(ctx, coll)
         message = "Data package scheduled for unarchival"
         for datamanager in datamanagers:
-            datamanager = '{}#{}'.format(*datamanager)
-            notifications.set(ctx, actor, datamanager, coll, message)
+            datamanager_name = '{}#{}'.format(*datamanager)
+            notifications.set(ctx, actor, datamanager_name, coll, message)
 
         log.write(ctx, "Data package <{}> scheduled for unarchiving by <{}>".format(coll, actor))
 

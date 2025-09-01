@@ -4,7 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import List, TYPE_CHECKING
+from typing import List, Tuple, TYPE_CHECKING
 
 import genquery
 
@@ -26,17 +26,20 @@ def exists(ctx: 'rule.Context', grp: str) -> bool:
                                .format(grp)).first() is not None
 
 
-def members(ctx: 'rule.Context', grp: str) -> List:
+def members(ctx: 'rule.Context', grp: str) -> List[Tuple[str, str]]:
     """Get members of a given group.
 
     :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
-    :returns: Members of given group
+    :returns: List of members of the group, where each list item is a tuple
+              of username and zone name. The function returns an empty member
+              list if the group does not exist.
     """
-    return genquery.Query(ctx, "USER_NAME, USER_ZONE",
-                          "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'"
-                          .format(grp))
+    query_results = list(genquery.Query(ctx, "USER_NAME, USER_ZONE",
+                                        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'"
+                                        .format(grp)))
+    return list(query_results)
 
 
 def is_member(ctx: 'rule.Context', grp: str, usr: str | None = None) -> bool:

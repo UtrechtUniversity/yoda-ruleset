@@ -215,7 +215,6 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
 
     log.write(ctx, 'retention - Checking Vault packages for ending retention')
 
-    zone = user.zone(ctx)
     errors = 0
     dp_notify_count = 0
 
@@ -281,19 +280,20 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
 
         log.write(ctx, 'retention - Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
         if r.years == 0 and r.months <= 1:
-            group_name = folder.collection_group_name(ctx, dp_coll)
-            category = group.get_category(ctx, group_name)
-            datamanager_group_name = "datamanager-" + category
+            try:
+                datamanagers = folder.get_datamanagers(ctx, dp_coll)
+            except ValueError as e:
+                log.write(ctx, f"Unable to send retention time notifications for <{dp_coll}>: cannot get data managers: {str(e)}")
+                datamanagers = []
 
-            if group.exists(ctx, datamanager_group_name):
+            if len(datamanagers) > 0:
                 dp_notify_count += 1
                 # Send notifications to datamanager(s).
-                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
                 message = "Data package reaching end of preservation date: {}".format(formatted_date)
                 for datamanager in datamanagers:
-                    datamanager = '{}#{}'.format(*datamanager)
+                    datamanager_name = '{}#{}'.format(*datamanager)
                     actor = 'system'
-                    set(ctx, actor, datamanager, dp_coll, message)
+                    set(ctx, actor, datamanager_name, dp_coll, message)
                 log.write(ctx, 'retention - Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, 'retention - Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
@@ -331,19 +331,21 @@ def rule_process_groups_expiration_date(ctx: rule.Context) -> None:
         coll = '/{}/home/{}'.format(zone, group_name)
         expiration_date = row[2]
 
-        # find corresponding datamanager
-        category = group.get_category(ctx, group_name)
-        datamanager_group_name = "datamanager-" + category
-        if group.exists(ctx, datamanager_group_name):
+        try:
+            datamanagers = folder.get_datamanagers(ctx, coll)
+        except ValueError as e:
+            log.write(ctx, f"Unable to send expiry time notifications for <{coll}>: cannot get data managers: {str(e)}")
+            datamanagers = []
+
+        if len(datamanagers) > 0:
             notify_count += 1
             # Send notifications to datamanager(s).
-            datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
             message = "Group '{}' reached expiration date: {}".format(group_name, expiration_date)
 
             for datamanager in datamanagers:
-                datamanager = '{}#{}'.format(*datamanager)
+                datamanager_name = '{}#{}'.format(*datamanager)
                 actor = 'system'
-                set(ctx, actor, datamanager, coll, message)
+                set(ctx, actor, datamanager_name, coll, message)
             log.write(ctx, 'group expiration date - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
 
     log.write(ctx, 'group expiration date - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
@@ -381,6 +383,14 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
     for row in iter:
         group_name = row[0]
         coll = '/{}/home/{}'.format(zone, group_name)
+
+        if not collection.exists(ctx, coll):
+            # This is apparently a leftover group, where the collection has already
+            # been removed. This is a technical operations issue, rather than a data management
+            # issue, so we don't send notification to the data managers about this.
+            log.write(ctx, 'inactive research group - Skipping group without collection: ' + group_name)
+            continue
+
         # Trigger this flag if there are any files that have been modified after the cut off
         # If the flag is still false after going through all the files, then that is when we send the notification
         recent_files_modified = False
@@ -444,19 +454,21 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
                     recent_files_modified = True
 
         if not recent_files_modified:
-            # find corresponding datamanager
-            category = group.get_category(ctx, group_name)
-            datamanager_group_name = "datamanager-" + category
-            if group.exists(ctx, datamanager_group_name):
+            try:
+                datamanagers = folder.get_datamanagers(ctx, coll)
+            except ValueError as e:
+                log.write(ctx, f"Unable to send inactive group notifications for <{coll}>: cannot get data managers: {str(e)}")
+                datamanagers = []
+
+            if len(datamanagers) > 0:
                 notify_count += 1
                 # Send notifications to datamanager(s).
-                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
                 message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
 
                 for datamanager in datamanagers:
-                    datamanager = '{}#{}'.format(*datamanager)
+                    datamanager_name = '{}#{}'.format(*datamanager)
                     actor = 'system'
-                    set(ctx, actor, datamanager, coll, message)
+                    set(ctx, actor, datamanager_name, coll, message)
                 log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
 
     log.write(ctx, 'inactive research group - Finished checking research groups for inactivity | notified: {}'.format(notify_count))
