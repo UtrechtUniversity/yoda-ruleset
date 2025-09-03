@@ -18,18 +18,6 @@ def coll_exists(ctx, coll):
     return len(list(genquery.Query(ctx, "COLL_ID", f"COLL_NAME = '{coll}'"))) > 0
 
 
-# Get user name from user ID
-def get_user_name(ctx, id):
-    user_query = list(genquery.Query(ctx,
-                                     "USER_NAME",
-                                     f"USER_ID = '{id}'"))
-
-    if len(user_query) > 0:
-        return user_query[0]
-    else:
-        return ""
-
-
 # Get group from collection
 def get_group_coll(ctx, coll):
     group_coll = ""
@@ -48,6 +36,9 @@ def get_group_coll(ctx, coll):
 
     return group_coll
 
+
+def group_exists(ctx, group):
+    return len(list(genquery.Query(ctx, "USER_GROUP_NAME", f"USER_GROUP_NAME = '{group}' AND USER_TYPE = 'rodsgroup'"))) > 0
 
 # Get AVUs from a collection
 def get_avus(ctx, coll, avu):
@@ -104,7 +95,10 @@ def get_acls(ctx, coll, data="", item=""):
             user_access = {}
 
             user_access['user_id'] = user
-            user_access['user_name'] = get_user_name(ctx, user)
+            
+            user_access['user_name'] = list(genquery.Query(ctx,
+                                                           "USER_NAME",
+                                                           f"USER_ID = '{user}'"))[0]
 
             if access == "read_object":
                 user_access['access'] = "read"
@@ -116,6 +110,70 @@ def get_acls(ctx, coll, data="", item=""):
             acl.append(user_access)
 
     return acl
+
+# Set initial state of group collection (ensure ACLs and inheritance are correct)
+def set_group_coll(ctx, coll):
+    group_coll_ready = True
+
+    # Get group collection
+    group_coll = get_group_coll(ctx, coll)
+
+    ctx.writeLine("stdout", f"Preparing vault group collection before check... (Path: {group_coll})")
+
+    if group_coll != "":
+        read_groups = []
+
+        group_name = group_coll.split('/')[-1]
+        parts = group_name.split('-')
+        base_name = '-'.join(parts[1:])
+
+        read_name = "read-" + base_name
+        if group_exists(ctx, read_name):
+            read_groups.append(read_name)
+
+        research_name = "research-" + base_name
+        if group_exists(ctx, research_name):
+            read_groups.append(research_name)
+
+        try:
+            category = ctx.uuGroupGetCategory(research_name, '', '')['arguments'][1]
+            if category != "":
+                datamanager_name = "datamanager-" + str(category)
+                if group_exists(ctx, datamanager_name):
+                    read_groups.append(research_name)
+        except Exception:
+            group_coll_ready = False
+            ctx.writeLine("stdout", f"ERROR: Something went wrong while getting groups information. (Path: {group_coll})")
+
+        try:
+            ctx.msiSetACL("recursive", "admin:noinherit", "", str(group_coll))
+
+            # Ensure write operation was successful
+            if not ensure_fix(ctx, "inheritance", group_coll):
+                group_coll_ready = False
+        except Exception:
+            group_coll_ready = False
+            ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {group_coll})")
+
+        for group in read_groups:
+            ctx.writeLine("stdout", f"group: {group}")
+            try:
+                ctx.msiSetACL("default", "admin:read", str(group), str(group_coll))
+
+                # Ensure write operation was successful
+                user_id = list(genquery.Query(ctx,
+                                                "USER_ID",
+                                                f"USER_NAME = '{group}'"))[0]
+                if not ensure_fix(ctx, "acl-add", group_coll, user_id=user_id, access="read"):
+                    group_coll_ready = False
+            except Exception:
+                group_coll_ready = False
+                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {group_coll})")
+    else:
+        group_coll_ready = False
+        ctx.writeLine("stdout", "ERROR: Cannot retrieve group collection.")
+
+    return group_coll_ready
 
 
 # Compare ACLs of a collection/data object with group ACLs
@@ -365,19 +423,20 @@ def main(rule_args, ctx, rei):
         if coll_exists(ctx, coll):
             if 'vault-' in coll:  # Script should be run on vault collections only
                 ctx.writeLine("stdout", f"Executing package check rule for collection: {coll} (mode: {mode})")
-                ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
 
-                # Check if collection ACLs match group ACLs
-                check_acls(ctx, coll, mode)
-                ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
+                group_ready = set_group_coll(ctx, coll)
 
-                # Check collection inheritance
-                check_inheritance(ctx, coll, mode)
-                ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
+                if group_ready:
+                    # Check if collection ACLs match group ACLs
+                    check_acls(ctx, coll, mode)
 
-                # Update metadata
-                check_metadata(ctx, coll, mode, current_user)
-                ctx.writeLine("stdout", "----------------------------------------------------------------------------------------------------")
+                    # Check collection inheritance
+                    check_inheritance(ctx, coll, mode)
+
+                    # Update metadata
+                    check_metadata(ctx, coll, mode, current_user)
+                else:
+                    ctx.writeLine("stdout", "ERROR: Something went wrong while determining initial state of vault group collection.")                
             else:
                 ctx.writeLine("stdout", "ERROR: This rule should be run on vault collections only.")
         else:
