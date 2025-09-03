@@ -39,16 +39,20 @@ Optional Arguments:
 
 Examples:
   Archive a collection:
-    $0 -m archive -s /tempZone/home/research-initial/data-package \\
+    $0 -m archive \\
+       -s /tempZone/home/research-initial/data-package \\
        -t /tempZone/home/research-initial/archives/backup.tar
 
   Extract an entire archive:
-    $0 -m extract -s /tempZone/home/research-initial/archives/backup.tar \\
+    $0 -m extract \\
+       -s /tempZone/home/research-initial/archives/backup.tar \\
        -t /tempZone/home/research-initial/extracted-data
 
   Extract a specific file from archive:
-    $0 -m extract -s /tempZone/home/research-initial/archives/backup.tar \\
-       -t /tempZone/home/research-initial/extracted-data -f file1.txt
+    $0 -m extract \\
+       -s /tempZone/home/research-initial/archives/backup.tar \\
+       -t /tempZone/home/research-initial/extracted-data \\
+       -f file1.txt
 EOF
 }
 
