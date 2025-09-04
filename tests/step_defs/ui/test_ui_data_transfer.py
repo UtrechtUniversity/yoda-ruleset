@@ -16,7 +16,7 @@ from conftest import portal_url
 
 scenarios('../../features/ui/ui_data_transfer.feature')
 
-icommands_url = "https://docs.irods.org/4.2.12/icommands/user/"
+icommands_url = "https://docs.irods.org/4.3.4/icommands/user/"
 gocommands_url = "https://github.com/cyverse/gocommands/blob/main/README.md"
 
 
