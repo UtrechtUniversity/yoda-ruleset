@@ -11,7 +11,7 @@ DEFAULT_RULE_ENGINE="irods_rule_engine_plugin-irods_rule_language-instance"
 MODE=""
 SOURCE_PATH=""
 TARGET_PATH=""
-TARGET_RESOURCE="null" # Default to default resource
+TARGET_RESOURCE="" # Default to default resource
 EXTRACT_FILE="null"  # Default to extract entire archive
 
 # Helper function
