@@ -156,7 +156,6 @@ def set_group_coll(ctx, coll):
             ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {group_coll})")
 
         for group in read_groups:
-            ctx.writeLine("stdout", f"group: {group}")
             try:
                 ctx.msiSetACL("default", "admin:read", str(group), str(group_coll))
 
@@ -349,12 +348,18 @@ def check_metadata(ctx, coll, mode, user):
                 if os.path.isabs(value):
                     current_zone = ctx.uuClientZone("")['arguments'][0]
                     avu_zone = value.split('/')[1]
+                    current_vault = [sub for sub in coll.split('/') if sub.startswith('vault-')]
+                    avu_vault = [sub for sub in value.split('/') if sub.startswith('vault-')]
+
                     if avu_zone != current_zone:
                         ctx.writeLine("stdout", f"WARN: AVU '{attr}' contains zone that does not match current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
 
                         if (mode == "write"):
                             ctx.writeLine("stdout", f"\tRunning in {mode} mode, fixing...")
                             new_value = value.replace(avu_zone, current_zone)
+
+                            if len(avu_vault) > 0 and avu_vault != "":
+                                new_value = new_value.replace(avu_vault[0], current_vault[0])
 
                             # Update zone name
                             try:
