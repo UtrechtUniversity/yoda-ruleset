@@ -13,7 +13,6 @@ from typing import Dict, List
 import genquery
 import irods_types
 import jsonschema
-from deepdiff import DeepDiff
 
 import meta_form
 import provenance
@@ -620,32 +619,9 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Log the difference between the metadata before and after the ingest
-    try:
-        meta_diff = DeepDiff(prev_json_data, current_json_data)
-        item_list = {}
-        for i in meta_diff:
-            action = i.split('_')[-1]
-            item_list[action] = []
-            if i.startswith('dictionary'):
-                keys = meta_diff[i]
-            else:
-                keys = meta_diff[i].keys()
-            if keys:
-                for item in keys:
-                    m = re.match(r"root\['(.*?)'\]", item)
-                    if m:
-                        item_list[action].append(m.group(1).replace('_', ' '))
-
-        for item in item_list:
-            if len(item_list[item]) < 5:
-                list_of_changes = ', '.join(item_list[item])
-                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {}'.format(item.replace('changed', 'modified'), list_of_changes))
-            else:
-                list_of_changes = ', '.join(item_list[item][:4])
-                provenance.log_action(ctx, actor, vault_pkg_path, '{} metadata: {} and more'.format(item.replace('changed', 'modified'), list_of_changes))
-    except Exception:
-        # Log provenance without the differences
-        provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
+    difference_descriptions = diff_data.describe_metadata_changes(prev_json_data, current_json_data)
+    for description in difference_descriptions:
+        provenance.log_action(ctx, actor, vault_pkg_path, description)
 
     # Write license file.
     vault.vault_write_license(ctx, vault_pkg_path)
