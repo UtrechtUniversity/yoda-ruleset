@@ -19,7 +19,7 @@ import groups
 import meta
 import research
 import schema
-from util import api, avu, collection, config, constants, data_object, group, jsonutil, log, measure_coverage, msi, resources, rule, user
+from util import api, avu, collection, config, constants, data_object, diff_data, group, jsonutil, log, measure_coverage, msi, resources, rule, user
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -349,6 +349,39 @@ def _test_folder_secure_func(ctx, func):
     return result
 
 
+def _test_diff_data_describe_changes(ctx, data_name):
+    """Runs util.diff_data.describe_metadata_changes against a particular
+       set of data
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param data_name:     Name of data to test
+
+    :returns: Result change description list
+    :raises Exception: If data_name does not refer to a known test data name
+    """
+    data1 = {"key1": "value1", "key2": "value2", "key3": "value3", "key4": "value4", "key5": "value5", "key6": "value6", "key7": {"nestedkey": "nestedvalue"}}
+    data2 = data1.copy()
+
+    if data_name == "same_data":
+        pass
+    elif data_name == "onevaluechanged":
+        data2["key1"] = "value_modified"
+    elif data_name == "twovalueschanged":
+        data2["key1"] = "value_modified"
+        data2["key2"] = "value_modified"
+    elif data_name == "sixvalueschanged":
+        for i in range(1, 7):
+            data2["key" + str(i)] = "value_modified"
+    elif data_name == "nestedvaluechanged":
+        data2["key7"]["nestedkey"] = "value_modified"
+    elif data_name == "keyadded":
+        data2["newkey"] = "newvalue"
+    else:
+        raise Exception("Unknown data name when testing diff_data.describe_metadata_changes.")
+
+    return diff_data.describe_metadata_changes(data1, data2)
+
+
 basic_integration_tests = [
     {"name": "msvc.add_avu_collection",
      "test": lambda ctx: _test_msvc_add_avu_collection(ctx),
@@ -627,10 +660,10 @@ basic_integration_tests = [
      "check": lambda x: x == []},
     {"name":  "research.api_research_manifest.invalid_path",
      "test": lambda ctx: research.research_manifest(ctx, "/tempZone/does/not/exist"),
-     "check": lambda x: type(x) is api.Error},
+     "check": lambda x: isinstance(x, api.Error)},
     {"name":  "research.api_research_manifest.no_space",
      "test": lambda ctx: research.research_manifest(ctx, "/tempZone/yoda/schemas"),
-     "check": lambda x: type(x) is api.Error},
+     "check": lambda x: isinstance(x, api.Error)},
     {"name":  "schema.get_active_schema_path.deposit",
      "test": lambda ctx: schema.get_active_schema_path(ctx, "/tempZone/home/deposit-pilot"),
      "check": lambda x: x == "/tempZone/yoda/schemas/dag-0/metadata.json"},
@@ -714,6 +747,24 @@ basic_integration_tests = [
     {"name":   "util.data_object.get_group_owners",
      "test": lambda ctx: data_object.get_group_owners(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x == [['research-initial', 'tempZone']]},
+    {"name":   "util.diff_data.describe_metadata_changes.same_data",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "same_data"),
+     "check": lambda x: x  == []},
+    {"name":   "util.diff_data.describe_metadata_changes.onevaluechanged",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "onevaluechanged"),
+     "check": lambda x: x  == ['modified metadata: key1']},
+    {"name":   "util.diff_data.describe_metadata_changes.twovalueschanged",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "twovalueschanged"),
+     "check": lambda x: x  == ['modified metadata: key1, key2']},
+    {"name":   "util.diff_data.describe_metadata_changes.sixvalueschanged",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "sixvalueschanged"),
+     "check": lambda x: x  == ['modified metadata: key1, key2, key3, key4 and more']},
+    {"name":   "util.diff_data.describe_metadata_changes.keyadded",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "keyadded"),
+     "check": lambda x: x  == ['added metadata: newkey']},
+    {"name":   "util.diff_data.describe_metadata_changes.nestedvaluechanged",
+     "test": lambda ctx: _test_diff_data_describe_changes(ctx, "nestedvaluechanged"),
+     "check": lambda x: x  == []},
     {"name":   "util.group.exists.yes",
      "test": lambda ctx: group.exists(ctx, "research-initial"),
      "check": lambda x: x},
