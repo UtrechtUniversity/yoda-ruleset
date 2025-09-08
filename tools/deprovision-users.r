@@ -11,7 +11,7 @@ def main(rule_args, callback, rei):
 
     # Get the user name and group count
     userIter = genquery.row_iterator(
-        "GROUP(USER_NAME), COUNT(USER_GROUP_NAME)",
+        "USER_NAME, COUNT(USER_GROUP_NAME)",
         "USER_TYPE = 'rodsuser' AND USER_ZONE = '{}'".format(zone),
         genquery.AS_TUPLE,
         callback) 
