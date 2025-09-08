@@ -176,80 +176,83 @@ def set_group_coll(ctx, coll):
 
 
 # Compare ACLs of a collection/data object with group ACLs
-def compare_acls(ctx, acls, g_acls, path, mode):
+def compare_acls(ctx, acls, g_acls, coll, mode, data=""):
+    if data == "":
+        path = coll
+    else:
+        path = f"{coll}/{data}"
+
     if len(g_acls) > 0 and len(acls) > 0:
-        if (acls == g_acls):
-            ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
+        acls_to_remove = []
+        acls_to_add = []
+
+        # Join ACLs of both lists
+        join_acls = [acl for i, acl in enumerate(acls + g_acls) if acl not in (acls + g_acls)[:i]]
+        for acl in join_acls:
+            user_name = acl['user_name']
+            access = acl['access']
+
+            if acl not in acls:  # If ACL is in group collection's ACLs but not collection/data object's ACLs, it might need to be added
+                if access != "own":  # Any own rights from group collection can be skipped
+                    acls_to_add.append(acl)
+            elif acl not in g_acls:  # If ACL is in collection/data object's ACLs but not in group collection's ACLs, it might need to be removed
+                if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
+                    acls_to_remove.append(acl)
+            
+            if user_name in path and acl in acls:  # Vault group should have no permissions on data package
+                if not path.endswith(user_name):  # Do not remove if current collection is the group collection itself
+                    acls_to_remove.append(acl)
+
+        if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
+            ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
+
+            # Add missing ACLs
+            if len(acls_to_add) > 0:
+                for acl in acls_to_add:
+                    user_id = acl['user_id']
+                    user_name = acl['user_name']
+                    access = acl['access']
+
+                    ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to the group collection but not to this collection/data object, and should have those rights.")
+
+                    if mode == "write":
+                        ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
+
+                        try:
+                            ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
+                        except Exception:
+                            ctx.writeLine("stdout", f"\tERROR: Something went wrong while setting ACLs. (Path: {path})")
+
+                        # Ensure write operation was successful
+                        if ensure_fix(ctx, "acl-add", coll, data=data, user_id=user_id, access=access):
+                            ctx.writeLine("stdout", "\tDone.")
+                        else:
+                            ctx.writeLine("stdout", f"\tERROR: ACL was not set correctly. (Path: {path})")
+
+            # Remove extra ACLs
+            if len(acls_to_remove) > 0:
+                for acl in acls_to_remove:
+                    user_id = acl['user_id']
+                    user_name = acl['user_name']
+                    access = acl['access']
+
+                    ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to this collection/data object, but should not have those rights.")
+
+                    if mode == "write":
+                        ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
+
+                        try:
+                            ctx.msiSetACL("default", "admin:null", str(user_name), str(path))
+                        except Exception:
+                            ctx.writeLine("stdout", f"\tERROR: Something went wrong while setting ACLs. (Path: {path})")
+
+                        # Ensure write operation was successful
+                        if ensure_fix(ctx, "acl-remove", coll, data=data, user_id=user_id, access=access):
+                            ctx.writeLine("stdout", "\tDone.")
+                        else:
+                            ctx.writeLine("stdout", f"\tERROR: ACL was not set correctly. (Path: {path})")
         else:
-            acls_to_remove = []
-            acls_to_add = []
-
-            # Join ACLs of both lists
-            join_acls = [acl for i, acl in enumerate(acls + g_acls) if acl not in (acls + g_acls)[:i]]
-            for acl in join_acls:
-                user_name = acl['user_name']
-                access = acl['access']
-
-                if acl not in acls:  # If ACL is in group collection's ACLs but not collection/data object's ACLs, it might need to be added
-                    if access != "own":  # Any own rights from group collection can be skipped
-                        acls_to_add.append(acl)
-                elif acl not in g_acls:  # If ACL is in collection/data object's ACLs but not in group collection's ACLs, it might need to be removed
-                    if user_name != "rods" and (user_name == "anonymous" and access != "read"):  # If rods has any rights or anonymous has read rights, they don't have to be removed
-                        acls_to_remove.append(acl)
-                    if user_name in path:  # Vault group should have no permissions on data package
-                        if not path.endswith(user_name):  # Do not remove if current collection is the group collection itself
-                            acls_to_remove.append(acl)
-
-            if len(acls_to_add) > 0 or len(acls_to_remove) > 0:
-                ctx.writeLine("stdout", f"WARN: ACLs of current collection/data object have issues. (Path: {path})")
-
-                # Add missing ACLs
-                if len(acls_to_add) > 0:
-                    for acl in acls_to_add:
-                        user_id = acl['user_id']
-                        user_name = acl['user_name']
-                        access = acl['access']
-
-                        ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to the group collection but not to this collection/data object, and should have those rights.")
-
-                        if mode == "write":
-                            ctx.writeLine("stdout", f"\tRunning in {mode} mode, adding missing ACLs...")
-
-                            try:
-                                ctx.msiSetACL("default", "admin:" + str(access), str(user_name), str(path))
-                            except Exception:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
-
-                            # Ensure write operation was successful
-                            if ensure_fix(ctx, "acl-add", path, user_id=user_id, access=access):
-                                ctx.writeLine("stdout", "\tDone.")
-                            else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
-
-                # Remove extra ACLs
-                if len(acls_to_remove) > 0:
-                    for acl in acls_to_remove:
-                        user_id = acl['user_id']
-                        user_name = acl['user_name']
-                        access = acl['access']
-
-                        ctx.writeLine("stdout", f"\tUser/group '{user_name}' has '{access}' rights to this collection/data object, but should not have those rights.")
-
-                        if mode == "write":
-                            ctx.writeLine("stdout", f"\tRunning in {mode} mode, removing extra ACLs...")
-
-                            try:
-                                ctx.msiSetACL("default", "admin:null", str(user_name), str(path))
-                            except Exception:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
-
-                            # Ensure write operation was successful
-                            if ensure_fix(ctx, "acl-remove", path, user_id=user_id, access=access):
-                                ctx.writeLine("stdout", "\tDone.")
-                            else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting ACLs. (Path: {path})")
-            else:
-                ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
+            ctx.writeLine("stdout", f"OK: ACLs of current collection/data object are correct. (Path: {path})")
     else:
         ctx.writeLine("stdout", f"ERROR: No ACLs found for this collection/data object. (Path: {path})")
 
@@ -270,7 +273,7 @@ def check_acls(ctx, coll, mode):
         if len(dataobjs) > 0:
             for data_obj in dataobjs:
                 dataobj_acls = get_acls(ctx, coll, data=data_obj, item="dataobj")
-                compare_acls(ctx, dataobj_acls, group_acls, f"{coll}/{data_obj}", mode)
+                compare_acls(ctx, dataobj_acls, group_acls, coll, mode, data=data_obj)
 
         # Check ACLs of provided collection's subcollections
         subcolls = get_subcolls(ctx, coll)
@@ -286,7 +289,7 @@ def check_acls(ctx, coll, mode):
                 if len(subcoll_dataobjs) > 0:
                     for subcoll_dataobj in subcoll_dataobjs:
                         subcoll_dataobj_acls = get_acls(ctx, subcoll, data=subcoll_dataobj, item="dataobj")
-                        compare_acls(ctx, subcoll_dataobj_acls, group_acls, f"{subcoll}/{subcoll_dataobj}", mode)
+                        compare_acls(ctx, subcoll_dataobj_acls, group_acls, subcoll, mode, data=subcoll_dataobj)
     else:
         ctx.writeLine("stdout", "ERROR: Could not retrieve group collection.")
 
@@ -312,13 +315,13 @@ def check_coll_inheritance(ctx, coll, mode):
             try:
                 ctx.msiSetACL("default", "admin:noinherit", "", str(coll))
             except Exception:
-                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
+                ctx.writeLine("stdout", f"\tERROR: Something went wrong while setting inheritance. (Path: {coll})")
 
             # Ensure write operation was successful
             if ensure_fix(ctx, "inheritance", coll):
                 ctx.writeLine("stdout", "\tDone.")
             else:
-                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting inheritance. (Path: {coll})")
+                ctx.writeLine("stdout", f"\tERROR: Inheritance was not set correctly. (Path: {coll})")
     else:
         ctx.writeLine("stdout", f"ERROR: Could not retrieve collection's inheritance. (Path: {coll})")
 
@@ -365,13 +368,13 @@ def check_metadata(ctx, coll, mode, user):
                             try:
                                 ctx.msiModAVUMetadata("-C", str(coll), "set", str(attr), str(new_value), "")
                             except Exception:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU '{attr}'.")
+                                ctx.writeLine("stdout", f"\tERROR: Something went wrong while setting AVU '{attr}'.")
 
                             # Ensure write operation was successful
                             if ensure_fix(ctx, "avu", coll, attr=attr, value=new_value):
                                 ctx.writeLine("stdout", "\tDone.")
                             else:
-                                ctx.writeLine("stdout", f"ERROR: Something went wrong while setting AVU '{attr}'.")
+                                ctx.writeLine("stdout", f"\tERROR: AVU '{attr}' was not set correctly.")
                     else:
                         ctx.writeLine("stdout", f"OK: AVU '{attr}' contains zone that matches current zone. (Metadata zone: '{avu_zone}', current zone: '{current_zone}')")
     else:
@@ -379,7 +382,7 @@ def check_metadata(ctx, coll, mode, user):
 
 
 # Ensures write operation was successful
-def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
+def ensure_fix(ctx, op, coll, data="", user_id="", access="", attr="", value=""):
     ensured = False
 
     if access == "read":
@@ -390,15 +393,27 @@ def ensure_fix(ctx, op, coll, user_id="", access="", attr="", value=""):
         access = [access]
 
     if op == "acl-add":
-        if len(list(genquery.Query(ctx,
-                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) > 0:
-            ensured = True
+        if data == "":
+            if len(list(genquery.Query(ctx,
+                                    "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                    f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) > 0:
+                ensured = True
+        else:
+            if len(list(genquery.Query(ctx,
+                                    "DATA_ACCESS_USER_ID, DATA_ACCESS_NAME",
+                                    f"DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'"))) > 0:
+                ensured = True            
     elif op == "acl-remove":
-        if len(list(genquery.Query(ctx,
-                                   "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-                                   f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) == 0:
-            ensured = True
+        if data == "":
+            if len(list(genquery.Query(ctx,
+                                    "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+                                    f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) == 0:
+                ensured = True
+        else:
+            if len(list(genquery.Query(ctx,
+                                    "DATA_ACCESS_USER_ID, DATA_ACCESS_NAME",
+                                    f"DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'"))) == 0:
+                ensured = True            
     elif op == "inheritance":
         query = list(genquery.Query(ctx,
                                     "COLL_INHERITANCE",
