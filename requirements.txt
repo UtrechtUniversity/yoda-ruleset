@@ -11,7 +11,7 @@ requests_cache==0.5.2
 irods-avu-json==2.2.0
 python-dateutil==2.9.0.post0
 python-magic==0.4.27
-deepdiff==8.0.1
+deepdiff==8.6.1
 persist-queue==0.8.1
 redis==3.5.3
 psutil==6.1.1
