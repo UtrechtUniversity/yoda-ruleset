@@ -226,6 +226,11 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
     )
     for row in iter:
         dp_coll = row[0]
+
+        if not pathutil.is_archived_datapackage_path(dp_coll):
+            # This is not a top-level collection of an archived data package. Skip it.
+            continue
+
         meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
 
         if meta_path is None:
