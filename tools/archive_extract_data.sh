@@ -86,7 +86,7 @@ EOF
             cat <<EOF >&2
 
 ERROR: ZIP archive extraction is not supported for now.
-Please use your local applications to extract such as unzip cmd (Linux/Mac), 7-Zip/WinZip (Windows)
+Please download the archive and use a local application to extract such as unzip cmd (Linux/Mac), 7-Zip/WinZip (Windows)
 EOF
             errors=$((errors+1))
         fi
