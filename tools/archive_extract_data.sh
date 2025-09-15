@@ -125,6 +125,20 @@ done
 # Validate inputs
 validate_arguments || exit 1
 
+# For archive mode: check if target archive already exists
+if [[ "$MODE" == "archive" ]]; then
+    if ils "$TARGET_PATH" &>/dev/null; then
+        echo "WARNING: Archive target '$TARGET_PATH' already exists."
+        read -p "Do you want to overwrite it? [y/N] " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Aborted by user."
+            exit 1
+        else
+            echo "Proceeding with overwrite..."
+        fi
+    fi
+fi
+
 # Execute the appropriate operation
 echo "Starting $MODE operation:"
 echo "  Source: $SOURCE_PATH"
