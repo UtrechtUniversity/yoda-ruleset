@@ -22,6 +22,7 @@ Archive Mode:
 
 Extract Mode:
   Extracts an archive to an iRODS collection using msiArchiveExtract
+  Files with the same name (already exist) will be skipped (not overwritten)
 
 Usage: $0 -m MODE -s SOURCE_PATH -t TARGET_PATH
 
