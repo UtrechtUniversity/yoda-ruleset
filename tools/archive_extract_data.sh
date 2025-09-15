@@ -80,6 +80,16 @@ This would cause recursive archiving and is not permitted.
 EOF
             errors=$((errors+1))
         fi
+    elif [[ "$MODE" == "extract" ]]; then
+        # Check for .zip extension (case-insensitive)
+        if [[ "${SOURCE_PATH,,}" == *.zip ]]; then
+            cat <<EOF >&2
+
+ERROR: ZIP archive extraction is not supported for now.
+Please use your local applications to extract such as unzip cmd (Linux/Mac), 7-Zip/WinZip (Windows)
+EOF
+            errors=$((errors+1))
+        fi
     fi
     
     return $errors
