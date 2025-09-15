@@ -449,6 +449,9 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
         # order on subcat level per category
         subcat_ordered_group_hierarchy[cat] = OrderedDict(sorted(subcats_data.items(), key=lambda x: x[0]))
 
+    # Sort categories: 'System' first, then all others alphabetically
+    subcat_ordered_group_hierarchy = OrderedDict(sorted(subcat_ordered_group_hierarchy.items(), key=lambda item: (item[0] != 'System', item[0].lower())))
+
     return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
