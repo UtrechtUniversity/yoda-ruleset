@@ -11,8 +11,6 @@ DEFAULT_RULE_ENGINE="irods_rule_engine_plugin-irods_rule_language-instance"
 MODE=""
 SOURCE_PATH=""
 TARGET_PATH=""
-TARGET_RESOURCE="" # Default to default resource
-EXTRACT_FILE="null"  # Default to extract entire archive
 
 # Helper function
 usage() {
@@ -25,17 +23,12 @@ Archive Mode:
 Extract Mode:
   Extracts an archive to an iRODS collection using msiArchiveExtract
 
-Usage: $0 -m MODE -s SOURCE_PATH -t TARGET_PATH [-r TARGET_RESOURCE] [-f EXTRACT_FILE]
+Usage: $0 -m MODE -s SOURCE_PATH -t TARGET_PATH
 
 Required Arguments:
   -m, --mode               Operation mode: 'archive' or 'extract'
   -s, --source-path        Source path (collection for archive, archive file for extract)
   -t, --target-path        Target path (archive file for archive, collection for extract)
-
-Optional Arguments:
-  -r, --target-resource    Target iRODS storage resource (default: null)
-  -f, --extract-file       Specific file to extract from archive (extract mode only, default: null for all files)
-  -h, --help               Show this help message
 
 Examples:
   Archive a collection:
@@ -43,16 +36,10 @@ Examples:
        -s /tempZone/home/research-initial/data-package \\
        -t /tempZone/home/research-initial/archives/backup.tar
 
-  Extract an entire archive:
+  Extract an archive:
     $0 -m extract \\
        -s /tempZone/home/research-initial/archives/backup.tar \\
        -t /tempZone/home/research-initial/extracted-data
-
-  Extract a specific file from archive:
-    $0 -m extract \\
-       -s /tempZone/home/research-initial/archives/backup.tar \\
-       -t /tempZone/home/research-initial/extracted-data \\
-       -f file1.txt
 EOF
 }
 
@@ -93,12 +80,6 @@ This would cause recursive archiving and is not permitted.
 EOF
             errors=$((errors+1))
         fi
-    elif [[ "$MODE" == "extract" ]]; then
-        # For extract mode, check that extract file is not a path
-        if [[ "$EXTRACT_FILE" != "null" && "$EXTRACT_FILE" == *"/"* ]]; then
-            echo "ERROR: Extract file should be a relative path within the archive, not an absolute path" >&2
-            errors=$((errors+1))
-        fi
     fi
     
     return $errors
@@ -117,14 +98,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         -t|--target-path)
             TARGET_PATH="$2"
-            shift 2
-            ;;
-        -r|--target-resource)
-            TARGET_RESOURCE="$2"
-            shift 2
-            ;;
-        -f|--extract-file)
-            EXTRACT_FILE="$2"
             shift 2
             ;;
         -h|--help)
@@ -146,8 +119,6 @@ validate_arguments || exit 1
 echo "Starting $MODE operation:"
 echo "  Source: $SOURCE_PATH"
 echo "  Target: $TARGET_PATH"
-[[ -n "$TARGET_RESOURCE" ]] && echo "  Resource: $TARGET_RESOURCE"
-[[ "$MODE" == "extract" && "$EXTRACT_FILE" != "null" ]] && echo "  Extract file: $EXTRACT_FILE"
 
 # Create temp file for output capture
 TEMP_OUTPUT=$(mktemp)
@@ -177,14 +148,14 @@ if [[ "$MODE" == "archive" ]]; then
     # Archive creation
     irule -r "$DEFAULT_RULE_ENGINE" \
         "msiArchiveCreate(*archiveTargetPath, *sourceCollection, *targetResource, *status=0)" \
-        "*archiveTargetPath=$TARGET_PATH%*sourceCollection=$SOURCE_PATH%*targetResource=${TARGET_RESOURCE:-null}%*status=0" \
+        "*archiveTargetPath=$TARGET_PATH%*sourceCollection=$SOURCE_PATH%*targetResource=null%*status=0" \
         "ruleExecOut" > "$TEMP_OUTPUT" 2>&1
     exit_code=$?
 else
     # Archive extraction
     irule -r "$DEFAULT_RULE_ENGINE" \
         "msiArchiveExtract(*archivePath, *extractPath, *extractFile, *targetResource, *status=0)" \
-        "*archivePath=$SOURCE_PATH%*extractPath=$TARGET_PATH%*extractFile=$EXTRACT_FILE%*targetResource=${TARGET_RESOURCE:-null}%*status=0" \
+        "*archivePath=$SOURCE_PATH%*extractPath=$TARGET_PATH%*extractFile=null%*targetResource=null%*status=0" \
         "ruleExecOut" > "$TEMP_OUTPUT" 2>&1
     exit_code=$?
 fi
