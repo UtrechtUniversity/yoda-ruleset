@@ -442,6 +442,9 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
     except KeyError:
         pass
 
+    # Sort categories: 'System' first, then all others alphabetically
+    group_hierarchy = OrderedDict((k, group_hierarchy[k]) for k in sorted(group_hierarchy, key=lambda x: (x != 'System', x)))
+
     # Per category the group data has to be ordered by subcat asc as well
     subcat_ordered_group_hierarchy = OrderedDict()
     for cat in group_hierarchy:
