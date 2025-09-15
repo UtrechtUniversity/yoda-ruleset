@@ -236,3 +236,17 @@ Feature: Group API
             | user                | group_name        |
             | functionaladminpriv | deposit-api-test2 |
             | technicaladmin      | deposit-api-test3 |
+
+
+    Scenario Outline: Verify categories, subcategories, and groups are sorted
+        Given user <user> is authenticated
+        And the Yoda group data API is queried
+        Then categories, subcategories, and groups are sorted
+
+        Examples:
+            | user                |
+            | researcher          |
+            | groupmanager        |
+            | functionaladminpriv |
+            | datamanager         |
+            | technicaladmin      |

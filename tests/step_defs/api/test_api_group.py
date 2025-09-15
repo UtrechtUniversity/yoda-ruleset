@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from collections import OrderedDict
+
 from pytest_bdd import (
     given,
     parsers,
@@ -309,3 +311,37 @@ def api_group_import_csv_data(user, data_id):
          "allow_update": True,
          "delete_users": True}
     )
+
+
+@given('user <user> is authenticated', target_fixture="api_response")
+def api_group_data_sorted(user):
+    """Fetch the group hierarchy for the authenticated user."""
+    return api_request(user, "group_data", {})
+
+
+@then('categories, subcategories, and groups are sorted')
+def check_full_group_hierarchy_sorted(api_response):
+    _, body = api_response
+    hierarchy: OrderedDict = body['data']['group_hierarchy']
+
+    # Check category order: 'System' first, then alphabetically
+    categories = list(hierarchy.keys())
+    if 'System' in categories:
+        assert categories[0] == 'System', f"Category 'System' should be first but found at position {categories.index('System')}"
+        remaining = categories[1:]
+    else:
+        remaining = categories
+    sorted_remaining = sorted(remaining, key=lambda x: x.lower())
+    assert remaining == sorted_remaining, f"Categories are not sorted alphabetically: {remaining}"
+
+    # Check subcategory order within each category
+    for cat, subcats in hierarchy.items():
+        subcat_names = list(subcats.keys())
+        sorted_subcats = sorted(subcat_names, key=lambda x: x.lower())
+        assert subcat_names == sorted_subcats, f"Subcategories in category '{cat}' are not sorted: {subcat_names}"
+
+        # Check group order within each subcategory
+        for subcat, groups in subcats.items():
+            group_names = list(groups.keys())
+            sorted_groups = sorted(group_names, key=lambda x: x.lower())
+            assert group_names == sorted_groups, f"Groups in category '{cat}', subcategory '{subcat}' are not sorted: {group_names}"
