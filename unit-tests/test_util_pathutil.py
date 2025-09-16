@@ -8,7 +8,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from pathutil import basename, chop, chopext, dirname, info, Space
+from pathutil import basename, chop, chopext, dirname, info, is_archived_datapackage_path, Space
 
 
 class UtilPathutilTest(TestCase):
@@ -124,3 +124,17 @@ class UtilPathutilTest(TestCase):
         self.assertEqual(output, (Space.INTAKE, 'tempZone', 'grp-intake-test', ''))
         output = info("/tempZone/home/datarequests-test")
         self.assertEqual(output, (Space.DATAREQUEST, 'tempZone', 'datarequests-test', ''))
+
+    def test_is_archived_datapackage_path(self):
+        self.assertTrue(is_archived_datapackage_path("/tempZone/home/vault-foo/datapackage[123456]"))
+        self.assertTrue(is_archived_datapackage_path("/tempZone/home/vault-foo/data-package[123456]"))
+        self.assertTrue(is_archived_datapackage_path("/tempZone/home/vault-foo/data package[123456]"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/home/vault-foo/collectionwithouttimestamp"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/home/research-foo/tempZone/home/vault-foo/datapackage[123456]"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/home/vault-foo/datapackage[123456]/original"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/trash/home/vault-foo/datapackage[123456]"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/yoda/schemas/default-0"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/home/research-foo"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone/home/vault-foo"))
+        self.assertFalse(is_archived_datapackage_path("/tempZone"))
+        self.assertFalse(is_archived_datapackage_path(""))

@@ -122,3 +122,13 @@ def info(path: str) -> Tuple[Space, str, str, str]:
             or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',              Space.OTHER)
             or test('^/([^/]+)()(?:/(.+))?$',                         Space.OTHER)
             or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
+
+
+def is_archived_datapackage_path(path: str) -> bool:
+    """Tests if a path is the top-level collection of an archived data package
+
+    :param path: Path to check
+
+    :returns: True if path refers to top-level collection of data package. Else False.
+    """
+    return bool(re.match(r"^/[^/]+/home/vault-[^/]+/[^/]+\[\d+\]$", path))
