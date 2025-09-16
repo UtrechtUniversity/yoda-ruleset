@@ -129,6 +129,6 @@ def is_archived_datapackage_path(path: str) -> bool:
 
     :param path: Path to check
 
-    :returns: True if path refers to top-leve collection of data package. Else False.
+    :returns: True if path refers to top-level collection of data package. Else False.
     """
     return bool(re.match(r"^/[^/]+/home/vault-[^/]+/[^/]+\[\d+\]$", path))
