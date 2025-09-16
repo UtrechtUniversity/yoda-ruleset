@@ -650,8 +650,12 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
         return api.Error('nonexistent', 'The given path does not exist')
 
     # Check if collection is in a research space.
-    space, _, group, _ = pathutil.info(path)
-    if space != pathutil.Space.RESEARCH:
+    space, _, group, subpath = pathutil.info(path)
+
+    # We are in the top level of home
+    if space == pathutil.Space.OTHER and subpath == "home":
+        return {}
+    elif space != pathutil.Space.RESEARCH:
         return api.Error('invalidpath', 'The given path is not in a research space ')
 
     basename = pathutil.chop(path)[1]
