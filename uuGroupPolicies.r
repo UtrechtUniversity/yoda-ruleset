@@ -434,7 +434,7 @@ uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *
 
     if (*objType == "-u") {
         uuGetUserType(*objName, *targetUserType);
-        if (*targetUserType == "rodsuser") {
+        if (*targetUserType == "rodsuser" || *targetUserType == "rodsadmin") {
             if (*unit != "") {
                 # We do not use / allow the unit field here.
                 fail;
