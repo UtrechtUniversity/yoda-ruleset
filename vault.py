@@ -1469,7 +1469,7 @@ def get_title(ctx: rule.Context, path: str) -> str:
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = '{}_0_s'".format(constants.UUUSERMETADATAROOT, path),
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = '{}_0_s'".format(path, constants.UUUSERMETADATAROOT),
         genquery.AS_LIST, ctx
     )
 
