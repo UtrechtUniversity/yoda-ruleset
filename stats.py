@@ -539,9 +539,6 @@ def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
                 storage_val = "[\"{}\", {}, {}, {}, {}]".format(category, total['research'], total['vault'], total['revision'], storage_total)
                 storage_val_other = "[\"{}\", {}, {}, {}, {}]".format(category, 0, 0, 0, total['other'])
 
-                # Only store if storage_total>0???
-                # Sla maar wel op want anders niet duidelijk of het gebeurd is
-
                 # write as metadata (kv-pair) to current group
                 if group.startswith(('research', 'deposit')):
                     avu.associate_to_group(ctx, group, md_storage_date, storage_val)
