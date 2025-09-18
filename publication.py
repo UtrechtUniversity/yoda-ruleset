@@ -231,6 +231,7 @@ def set_update_publication_state(ctx: rule.Context, vault_package: str) -> str:
         return "NotAllowed"
 
     publication_state = get_publication_state(ctx, vault_package)
+    log.write(ctx, "Publication state in set update publication state: {}".format(publication_state))
     if publication_state["status"] != "OK":
         return "PublicationNotOK"
 
@@ -757,6 +758,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+    log.write(ctx, "Vault package <{}>".format(vault_package))
+    log.write(ctx, "Vault Status <{}>".format(vault_status))
 
     if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.APPROVED_FOR_PUBLICATION)]:
         return "InvalidPackageStatusForPublication" + ": " + vault_status
@@ -782,6 +785,14 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         status = "Processing"
         publication_state['status'] = status
 
+    log.write(ctx, "Is publication status Unknown? : {}".format(publication_state['status'] ))
+
+    # Get previous publication state if exists
+    if 'previous_version' in publication_state:
+        previous_vault_package = publication_state["previous_version"]
+        previous_publication_state = get_publication_state(ctx, previous_vault_package)
+        log.write(ctx, "previous pub state: {}".format(previous_publication_state))
+
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
     if "previous_version" in publication_state and "next_version" not in publication_state:
@@ -790,17 +801,21 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         update_base_doi = True
         # Get previous publication state
-        previous_vault_package = publication_state["previous_version"]
-        previous_publication_state = get_publication_state(ctx, previous_vault_package)
+        # previous_vault_package = publication_state["previous_version"]
+        # previous_publication_state = get_publication_state(ctx, previous_vault_package)
+        # log.write(ctx, "previous pub state: {}".format(previous_publication_state))
 
         if "baseDOI" in previous_publication_state:
+            log.write(ctx, "If baseDOI in prev")
             # Set the link to previous publication state
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
             publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
             publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]
+            log.write(ctx, "End If baseDOI in prev")
 
         # Create base DOI if it does not exist in the previous publication state.
         elif "baseDOI" not in previous_publication_state:
+            log.write(ctx, "If baseDOI not in prev")
             log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
             try:
                 generate_base_doi(ctx, publication_config, publication_state)
@@ -1052,8 +1067,12 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                 log.write(ctx, "Base DOI update.")
             base_doi = publication_state['baseDOI']
             mint_doi(ctx, publication_state, 'base')
+            if 'previous_version' in publication_state:
+                previous_publication_state['baseDOIMinted'] = publication_state['baseDOIMinted']
+                save_publication_state(ctx, previous_vault_package, previous_publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
+        log.write(ctx, "Publication status after minting: {}".format(publication_state['status']))
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             if verbose:
@@ -1062,19 +1081,23 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         # The publication was a success
         publication_state["status"] = "OK"
+        log.write(ctx, "Publication status after setting it to OK: {}".format(publication_state['status']))
         save_publication_state(ctx, vault_package, publication_state)
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
-
+        log.write(ctx, "Are we still on publication status OK: {}?".format(publication_state['status']))
         if "previous_version" in publication_state:
             if verbose:
                 log.write(ctx, "Updating previous version AVU.")
+                log.write(ctx, "Lets hope we are still on publication status OK: {}?".format(publication_state['status']))
             avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
+            log.write(ctx, "After updating AVUs: {}?".format(publication_state['status']))
             if verbose:
                 log.write(ctx, "Updating previous version landing page.")
             previous_versions = get_all_versions(ctx, publication_state["previous_version"], publication_state["baseDOI"])[1]
             for item in previous_versions[1:]:
                 update_publication(ctx, item[1], update_datacite=False, update_landingpage=True, update_moai=False)
+            log.write(ctx, "After updating publication: {}?".format(publication_state['status']))
     else:
         # The publication was a success
         if verbose:
