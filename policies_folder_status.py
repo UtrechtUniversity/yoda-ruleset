@@ -10,6 +10,7 @@ import folder
 import meta
 import notifications
 import provenance
+from policies_utils import should_transition_submitted_to_accepted_immediately
 from util import *
 
 
@@ -146,7 +147,9 @@ def post_status_transition(ctx: rule.Context,
                 datamanager_name = '{}#{}'.format(*datamanager)
                 notifications.set(ctx, actor, datamanager_name, path, message)
         else:
-            # Set status to accepted for deposit groups or if research group has no datamanager.
+            datamanagers = []
+
+        if should_transition_submitted_to_accepted_immediately(path, datamanagers):
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
