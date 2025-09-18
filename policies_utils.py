@@ -1,12 +1,36 @@
 """iRODS policy utility functions"""
 
-__copyright__ = 'Copyright (c) 2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2024-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import ast
-from typing import Set
+from typing import List, Set, Tuple
 
+from util import pathutil
 from util.genquery_col_constants import *
+
+
+def should_transition_submitted_to_accepted_immediately(folder_path: str, datamanagers: List[Tuple[str, str]]) -> bool:
+    """Determines whether a folder that is submitted should be transitioned to
+       an "accepted" status immediately, without an approval step.
+
+       :param folder_path: path of folder to be submitted.
+       :param datamanagers: list of datamanagers
+
+       :returns: boolean value. True if folder should be transitioned
+                 to accepted status immediately, otherwise false.
+    """
+    space = pathutil.info(folder_path).space
+    if space is pathutil.Space.RESEARCH:
+        # Data manager approval is not needed if the category has no data managers
+        return len(datamanagers) == 0
+    elif space is pathutil.Space.DEPOSIT:
+        # No approval is needed for data packages in deposit space
+        return True
+    else:
+        # Yoda does not support submitting data packages outside research and deposit space.
+        # Do not accept.
+        return False
 
 
 def is_safe_genquery_inp(genquery_inp: object) -> bool:

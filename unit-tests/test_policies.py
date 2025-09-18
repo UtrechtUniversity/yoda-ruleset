@@ -8,7 +8,7 @@ from unittest import TestCase
 
 sys.path.append('..')
 
-from policies_utils import _is_safe_genquery_inp
+from policies_utils import _is_safe_genquery_inp, should_transition_submitted_to_accepted_immediately
 
 
 class PoliciesTest(TestCase):
@@ -97,3 +97,11 @@ class PoliciesTest(TestCase):
         selectInp = {641: 1}
         sqlCondInp = []
         self.assertFalse(_is_safe_genquery_inp(selectInp, sqlCondInp))
+
+    def test_should_transition_submitted_to_accepted_immediately(self):
+        self.assertTrue(should_transition_submitted_to_accepted_immediately("/tempZone/home/research-foo/datapackage", []))
+        self.assertFalse(should_transition_submitted_to_accepted_immediately("/tempZone/home/research-foo/datapackage", [("datamanager", "tempZone")]))
+        self.assertTrue(should_transition_submitted_to_accepted_immediately("/tempZone/home/deposit-foo/datapackage", []))
+        self.assertTrue(should_transition_submitted_to_accepted_immediately("/tempZone/home/deposit-foo/datapackage", [("any", "any")]))
+        self.assertFalse(should_transition_submitted_to_accepted_immediately("/tempZone/home/not-deposit-or-research/datapackage", []))
+        self.assertFalse(should_transition_submitted_to_accepted_immediately("/tempZone/home/not-deposit-or-research/datapackage", [("any", "any")]))
