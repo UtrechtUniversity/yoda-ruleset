@@ -782,6 +782,11 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         status = "Processing"
         publication_state['status'] = status
 
+    # Get previous publication state if exists
+    if 'previous_version' in publication_state:
+        previous_vault_package = publication_state["previous_version"]
+        previous_publication_state = get_publication_state(ctx, previous_vault_package)
+
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
     if "previous_version" in publication_state and "next_version" not in publication_state:
@@ -789,9 +794,6 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             log.write(ctx, "In branch for updating base DOI")
 
         update_base_doi = True
-        # Get previous publication state
-        previous_vault_package = publication_state["previous_version"]
-        previous_publication_state = get_publication_state(ctx, previous_vault_package)
 
         if "baseDOI" in previous_publication_state:
             # Set the link to previous publication state
@@ -1052,6 +1054,9 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                 log.write(ctx, "Base DOI update.")
             base_doi = publication_state['baseDOI']
             mint_doi(ctx, publication_state, 'base')
+            if 'previous_version' in publication_state:
+                previous_publication_state['baseDOIMinted'] = publication_state['baseDOIMinted']
+                save_publication_state(ctx, previous_vault_package, previous_publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -1065,7 +1070,6 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         save_publication_state(ctx, vault_package, publication_state)
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
-
         if "previous_version" in publication_state:
             if verbose:
                 log.write(ctx, "Updating previous version AVU.")
