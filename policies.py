@@ -504,9 +504,9 @@ def py_acPostProcForModifyAVUMetadata(ctx: rule.Context,
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 
     elif info.space is pathutil.Space.VAULT:
-        if attr == constants.IIVAULTSTATUSATTRNAME:
-            policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
-        elif attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
+        # if attr == constants.IIVAULTSTATUSATTRNAME:
+            # policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+        if attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
             vault.update_archive(ctx, obj_name, attr)
 
     # Send emails after datarequest status transition if appropriate
