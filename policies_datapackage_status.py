@@ -26,10 +26,16 @@ def can_transition_datapackage_status(ctx: rule.Context,
                                       coll: str,
                                       status_from: str,
                                       status_to: str) -> policy.Succeed | policy.Fail:
+
+    provenance_log = provenance.get_provenance_log(ctx, coll)
     transition = (constants.vault_package_state(status_from),
                   constants.vault_package_state(status_to))
     if transition not in constants.datapackage_transitions:
-        return policy.fail('Illegal status transition')
+        # If data package is published or depublished, skip transition policy.
+        if provenance_log[0][1] in ('published', 'depublication', 'publication updated'):
+            policy.succeed()
+        else:
+            return policy.fail('Illegal status transition')
 
     if status_to is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
