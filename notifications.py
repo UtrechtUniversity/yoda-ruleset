@@ -441,7 +441,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
                     # Get count of any data objects that have been modified after the inactivity cut off
                     iter_recent_data = genquery.row_iterator(
                         "COUNT(DATA_NAME)",
-                        "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME n> '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
+                        "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME > '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
                         genquery.AS_LIST, ctx
                     )
 
