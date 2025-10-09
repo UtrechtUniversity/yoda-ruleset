@@ -91,7 +91,7 @@ def api_browse_folder(ctx: rule.Context,
 
     colls = list(map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)]))
 
-    qdata = Query(ctx, dcols, "COLL_NAME = '{}' AND DATA_REPL_STATUS n> '0'".format(coll),
+    qdata = Query(ctx, dcols, "COLL_NAME = '{}' AND DATA_REPL_STATUS > '0'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
     datas = list(map(transform, list(qdata)))
 
