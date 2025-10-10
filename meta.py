@@ -320,7 +320,7 @@ def ingest_metadata_staging(ctx: rule.Context, path: str) -> None:
 def update_index_metadata(ctx: rule.Context, path: str, metadata: Dict, creation_time: str, data_package: str) -> None:
     """Update the index attributes for JSON metadata."""
     msi.coll_create(ctx, path, "", irods_types.BytesBuf())
-    ctx.msi_rmw_avu('-C', path, '%', '%', constants.UUFLATINDEX)
+    avu.rmw_from_coll(ctx, '%', '%', constants.UUFLATINDEX)
     avu_op = "add"
     avu_unit = constants.UUFLATINDEX
     metadata_operations = {

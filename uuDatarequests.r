@@ -140,18 +140,13 @@ uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName,
         # request for review to one or more DAC members
         if (*attributeName == "assignedForReview") {
 
-                # Check if data request is already assigned. If so, remove
-                # the current assignees
-                *alreadyAssigned = false;
+                # Check if data request is already assigned.
+                # If so, remove the current assignees.
                 foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE
                                 COLL_NAME = *datarequestColl AND
                                 DATA_NAME = "datarequest.json" AND
                                 META_DATA_ATTR_NAME = *attributeName) {
-                        *alreadyAssigned = true;
-                }
-                if (*alreadyAssigned) {
-                        *err = msi_rmw_avu("-d", *filePath, "assignedForReview",
-                                   "%", "%");
+                        msiModAVUMetadata("-d", *filePath, "rm", "assignedForReview", *row.META_DATA_ATTR_VALUE, "");
                 }
 
                 # Convert JSON array of assignees to list

@@ -412,17 +412,19 @@ def retry_attempts(ctx: rule.Context, coll: str) -> bool:
 def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) -> bool:
     """Set/rm AVUs on source folder when successfully secured folder"""
     org_metadata = dict(get_org_metadata(ctx, coll))
+
     # In cases where copytovault only ran once, okay that these attributes were not created
     if constants.IICOPYRETRYCOUNT in org_metadata:
-        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, '%', True):
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, '%', catch=True):
             return False
     if constants.IICOPYLASTRUN in org_metadata:
-        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, '%', True):
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYLASTRUN, '%', catch=True):
             return False
 
     # Set cronjob status to final state before deletion
     if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
         return False
+
     if not rm_cronjob_status(ctx, coll):
         return False
 
@@ -432,12 +434,12 @@ def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) ->
         if not avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%', catch=True):
             return False
 
-    # Remove target AVU on source folder (if folder still exists).
-    # This should be done after all possibly failing steps  have occurred in folder_secure (any "return False" steps),
-    # so that if those trip a retry state, on retry folder_secure can reuse the target from before.
-        if collection.exists(ctx, coll) and constants.IICOPYPARAMSNAME in org_metadata:
-            if not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True):
-                return False
+    # Remove target AVU on source folder. This should be done after all possibly failing steps
+    # have occurred in folder_secure (any "return False" steps), so that if those trip a retry state,
+    # on retry folder_secure can reuse the target from before.
+    if collection.exists(ctx, coll) and constants.IICOPYPARAMSNAME in org_metadata:
+        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", catch=True):
+            return False
 
     return True
 
@@ -461,9 +463,9 @@ def folder_secure_set_retry_avus(ctx: rule.Context, coll: str, retry_count: int)
 def folder_secure_fail(ctx: rule.Context, coll: str) -> None:
     """When there are too many retries, give up, set the AVUs and send notifications"""
     # Errors are caught here in hopes that will still be able to set UNRECOVERABLE status at least
-    avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", True)
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, "%", catch=True)
     # Remove target AVU
-    avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True)
+    avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", catch=True)
     set_cronjob_status(ctx, constants.CRONJOB_STATE['UNRECOVERABLE'], coll)
 
 
@@ -522,7 +524,7 @@ def rm_cronjob_status(ctx: rule.Context, coll: str) -> bool:
 
     :returns: True when successfully removed
     """
-    return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", True)
+    return avu.rmw_from_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", "%", catch=True)
 
 
 def set_cronjob_status(ctx: rule.Context, status: str, coll: str) -> bool:
@@ -534,7 +536,7 @@ def set_cronjob_status(ctx: rule.Context, status: str, coll: str) -> bool:
 
     :returns: True when successfully set
     """
-    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, True)
+    return avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", status, catch=True)
 
 
 def set_acl_parents(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: str) -> None:

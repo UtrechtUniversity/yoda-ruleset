@@ -65,68 +65,46 @@ def _create_tmp_collection(ctx):
     return path
 
 
-def _test_msvc_add_avu_object(ctx):
+def _test_avu_associate_to_data(ctx):
     tmp_object = _create_tmp_object(ctx)
-    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
+    avu.associate_to_data(ctx, tmp_object, "foo", "bar", "baz")
     result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
     data_object.remove(ctx, tmp_object)
     return result
 
 
-def _test_msvc_add_avu_collection(ctx):
+def _test_avu_associate_to_coll(ctx):
     tmp_coll = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_coll, "foo", "bar", "baz")
+    avu.associate_to_coll(ctx, tmp_coll, "foo", "bar", "baz")
     result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
     collection.remove(ctx, tmp_coll)
     return result
 
 
-def _test_msvc_rmw_avu_object(ctx, rmw_attributes):
-    tmp_object = _create_tmp_object(ctx)
-    ctx.msi_add_avu('-d', tmp_object, "foo", "bar", "baz")
-    ctx.msi_add_avu('-d', tmp_object, "foot", "hand", "head")
-    ctx.msi_add_avu('-d', tmp_object, "aap", "noot", "mies")
-    ctx.msi_rmw_avu('-d', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
-    result = [(m.attr, m.value, m.unit) for m in avu.of_data(ctx, tmp_object)]
-    data_object.remove(ctx, tmp_object)
-    return result
-
-
-def _test_msvc_rmw_avu_collection(ctx, rmw_attributes):
-    tmp_object = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
-    ctx.msi_add_avu('-c', tmp_object, "foot", "hand", "head")
-    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
-    ctx.msi_rmw_avu('-c', tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2])
-    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
-    collection.remove(ctx, tmp_object)
-    return result
-
-
 def _test_avu_set_collection(ctx, catch):
     # Test setting avu with catch and without catch
-    tmp_object = _create_tmp_collection(ctx)
-    avu.set_on_coll(ctx, tmp_object, "foo", "bar", catch)
-    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
-    collection.remove(ctx, tmp_object)
+    tmp_coll = _create_tmp_collection(ctx)
+    avu.set_on_coll(ctx, tmp_coll, "foo", "bar", catch)
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
     return result
 
 
 def _test_avu_rmw_collection(ctx, rmw_attributes):
     # Test removing with catch and without catch
-    tmp_object = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_object, "foo", "bar", "baz")
-    ctx.msi_add_avu('-c', tmp_object, "aap", "noot", "mies")
-    avu.rmw_from_coll(ctx, tmp_object, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2], rmw_attributes[3])
-    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_object)]
-    collection.remove(ctx, tmp_object)
+    tmp_coll = _create_tmp_collection(ctx)
+    avu.associate_to_coll(ctx, tmp_coll, "foo", "bar", "baz")
+    avu.associate_to_coll(ctx, tmp_coll, "aap", "noot", "mies")
+    avu.rmw_from_coll(ctx, tmp_coll, rmw_attributes[0], rmw_attributes[1], rmw_attributes[2], rmw_attributes[3])
+    result = [(m.attr, m.value, m.unit) for m in avu.of_coll(ctx, tmp_coll)]
+    collection.remove(ctx, tmp_coll)
     return result
 
 
 def _test_avu_get_attr_val_of_coll(ctx, attr, value):
     # Test getting the value of an attribute on a collection
     tmp_coll = _create_tmp_collection(ctx)
-    ctx.msi_add_avu('-c', tmp_coll, attr, value, "baz")
+    avu.associate_to_coll(ctx, tmp_coll, attr, value, "baz")
     result = avu.get_attr_val_of_coll(ctx, tmp_coll, attr)
     collection.remove(ctx, tmp_coll)
     return result
@@ -252,7 +230,7 @@ def _test_folder_set_get_last_run(ctx):
 
 
 def _test_groups_data(ctx, test_group, attribute, value):
-    ctx.msi_add_avu('-u', test_group, attribute, value, "")
+    avu.associate_to_group(ctx, test_group, attribute, value, "")
     try:
         groups_data = groups.internal_api_group_data(ctx)
     except KeyError:
@@ -384,14 +362,6 @@ def _test_diff_data_describe_changes(ctx, data_name):
 
 
 basic_integration_tests = [
-    {"name": "msvc.add_avu_collection",
-     "test": lambda ctx: _test_msvc_add_avu_collection(ctx),
-     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
-    {"name": "msvc.add_avu_object",
-     "test": lambda ctx: _test_msvc_add_avu_object(ctx),
-     "check": lambda x: (("foo", "bar", "baz") in x
-                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
-                         )},
     {"name": "msvc.json_arrayops.add",
      "test": lambda ctx: _call_msvc_json_arrayops(ctx, '["a", "b", "c"]', "d", "add", 0, 0),
      "check": lambda x: x == '["a", "b", "c", "d"]'},
@@ -493,37 +463,12 @@ basic_integration_tests = [
     {"name": "msvc.msi_dir_list.outside_vault",
      "test": lambda ctx: _call_dir_list_check_exc(ctx, '/etc/passwd', 'dev001_2'),
      "check": lambda x: x},
-    {"name": "msvc.rmw_avu_collection_literal",
-     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("foo", "bar", "baz")),
-     "check": lambda x: (("aap", "noot", "mies") in x
-                         and ("foot", "hand", "head") in x
-                         and len(x) == 2)},
-    {"name": "msvc.rmw_avu_object_literal",
-     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("foo", "bar", "baz")),
-     "check": lambda x: (("aap", "noot", "mies") in x
-                         and ("foot", "hand", "head") in x
-                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 2
-                         )},
-    {"name": "msvc.rmw_avu_collection_literal_notexist",
-     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("does", "not", "exist")),
-     "check": lambda x: (("aap", "noot", "mies") in x
-                         and ("foo", "bar", "baz") in x
-                         and ("foot", "hand", "head") in x
-                         and len(x) == 3)},
-    {"name": "msvc.rmw_avu_object_literal_notexist",
-     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("does", "not", "exist")),
-     "check": lambda x: (("aap", "noot", "mies") in x
-                         and ("foo", "bar", "baz") in x
-                         and ("foot", "hand", "head") in x
-                         and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 3
-                         )},
-    {"name": "msvc.rmw_avu_collection_wildcard",
-     "test": lambda ctx: _test_msvc_rmw_avu_collection(ctx, ("fo%", "%", "%")),
-     "check": lambda x: (("aap", "noot", "mies") in x
-                         and len(x) == 1)},
-    {"name": "msvc.rmw_avu_object_wildcard",
-     "test": lambda ctx: _test_msvc_rmw_avu_object(ctx, ("fo%", "%", "%")),
-     "check": lambda x: (("aap", "noot", "mies") in x
+    {"name": "avu.associate_to_coll",
+     "test": lambda ctx: _test_avu_associate_to_coll(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x and len(x) == 1)},
+    {"name": "avu.associate_to_data",
+     "test": lambda ctx: _test_avu_associate_to_data(ctx),
+     "check": lambda x: (("foo", "bar", "baz") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
     {"name": "avu.set_from_coll.catch.yes",

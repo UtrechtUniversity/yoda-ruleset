@@ -208,7 +208,7 @@ def save_publication_state(ctx: rule.Context, vault_package: str, publication_st
     :param vault_package:     Path to the package in the vault
     :param publication_state: Dict with state of the publication process
     """
-    ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
+    avu.rmw_from_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
     for key in publication_state:
         if publication_state[key] != "":
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])

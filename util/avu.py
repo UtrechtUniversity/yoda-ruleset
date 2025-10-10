@@ -147,24 +147,24 @@ def set_on_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
     msi.mod_avu_metadata(ctx, "-R", resource, "set", a, v, "")
 
 
-def associate_to_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
+def associate_to_data(ctx: rule.Context, path: str, a: str, v: str, u: str = '') -> None:
     """Associate key/value metadata to a data object."""
-    msi.mod_avu_metadata(ctx, "-d", path, "add", a, v, "")
+    msi.mod_avu_metadata(ctx, "-d", path, "add", a, v, u)
 
 
-def associate_to_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
+def associate_to_coll(ctx: rule.Context, coll: str, a: str, v: str, u: str = '') -> None:
     """Associate key/value metadata on a collection."""
-    msi.mod_avu_metadata(ctx, "-C", coll, "add", a, v, "")
+    msi.mod_avu_metadata(ctx, "-C", coll, "add", a, v, u)
 
 
-def associate_to_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
+def associate_to_group(ctx: rule.Context, group: str, a: str, v: str, u: str = '') -> None:
     """Associate key/value metadata on a group."""
-    msi.mod_avu_metadata(ctx, "-u", group, "add", a, v, "")
+    msi.mod_avu_metadata(ctx, "-u", group, "add", a, v, u)
 
 
-def associate_to_resource(ctx: rule.Context, resource: str, a: str, v: str) -> None:
+def associate_to_resource(ctx: rule.Context, resource: str, a: str, v: str, u: str = '') -> None:
     """Associate key/value metadata on a group."""
-    msi.mod_avu_metadata(ctx, "-R", resource, "add", a, v, "")
+    msi.mod_avu_metadata(ctx, "-R", resource, "add", a, v, u)
 
 
 def rm_from_coll(ctx: rule.Context, coll: str, a: str, v: str) -> None:
@@ -182,47 +182,100 @@ def rm_from_group(ctx: rule.Context, group: str, a: str, v: str) -> None:
     msi.mod_avu_metadata(ctx, "-u", group, "rm", a, v, "")
 
 
-def rmw_from_coll(ctx: rule.Context, obj: str, a: str, v: str, catch: bool = False, u: str = '') -> bool:
+def wildcard_filter(avu: Tuple[str, str, str], a_filter: str, v_filter: str, u_filter: str) -> bool:
+    """Wildcard filter for rmw operations."""
+    a, v, u = avu
+
+    def matches(value: str, filter_val: str) -> bool:
+        if filter_val == "%":
+            return True
+        if filter_val.endswith("%"):
+            prefix = filter_val[:-1]
+            return value.startswith(prefix)
+        return value == filter_val
+
+    return matches(a, a_filter) and matches(v, v_filter) and matches(u, u_filter)
+
+
+def rmw_from_coll(ctx: rule.Context, coll: str, a: str, v: str, u: str = '%', catch: bool = False) -> bool:
     """Remove AVU from collection with wildcards. Optionally catch any exceptions that occur.
 
     :param ctx:   Combined type of a callback and rei struct
-    :param obj:   Collection to get paginated contents of
-    :param a:     Attribute
-    :param v:     Value
+    :param coll:  Collection to operate on
+    :param a:     Attribute pattern to match (supports wildcards)
+    :param v:     Value pattern to match (supports wildcards)
+    :param u:     Unit pattern to match (supports wildcards) (default: '%')
     :param catch: Whether to catch any exceptions that occur
-    :param u:     Unit
 
     :returns: True if catch=True and no exceptions occurred during operation
     """
     if catch:
-        return _rmw_from_coll_catch(ctx, obj, a, v, u)
+        return _rmw_from_coll_catch(ctx, coll, a, v, u)
 
-    _rmw_from_coll(ctx, obj, a, v, u)
+    _rmw_from_coll(ctx, coll, a, v, u)
     return True
 
 
-def _rmw_from_coll(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> None:
-    msi.rmw_avu(ctx, '-C', obj, a, v, u)
+def _rmw_from_coll(ctx: rule.Context, coll: str, a: str, v: str, u: str) -> None:
+    # Retrieve list of AVUs of collection.
+    avus = [(avu.attr, avu.value, avu.unit) for avu in of_coll(ctx, coll)]
+
+    # Filter list of AVUs.
+    avus_filtered = [avu for avu in avus if wildcard_filter(avu, a, v, u)]
+
+    # Remove filtered AVUs.
+    for (a_, v_, u_) in avus_filtered:
+        msi.mod_avu_metadata(ctx, "-C", coll, "rm", a_, v_, u_)
 
 
-def _rmw_from_coll_catch(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> bool:
+def _rmw_from_coll_catch(ctx: rule.Context, obj: str, a: str, v: str, u: str) -> bool:
     try:
         _rmw_from_coll(ctx, obj, a, v, u)
     except Exception:
-        log.write(ctx, "Failed to rm AVU {} on coll {}".format(a, obj))
+        log.write(ctx, "Failed to rmw AVU {} on coll {}".format(a, obj))
         return False
 
     return True
 
 
-def rmw_from_data(ctx: rule.Context, obj: str, a: str, v: str, u: str = '') -> None:
-    """Remove AVU from data object with wildcards."""
-    msi.rmw_avu(ctx, '-d', obj, a, v, u)
+def rmw_from_data(ctx: rule.Context, obj: str, a: str, v: str, u: str = '%') -> None:
+    """Remove AVUs from data object with wildcards.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param obj: Data object to operate on
+    :param a:   Attribute pattern to match (supports wildcards)
+    :param v:   Value pattern to match (supports wildcards)
+    :param u:   Unit pattern to match (supports wildcards) (default: '%')
+    """
+    # Retrieve list of AVUs of data object.
+    avus = [(avu.attr, avu.value, avu.unit) for avu in of_data(ctx, obj)]
+
+    # Filter list of AVUs.
+    avus_filtered = [avu for avu in avus if wildcard_filter(avu, a, v, u)]
+
+    # Remove filtered AVUs.
+    for (a_, v_, u_) in avus_filtered:
+        msi.mod_avu_metadata(ctx, "-d", obj, "rm", a_, v_, u_)
 
 
-def rmw_from_group(ctx: rule.Context, group: str, a: str, v: str, u: str = '') -> None:
-    """Remove AVU from group with wildcards."""
-    msi.rmw_avu(ctx, '-u', group, a, v, u)
+def rmw_from_group(ctx: rule.Context, group: str, a: str, v: str, u: str = '%') -> None:
+    """Remove AVUs from group with wildcards.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param group: Group to operate on
+    :param a:     Attribute pattern to match (supports wildcards)
+    :param v:     Value pattern to match (supports wildcards)
+    :param u:     Unit pattern to match (supports wildcards) (default: '%')
+    """
+    # Retrieve list of AVUs of group.
+    avus = [(avu.attr, avu.value, avu.unit) for avu in of_group(ctx, group)]
+
+    # Filter list of AVUs.
+    avus_filtered = [avu for avu in avus if wildcard_filter(avu, a, v, u)]
+
+    # Remove filtered AVUs.
+    for (a_, v_, u_) in avus_filtered:
+        msi.mod_avu_metadata(ctx, "-u", group, "rm", a_, v_, u_)
 
 
 def apply_atomic_operations(ctx: rule.Context, operations: Dict) -> bool:

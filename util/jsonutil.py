@@ -69,11 +69,11 @@ def set_on_object(ctx: rule.Context, path: str, type: str, namespace: str, json_
     data = json.loads(json_string)
 
     # Remove existing metadata from object in namespace.
-    msi_type = "-d"
-    if type == "collection":
-        msi_type = "-C"
     try:
-        msi.rmw_avu(ctx, msi_type, path, "%", "%", "{}_%".format(namespace))
+        if type == "collection":
+            avu.rmw_from_coll(ctx, path, "%", "%", "{}_%".format(namespace))
+        else:
+            avu.rmw_from_data(ctx, path, "%", "%", "{}_%".format(namespace))
     except msi.Error as e:
         # Ignore -819000 (CAT_SUCCESS_BUT_WITH_NO_INFO) errors when removing metadata.
         if str(e).find("-819000") > -1:
