@@ -532,7 +532,7 @@ def vault_enable_indexing(ctx: rule.Context, coll: str) -> None:
             # index collection does not exist yet
             path = meta.get_latest_vault_metadata_path(ctx, coll)
             if path:
-                ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+                avu.rmw_from_data(ctx, path, '%', '%', constants.UUFLATINDEX)
                 meta.ingest_metadata_vault(ctx, path)
 
         # add indexing attribute and update opensearch
