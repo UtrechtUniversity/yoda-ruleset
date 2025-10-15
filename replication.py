@@ -110,7 +110,7 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
         # Get list of up to batch size limit of data objects scheduled for replication, taking into account their modification time.
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE', 'DATA_RESC_NAME'],
-                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME n<= '{}'".format(attr, minimum_timestamp),
+                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME <= '{}'".format(attr, minimum_timestamp),
                     offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked replication process.
