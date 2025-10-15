@@ -153,9 +153,10 @@ def api_notifications_dismiss(ctx: rule.Context, identifier: str) -> api.Result:
     :param ctx:        Combined type of a callback and rei struct
     :param identifier: Identifier of notification message
     """
+    user_name = user.name(ctx)
     key = "{}_{}".format(NOTIFICATION_KEY, str(identifier))
-    user_name = user.full_name(ctx)
-    ctx.uuUserMetaRemove(user_name, key, '', '')
+    value = avu.get_attr_val_of_user(ctx, user_name, key)
+    msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", key, value, "", "")
 
 
 @api.make()
@@ -164,9 +165,18 @@ def api_notifications_dismiss_all(ctx: rule.Context) -> api.Result:
 
     :param ctx: Combined type of a callback and rei struct
     """
+    user_name = user.name(ctx)
     key = "{}_%".format(NOTIFICATION_KEY)
-    user_name = user.full_name(ctx)
-    ctx.uuUserMetaRemove(user_name, key, '', '')
+
+    # Retrieve list of AVUs of user.
+    avus = [(avu.attr, avu.value, avu.unit) for avu in avu.of_group(ctx, user_name)]
+
+    # Filter list of AVUs.
+    avus_filtered = [avu for avu in avus if avu.wildcard_filter(avu, key, "%", "%")]
+
+    # Remove filtered AVUs.
+    for (a_, v_, u_) in avus_filtered:
+        msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", a_, v_, u_, "")
 
 
 def send_notification(ctx: rule.Context, to: str, actor: str, message: str) -> api.Result:

@@ -880,28 +880,6 @@ uuUserModify(*userName, *property, *value, *status, *message) {
 	}
 }
 
-# \brief Remove user metadata.
-#
-# \param[in]  userName
-# \param[in]  property  the property to remove
-# \param[out] status    zero on success, non-zero on failure
-# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
-#
-uuUserMetaRemove(*userName, *property, *status, *message) {
-	*status  = 1;
-	*message = "An internal error occurred.";
-
-    *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "wildcards", *property, "", "", ""));
-    if (*status == 0) {
-		*message = "";
-	} else {
-		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *allowed, *reason);
-		if (*allowed == 0) {
-			*message = *reason;
-		}
-	}
-}
-
 # \brief Add a user to a group on behalf of another user.
 #
 # \param[in]  groupName
