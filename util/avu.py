@@ -46,6 +46,18 @@ def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
     raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
 
 
+def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> Dict:
+    """Get the value corresponding to an attr for a given user."""
+    iter = genquery.Query(
+        ctx,
+        "META_USER_ATTR_VALUE",
+        "META_USER_ATTR_NAME = '{}' AND USER_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(attr, user))
+
+    for row in iter:
+        return row
+    raise ValueError("Attribute {} not found in AVUs of user {}".format(attr, user))
+
+
 def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
     """Get a list of all AVUs inside a collection with corresponding paths.
 
@@ -102,6 +114,12 @@ def of_group(ctx: rule.Context, group: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given group."""
     return (Avu(*x) for x in genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
                                                  "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+
+
+def of_user(ctx: rule.Context, group: str) -> Iterable[Avu]:
+    """Get (a,v,u) triplets for a given group."""
+    return (Avu(*x) for x in genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                                 "USER_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(group)))
 
 
 def set_on_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
