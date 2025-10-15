@@ -382,7 +382,7 @@ def rule_revision_batch(ctx: rule.Context,
 
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
-                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%' AND DATA_MODIFY_TIME n<= '{}'".format(
+                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%' AND DATA_MODIFY_TIME <= '{}'".format(
                         attr,
                         user.zone(ctx),
                         constants.IIGROUPPREFIX,
