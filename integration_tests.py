@@ -482,12 +482,12 @@ basic_integration_tests = [
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
     {"name": "avu.rmw_from_coll_wildcard.catch.yes",
-     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", True, "%")),
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", "%", True)),
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},
     {"name": "avu.rmw_from_coll_wildcard.catch.no",
-     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", False, "%")),
+     "test": lambda ctx: _test_avu_rmw_collection(ctx, ("foo", "%", "%", False)),
      "check": lambda x: (("aap", "noot", "mies") in x
                          and len([a for a in x if a[0] not in ["org_replication_scheduled"]]) == 1
                          )},

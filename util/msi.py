@@ -115,7 +115,7 @@ set_acl,          SetACLError         = make('SetACL',         'Could not set AC
 get_icat_time,    GetIcatTimeError    = make('GetIcatTime',    'Could not get Icat time')
 get_obj_type,     GetObjTypeError     = make('GetObjType',     'Could not get object type')
 mod_avu_metadata, ModAVUMetadataError = make('ModAVUMetadata', 'Could not modify AVU metadata')
-stat_vault,       MSIStatVaultError   = make("_stat_vault",    'Could not stat file system object in vault.')
+stat_vault,       StatVaultError      = make("_stat_vault",    'Could not stat file system object in vault.')
 bytes_buf_to_str, BytesBufToStr       = make('BytesBufToStr',  'Could not write bytes buffer to string')
 
 # The file checksum microservice should not be invoked directly. This microservice should be invoked via wrap_file_checksum.r wrapper.
