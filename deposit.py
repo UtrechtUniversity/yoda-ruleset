@@ -280,7 +280,7 @@ def api_deposit_overview(ctx: rule.Context,
     # Then collect the deposits that are directly under the deposit groups
     for item in qcoll_above:
         coll_name = item['COLL_NAME']
-        if "deposit-" in coll_name:
+        if pathutil.info(coll_name).space is pathutil.Space.DEPOSIT:
             qcoll = Query(ctx, ccols,
                           "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
                           offset=offset, limit=limit, output=AS_DICT)
