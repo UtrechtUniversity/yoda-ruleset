@@ -439,10 +439,6 @@ uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *
                 # We do not use / allow the unit field here.
                 fail;
             }
-            if (*value != "") {
-                # We do not use / allow the value field here.
-                fail;
-            }
             uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
             if (*allowed == 1) {
                 succeed;
