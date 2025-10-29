@@ -634,7 +634,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
-    if collection.empty(ctx, stage_coll):
+    if collection.is_empty(ctx, stage_coll):
         try:
             # We may or may not have delete access already.
             msi.set_acl(ctx, 'recursive', 'admin:own', client_full_name, dm_path)

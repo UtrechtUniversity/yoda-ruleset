@@ -55,6 +55,15 @@ def api_folder_submit(user, folder):
     )
 
 
+@given(parsers.parse("the Yoda folder submit API is queried with {folder} and {delete_research_copy}"), target_fixture="api_response")
+def api_folder_submit_move(user, folder, delete_research_copy="False"):
+    return api_request(
+        user,
+        "folder_submit",
+        {"coll": folder, "delete_research_copy": delete_research_copy}
+    )
+
+
 @given(parsers.parse("the Yoda folder unsubmit API is queried with {folder}"), target_fixture="api_response")
 def api_folder_unsubmit(user, folder):
     return api_request(
@@ -112,6 +121,20 @@ def api_response(user, folder):
     assert http_status == 200
 
 
+@given(parsers.parse("user creates a new folder {folder}"), target_fixture="api_response")
+def api_research_folder_add(user, folder):
+    parent_folder, new_folder_name = os.path.split(folder.rstrip('/'))
+
+    return api_request(
+        user,
+        "research_folder_add",
+        {
+            "coll":            parent_folder,
+            "new_folder_name": new_folder_name
+        }
+    )
+
+
 @then(parsers.parse("folder {folder} status is {status}"))
 def folder_status(user, folder, status):
     # Status FOLDER is empty.
@@ -137,3 +160,23 @@ def folder_locks(api_response, folder):
     _, body = api_response
     x = folder.split('/')
     assert "/{}".format(x[-1]) in body["data"]
+
+
+@then(parsers.parse("folder {folder} does not exist"))
+def folder_does_not_exist(user, folder):
+    parent_folder, target = os.path.split(folder.rstrip('/'))
+
+    for _ in range(30):
+        _, body = api_request(
+            user,
+            "browse_folder",
+            {"coll": parent_folder, "limit": 50}
+        )
+
+        items = body["data"].get("items")
+        if not any(entry.get("name") == target for entry in items):
+            return True
+
+        time.sleep(5)
+
+    raise AssertionError(f"Folder {folder} still exists after timeout")

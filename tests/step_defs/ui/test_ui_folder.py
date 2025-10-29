@@ -30,8 +30,16 @@ def ui_folder_unlock(browser):
 
 @when('user submits the folder')
 def ui_folder_submit(browser):
+    # Click submit
     browser.find_by_id('actionMenu').click()
+    assert browser.is_element_present_by_css('a.action-submit')
     browser.find_by_css('a.action-submit').click()
+
+    # Click confirm in modal
+    assert browser.is_element_present_by_css('#submit-confirm.show', wait_time=3)
+    # It takes time for modal transition, before the submit button becomes avaliable
+    time.sleep(3)
+    browser.find_by_css('#submit-confirm.show .btn-confirm-submit').click()
 
 
 @when('user unsubmits the folder')

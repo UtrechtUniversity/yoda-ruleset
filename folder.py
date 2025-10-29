@@ -122,14 +122,24 @@ def api_folder_unlock(ctx: rule.Context, coll: str) -> api.Result:
 
 
 @api.make()
-def api_folder_submit(ctx: rule.Context, coll: str) -> api.Result:
+def api_folder_submit(ctx: rule.Context, coll: str, delete_research_copy: bool = False) -> api.Result:
     """Submit a folder.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Folder to submit
+    :param ctx:                  Combined type of a callback and rei struct
+    :param coll:                 Folder to submit
+    :param delete_research_copy: Whether to delete copy in research space
 
     :returns: API status
     """
+    if delete_research_copy:
+        avu.set_on_coll(ctx, coll, constants.DELETE_RESEARCH_COPY, coll)
+    else:
+        try:
+            research_coll = avu.get_attr_val_of_coll(ctx, coll, constants.DELETE_RESEARCH_COPY)
+            avu.rmw_from_coll(ctx, coll, constants.DELETE_RESEARCH_COPY, research_coll)
+        except ValueError:
+            pass
+
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
@@ -286,9 +296,9 @@ def folder_secure(ctx: rule.Context, coll: str) -> bool:
     if not folder_secure_succeed_avus(ctx, coll, group_name):
         return False
 
-    # Deposit group has been deleted once secured status is set,
-    # so cannot change AVUs on collection
-    if not group_name.startswith("deposit-"):
+    # Check if the collection still exists, before changing the ACLs.
+    # Research/deposit collections may be deleted after moving to vault.
+    if collection.exists(ctx, coll):
         set_acl_check(ctx, "recursive", "admin:null", coll, "Could not set ACL (admin:null) for collection: {}".format(coll))
         set_acl_parents(ctx, "default", "admin:null", coll)
 
@@ -402,7 +412,6 @@ def retry_attempts(ctx: rule.Context, coll: str) -> bool:
 def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) -> bool:
     """Set/rm AVUs on source folder when successfully secured folder"""
     org_metadata = dict(get_org_metadata(ctx, coll))
-
     # In cases where copytovault only ran once, okay that these attributes were not created
     if constants.IICOPYRETRYCOUNT in org_metadata:
         if not avu.rmw_from_coll(ctx, coll, constants.IICOPYRETRYCOUNT, '%', True):
@@ -414,7 +423,6 @@ def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) ->
     # Set cronjob status to final state before deletion
     if not set_cronjob_status(ctx, constants.CRONJOB_STATE['OK'], coll):
         return False
-
     if not rm_cronjob_status(ctx, coll):
         return False
 
@@ -424,12 +432,12 @@ def folder_secure_succeed_avus(ctx: rule.Context, coll: str, group_name: str) ->
         if not avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%', catch=True):
             return False
 
-    # Remove target AVU on source folder. This should be done after all possibly failing steps
-    # have occurred in folder_secure (any "return False" steps), so that if those trip a retry state,
-    # on retry folder_secure can reuse the target from before.
-    if not group_name.startswith("deposit-") and constants.IICOPYPARAMSNAME in org_metadata:
-        if not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True):
-            return False
+    # Remove target AVU on source folder (if folder still exists).
+    # This should be done after all possibly failing steps  have occurred in folder_secure (any "return False" steps),
+    # so that if those trip a retry state, on retry folder_secure can reuse the target from before.
+        if collection.exists(ctx, coll) and constants.IICOPYPARAMSNAME in org_metadata:
+            if not avu.rmw_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, "%", True):
+                return False
 
     return True
 
