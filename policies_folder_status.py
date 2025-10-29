@@ -85,8 +85,8 @@ def can_transition_folder_status(ctx: rule.Context,
     elif status_to in [constants.research_package_state.ACCEPTED,
                        constants.research_package_state.REJECTED]:
 
-        if pathutil.info(coll).space is pathutil.Space.RESEARCH:
-            grp = pathutil.info(coll).group
+        space, _, grp, _ = pathutil.info(coll)
+        if space is pathutil.Space.RESEARCH:
             cat = group.get_category(ctx, grp)
             dmgrp = 'datamanager-' + cat
 
@@ -127,6 +127,7 @@ def post_status_transition(ctx: rule.Context,
     """Post folder status transition actions."""
     status = "" if status == "FOLDER" else status
     status = constants.research_package_state(status)
+    space, _, group, subpath = pathutil.info(path)
 
     if status is constants.research_package_state.SUBMITTED:
         provenance.log_action(ctx, actor, path, "submitted for vault")
@@ -134,7 +135,7 @@ def post_status_transition(ctx: rule.Context,
         # Store actor of submitted for vault.
         folder.set_submitter(ctx, path, actor)
 
-        if pathutil.info(path).space is pathutil.Space.RESEARCH:
+        if space is pathutil.Space.RESEARCH:
             try:
                 datamanagers = folder.get_datamanagers(ctx, path)
             except ValueError as e:
@@ -160,7 +161,7 @@ def post_status_transition(ctx: rule.Context,
             log.write(ctx, f"Unable to determine whether <{path}> has data managers: {str(e)}")
             datamanager_exists = False
 
-        if pathutil.info(path).space is pathutil.Space.DEPOSIT or not datamanager_exists:
+        if space is pathutil.Space.DEPOSIT or not datamanager_exists:
             actor = "system"
 
         # Log action at least one second after previous action, to ensure correct order of provenance log.
@@ -171,7 +172,7 @@ def post_status_transition(ctx: rule.Context,
         folder.set_accepter(ctx, path, actor)
 
         # Send notifications to submitter.
-        if pathutil.info(path).space is pathutil.Space.RESEARCH and datamanager_exists:
+        if space is pathutil.Space.RESEARCH and datamanager_exists:
             submitter = folder.get_submitter(ctx, path)
             message = "Data package accepted for vault"
             notifications.set(ctx, actor, submitter, path, message)
@@ -197,8 +198,18 @@ def post_status_transition(ctx: rule.Context,
             notifications.set(ctx, actor, submitter, data_package, message)
             notifications.set(ctx, actor, accepter, data_package, message)
 
+            # Check if user requested to delete research space copy.
+            delete_research_copy = False
+            if space is pathutil.Space.RESEARCH:
+                try:
+                    research_coll = avu.get_attr_val_of_coll(ctx, path, constants.DELETE_RESEARCH_COPY)
+                    delete_research_copy = research_coll == path
+                except ValueError:
+                    # AVU DELETE_RESEARCH_COPY is absent, so copy in research remains.
+                    pass
+
             # Handle vault packages from deposit module.
-            if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            if space is pathutil.Space.DEPOSIT:
                 # Grant submitter (depositor) read access to vault package.
                 msi.set_acl(ctx, "recursive", "read", submitter, data_package)
 
@@ -213,14 +224,18 @@ def post_status_transition(ctx: rule.Context,
 
                 # Revoke read access for research group when data package is not open.
                 if not open_package:
-                    _, _, group, _ = pathutil.info(path)
                     msi.set_acl(ctx, "recursive", "null", group, data_package)
 
-                # Remove deposit folder after secure in vault.
+            # Delete research package or deposit folder if needed.
+            if space is pathutil.Space.DEPOSIT or delete_research_copy:
                 parent, _ = pathutil.chop(path)
-                msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
-                msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
-                collection.remove(ctx, path)
+                admin = user.full_name(ctx)
+                msi.set_acl(ctx, "default",  "admin:write", admin, parent)
+                msi.set_acl(ctx, "recursive", "admin:own",  admin, path)
+                if space is pathutil.Space.RESEARCH and not subpath:
+                    collection.empty(ctx, path)
+                else:
+                    collection.remove(ctx, path)
         else:
             provenance.log_action(ctx, actor, path, "unlocked")
 

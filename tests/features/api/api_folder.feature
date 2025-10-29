@@ -168,3 +168,27 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | FOLDER |
             | /tempZone/home/research-default-3  | FOLDER |
             | /tempZone/home/research-epos-msl-0 | FOLDER |
+
+
+    Scenario Outline: Folder submit (move to vault)
+        Given user researcher is authenticated
+        And user creates a new folder <folder>
+        And metadata JSON exists in <folder>
+        And the Yoda folder submit API is queried with <folder> and <delete_research_copy>
+        Then the response status code is "200"
+        And folder <folder> status is <status>
+
+        Examples:
+            | folder                                       | delete_research_copy | status    |
+            | /tempZone/home/research-core-0/move_to_vault | True                 | SUBMITTED |
+
+
+    Scenario Outline: Folder accept (move to vault)
+        Given user datamanager is authenticated
+        And the Yoda folder accept API is queried with <folder>
+        Then the response status code is "200"
+        Then folder <folder> does not exist
+
+        Examples:
+            | folder                                       |
+            | /tempZone/home/research-core-0/move_to_vault |

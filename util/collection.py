@@ -33,7 +33,7 @@ def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
-def empty(ctx: rule.Context, path: str) -> bool:
+def is_empty(ctx: rule.Context, path: str) -> bool:
     """Check if a collection contains any data objects."""
     return (len(list(genquery.row_iterator(
                      "DATA_ID",
@@ -232,6 +232,25 @@ def remove(ctx: rule.Context, path: str, force: bool = False) -> None:
                 path,
                 'forceFlag=' if force else '',
                 irods_types.BytesBuf())
+
+
+def empty(ctx: rule.Context, path: str) -> None:
+    """Empty a collection (remove all data objects and subcollections).
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param path:  Path of collection to be emptied
+    """
+    for row in genquery.row_iterator("DATA_NAME",
+                                     "COLL_NAME = '{}'".format(path),
+                                     genquery.AS_LIST,
+                                     ctx):
+        data_object.remove(ctx, f"{path}/{row[0]}")
+
+    for row in genquery.row_iterator("COLL_NAME",
+                                     "COLL_PARENT_NAME = '{}'".format(path),
+                                     genquery.AS_LIST,
+                                     ctx):
+        remove(ctx, f"{path}/{row[0]}")
 
 
 def rename(ctx: rule.Context, path_org: str, path_target: str) -> None:

@@ -1124,7 +1124,7 @@ def set_reader_vault_permissions(ctx: rule.Context, group_name: str, zone: str, 
     no_errors = True
 
     # Do not change the permissions if there aren't any vault packages in this vault.
-    if collection.empty(ctx, vault_path):
+    if collection.is_empty(ctx, vault_path):
         return True
 
     if reader_needs_access(ctx, group_name, vault_path):
