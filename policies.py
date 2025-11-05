@@ -504,8 +504,11 @@ def py_acPostProcForModifyAVUMetadata(ctx: rule.Context,
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 
     elif info.space is pathutil.Space.VAULT:
-        # if attr == constants.IIVAULTSTATUSATTRNAME:
-        #   policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+        if attr == constants.IIVAULTSTATUSATTRNAME:
+            if not migration.get_migration_config(ctx, obj_name):
+                policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+            else:
+                return policy.succeed()
         if attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
             vault.update_archive(ctx, obj_name, attr)
 

@@ -27,12 +27,11 @@ def can_transition_datapackage_status(ctx: rule.Context,
                                       status_from: str,
                                       status_to: str) -> policy.Succeed | policy.Fail:
 
-    provenance_log = provenance.get_provenance_log(ctx, coll)
     transition = (constants.vault_package_state(status_from),
                   constants.vault_package_state(status_to))
     if transition not in constants.datapackage_transitions:
         # If data package is published or depublished, skip transition policy.
-        if provenance_log[0][1] in ('published', 'depublication', 'publication updated'):
+        if migration.get_migration_config(ctx, coll):
             policy.succeed()
         else:
             return policy.fail('Illegal status transition')
