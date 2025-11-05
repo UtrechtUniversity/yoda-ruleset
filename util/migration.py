@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 import genquery
+
 from util import *
 
 
@@ -22,7 +23,7 @@ def get_migration_config(ctx: rule.Context, coll: str) -> bool:
 
     for row in iter:
         val = row[1]
-    
+
     if val == 'yes':
         return True
     else:
