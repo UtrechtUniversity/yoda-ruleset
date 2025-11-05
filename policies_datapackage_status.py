@@ -10,6 +10,7 @@ import notifications
 import provenance
 import vault
 from util import *
+from util import migration
 
 
 def pre_status_transition(ctx: rule.Context,

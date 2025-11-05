@@ -19,6 +19,7 @@ import revisions
 import vault
 from policies_utils import is_safe_genquery_inp
 from util import *
+from util import migration
 
 
 # Policy check functions {{{
