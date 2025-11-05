@@ -32,7 +32,7 @@ def can_transition_datapackage_status(ctx: rule.Context,
     if transition not in constants.datapackage_transitions:
         # If data package is published or depublished, skip transition policy.
         if migration.get_migration_config(ctx, coll):
-            policy.succeed()
+            return policy.succeed()
         else:
             return policy.fail('Illegal status transition')
 
