@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os
+import re
 import time
 from collections import OrderedDict
 from urllib.parse import urlparse
@@ -58,6 +59,19 @@ def deposit_is_archived(user):
     time.sleep(45)
 
 
+@given('archived deposit exists', target_fixture="deposit_name")
+def deposit_archive_exists(user):
+    http_status, body = api_request(
+        user,
+        "browse_collections",
+        {"coll": "/tempZone/home/vault-pilot", "sort_order": "desc"}
+    )
+
+    assert http_status == 200
+    assert len(body["data"]["items"]) > 0
+    return body["data"]["items"][0]["name"]
+
+
 @given('the Yoda deposit status API is queried', target_fixture="api_response")
 def api_deposit_status(user, deposit_name):
     return api_request(
@@ -73,6 +87,34 @@ def api_deposit_clear(user, deposit_name):
         user,
         "deposit_submit",
         {"path": "/deposit-pilot/{}".format(deposit_name)}
+    )
+
+
+@given('the Yoda deposit copy data package API is queried', target_fixture="api_response")
+def api_deposit_copy_data_package(user, deposit_name):
+    _, body = api_request(
+        user,
+        "vault_system_metadata",
+        {"coll": f"/tempZone/home/vault-pilot/{deposit_name}"}
+    )
+    assert "Data Package Reference" in body["data"]
+
+    # Regex to match the data package reference.
+    uuid_pattern = r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+
+    # Search for the data package reference response body.
+    match = re.search(uuid_pattern, body["data"]["Data Package Reference"])
+
+    # Check if a data package reference was found
+    if match:
+        reference = match.group(1)
+    else:
+        raise AssertionError(f"No reference found for {deposit_name}")
+
+    return api_request(
+        user,
+        "deposit_copy_data_package",
+        {"reference": reference, "deposit_group": "deposit-pilot"}
     )
 
 
