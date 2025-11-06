@@ -14,6 +14,7 @@ from genquery import AS_DICT, Query
 import folder
 import groups
 import meta
+import vault
 from util import *
 
 __all__ = ['api_deposit_create',
@@ -40,7 +41,8 @@ def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_gro
         return api.Error('not_allowed', 'Could not create deposit collection.')
 
     new_deposit_path = result["deposit_path"]
-    coll_target = "/" + user.zone(ctx) + "/home/" + new_deposit_path
+    zone = user.zone(ctx)
+    coll_target = f"/{zone}/home/{new_deposit_path}"
 
     coll_data_package = ""
     iter = genquery.row_iterator(
@@ -54,8 +56,7 @@ def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_gro
     if coll_data_package == "":
         return api.Error('not_found', 'Could not find data package with provided reference.')
 
-    parts = coll_target.split('/')
-    group_name = parts[3]
+    _, _, group_name, _ = pathutil.info(coll_target)
 
     # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
     user_full_name = user.full_name(ctx)
@@ -75,10 +76,9 @@ def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_gro
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
-    ctx.delayExec(
-        "<PLUSET>1s</PLUSET>",
-        "iiCopyFolderToResearch('{}', '{}')".format(coll_data_package, coll_target),
-        "")
+    retry_count  = 1
+    wait_seconds = 0
+    vault.schedule_copy_to_research(ctx, coll_data_package, coll_target, user_full_name, retry_count, wait_seconds)
 
     return {"data": new_deposit_path}
 

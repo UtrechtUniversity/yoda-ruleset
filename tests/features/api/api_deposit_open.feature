@@ -67,3 +67,10 @@ Feature: Deposit API (open)
         Examples:
             | collection                 |
             | /tempZone/home/vault-pilot |
+
+
+    Scenario Outline: Deposit copy data package
+        Given user researcher is authenticated
+        And archived deposit exists
+        And the Yoda deposit copy data package API is queried
+        Then the response status code is "200"

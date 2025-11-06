@@ -5,106 +5,6 @@
 # \copyright Copyright (c) 2016-2025, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-
-# \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
-#
-# \param[in] itemParent
-# \param[in] itemName
-# \param[in] itemIsCollection
-# \param[in/out] buffer
-# \param[in/out] error
-#
-iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
-	*sourcePath = "*itemParent/*itemName";
-	msiCheckAccess(*sourcePath, "read_object", *readAccess);
-	if (*readAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to acquire read access to *sourcePath";
-			succeed;
-		} else {
-			writeLine("stdout", "iiIngestObject: Read access to *sourcePath acquired");
-		}
-	}
-
-	*destPath = *buffer.destination;
-	if (*sourcePath != *buffer."source") {
-		# rewrite path to copy objects that are located underneath the toplevel collection
-		*sourceLength = strlen(*sourcePath);
-		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
-		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
-		*markIncomplete = false;
-	} else {
-		*markIncomplete = true;
-	}
-
-	if (*itemIsCollection) {
-		*error = errorcode(msiCollCreate(*destPath, 1, *status));
-		if (*error < 0) {
-			*buffer.msg = "Failed to create collection *destPath";
-		} else if (*markIncomplete) {
-			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
-			*vaultStatus = IIVAULTSTATUSATTRNAME;
-			msiString2KeyValPair("*vaultStatus=" ++ INCOMPLETE, *kvp);
-			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
-		}
-	} else {
-	    # Copy data object to vault and compute checksum.
-	    *resource = "";
-		*numThreads = "";
-	    *err1 = errorcode(rule_resource_vault(*resource));
-		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
-	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
-	    if (*error < 0) {
-		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
-	    }
-	}
-	if (*readAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to revoke read access to *sourcePath";
-		} else {
-			writeLine("stdout", "iiIngestObject: Read access to *sourcePath revoked");
-		}
-	}
-}
-
-# \brief Called by uuTreeWalk for each collection and dataobject to copy to the research area.
-#
-# \param[in] itemParent
-# \param[in] itemName
-# \param[in] itemIsCollection
-# \param[in/out] buffer
-# \param[in/out] error
-#
-iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
-	*sourcePath = "*itemParent/*itemName";
-	*destPath = *buffer.destination;
-
-	if (*sourcePath != *buffer."source") {
-		# rewrite path to copy objects that are located underneath the toplevel collection
-		*sourceLength = strlen(*sourcePath);
-		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
-		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
-	}
-
-	if (*itemIsCollection) {
-		*error = errorcode(msiCollCreate(*destPath, 1, *status));
-		if (*error < 0) {
-			*buffer.msg = "Failed to create collection *destPath";
-		}
-	} else {
-		*resource = "";
-		*numThreads = "";
-		*err1 = errorcode(rule_resource_research(*resource));
-		*err2 = errorcode(rule_vault_copy_numthreads(*numThreads));
-	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++numThreads=" ++ *numThreads ++ "++++verifyChksum=", *status));
-		if (*error < 0) {
-			*buffer.msg = "Failed to copy *sourcePath to *destPath";
-		}
-	}
-}
-
 #\ Generic secure copy functionality
 # \param[in] argv         argument string for secure copy like "*publicHost inbox /var/www/landingpages/*publicPath";
 # \param[in] origin_path  local path of origin file
@@ -155,28 +55,6 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
         }
 }
 
-# \brief Copy a vault package to the research area.
-#
-# \param[in] folder  folder to copy from the vault
-# \param[in] target  path of the research area target
-#
-iiCopyFolderToResearch(*folder, *target) {
-        writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
-
-        # Determine target collection group and actor.
-        *pathElems = split(*folder, "/");
-        *elemSize = size(*pathElems);
-        *vaultPackage = elem(*pathElems, *elemSize - 1);
-
-        *buffer.source = *folder;
-        *buffer.destination = *target ++ "/" ++ *vaultPackage;
-        uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
-        if (*error != 0) {
-                msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-                writeLine("stdout", "iiCopyObject: *error: *msg");
-                fail;
-        }
-}
 
 # \brief Retrieve current vault folder status
 #

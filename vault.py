@@ -228,13 +228,9 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
     if user_role not in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
-    # Schedule immediate execution
-    # This uses delay server to run irule in backend
-    # Which ensures the initial copy and following retry calls are consistent in behavior
-    # Also to avoid timeout issues with large data copies, counterexample: run with rule.call directly
+    # Register to delayed rule queue.
     retry_count  = 1
     wait_seconds = 0
-
     schedule_copy_to_research(ctx, coll_origin, sub_coll_target, user_full_name, retry_count, wait_seconds)
 
     return {
@@ -269,16 +265,18 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
 
     :param ctx:         Combined type of a callback and rei struct
     :param coll_origin: Origin data collection in vault space
-    :param coll_target: Target collection in research space
+    :param coll_target: Target collection in research or deposit space
     :param actor:       User to notify of success/failure
     :param retry_str:   Current retry attempt as string
 
     :returns:           True if operation succeeded or entered retry logic, False if target already existed
     """
-    log.write(ctx, f"Starting vault copy to research: {coll_origin} -> {coll_target}, attempt #{retry_str}")
+    log.write(ctx, f"Starting vault copy: {coll_origin} -> {coll_target}, attempt #{retry_str}")
+
+    space, _, _, _ = pathutil.info(coll_target)
 
     # Check target already existed during the retry process, to prevent double clicking
-    if collection.exists(ctx, coll_target):
+    if space is pathutil.Space.RESEARCH and collection.exists(ctx, coll_target):
         log.write(ctx, f"Target collection already exists: {coll_target}")
         return None
 
@@ -287,13 +285,17 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
 
     # Handle result
     if success:
-        notifications.set(ctx, "system", actor, coll_target, "Copy data package to research space finished")
-        log.write(ctx, f"Copy successful: {coll_origin}")
-        return None
+        # Fix ACLs for data package copied to deposit.
+        if space is pathutil.Space.DEPOSIT:
+            msi.set_acl(ctx, "recursive", "admin:own", actor, coll_target)
 
-    # Copy failed and enter retry logic
-    retry_count = int(retry_str)
-    handle_retry_operation(ctx, coll_origin, coll_target, actor, retry_count)
+        _, _, _, datapackage_name = pathutil.info(coll_origin)
+        notifications.set(ctx, "system", actor, coll_target, f"Copying data package <{datapackage_name}>finished")
+        log.write(ctx, f"Copy successful: {coll_origin}")
+    else:
+        # Copy failed and enter retry logic
+        retry_count = int(retry_str)
+        handle_retry_operation(ctx, coll_origin, coll_target, actor, retry_count)
 
 
 def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
@@ -352,8 +354,9 @@ def handle_retry_operation(ctx: rule.Context, coll_origin: str, coll_target: str
     wait_seconds = config.vault_copy_backoff_time  # in seconds
 
     if retry_count >= max_retries:
+        _, _, _, datapackage_name = pathutil.info(coll_origin)
         log.write(ctx, f"Max retries exceeded for copy_to_research: {coll_origin}")
-        notifications.set(ctx, "system", actor, coll_target, "Copy data package to research space failed, max retries exceeded")
+        notifications.set(ctx, "system", actor, coll_origin, "Copying data package <{datapackage_name}> failed, max retries exceeded")
         return False
 
     next_attempt  = retry_count + 1
