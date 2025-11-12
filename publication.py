@@ -610,7 +610,7 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
 
     # Only retrieve manifest for open access vault packages.
     if publication_state["accessRestriction"].startswith("Open"):
-        manifest = research.research_manifest(ctx, vault_package, empty_colls=True)
+        manifest = research.research_manifest(ctx, vault_package, empty_colls=True)['manifest']
     else:
         manifest = []
     data_object.write(ctx, manifest_path, json.dumps(manifest))

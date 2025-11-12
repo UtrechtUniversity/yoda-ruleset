@@ -1,7 +1,7 @@
 # coding=utf-8
 """Research API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -226,6 +226,8 @@ def research_manifest_checksums(api_response):
     _, body = api_response
 
     assert len(body['data']) > 0
+    assert body['data']['files'] > 0
+    assert len(body['data']["manifest"]) > 0
 
     # List of names to check.
     expected_names = [
@@ -237,7 +239,7 @@ def research_manifest_checksums(api_response):
     ]
 
     # Assert that all expected names are in the data.
-    actual_names = [item["name"] for item in body["data"]]
+    actual_names = [item["name"] for item in body["data"]["manifest"]]
     for name in expected_names:
         assert name in actual_names, f"{name} is not present in the manifest data"
 
@@ -247,6 +249,8 @@ def research_manifest_checksum_empty(api_response):
     _, body = api_response
 
     assert len(body['data']) > 0
+    assert body['data']['files'] > 0
+    assert len(body['data']["manifest"]) > 0
 
     # List of names to check.
     expected_names = [
@@ -260,6 +264,6 @@ def research_manifest_checksum_empty(api_response):
     ]
 
     # Assert that all expected names are in the data.
-    actual_names = [item["name"] for item in body["data"]]
+    actual_names = [item["name"] for item in body["data"]["manifest"]]
     for name in expected_names:
         assert name in actual_names, f"{name} is not present in the manifest data"
