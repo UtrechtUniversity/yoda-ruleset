@@ -3,7 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Tuple
+from typing import List, Tuple
 
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
@@ -656,7 +656,7 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
     if space == pathutil.Space.OTHER and subpath == "home":
         return {}
     elif space != pathutil.Space.RESEARCH:
-        return api.Error('invalidpath', 'The given path is not in a research space ')
+        return api.Error('invalidpath', 'The given path is not in a research space')
 
     basename = pathutil.chop(path)[1]
 
@@ -682,14 +682,73 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
             "is_locked": is_locked}
 
 
+def _get_data_checksums(ctx: rule.Context, coll: str) -> List:
+    """Retrieve checksums for data objects in the given collection."""
+    iter_data = genquery.row_iterator(
+        "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
+        f"COLL_NAME = '{coll}'",
+        genquery.AS_LIST, ctx
+    )
+
+    return [
+        {
+            "name": row[0],
+            "size": int(row[1]),
+            "human_readable_size": misc.human_readable_size(int(row[1])),
+            "checksum": data_object.decode_checksum(row[2])
+        }
+        for row in iter_data
+    ]
+
+
+def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List:
+    """Retrieve checksums for data objects in sub-collections."""
+    iter_sub = genquery.row_iterator(
+        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
+        f"COLL_PARENT_NAME like '{coll}%'",
+        genquery.AS_LIST, ctx
+    )
+    length = len(coll) + 1
+    return [
+        {
+            "name": (row[0] + "/")[length:] + row[1],
+            "size": int(row[2]),
+            "human_readable_size": misc.human_readable_size(int(row[2])),
+            "checksum": data_object.decode_checksum(row[3])
+        }
+        for row in iter_sub
+    ]
+
+
+def _get_empty_collections_checksums(ctx: rule.Context, coll: str, existing_coll_names: List) -> List:
+    """Retrieve names of empty sub-collections."""
+    iter_sub = genquery.row_iterator(
+        "ORDER(COLL_NAME)",
+        f"COLL_PARENT_NAME like '{coll}%'",
+        genquery.AS_LIST, ctx
+    )
+
+    length = len(coll) + 1
+    return [
+        {
+            "name": (row[0] + "/")[length:],
+            "size": "",
+            "human_readable_size": "",
+            "checksum": ""
+        }
+        for row in iter_sub
+        if row[0] not in existing_coll_names
+    ]
+
+
 def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -> api.Result:
-    """Produce a manifest of data objects in a collection.
+    """Produce number of files, total file size and checksum manifest of data objects in a collection.
 
-    :param ctx:         Combined type of a callback and rei struct
-    :param coll:        Parent collection of data objects to include
-    :param empty_colls: Include mepty collections in manifest
+    :param ctx: Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+    :param empty_colls: Include empty collections in manifest
 
-    :returns: List of json objects with name and checksum
+    :returns: Dict with number of files, total file size and checksum manifest
     """
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'The given path does not exist')
@@ -698,38 +757,29 @@ def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -
     space, _, _, _ = pathutil.info(coll)
     valid_spaces = {pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT}
     if space not in valid_spaces:
-        return api.Error('invalidpath', 'The given path is not in a research, deposit, or vault space.')
+        return api.Error('invalidpath', 'The given path is not in a research, deposit, or vault space')
 
-    iter = genquery.row_iterator(
-        "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        "COLL_NAME = '{}'".format(coll),
-        genquery.AS_LIST, ctx
-    )
-    checksums = [{"name": row[0], "size": misc.human_readable_size(int(row[1])), "checksum": data_object.decode_checksum(row[2])} for row in iter]
+    # Get checksums for data objects.
+    checksums = _get_data_checksums(ctx, coll) + _get_sub_data_checksums(ctx, coll)
+    num_files = len(checksums)
+    num_checksums = sum(1 for obj in checksums if obj['checksum'])
 
-    iter_sub = genquery.row_iterator(
-        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        "COLL_PARENT_NAME like '{}%'".format(coll),
-        genquery.AS_LIST, ctx
-    )
-    length = len(coll) + 1
-    coll_names = [row[0] for row in iter_sub]
-    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "size": misc.human_readable_size(int(row[2])), "checksum": data_object.decode_checksum(row[3])} for row in iter_sub]
+    # Calculate the total size of the data objects.
+    total_size = misc.human_readable_size(sum(obj['size'] for obj in checksums))
+
+    # Initialize the manifest response.
+    manifest = checksums
 
     if empty_colls:
-        iter_sub = genquery.row_iterator(
-            "ORDER(COLL_NAME)",
-            "COLL_PARENT_NAME like '{}%'".format(coll),
-            genquery.AS_LIST, ctx
-        )
-        checksums_sub_coll = [
-            {"name": (row[0] + "/")[length:], "size": "", "checksum": ""}
-            for row in iter_sub
-            if row[0] not in coll_names
-        ]
-        return checksums + checksums_sub + checksums_sub_coll
+        empty_checksums = _get_empty_collections_checksums(ctx, coll, checksums)
+        manifest += empty_checksums
 
-    return checksums + checksums_sub
+    return {
+        "files": num_files,
+        "size": total_size,
+        "checksums": num_checksums,
+        "manifest": manifest
+    }
 
 
 @api.make()
