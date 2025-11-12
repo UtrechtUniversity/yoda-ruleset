@@ -572,7 +572,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         if response:
             new_group = True
             message += "Group '{}' created.".format(group_name)
-        elif response.status == "error_group_exists" and allow_update:
+        elif (response.status == "error_group_exists" or (response.status == "error_sram_error" and "already exists" in response.status_info)) and allow_update:
             log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
             message += "Group '{}' already exists.".format(group_name)
         else:
