@@ -275,9 +275,6 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
 
     # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
     try:
-        # Give rods 'own' access so that they can remove the AVU.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-
         # Check whether the object already has an AVU. If we try to add the AVU when it already
         # exists, we will catch the exception below, however the SQL error would still result in log
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
@@ -406,6 +403,9 @@ def rule_revision_batch(ctx: rule.Context,
             # Perform scheduled revision creation for one data object.
             data_id = row[0]
             path    = row[1] + "/" + row[2]
+
+            # Give rods 'own' access so that they can remove the AVU.
+            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), path)
 
             # Metadata value contains resc and balance id for load balancing purposes.
             resc = get_resc(row)
