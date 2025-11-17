@@ -24,15 +24,11 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
     :param source_resource: Resource to be used as source
     :param target_resource: Resource to be used as destination
     """
-    zone = user.zone(ctx)
     replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"
     replication_avu_value = "{},{},{}".format(source_resource, target_resource, random.randint(1, 64))
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
-        # Give rods 'own' access so that they can remove the AVU.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
-
         # Check whether the object already has an AVU. If we try to add the AVU when it already
         # exists, we will catch the exception below, however the SQL error would still result in log
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
@@ -130,6 +126,9 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
 
             count += 1
             path = row[1] + "/" + row[2]
+
+            # Give rods 'own' access so that they can remove the AVU.
+            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), path)
 
             # Metadata value contains from_path, to_path and balance id for load balancing purposes.
             info = row[3].split(',')
