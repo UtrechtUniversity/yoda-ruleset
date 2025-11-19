@@ -21,7 +21,7 @@ def api_search_file(user, file):
     return api_request(
         user,
         "search",
-        {"search_string": file, "search_type": "filename", "offset": 0, "limit": "10", "sort_order": "asc", "sort_on": "name"}
+        {"search_string": file, "search_type": "filename", "offset": 0, "limit": "100", "sort_order": "asc", "sort_on": "name"}
     )
 
 
@@ -30,7 +30,7 @@ def api_search_folder(user, folder):
     return api_request(
         user,
         "search",
-        {"search_string": folder, "search_type": "folder", "offset": 0, "limit": "10", "sort_order": "asc", "sort_on": "name"}
+        {"search_string": folder, "search_type": "folder", "offset": 0, "limit": "100", "sort_order": "asc", "sort_on": "name"}
     )
 
 
@@ -39,7 +39,7 @@ def api_search_metadata(user, metadata):
     return api_request(
         user,
         "search",
-        {"search_string": metadata, "search_type": "metadata", "offset": 0, "limit": "10", "sort_order": "asc", "sort_on": "name"}
+        {"search_string": metadata, "search_type": "metadata", "offset": 0, "limit": "100", "sort_order": "asc", "sort_on": "name"}
     )
 
 
@@ -48,7 +48,7 @@ def api_search_folder_status(user, status):
     return api_request(
         user,
         "search",
-        {"search_string": status, "search_type": "status", "offset": 0, "limit": "10", "sort_order": "asc", "sort_on": "name"}
+        {"search_string": status, "search_type": "status", "offset": 0, "limit": "100", "sort_order": "asc", "sort_on": "name"}
     )
 
 
