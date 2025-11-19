@@ -149,12 +149,18 @@ acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit
 }
 
 # }}}
-# Implementation 3: User settings policy implementations. {{{
-# Only define User Settings rules for meta operations on User / Group objects.
+# Implementation 3: User policy implementations. {{{
+# Only define rules for meta operations on user objects.
 
 acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 	ON (*objType == "-u") {
 		uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv);
+	}
+}
+
+acPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) {
+	ON (*objType == "-u") {
+		uuUserPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv);
 	}
 }
 
