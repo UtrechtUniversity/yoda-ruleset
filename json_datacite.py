@@ -9,6 +9,18 @@ from dateutil import parser
 
 from util import *
 
+# Mapping between Yoda metadata license names and SPDX License Identifiers.
+spdx_map = {
+    "Creative Commons Attribution 4.0 International Public License": "CC-BY-4.0",
+    "Creative Commons Attribution-ShareAlike 4.0 International Public License": "CC-BY-SA-4.0",
+    "Creative Commons Attribution-NonCommercial 4.0 International Public License": "CC-BY-NC-4.0",
+    "Creative Commons Attribution-NoDerivs 4.0 International Public License": "CC-BY-ND-4.0",
+    "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License": "CC-BY-NC-SA-4.0",
+    "Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International Public License": "CC-BY-NC-ND-4.0",
+    "Creative Commons Zero v1.0 Universal": "CC0-1.0",
+    "Open Data Commons Attribution License (ODC-By) v1.0": "ODC-By-1.0"
+}
+
 
 def json_datacite_create_combi_metadata_json(ctx: rule.Context,
                                              metadataJsonPath: str,
@@ -340,12 +352,24 @@ def get_rights_list(combi: Dict) -> List:
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    rights_list = [{'rights': data_access_restriction, 'rightsUri': options[data_access_restriction.split()[0]]}]
+    rights_list = [{'rights': data_access_restriction,
+                    'rightsUri': options[data_access_restriction.split()[0]]}]
 
-    if combi['License'] == 'Custom' and data_access_restriction.startswith('Open'):
-        rights_list.append({'rights': combi['License'], 'rightsUri': f"{combi['System']['Open_access_Link']}"})
-    elif combi['License'] != 'Custom':
-        rights_list.append({'rights': combi['License'], 'rightsUri': combi['System']['License_URI']})
+    license = combi['License']
+    if license == 'Custom' and data_access_restriction.startswith('Open'):
+        rights_list.append({'rights': license,
+                            'rightsUri': f"{combi['System']['Open_access_Link']}"})
+    elif license != 'Custom':
+        # Map license name to SPDX identifier.
+        if license in spdx_map:
+            rights_list.append({'rights': license,
+                                'rightsUri': combi['System']['License_URI'],
+                                'schemeUri': 'https://spdx.org/licenses/',
+                                'rightsIdentifier': spdx_map[license],
+                                'rightsIdentifierScheme': 'SPDX'})
+        else:
+            rights_list.append({'rights': license,
+                                'rightsUri': combi['System']['License_URI']})
 
     return rights_list
 
