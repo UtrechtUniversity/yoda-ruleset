@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from typing import Callable, Dict
 
-from schema_transformations_utils import correctify_isni, correctify_orcid, correctify_researcher_id, correctify_scopus
+from schema_transformations_utils import add_affiliation_identifier, correctify_isni, correctify_orcid, correctify_personal_identifiers, correctify_researcher_id, correctify_scopus, merge_geo_keywords, rename_related_datapackage
 
 import meta
 from util import *
@@ -715,6 +715,97 @@ def _teclab0_teclab1(ctx: rule.Context, m: Dict) -> Dict:
 
     return m
 
+
+def _teclab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+    """
+    Add affiliation identifiers to creators, contributors and contacts.
+    Rename Related Datapackage field to Related Resource field.
+    Merge several geo keywords into single keyword field.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (teclab-0)
+
+    :returns: Transformed (epos-msl-0) JSON object
+    """
+    m = add_affiliation_identifier(m)
+    m = correctify_personal_identifiers(m)
+    m = rename_related_datapackage(m)
+    m = merge_geo_keywords(m)
+    m.pop('Dataset_Created', None)
+    m.pop('Additional_Lab', None)
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json')
+
+    return m
+
+
+def _hptlab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+    """
+    Add affiliation identifiers to creators, contributors and contacts.
+    Rename Related Datapackage field to Related Resource field.
+    Merge several geo keywords into single keyword field.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (hptlab-0)
+
+    :returns: Transformed (epos-msl-0) JSON object
+    """
+    m = add_affiliation_identifier(m)
+    m = correctify_personal_identifiers(m)
+    m = rename_related_datapackage(m)
+    m = merge_geo_keywords(m)
+    m.pop('Dataset_Created', None)
+    m.pop('Additional_Lab', None)
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json')
+
+    return m
+
+
+def _teclab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+    """
+    Add affiliation identifiers to creators, contributors and contacts.
+    Rename Related Datapackage field to Related Resource field.
+    Merge several geo keywords into single keyword field.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (teclab-1)
+
+    :returns: Transformed (epos-msl-0) JSON object
+    """
+    m = add_affiliation_identifier(m)
+    m = correctify_personal_identifiers(m)
+    m = rename_related_datapackage(m)
+    m = merge_geo_keywords(m)
+    m.pop('Dataset_Created', None)
+    m.pop('Additional_Lab', None)
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json')
+
+    return m
+
+
+def _hptlab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+    """
+    Add affiliation identifiers to creators, contributors and contacts.
+    Rename Related Datapackage field to Related Resource field.
+    Merge several geo keywords into single keyword field.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (hptlab-1)
+
+    :returns: Transformed (epos-msl-0) JSON object
+    """
+    m = add_affiliation_identifier(m)
+    m = correctify_personal_identifiers(m)
+    m = rename_related_datapackage(m)
+    m = merge_geo_keywords(m)
+    m.pop('Dataset_Created', None)
+    m.pop('Additional_Lab', None)
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json')
+
+    return m
 # }}}
 
 
@@ -734,20 +825,37 @@ def get(src_id: str, dst_id: str) -> Callable | None:
         if dst_id == 'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
             return _default1_teclab0
 
-    transformations = {'https://yoda.uu.nl/schemas/dag-0/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _dag0_default2},
-                       'https://yoda.uu.nl/schemas/default-0/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
-                       'https://yoda.uu.nl/schemas/default-1/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
-                       'https://yoda.uu.nl/schemas/default-2/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-3/metadata.json': _default2_default3},
-                       'https://yoda.uu.nl/schemas/core-1/metadata.json':
-                       {'https://yoda.uu.nl/schemas/core-2/metadata.json': _core1_core2},
-                       'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
-                       {'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1},
-                       'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
-                       {'https://yoda.uu.nl/schemas/teclab-1/metadata.json': _teclab0_teclab1}}
+    transformations = {
+        'https://yoda.uu.nl/schemas/dag-0/metadata.json': {
+            'https://yoda.uu.nl/schemas/default-2/metadata.json': _dag0_default2
+        },
+        'https://yoda.uu.nl/schemas/default-0/metadata.json': {
+            'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1
+        },
+        'https://yoda.uu.nl/schemas/default-1/metadata.json': {
+            'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2
+        },
+        'https://yoda.uu.nl/schemas/default-2/metadata.json': {
+            'https://yoda.uu.nl/schemas/default-3/metadata.json': _default2_default3
+        },
+        'https://yoda.uu.nl/schemas/core-1/metadata.json': {
+            'https://yoda.uu.nl/schemas/core-2/metadata.json': _core1_core2
+        },
+        'https://yoda.uu.nl/schemas/hptlab-0/metadata.json': {
+            'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1,
+            'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': _hptlab0_eposmsl0
+        },
+        'https://yoda.uu.nl/schemas/teclab-0/metadata.json': {
+            'https://yoda.uu.nl/schemas/teclab-1/metadata.json': _teclab0_teclab1,
+            'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': _teclab0_eposmsl0
+        },
+        'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': {
+            'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': _hptlab1_eposmsl0
+        },
+        'https://yoda.uu.nl/schemas/teclab-1/metadata.json': {
+            'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': _teclab1_eposmsl0
+        }
+    }
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)
