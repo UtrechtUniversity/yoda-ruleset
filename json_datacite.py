@@ -3,7 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dateutil import parser
 
@@ -144,10 +144,18 @@ def get_subjects(combi: Dict) -> List:
 
     :returns: list of subjects in DataCite format
     """
+    def format_fos(s: str) -> Optional[str]:
+        if not isinstance(s, str) or '-' not in s:
+            return None
+        sub = s.split('-', 1)[1].split('(', 1)[0].strip()
+        return f"FOS: {sub}" if sub else None
 
     subjects = []
     for discipline in combi.get('Discipline', []):
-        subjects.append({'subjectScheme': 'OECD FOS 2007', 'subject': discipline})
+        if fos_discipline := format_fos(discipline):
+            subjects.append({'subject': fos_discipline, 'subjectScheme': 'Fields of Science and Technology (FOS)', 'schemeUri': 'http://www.oecd.org/science/inno/38235147.pdf'})
+        else:
+            subjects.append({'subject': discipline})
 
     # Assume that there is only one keyword field,
     # either called TreeKeyword or Keyword
