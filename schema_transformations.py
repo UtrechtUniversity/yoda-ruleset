@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from typing import Callable, Dict
 
-from schema_transformations_utils import add_affiliation_identifier, correctify_isni, correctify_orcid, correctify_personal_identifiers, correctify_researcher_id, correctify_scopus, merge_geo_keywords, rename_related_datapackage
+from schema_transformations_utils import add_affiliation_identifier, correctify_personal_identifiers, merge_geo_keywords, rename_related_datapackage
 
 import meta
 from util import *
@@ -121,122 +121,9 @@ def _default2_default3(ctx: rule.Context, m: Dict) -> Dict:
 
     :returns: Transformed (default-3) JSON object
     """
-    if m.get('Creator', False):
-        # For this creator step through all its affiliations
-        for creator in m['Creator']:
-            affiliations = []
-            for affiliation in creator['Affiliation']:
-                affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            creator['Affiliation'] = affiliations
-
-            person_identifiers = []
-            for person_identifier in creator.get('Person_Identifier', []):
-                # Check ORCID
-                if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
-                    # Check for incorrect ORCID format.
-                    if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
-                        corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid is None:
-                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_orcid != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_orcid
-                # Check Scopus
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
-                    # Check for incorrect Scopus format.
-                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
-                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_scopus is None:
-                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_scopus != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_scopus
-                # Check ISNI
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
-                    # Check for incorrect ISNI format.
-                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
-                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_isni is None:
-                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_isni != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_isni
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
-                    # Check for incorrect ResearcherID format.
-                    if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
-                        corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_researcher_id != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_researcher_id
-                elif 'Name_Identifier_Scheme' not in person_identifier:
-                    continue
-
-                person_identifiers.append({"Name_Identifier_Scheme": person_identifier['Name_Identifier_Scheme'], "Name_Identifier": person_identifier['Name_Identifier']})
-
-            if len(person_identifiers) > 0:
-                creator['Person_Identifier'] = person_identifiers
-
-    if m.get('Contributor', False):
-        # For this contributor step through all its affiliations
-        for contributor in m['Contributor']:
-            affiliations = []
-            if contributor.get('Affiliation', False):
-                for affiliation in contributor['Affiliation']:
-                    affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-                contributor['Affiliation'] = affiliations
-
-            person_identifiers = []
-            for person_identifier in contributor.get('Person_Identifier', []):
-                # Check ORCID
-                if person_identifier.get('Name_Identifier_Scheme', None) == 'ORCID':
-                    # Check for incorrect ORCID format.
-                    if not re.search("^(https://orcid.org/)[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", person_identifier.get('Name_Identifier', None)):
-                        corrected_orcid = correctify_orcid(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_orcid is None:
-                            log.write(ctx, "Warning: could not correct ORCID %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_orcid != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_orcid
-                # Check Scopus
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'Author identifier (Scopus)':
-                    # Check for incorrect Scopus format.
-                    if not re.search(r"^\d{1,11}$", person_identifier.get('Name_Identifier', None)):
-                        corrected_scopus = correctify_scopus(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_scopus is None:
-                            log.write(ctx, "Warning: could not correct Scopus %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_scopus != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_scopus
-                # Check ISNI
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ISNI':
-                    # Check for incorrect ISNI format.
-                    if not re.search("^(https://isni.org/isni/)[0-9]{15}[0-9X]$", person_identifier.get('Name_Identifier', None)):
-                        corrected_isni = correctify_isni(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_isni is None:
-                            log.write(ctx, "Warning: could not correct ISNI %s during schema transformation. It needs to be fixed manually."
-                                      % (person_identifier['Name_Identifier']))
-                        elif corrected_isni != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_isni
-                elif person_identifier.get('Name_Identifier_Scheme', None) == 'ResearcherID (Web of Science)':
-                    # Check for incorrect ResearcherID format.
-                    if not re.search("^(https://www.researcherid.com/rid/)[A-Z]-[0-9]{4}-[0-9]{4}$", person_identifier.get('Name_Identifier', None)):
-                        corrected_researcher_id = correctify_researcher_id(person_identifier['Name_Identifier'])
-                        # Only if an actual correction took place change the value and mark this data as 'changed'.
-                        if corrected_researcher_id != person_identifier['Name_Identifier']:
-                            person_identifier['Name_Identifier'] = corrected_researcher_id
-                elif 'Name_Identifier_Scheme' not in person_identifier:
-                    continue
-
-                person_identifiers.append({"Name_Identifier_Scheme": person_identifier['Name_Identifier_Scheme'], "Name_Identifier": person_identifier['Name_Identifier']})
-
-            if len(person_identifiers) > 0:
-                contributor['Person_Identifier'] = person_identifiers
+    m = add_affiliation_identifier(m)
+    m = correctify_personal_identifiers(m)
+    m = rename_related_datapackage(m)
 
     # Rename Tags to Keywords
     if m.get('Tag', False):
@@ -245,17 +132,6 @@ def _default2_default3(ctx: rule.Context, m: Dict) -> Dict:
             keywords.append(tag)
         m['Keyword'] = keywords
         m.pop('Tag')
-
-    # Rename Related_Datapackage to Related_Resource
-    if m.get('Related_Datapackage', False):
-        resources = []
-        for resource in m['Related_Datapackage']:
-            # Only use the identifier regarding relation type
-            if resource.get('Relation_Type', False):
-                resource['Relation_Type'] = resource['Relation_Type'].split(':')[0]
-            resources.append(resource)
-        m['Related_Resource'] = resources
-        m.pop('Related_Datapackage')
 
     # Restricted or closed data packages can't have open license.
     data_access_restriction = m.get('Data_Access_Restriction', "")
@@ -278,13 +154,7 @@ def _core1_core2(ctx: rule.Context, m: Dict) -> Dict:
 
     :returns: Transformed (core-2) JSON object
     """
-    if m.get('Creator', False):
-        # For this creator step through all its affiliations
-        for creator in m['Creator']:
-            new_affiliations = []
-            for affiliation in creator['Affiliation']:
-                new_affiliations.append({"Affiliation_Name": affiliation, "Affiliation_Identifier": ""})
-            creator['Affiliation'] = new_affiliations
+    m = add_affiliation_identifier(m)
 
     # Rename Tags to Keywords
     if m.get('Tag', False):
@@ -566,6 +436,7 @@ def _hptlab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json')
 
     return m
+
 # }}}
 
 
