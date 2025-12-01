@@ -17,7 +17,7 @@ import policies_intake
 import replication
 import revisions
 import vault
-from policies_utils import is_safe_genquery_inp
+from policies_utils import *
 from util import *
 
 
@@ -571,28 +571,12 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     return policy.fail('No execcmd privileges for this command')
 
 
-# Internal function to determine whether changes to data objects on a particular
-# resource need to trigger policies (e.g. asynchronous replication) by default.
-def resource_should_trigger_policies(resource: str) -> bool:
-    if resource in config.resource_primary:
-        return True
-
-    if resource in config.resource_vault:
-        return True
-
-    for pattern in config.resource_trigger_pol:
-        if re.match(pattern, resource):
-            return True
-
-    return False
-
-
 @rule.make()
 def pep_resource_modified_post(ctx: rule.Context,
                                instance_name: str,
                                _ctx: rule.Context,
                                out: str) -> None:
-    if not resource_should_trigger_policies(instance_name):
+    if not should_resource_trigger_policies(config, instance_name):
         return
 
     path = _ctx.map()['logical_path']
@@ -600,8 +584,9 @@ def pep_resource_modified_post(ctx: rule.Context,
     username = _ctx.map()['user_user_name']
     info = pathutil.info(path)
 
-    for resource in config.resource_replica:
-        replication.replicate_asynchronously(ctx, path, instance_name, resource)
+    if not should_resource_be_replication_exempt(config, instance_name):
+        for resource in config.resource_replica:
+            replication.replicate_asynchronously(ctx, path, instance_name, resource)
 
     try:
         # Import metadata if a metadata JSON file was changed.
