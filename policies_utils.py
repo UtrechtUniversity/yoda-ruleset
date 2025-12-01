@@ -4,8 +4,11 @@ __copyright__ = 'Copyright (c) 2024-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import ast
+import re
 from typing import List, Set, Tuple
 
+
+from config import Config
 from util import pathutil
 from util.genquery_col_constants import *
 
@@ -118,3 +121,30 @@ def _is_safe_genquery_inp(selectInp: Set[int], sqlCondInp: Set[int]) -> bool:
         return False
     else:
         return True
+
+
+# Determine whether changes to data objects on a particular resource need
+# to trigger policies (e.g. asynchronous replication) by default.
+def should_resource_trigger_policies(config: Config, resource: str) -> bool:
+    if resource in config.resource_primary:
+        return True
+
+    if resource in config.resource_vault:
+        return True
+
+    for pattern in config.resource_trigger_pol:
+        if re.match(pattern, resource):
+            return True
+
+    return False
+
+
+# Determine whether resource should be exempt from policies (currently only for asynchronous replication)
+def should_resource_be_replication_exempt(config: Config, resource: str) -> bool:
+    exempt_list = config.resource_repl_exempt
+    if exempt_list:
+        for pattern in exempt_list:
+            if pattern in resource:
+                return True
+
+    return False

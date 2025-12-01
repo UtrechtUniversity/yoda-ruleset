@@ -8,7 +8,15 @@ from unittest import TestCase
 
 sys.path.append('..')
 
-from policies_utils import _is_safe_genquery_inp, should_transition_submitted_to_accepted_immediately
+from policies_utils import _is_safe_genquery_inp, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately
+from util import config
+
+
+resc_config = config.Config(resource_primary=["irodsResc"],
+                            resource_vault=["irodsResc"],
+                            resource_replica=["irodsRescRepl"],
+                            resource_trigger_pol=["triggerResc"],
+                            resource_repl_exempt=["exemptResc"])
 
 
 class PoliciesTest(TestCase):
@@ -105,3 +113,15 @@ class PoliciesTest(TestCase):
         self.assertTrue(should_transition_submitted_to_accepted_immediately("/tempZone/home/deposit-foo/datapackage", [("any", "any")]))
         self.assertFalse(should_transition_submitted_to_accepted_immediately("/tempZone/home/not-deposit-or-research/datapackage", []))
         self.assertFalse(should_transition_submitted_to_accepted_immediately("/tempZone/home/not-deposit-or-research/datapackage", [("any", "any")]))
+
+    def test_should_resource_trigger_policies(self):
+        self.assertTrue(should_resource_trigger_policies(resc_config, "irodsResc"))
+        self.assertTrue(should_resource_trigger_policies(resc_config, "triggerResc"))
+        self.assertFalse(should_resource_trigger_policies(resc_config, "exemptResc"))
+        self.assertFalse(should_resource_trigger_policies(resc_config, "randomResc"))
+
+    def test_should_resource_be_replication_exempt(self):
+        self.assertFalse(should_resource_be_replication_exempt(resc_config, "irodsResc"))
+        self.assertFalse(should_resource_be_replication_exempt(resc_config, "triggerResc"))
+        self.assertTrue(should_resource_be_replication_exempt(resc_config, "exemptResc"))
+        self.assertFalse(should_resource_be_replication_exempt(resc_config, "randomResc"))
