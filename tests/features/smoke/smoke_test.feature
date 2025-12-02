@@ -9,8 +9,8 @@ Feature: Smoke tests
         And metadata is returned for <collection>
 
         Examples:
-            | collection                       |
-            | /tempZone/home/research-smoke-test  |
+            | collection                         |
+            | /tempZone/home/research-smoke-test |
 
 
     Scenario Outline: Browse research folder
@@ -20,7 +20,7 @@ Feature: Smoke tests
         And the browse result contains <result>
 
         Examples:
-            | collection                      | result             |
+            | collection                         | result             |
             | /tempZone/home/research-smoke-test | yoda-metadata.json |
 
 
@@ -31,7 +31,7 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                          | status |
+            | folder                             | status |
             | /tempZone/home/research-smoke-test | LOCKED |
 
 
@@ -42,7 +42,7 @@ Feature: Smoke tests
         And folder locks contains <folder>
 
         Examples:
-          | folder                          |
+          | folder                             |
           | /tempZone/home/research-smoke-test |
 
 
@@ -53,8 +53,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status |
-            | /tempZone/home/research-smoke-test   | FOLDER |
+            | folder                             | status |
+            | /tempZone/home/research-smoke-test | FOLDER |
 
 
     Scenario Outline: Research folder submit
@@ -65,8 +65,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-smoke-test   | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-smoke-test | SUBMITTED |
 
 
     Scenario Outline: Research folder unsubmit
@@ -76,8 +76,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status |
-            | /tempZone/home/research-smoke-test   | FOLDER |
+            | folder                             | status |
+            | /tempZone/home/research-smoke-test | FOLDER |
 
     Scenario Outline: Research folder resubmit after unsubmit
         Given user smoke_account is authenticated
@@ -86,8 +86,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-smoke-test   | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-smoke-test | SUBMITTED |
 
 
     Scenario Outline: Research folder reject
@@ -97,8 +97,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-smoke-test   | REJECTED |
+            | folder                             | status   |
+            | /tempZone/home/research-smoke-test | REJECTED |
 
 
     Scenario Outline: Research folder resubmit after reject
@@ -108,8 +108,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
-            | /tempZone/home/research-smoke-test   | SUBMITTED |
+            | folder                             | status    |
+            | /tempZone/home/research-smoke-test | SUBMITTED |
 
 
     Scenario Outline: Research folder accept
@@ -119,8 +119,8 @@ Feature: Smoke tests
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status   |
-            | /tempZone/home/research-smoke-test   | ACCEPTED |
+            | folder                             | status   |
+            | /tempZone/home/research-smoke-test | ACCEPTED |
 
 
     Scenario Outline: Research folder secured
@@ -128,8 +128,8 @@ Feature: Smoke tests
         Then folder <folder> status is <status>
 
         Examples:
-            | folder                               | status   |
-            | /tempZone/home/research-smoke-test   | FOLDER   |
+            | folder                             | status |
+            | /tempZone/home/research-smoke-test | FOLDER |
 
 
     Scenario Outline: Vault meta form save in vault
@@ -139,8 +139,8 @@ Feature: Smoke tests
         Then the response status code is "200"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault submit
@@ -151,8 +151,8 @@ Feature: Smoke tests
         And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault cancel
@@ -163,8 +163,8 @@ Feature: Smoke tests
         And data package in <vault> status is "UNPUBLISHED"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault submit after cancel
@@ -175,8 +175,8 @@ Feature: Smoke tests
         And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault approve
@@ -187,8 +187,8 @@ Feature: Smoke tests
         And data package in <vault> status is "APPROVED_FOR_PUBLICATION"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault secured
@@ -197,8 +197,8 @@ Feature: Smoke tests
         Then data package in <vault> status is "PUBLISHED"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault preservable formats lists
@@ -208,8 +208,8 @@ Feature: Smoke tests
         And preservable formats lists are returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault unpreservable files
@@ -220,9 +220,9 @@ Feature: Smoke tests
         And unpreservable files are returned
 
         Examples:
-            | vault                          | list |
-            | /tempZone/home/vault-smoke-test   | 4TU  |
-            | /tempZone/home/vault-smoke-test   | DANS |
+            | vault                           | list |
+            | /tempZone/home/vault-smoke-test | 4TU  |
+            | /tempZone/home/vault-smoke-test | DANS |
 
 
     Scenario Outline: Vault system metadata
@@ -233,8 +233,8 @@ Feature: Smoke tests
         And system metadata is returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault collection details
@@ -244,8 +244,8 @@ Feature: Smoke tests
         Then the response status code is "200"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
 
 
     Scenario Outline: Vault revoke read access to research group
@@ -284,5 +284,5 @@ Feature: Smoke tests
         And published packages are returned
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-smoke-test   |
+            | vault                           |
+            | /tempZone/home/vault-smoke-test |
