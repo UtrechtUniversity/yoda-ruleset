@@ -834,7 +834,7 @@ def rule_revisions_cleanup_scan(ctx: rule.Context, revision_strategy_name: str, 
        scan jobs
 
        :param ctx:                    Combined type of a callback and rei struct
-       :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
+       :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple', 'Fourweeks'). See
                                       https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                                       for an explanation.
        :param verbose_flag:           "1" if rule needs to print additional information for troubleshooting, else "0"
@@ -932,7 +932,7 @@ def rule_revisions_cleanup_process(ctx: rule.Context, revision_strategy_name: st
     """Applies the selected revision strategy to a batch of spooled revision data
 
     :param ctx:                    Combined type of a callback and rei struct
-    :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
+    :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple', 'Fourweeks'). See
                                    https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                                    for an explanation.
     :param endOfCalendarDay:       If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)

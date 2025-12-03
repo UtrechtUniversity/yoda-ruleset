@@ -1,6 +1,6 @@
 """Unit tests for the revision functions"""
 
-__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -73,6 +73,13 @@ class RevisionTest(TestCase):
         exists_dict = {"/foo/bar/baz": True}
         single_output = revision_cleanup_prefilter(None, single_input, "B", exists_dict, False)
         self.assertEqual(single_output, [])  # Does not exceed min. bucket size for strategy B
+
+    def test_revision_cleanup_prefilter_single_exists_fourweeks(self):
+        # Test that no revisions are filtered in the prefilter, since Fourweeks strategy can have 0 revisions.
+        single_input = [[(1, 123, "/foo/bar/baz")]]
+        exists_dict = {"/foo/bar/baz": True}
+        single_output = revision_cleanup_prefilter(None, single_input, "Fourweeks", exists_dict, False)
+        self.assertEqual(single_output, single_input)
 
     def test_revision_cleanup_prefilter_single_doesnotexist(self):
         single_input = [[(1, 123, "/foo/bar/baz")]]
@@ -212,3 +219,23 @@ class RevisionTest(TestCase):
                      (3, dummy_time - 365 * 24 * 3600 - 180, "/foo/bar/baz")]
         output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, True, False)
         self.assertEqual(output, [2, 3])
+
+    def test_revision_deletion_1_bucket_2_before_fourweeks(self):
+        # For strategy Fourweeks, revisions older than 4 weeks should be deleted.
+        dummy_time = 1000000000
+        revision_strategy = get_revision_strategy("Fourweeks")
+        revisions = [(1, dummy_time - 60, "/foo/bar/baz"),
+                     (2, dummy_time - 35 * 24 * 3600, "/foo/bar/baz"),
+                     (3, dummy_time - 35 * 24 * 3600, "/foo/bar/baz")]
+        output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, True, False)
+        self.assertCountEqual(output, [2, 3])
+
+    def test_revision_deletion_3_before_fourweeks(self):
+        # For strategy Fourweeks, revisions older than 4 weeks should be deleted.
+        dummy_time = 1000000000
+        revision_strategy = get_revision_strategy("Fourweeks")
+        revisions = [(1, dummy_time - 35 * 24 * 3600, "/foo/bar/baz"),
+                     (2, dummy_time - 35 * 24 * 3600, "/foo/bar/baz"),
+                     (3, dummy_time - 35 * 24 * 3600, "/foo/bar/baz")]
+        output = get_deletion_candidates(None, revision_strategy, revisions, 1000000000, True, False)
+        self.assertCountEqual(output, [1, 2, 3])
