@@ -16,7 +16,7 @@ NO_MORE_WORK_STATUS = "No more revision cleanup data"
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("endofcalendarday", help="End of calendar day (epoch time)")
-    parser.add_argument("strategyname",  choices=["A", "B", "Simple"], help="Revision strategy name (also referred to as 'bucket case')")
+    parser.add_argument("strategyname",  choices=["A", "B", "Simple", "Fourweeks"], help="Revision strategy name (also referred to as 'bucket case')")
     parser.add_argument("--batch-size", type=int, default=10000,
                         help="Number of revisions to process at a time (default: 10000).", required=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False,

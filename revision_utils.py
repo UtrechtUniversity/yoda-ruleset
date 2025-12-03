@@ -1,6 +1,6 @@
 """Utility functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -85,7 +85,7 @@ def get_revision_store_path(zone: str, trailing_slash: bool = False) -> str:
 def get_deletion_candidates(ctx: 'rule.Context',
                             revision_strategy: RevisionStrategy,
                             revisions: List,
-                            initial_upper_time_bound: bool,
+                            initial_upper_time_bound: int,
                             original_exists: bool,
                             verbose: bool) -> List:
     """Get revision data objects for a particular versioned data object that should be deleted, as per
@@ -172,17 +172,21 @@ def get_deletion_candidates(ctx: 'rule.Context',
 
         bucket_counter += 1  # To keep conciding with strategy list
 
-    # If there are revisions in any bucket, remove all revisions before defined buckets. If there are
-    # no revisions in buckets, remove all revisions before defined buckets except the last one.
-    if len(non_bucket_revisions) > 1 or (len(non_bucket_revisions) == 1 and revision_found_in_bucket):
-        nr_to_be_removed = len(non_bucket_revisions) - (0 if revision_found_in_bucket else 1)
-        count = 0
-        while count < nr_to_be_removed:
-            index = count + (0 if revision_found_in_bucket else 1)
-            if verbose:
-                log.write(ctx, 'Scheduling revision <{}> (older than buckets) for removal.'.format(str(index)))
-            deletion_candidates.append(non_bucket_revisions[index])
-            count += 1
+    if revision_strategy.always_keep_one():
+        # If there are revisions in any bucket, remove all revisions before defined buckets. If there are
+        # no revisions in buckets, remove all revisions before defined buckets except the last one.
+        if len(non_bucket_revisions) > 1 or (len(non_bucket_revisions) == 1 and revision_found_in_bucket):
+            nr_to_be_removed = len(non_bucket_revisions) - (0 if revision_found_in_bucket else 1)
+            count = 0
+            while count < nr_to_be_removed:
+                index = count + (0 if revision_found_in_bucket else 1)
+                if verbose:
+                    log.write(ctx, 'Scheduling revision <{}> (older than buckets) for removal.'.format(str(index)))
+                deletion_candidates.append(non_bucket_revisions[index])
+                count += 1
+    else:
+        # Do NOT keep a copy outside span.
+        deletion_candidates.extend(non_bucket_revisions)
 
     return deletion_candidates
 
@@ -205,7 +209,7 @@ def revision_cleanup_prefilter(ctx: 'rule.Context',
        :param revisions_list:         List of versioned data objects. Each versioned data object is represented as a list of revisions,
                                       with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
-       :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple'). See
+       :param revision_strategy_name: Select a revision strategy based on a string ('A', 'B', 'Simple', 'Fourweeks'). See
                                       https://github.com/UtrechtUniversity/yoda/blob/development/docs/design/processes/revisions.md
                                       for an explanation.
        :param original_exists_dict:   Dictionary where keys are paths of versioned data objects. Values are booleans that indicate whether
@@ -217,7 +221,10 @@ def revision_cleanup_prefilter(ctx: 'rule.Context',
                                       with each revision represented as a 3-tuple (revision ID, modification time in epoch time, original
                                       path)
        """
-    minimum_bucket_size = get_revision_strategy(revision_strategy_name).get_minimum_bucket_size()
+    revision_strategy = get_revision_strategy(revision_strategy_name)
+    always_keep_one = revision_strategy.always_keep_one()
+    minimum_bucket_size = revision_strategy.get_minimum_bucket_size()
+
     results = []
     for object in revisions_list:
         if len(object) > 0:
@@ -226,7 +233,12 @@ def revision_cleanup_prefilter(ctx: 'rule.Context',
                 # remove it in the prefilter stage if it has only a single
                 # revision, assuming that the size of the smallest bucket is
                 # at least 1.
-                if len(object) > min(minimum_bucket_size, 1):
+                if always_keep_one:
+                    if len(object) > min(minimum_bucket_size, 1):
+                        results.append(object)
+                else:
+                    # For Fourweeks policy (and future similar policies),
+                    # never drop objects here. They may still need cleanup.
                     results.append(object)
             else:
                 # Revisions of versioned data objects that do not exist
