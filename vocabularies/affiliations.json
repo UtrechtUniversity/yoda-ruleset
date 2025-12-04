@@ -1,5 +1,9 @@
 [
   {
+    "value": "https://ror.org/03rsncr94",
+    "label": "4TU"
+  },
+  {
     "value": "https://ror.org/04x5wnb75",
     "label": "Academic Center for Dentistry Amsterdam"
   },
@@ -8,12 +12,40 @@
     "label": "Academie Verloskunde Amsterdam Groningen"
   },
   {
+    "value": "https://ror.org/03jnx2c74",
+    "label": "Aeres University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/00ma2r948",
+    "label": "African Studies Centre"
+  },
+  {
+    "value": "https://ror.org/008a4xs91",
+    "label": "Alan Turing Institute Almere"
+  },
+  {
     "value": "https://ror.org/030ms0k96",
     "label": "Alfa College"
   },
   {
+    "value": "https://ror.org/022gvqh28",
+    "label": "Amsterdam Institute for Addiction Research"
+  },
+  {
     "value": "https://ror.org/01g0n8690",
     "label": "Amsterdam Institute for Advanced Metropolitan Solutions"
+  },
+  {
+    "value": "https://ror.org/037n2rm85",
+    "label": "Amsterdam Institute for Global Health and Development"
+  },
+  {
+    "value": "https://ror.org/01x2d9f70",
+    "label": "Amsterdam Neuroscience"
+  },
+  {
+    "value": "https://ror.org/0258apj61",
+    "label": "Amsterdam Public Health"
   },
   {
     "value": "https://ror.org/03dpjfc73",
@@ -29,7 +61,11 @@
   },
   {
     "value": "https://ror.org/05az93f25",
-    "label": "ArtEZ Institute of the Arts"
+    "label": "ArtEZ University of the Arts"
+  },
+  {
+    "value": "https://ror.org/03h837345",
+    "label": "Astronomisch Fysisch Onderzoek Nederland"
   },
   {
     "value": "https://ror.org/015d5s513",
@@ -48,6 +84,10 @@
     "label": "BC Broekhin Roermond"
   },
   {
+    "value": "https://ror.org/03vf2kf90",
+    "label": "Benelux Society of Phlebology"
+  },
+  {
     "value": "https://ror.org/002g6sj22",
     "label": "Bertrand Russell College"
   },
@@ -56,12 +96,52 @@
     "label": "Bonaventuracollege"
   },
   {
+    "value": "https://ror.org/04cr37s66",
+    "label": "Borstkanker Onderzoek Groep"
+  },
+  {
+    "value": "https://ror.org/00q8tg479",
+    "label": "Brainclinics"
+  },
+  {
+    "value": "https://ror.org/04mfj5474",
+    "label": "Breda University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/0360ybs31",
+    "label": "Brightlands Materials Center"
+  },
+  {
     "value": "https://ror.org/020dp5a36",
     "label": "C.T. de Wit Graduate School for Production Ecology and Resource Conservation"
   },
   {
+    "value": "https://ror.org/05d63m431",
+    "label": "Carbohydrate Competence Center"
+  },
+  {
+    "value": "https://ror.org/00gxyk415",
+    "label": "Center for Language Studies"
+  },
+  {
     "value": "https://ror.org/041deym60",
     "label": "Center for Technology & Innovation Management"
+  },
+  {
+    "value": "https://ror.org/044hshx49",
+    "label": "Centre for Human Drug Research"
+  },
+  {
+    "value": "https://ror.org/00e7dfm13",
+    "label": "Centre for Medical Systems Biology"
+  },
+  {
+    "value": "https://ror.org/00x7ekv49",
+    "label": "Centrum Wiskunde & Informatica"
+  },
+  {
+    "value": "https://ror.org/04m8g8w48",
+    "label": "Certe"
   },
   {
     "value": "https://ror.org/02gd5t807",
@@ -76,6 +156,10 @@
     "label": "Christian University of Applied Sciences"
   },
   {
+    "value": "https://ror.org/01qyj4j90",
+    "label": "CityLab010"
+  },
+  {
     "value": "https://ror.org/04vtvrr13",
     "label": "Codarts Rotterdam"
   },
@@ -84,16 +168,68 @@
     "label": "College voor de Rechten van de Mens"
   },
   {
+    "value": "https://ror.org/00pavee11",
+    "label": "CSG Centre for Society and the Life Sciences"
+  },
+  {
     "value": "https://ror.org/00e39jm60",
     "label": "Curio"
+  },
+  {
+    "value": "https://ror.org/04ts2h794",
+    "label": "Darwin Center for Biogeosciences"
+  },
+  {
+    "value": "https://ror.org/008pnp284",
+    "label": "Data Archiving Networked Services (DANS)"
+  },
+  {
+    "value": "https://ror.org/04xdr5k48",
+    "label": "DDL Diagnostic Laboratory"
   },
   {
     "value": "https://ror.org/02e2c7k09",
     "label": "Delft University of Technology"
   },
   {
+    "value": "https://ror.org/01yx4wq53",
+    "label": "Delta Institute for Theoretical Physics"
+  },
+  {
+    "value": "https://ror.org/01deh9c76",
+    "label": "Deltares"
+  },
+  {
     "value": "https://ror.org/039vq9023",
     "label": "Design Academy Eindhoven"
+  },
+  {
+    "value": "https://ror.org/01qsyak13",
+    "label": "Dianet"
+  },
+  {
+    "value": "https://ror.org/04x9ra670",
+    "label": "Digital Communication Methods Lab"
+  },
+  {
+    "value": "https://ror.org/05ft09q38",
+    "label": "Donders Centre for Cognition"
+  },
+  {
+    "value": "https://ror.org/01jdz5g73",
+    "label": "Donders Centre for Cognitive Neuroimaging"
+  },
+  {
+    "value": "https://ror.org/0546zz821",
+    "label": "Donders Centre for Neuroscience"
+  },
+  {
+    "value": "https://ror.org/04h6t4j49",
+    "label": "Donders Community for Medical Neuroscience"
+  },
+  {
+    "value": "https://ror.org/053sba816",
+    "label": "Donders Institute for Brain, Cognition and Behaviour"
   },
   {
     "value": "https://ror.org/05jext738",
@@ -104,8 +240,24 @@
     "label": "Dutch Art Institute"
   },
   {
+    "value": "https://ror.org/05bpzf670",
+    "label": "Dutch Institute for Alcohol Policy"
+  },
+  {
+    "value": "https://ror.org/00wjmdk95",
+    "label": "Dutch Institute for Alcohol Policy STAP"
+  },
+  {
+    "value": "https://ror.org/03w5dn804",
+    "label": "Dutch Institute for Fundamental Energy Research"
+  },
+  {
     "value": "https://ror.org/04jrdcy74",
     "label": "Dutch Network of Systems and Control"
+  },
+  {
+    "value": "https://ror.org/01m71fs94",
+    "label": "Dutch Polymer Institute"
   },
   {
     "value": "https://ror.org/0265xav62",
@@ -114,6 +266,18 @@
   {
     "value": "https://ror.org/02c2kyt77",
     "label": "Eindhoven University of Technology"
+  },
+  {
+    "value": "https://ror.org/04xa4c474",
+    "label": "Energy Research Centre of the Netherlands"
+  },
+  {
+    "value": "https://ror.org/055pf8065",
+    "label": "ERA-NET Plant Genomics"
+  },
+  {
+    "value": "https://ror.org/00hjpwn75",
+    "label": "Erasmus Optical Imaging Centre"
   },
   {
     "value": "https://ror.org/057w15z03",
@@ -128,12 +292,20 @@
     "label": "European Graduate School of Neuroscience"
   },
   {
+    "value": "https://ror.org/04beyjz13",
+    "label": "European Tropical Forest Research Network"
+  },
+  {
     "value": "https://ror.org/05jrbdv26",
     "label": "Expertise Center Vocational Education"
   },
   {
     "value": "https://ror.org/03tqe0950",
     "label": "Expertisecentrum Nederlands"
+  },
+  {
+    "value": "https://ror.org/03tkwyq76",
+    "label": "FELIX Laboratory"
   },
   {
     "value": "https://ror.org/01p232496",
@@ -144,36 +316,48 @@
     "label": "Fontys University of Applied Sciences"
   },
   {
+    "value": "https://ror.org/04hzejq44",
+    "label": "Foundation for Liver and Gastrointestinal Research"
+  },
+  {
     "value": "https://ror.org/02fq0hm69",
     "label": "Friesland College"
+  },
+  {
+    "value": "https://ror.org/05fcmfe52",
+    "label": "Fryske Akademy"
+  },
+  {
+    "value": "https://ror.org/03agtxq40",
+    "label": "Genetic Factors for Osteoporosis Consortium"
   },
   {
     "value": "https://ror.org/053jpjd80",
     "label": "Gerrit Rietveld Academy"
   },
   {
+    "value": "https://ror.org/00dztkz65",
+    "label": "Graduate School Experimental Plant Sciences"
+  },
+  {
     "value": "https://ror.org/0449h4696",
     "label": "Graduate School Neurosciences Amsterdam Rotterdam"
-  },
-  {
-    "value": "https://ror.org/0500gea42",
-    "label": "HAN University of Applied Sciences"
-  },
-  {
-    "value": "https://ror.org/05p706d77",
-    "label": "HAS University of Applied Sciences"
-  },
-  {
-    "value": "https://ror.org/047cqa323",
-    "label": "HZ University of Applied Sciences"
   },
   {
     "value": "https://ror.org/03skjap48",
     "label": "Hague Academy of International Law"
   },
   {
+    "value": "https://ror.org/0500gea42",
+    "label": "HAN University of Applied Sciences"
+  },
+  {
     "value": "https://ror.org/00xqtxw43",
     "label": "Hanze University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/05p706d77",
+    "label": "HAS green academy"
   },
   {
     "value": "https://ror.org/056k6yz11",
@@ -184,36 +368,100 @@
     "label": "Hogeschool iPabo"
   },
   {
+    "value": "https://ror.org/007bss615",
+    "label": "Holland Chemistry"
+  },
+  {
     "value": "https://ror.org/018t8yw14",
     "label": "Hotelschool The Hague"
+  },
+  {
+    "value": "https://ror.org/023qc4a07",
+    "label": "Hubrecht Institute for Developmental Biology and Stem Cell Research"
   },
   {
     "value": "https://ror.org/03wyamy27",
     "label": "Huizinga Instituut"
   },
   {
-    "value": "https://ror.org/030deh410",
-    "label": "IHE Delft Institute for Water Education"
+    "value": "https://ror.org/04x6kq749",
+    "label": "Huygens Institute for History and Culture of the Netherlands"
+  },
+  {
+    "value": "https://ror.org/047cqa323",
+    "label": "HZ University of Applied Sciences"
   },
   {
     "value": "https://ror.org/039ryse59",
     "label": "Ichthus College"
   },
   {
+    "value": "https://ror.org/00h88tf73",
+    "label": "IGRAC"
+  },
+  {
+    "value": "https://ror.org/030deh410",
+    "label": "IHE Delft Institute for Water Education"
+  },
+  {
+    "value": "https://ror.org/01ezq2j76",
+    "label": "Imec the Netherlands"
+  },
+  {
     "value": "https://ror.org/03cfsyg37",
     "label": "Inholland University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/02yzsw326",
+    "label": "Institute for Applied Environmental Economics"
+  },
+  {
+    "value": "https://ror.org/038x9td67",
+    "label": "Institute for Atomic and Molecular Physics"
+  },
+  {
+    "value": "https://ror.org/04y6n3q27",
+    "label": "Institute for High Energy Physics"
   },
   {
     "value": "https://ror.org/04jxbkz90",
     "label": "Institute for Programming research and Algorithmics"
   },
   {
+    "value": "https://ror.org/017xhef20",
+    "label": "Institute for Social Sciences and Humanities - ISSH (Iran Academia)"
+  },
+  {
+    "value": "https://ror.org/03hxrmn64",
+    "label": "Institute for the Study of Education and Human Development"
+  },
+  {
+    "value": "https://ror.org/011p0ty46",
+    "label": "Institute for Theoretical Physics Amsterdam"
+  },
+  {
+    "value": "https://ror.org/03hxzy361",
+    "label": "Institute of Physics"
+  },
+  {
+    "value": "https://ror.org/02ymhq538",
+    "label": "Instituut Verbeeten"
+  },
+  {
     "value": "https://ror.org/04m5bjk54",
-    "label": "Instituut voor Nederlandse Lexicologie"
+    "label": "Instituut voor de Nederlandse Taal"
   },
   {
     "value": "https://ror.org/00bscyw28",
     "label": "International Bureau of Fiscal Documentation"
+  },
+  {
+    "value": "https://ror.org/04tz9fd40",
+    "label": "International Institute for Asian Studies"
+  },
+  {
+    "value": "https://ror.org/038v7xb98",
+    "label": "International Institute for Geo-Information Science and Earth Observation"
   },
   {
     "value": "https://ror.org/027zjnr49",
@@ -236,6 +484,14 @@
     "label": "Islamic University of Rotterdam"
   },
   {
+    "value": "https://ror.org/03w498803",
+    "label": "IVO Addiction Research Institute"
+  },
+  {
+    "value": "https://ror.org/035jnav47",
+    "label": "J.M. Burgerscentrum"
+  },
+  {
     "value": "https://ror.org/05nrjb178",
     "label": "Katholieke Pabo Zwolle"
   },
@@ -248,8 +504,28 @@
     "label": "Koninklijke Scholengemeenschap"
   },
   {
+    "value": "https://ror.org/01a0jnf88",
+    "label": "Landsteiner Instituut"
+  },
+  {
+    "value": "https://ror.org/00rkqp577",
+    "label": "LCPL Pathan"
+  },
+  {
+    "value": "https://ror.org/03es66g06",
+    "label": "Leiden Observatory"
+  },
+  {
     "value": "https://ror.org/027bh9e22",
     "label": "Leiden University"
+  },
+  {
+    "value": "https://ror.org/00txvrc11",
+    "label": "Leyden Academy on Vitality and Ageing"
+  },
+  {
+    "value": "https://ror.org/04nae0247",
+    "label": "Libra Revalidatie & Audiologie"
   },
   {
     "value": "https://ror.org/04zb8fk81",
@@ -268,28 +544,92 @@
     "label": "Marnix Academie"
   },
   {
+    "value": "https://ror.org/00fyemf28",
+    "label": "Materials innovation institute"
+  },
+  {
+    "value": "https://ror.org/00671me87",
+    "label": "Max Planck Institute for Psycholinguistics"
+  },
+  {
+    "value": "https://ror.org/02n9d1732",
+    "label": "Max Planck University of Twente Center for Complex Fluid Dynamics"
+  },
+  {
     "value": "https://ror.org/05mv4rb84",
     "label": "Medicines Evaluation Board"
+  },
+  {
+    "value": "https://ror.org/05kaxyq51",
+    "label": "Meertens Institute"
+  },
+  {
+    "value": "https://ror.org/03120tz42",
+    "label": "Menasseh Ben Israel Institute"
   },
   {
     "value": "https://ror.org/004pfc251",
     "label": "Middelbaar Beroeps Onderwijs"
   },
   {
-    "value": "https://ror.org/02xgxme97",
-    "label": "NHL Stenden University of Applied Sciences"
+    "value": "https://ror.org/03c2k6525",
+    "label": "National Computer Facilities"
   },
   {
-    "value": "https://ror.org/04mfj5474",
-    "label": "NHTV Breda University of Applied Sciences"
+    "value": "https://ror.org/0460chp58",
+    "label": "National Initiative Brain & Cognition"
   },
   {
-    "value": "https://ror.org/025gshh98",
-    "label": "NTI University"
+    "value": "https://ror.org/01cesdt21",
+    "label": "National Institute for Public Health and the Environment"
+  },
+  {
+    "value": "https://ror.org/00f9tz983",
+    "label": "National Institute for Subatomic Physics"
+  },
+  {
+    "value": "https://ror.org/0072ngz93",
+    "label": "Nectaerra"
+  },
+  {
+    "value": "https://ror.org/020hsr785",
+    "label": "Nederlands Instituut voor Wetenschappelijke Informatiediensten"
+  },
+  {
+    "value": "https://ror.org/05ddg7v64",
+    "label": "Nederlands Instituut Voor Zuivel Oonderzoek"
+  },
+  {
+    "value": "https://ror.org/054qehp48",
+    "label": "Nederlandse Onderzoekschool Voor Astronomie"
+  },
+  {
+    "value": "https://ror.org/0123yy056",
+    "label": "Nederlandse Vereniging voor Tropische Geneeskunde"
   },
   {
     "value": "https://ror.org/03y974j42",
     "label": "Nefrovisie"
+  },
+  {
+    "value": "https://ror.org/00jtnvh80",
+    "label": "Netherlands Center for Occupational Diseases"
+  },
+  {
+    "value": "https://ror.org/02dnvjf04",
+    "label": "Netherlands Defence Academy"
+  },
+  {
+    "value": "https://ror.org/05bpjsf25",
+    "label": "Netherlands Earth System Science Centre"
+  },
+  {
+    "value": "https://ror.org/052x1hs80",
+    "label": "Netherlands Environmental Assessment Agency"
+  },
+  {
+    "value": "https://ror.org/04s2z4291",
+    "label": "Netherlands Forensic Institute"
   },
   {
     "value": "https://ror.org/025fr4535",
@@ -300,8 +640,44 @@
     "label": "Netherlands Graduate School of Linguistics"
   },
   {
+    "value": "https://ror.org/01mh6b283",
+    "label": "Netherlands Heart Institute"
+  },
+  {
+    "value": "https://ror.org/04z3wz653",
+    "label": "Netherlands Institute for Advanced Study in the Humanities and Social Sciences"
+  },
+  {
     "value": "https://ror.org/0567f1w19",
     "label": "Netherlands Institute for Catalysis Research"
+  },
+  {
+    "value": "https://ror.org/04hmqap24",
+    "label": "Netherlands Institute for Innovative Ocular Surgery"
+  },
+  {
+    "value": "https://ror.org/05csn2x06",
+    "label": "Netherlands Institute for Neuroscience"
+  },
+  {
+    "value": "https://ror.org/03124pm05",
+    "label": "Netherlands Institute for the Study of Crime and Law Enforcement"
+  },
+  {
+    "value": "https://ror.org/01g25jp36",
+    "label": "Netherlands Institute of Ecology"
+  },
+  {
+    "value": "https://ror.org/04kf5kc54",
+    "label": "Netherlands Interdisciplinary Demographic Institute"
+  },
+  {
+    "value": "https://ror.org/00zh5wn98",
+    "label": "Netherlands Metabolomics Centre"
+  },
+  {
+    "value": "https://ror.org/04fp8ns78",
+    "label": "Netherlands Pharmacovigilance Centre Lareb"
   },
   {
     "value": "https://ror.org/04mx1wt49",
@@ -312,6 +688,22 @@
     "label": "Netherlands School of Public Administration"
   },
   {
+    "value": "https://ror.org/02xgxme97",
+    "label": "NHL Stenden University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/05m4jv490",
+    "label": "NHL University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/05he87q93",
+    "label": "NIOD Institute for War, Holocaust and Genocide Studies"
+  },
+  {
+    "value": "https://ror.org/025gshh98",
+    "label": "NTI University"
+  },
+  {
     "value": "https://ror.org/018528593",
     "label": "Nyenrode Business University"
   },
@@ -320,12 +712,36 @@
     "label": "Oncode Institute"
   },
   {
+    "value": "https://ror.org/03m8v6t10",
+    "label": "Open Data Infrastructure for Social Science and Economic Innovations"
+  },
+  {
     "value": "https://ror.org/018dfmf50",
-    "label": "Open University in the Netherlands"
+    "label": "Open University of the Netherlands"
   },
   {
     "value": "https://ror.org/008za0b72",
     "label": "Openbare Scholengemeenschap De Hogeberg"
+  },
+  {
+    "value": "https://ror.org/05mggs005",
+    "label": "PAMM"
+  },
+  {
+    "value": "https://ror.org/00p5j4e25",
+    "label": "Panteia (Netherlands)"
+  },
+  {
+    "value": "https://ror.org/029pyqp16",
+    "label": "Parnassia Groep Academie"
+  },
+  {
+    "value": "https://ror.org/01wfg6h04",
+    "label": "Pharmo Institute"
+  },
+  {
+    "value": "https://ror.org/01rr7ev58",
+    "label": "Pharmo Instituut"
   },
   {
     "value": "https://ror.org/03naar428",
@@ -336,12 +752,28 @@
     "label": "Protestant Theological University"
   },
   {
+    "value": "https://ror.org/00zq3ce72",
+    "label": "QuSoft"
+  },
+  {
+    "value": "https://ror.org/04wf30j82",
+    "label": "QuTech"
+  },
+  {
+    "value": "https://ror.org/01yb10j39",
+    "label": "Radboud Institute for Molecular Life Sciences"
+  },
+  {
     "value": "https://ror.org/016xsfp80",
     "label": "Radboud University Nijmegen"
   },
   {
-    "value": "https://ror.org/02ar29j81",
-    "label": "Reformed University of Applied Sciences"
+    "value": "https://ror.org/04crnd335",
+    "label": "Rathenau Instituut"
+  },
+  {
+    "value": "https://ror.org/00bp9f906",
+    "label": "Reade"
   },
   {
     "value": "https://ror.org/02z0ywx65",
@@ -352,8 +784,24 @@
     "label": "Reinwardt Academie"
   },
   {
+    "value": "https://ror.org/04xywqt24",
+    "label": "Rembrandt Institute of Cardiovascular Science"
+  },
+  {
+    "value": "https://ror.org/01mzc3z63",
+    "label": "Research Institute for Knowledge Systems"
+  },
+  {
     "value": "https://ror.org/03bkq6a07",
     "label": "Research School for Medieval Studies"
+  },
+  {
+    "value": "https://ror.org/05ck1h211",
+    "label": "Roosevelt Institute for American Studies"
+  },
+  {
+    "value": "https://ror.org/02ac58f22",
+    "label": "Rotterdam Study"
   },
   {
     "value": "https://ror.org/0481e1q24",
@@ -365,43 +813,91 @@
   },
   {
     "value": "https://ror.org/01mwwwn80",
-    "label": "Royal Conservatory of The Hague"
+    "label": "Royal Conservatory The Hague"
   },
   {
     "value": "https://ror.org/0175ya539",
     "label": "Royal Dutch Kentalis"
   },
   {
+    "value": "https://ror.org/01gntjh03",
+    "label": "Royal Netherlands Institute for Sea Research"
+  },
+  {
+    "value": "https://ror.org/01bdv4312",
+    "label": "Royal Netherlands Institute of Southeast Asian and Caribbean Studies"
+  },
+  {
     "value": "https://ror.org/005t9n460",
-    "label": "Saxion University of Applied Sciences"
+    "label": "Saxion"
   },
   {
     "value": "https://ror.org/01dcz6f16",
     "label": "Scalda"
   },
   {
-    "value": "https://ror.org/04x99xv31",
-    "label": "Stoas University of Applied Sciences"
+    "value": "https://ror.org/024h8zy86",
+    "label": "Schothorst Feed Research"
   },
   {
-    "value": "https://ror.org/03q7ay915",
-    "label": "TIAS School for Business and Society"
+    "value": "https://ror.org/00ypx8t52",
+    "label": "Social Historic Centre for Limburg"
+  },
+  {
+    "value": "https://ror.org/02wc0kq10",
+    "label": "Space Research Organisation Netherlands"
+  },
+  {
+    "value": "https://ror.org/01jbeyb43",
+    "label": "SPRINT"
+  },
+  {
+    "value": "https://ror.org/026xbkx09",
+    "label": "Stenden University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/026e19k63",
+    "label": "Stichting Aeres Groep"
+  },
+  {
+    "value": "https://ror.org/00xe2gs46",
+    "label": "Stichting Artsenlaboratorium en Trombosedienst"
+  },
+  {
+    "value": "https://ror.org/02jybwh86",
+    "label": "Stichting Technisch Centrum vd Keramische Industrie"
+  },
+  {
+    "value": "https://ror.org/053tsx367",
+    "label": "Stichting Wetenschappelijk Onderzoek Verkeersveiligheid"
+  },
+  {
+    "value": "https://ror.org/04x99xv31",
+    "label": "Stoas University of Applied Sciences"
   },
   {
     "value": "https://ror.org/01dn09e98",
     "label": "Terra"
   },
   {
+    "value": "https://ror.org/05ttdrn83",
+    "label": "The Hague Centre for Strategic Studies"
+  },
+  {
     "value": "https://ror.org/021zvq422",
     "label": "The Hague University of Applied Sciences"
   },
   {
-    "value": "https://ror.org/02x435584",
-    "label": "Theological University"
-  },
-  {
     "value": "https://ror.org/03s2fjy85",
     "label": "Theological University of Apeldoorn"
+  },
+  {
+    "value": "https://ror.org/02x435584",
+    "label": "Theological University Utrecht"
+  },
+  {
+    "value": "https://ror.org/03q7ay915",
+    "label": "TIAS School for Business and Society"
   },
   {
     "value": "https://ror.org/0183vre95",
@@ -417,15 +913,39 @@
   },
   {
     "value": "https://ror.org/00560h931",
-    "label": "Tio University"
+    "label": "Tio Business School"
+  },
+  {
+    "value": "https://ror.org/01qmxzb47",
+    "label": "Top Institute Pharma"
   },
   {
     "value": "https://ror.org/05f0rzm15",
     "label": "Transnational University Limburg"
   },
   {
+    "value": "https://ror.org/02amggm23",
+    "label": "Trimbos Institute"
+  },
+  {
     "value": "https://ror.org/04ryr8437",
     "label": "Udens College"
+  },
+  {
+    "value": "https://ror.org/057tkar12",
+    "label": "Understanding Childhood Arthritis Network"
+  },
+  {
+    "value": "https://ror.org/04nq8gx07",
+    "label": "Unilever Foods Innovation Centre"
+  },
+  {
+    "value": "https://ror.org/053zwxr79",
+    "label": "United Nations University – Maastricht Economic and Social Research Institute on Innovation and Technology"
+  },
+  {
+    "value": "https://ror.org/008appn90",
+    "label": "University College Maastricht"
   },
   {
     "value": "https://ror.org/002fzqp75",
@@ -452,28 +972,48 @@
     "label": "University of Humanistic Studies"
   },
   {
+    "value": "https://ror.org/018bzp792",
+    "label": "University of the Arts Utrecht"
+  },
+  {
     "value": "https://ror.org/006hf6230",
     "label": "University of Twente"
   },
   {
-    "value": "https://ror.org/018bzp792",
-    "label": "University of the Arts Utrecht"
+    "value": "https://ror.org/0041rwe58",
+    "label": "Utrecht Life Sciences"
   },
   {
     "value": "https://ror.org/04pp8hn57",
     "label": "Utrecht University"
   },
   {
+    "value": "https://ror.org/05wag9297",
+    "label": "Van der Waals-Zeeman Institute"
+  },
+  {
     "value": "https://ror.org/02mdbnd10",
     "label": "Van Hall Larenstein University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/013rctf62",
+    "label": "Van Leeuwenhoek Centre for Advanced Microscopy"
   },
   {
     "value": "https://ror.org/02dnd4c36",
     "label": "Van Lodenstein College"
   },
   {
+    "value": "https://ror.org/017hmby02",
+    "label": "Verwey Jonker Institute"
+  },
+  {
     "value": "https://ror.org/026rmnx29",
     "label": "Via Vinci Academy"
+  },
+  {
+    "value": "https://ror.org/02ar29j81",
+    "label": "Viaa Christian University of Applied Sciences"
   },
   {
     "value": "https://ror.org/01xpgs822",
@@ -484,8 +1024,28 @@
     "label": "Vrije Universiteit Amsterdam"
   },
   {
+    "value": "https://ror.org/05ap1vt50",
+    "label": "VSL Dutch Metrology Institute"
+  },
+  {
+    "value": "https://ror.org/041pa7h16",
+    "label": "Waag Futurelab"
+  },
+  {
     "value": "https://ror.org/04qw24q55",
     "label": "Wageningen University & Research"
+  },
+  {
+    "value": "https://ror.org/01jases89",
+    "label": "WaterCampus"
+  },
+  {
+    "value": "https://ror.org/030a5r161",
+    "label": "Westerdijk Fungal Biodiversity Institute"
+  },
+  {
+    "value": "https://ror.org/0002exf56",
+    "label": "Wetenschappelijk Onderzoek- en Documentatiecentrum"
   },
   {
     "value": "https://ror.org/036k3ee35",
@@ -494,6 +1054,10 @@
   {
     "value": "https://ror.org/04zmc0e16",
     "label": "Windesheim University of Applied Sciences"
+  },
+  {
+    "value": "https://ror.org/04zsytt76",
+    "label": "Wise & Munro Learning Research"
   },
   {
     "value": "https://ror.org/020z55s31",
