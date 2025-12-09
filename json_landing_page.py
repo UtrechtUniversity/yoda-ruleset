@@ -212,6 +212,11 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     publication_date_time = parser.parse(json_data["System"]["Publication_Date"])
     publication_date = publication_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
 
+    ############################################################################
+    # Yoda configuration
+    ############################################################################
+    enable_anubis = config.enable_anubis
+
     tm = Template(template)
     # Add custom function to transform a persistent identifier to URI.
     tm.globals["persistent_identifier_to_uri"] = persistent_identifier_to_uri
@@ -248,4 +253,5 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         random_id=random_id,
         base_doi=base_doi,
         versions=versions,
+        enable_anubis=enable_anubis
     )
