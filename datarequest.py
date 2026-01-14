@@ -1420,7 +1420,8 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id:
         permitted_to_read = [GROUP_DM, GROUP_PM]
         if 'assign_to' in data:
             permitted_to_read = permitted_to_read + data['assign_to'][:]
-
+        else:
+            return api.Error("missing_assignee", "Select at least one DAC member to assign the request to.")
         # Write form data to disk
         file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read)
     except error.UUError:
