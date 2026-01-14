@@ -1,6 +1,6 @@
 """Functions for transforming Yoda JSON to DataCite 4.4 JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from typing import Dict, List, Optional
@@ -322,14 +322,32 @@ def get_contributors(combi: Dict) -> List:
 
 
 def get_dates(combi: Dict) -> List:
-    """Return list of dates in DataCite format."""
+    """Return list of dates in DataCite format.
 
-    # Format last modified date for DataCite: https://support.datacite.org/docs/schema-optional-properties-v41#8-date
+    :param combi: Combined JSON file that holds both user and system metadata
+
+    :returns: JSON element with dates in DataCite format
+    """
+
+    # Format dates for DataCite: https://datacite-metadata-schema.readthedocs.io/en/4.6/properties/date/
+    publication_date = combi.get('System', {}).get('Publication_Date')
+    publication_date = parser.parse(publication_date)
+    publication_date = publication_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+
     last_modified_date = combi.get('System', {}).get('Last_Modified_Date')
     last_modified_date = parser.parse(last_modified_date)
     last_modified_date = last_modified_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
-    dates = [{'date': last_modified_date, 'dateType': 'Updated'}]
+    dates = [
+        {
+            'date': publication_date,
+            'dateType': 'Issued'
+        },
+        {
+            'date': last_modified_date,
+            'dateType': 'Updated'
+        }
+    ]
 
     embargo_end_date = combi.get('Embargo_End_Date')
     if embargo_end_date is not None:
