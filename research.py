@@ -738,7 +738,7 @@ def api_research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = Fals
 
     :param ctx:         Combined type of a callback and rei struct
     :param coll:        Parent collection of data objects to include
-    :param empty_colls: Include mepty collections in manifest
+    :param empty_colls: Include empty collections in manifest
 
     :returns: List of json objects with name and checksum
     """
