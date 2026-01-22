@@ -686,7 +686,7 @@ def _get_data_checksums(ctx: rule.Context, coll: str) -> List:
     """Retrieve checksums for data objects in the given collection."""
     iter_data = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        f"COLL_NAME = '{coll}'",
+        f"COLL_NAME = '{coll}' AND DATA_REPL_STATUS = '1'",
         genquery.AS_LIST, ctx
     )
 
@@ -705,7 +705,7 @@ def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List:
     """Retrieve checksums for data objects in sub-collections."""
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        f"COLL_PARENT_NAME like '{coll}%'",
+        f"COLL_NAME like '{coll}/%' AND DATA_REPL_STATUS = '1'",
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
