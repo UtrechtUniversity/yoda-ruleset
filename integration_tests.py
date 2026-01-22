@@ -1,6 +1,6 @@
 """Integration tests for the development environment."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_run_integration_tests']
@@ -711,6 +711,9 @@ basic_integration_tests = [
     {"name":   "util.collection.to_from_id",
      "test": lambda ctx: collection.name_from_id(ctx, collection.id_from_name(ctx, "/tempZone/home/research-initial")),
      "check": lambda x: x == "/tempZone/home/research-initial"},
+    {"name":   "util.collection.subcollections",
+     "test": lambda ctx: collection.subcollections(ctx, "/tempZone/home/research-initial"),
+     "check": lambda x: x[0].startswith("/tempZone/home/research-initial")},
     {"name":   "util.data_object.exists.yes",
      "test": lambda ctx: data_object.exists(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x},
