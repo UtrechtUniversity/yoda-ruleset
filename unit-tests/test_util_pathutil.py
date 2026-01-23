@@ -8,7 +8,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from pathutil import basename, chop, chopext, dirname, info, is_archived_datapackage_path, Space
+from pathutil import basename, chop, chopext, dirname, info, is_archived_datapackage_path, relpath, Space
 
 
 class UtilPathutilTest(TestCase):
@@ -138,3 +138,8 @@ class UtilPathutilTest(TestCase):
         self.assertFalse(is_archived_datapackage_path("/tempZone/home/vault-foo"))
         self.assertFalse(is_archived_datapackage_path("/tempZone"))
         self.assertFalse(is_archived_datapackage_path(""))
+
+    def test_relpath(self):
+        self.assertEqual(relpath("/foo/bar", "/foo/bar"), ".")
+        self.assertEqual(relpath("/foo/bar/bat", "/foo/bar"), "bat")
+        self.assertEqual(relpath("/foo/bar/bat/ball", "/foo/bar"), "bat/ball")
