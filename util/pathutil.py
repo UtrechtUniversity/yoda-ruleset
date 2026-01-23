@@ -3,12 +3,13 @@ from __future__ import annotations
 
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import namedtuple
 from enum import Enum
+from pathlib import PurePath
 from typing import List, Tuple
 
 
@@ -69,6 +70,17 @@ def basename(path: str) -> str:
 def chopext(path: str) -> List[str]:
     """Return the extension of a path."""
     return path.rsplit('.', 1)
+
+
+def relpath(path: str, start_path: str) -> str:
+    """Return path relative to another path
+
+    :param path:       path supposed to be under start_path
+    :param start_path: path that should be above the other path
+
+    :returns: String relative path
+    """
+    return str(PurePath(path).relative_to(start_path))
 
 
 def info(path: str) -> Tuple[Space, str, str, str]:

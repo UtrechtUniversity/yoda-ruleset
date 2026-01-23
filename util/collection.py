@@ -1,7 +1,7 @@
 """Utility / convenience functions for dealing with collections."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -96,23 +96,20 @@ def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Ite
 
     :returns: List of all subcollections in a collection
     """
-    # coll+subcoll name -> path
-    def to_absolute(row: List) -> str:
-        return '{}/{}'.format(*row)
 
-    q_root = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
+    q_root = genquery.row_iterator("COLL_NAME",
                                    "COLL_PARENT_NAME = '{}'".format(path),
                                    genquery.AS_LIST, ctx)
 
     if not recursive:
-        return map(to_absolute, q_root)
+        return (row[0] for row in q_root)
 
     # Recursive? Return a generator combining both queries.
-    q_sub = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
+    q_sub = genquery.row_iterator("COLL_NAME",
                                   "COLL_PARENT_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
 
-    return map(to_absolute, itertools.chain(q_root, q_sub))
+    return (row[0] for row in itertools.chain(q_root, q_sub))
 
 
 def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
