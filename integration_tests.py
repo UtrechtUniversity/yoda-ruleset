@@ -708,12 +708,12 @@ basic_integration_tests = [
     {"name":   "util.collection.owner",
      "test": lambda ctx: collection.owner(ctx, "/tempZone/yoda"),
      "check": lambda x: x == ('rods', 'tempZone')},
+    {"name":   "util.collection.subcollections",
+     "test": lambda ctx: _test_collection_subcollections(ctx),
+     "check": lambda x: x},
     {"name":   "util.collection.to_from_id",
      "test": lambda ctx: collection.name_from_id(ctx, collection.id_from_name(ctx, "/tempZone/home/research-initial")),
      "check": lambda x: x == "/tempZone/home/research-initial"},
-    {"name":   "util.collection.subcollections",
-     "test": lambda ctx: collection.subcollections(ctx, "/tempZone/home/research-initial"),
-     "check": lambda x: x[0].startswith("/tempZone/home/research-initial")},
     {"name":   "util.data_object.exists.yes",
      "test": lambda ctx: data_object.exists(ctx, "/tempZone/home/research-initial/testdata/lorem.txt"),
      "check": lambda x: x},
@@ -1168,3 +1168,66 @@ def _test_copy_folder_to_research(ctx):
                     collection.remove(ctx, path)
             except Exception as e:
                 log.write(ctx, f"Clean up test files exception: {str(e)}")
+
+
+def _test_collection_subcollections(ctx: rule.Context) -> bool:
+    """Tests for the collection.subcollections function
+
+    :param ctx: combined type of a callback and rei struct
+
+    :raises RuntimeError: if cleanup of test data failed
+
+    :returns: true if tests passed, otherwise false
+    """
+    basepath = "/tempZone/home/rods/test_subcollections"
+    testdirs = ["a1", "a1/a2", "b1", "b1/b2", "c1", "c1/c2"]
+
+    # Set up test data
+    if not collection.exists(ctx, basepath):
+        collection.create(ctx, basepath)
+    for testdir in testdirs:
+        subpath = os.path.join(basepath, testdir)
+        if not collection.exists(ctx, subpath):
+            collection.create(ctx, subpath)
+
+    result_nosub_nonr = list(collection.subcollections(ctx, os.path.join(basepath, "a1/a2")))
+    if result_nosub_nonr != []:
+        log.write(ctx, "test_collection_subcollections fail on empty/NR: " + str(result_nosub_nonr))
+        return False
+
+    result_nosub_rec = list(collection.subcollections(ctx, os.path.join(basepath, "a1/a2"), True))
+    if result_nosub_rec != []:
+        log.write(ctx, "test_collection_subcollections fail on empty/R: " + str(result_nosub_rec))
+        return False
+
+    result_l1_nonr = list(collection.subcollections(ctx, os.path.join(basepath, "a1")))
+    if result_l1_nonr != [os.path.join(basepath, "a1/a2")]:
+        log.write(ctx, "test_collection_subcollections fail on L1/NR: " + str(result_l1_nonr))
+        return False
+
+    result_l1_rec = list(collection.subcollections(ctx, os.path.join(basepath, "a1"), True))
+    if result_l1_rec != [os.path.join(basepath, "a1/a2")]:
+        log.write(ctx, "test_collection_subcollections fail on L1/R: " + str(result_l1_rec))
+        return False
+
+    result_l2_nonr = list(collection.subcollections(ctx, basepath))
+    if result_l2_nonr != sorted([os.path.join(basepath, dir) for dir in ["a1", "b1", "c1"]]):
+        log.write(ctx, "test_collection_subcollections fail on L2/NR: " + str(result_l2_nonr))
+        return False
+
+    result_l2_rec = list(collection.subcollections(ctx, basepath, True))
+    if sorted(result_l2_rec) != sorted([os.path.join(basepath, dir) for dir in testdirs]):
+        log.write(ctx, "test_collection_subcollections fail on L2/R: " + str(result_l2_rec))
+        return False
+
+    # Remove test data
+    cmd = ["irm", "-r", basepath]
+    environment = dict(os.environ)
+
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=environment)
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        raise RuntimeError(f"failure during cleanup test data collections.subcollections {stderr.decode()}")
+
+    return True
