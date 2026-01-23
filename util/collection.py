@@ -100,18 +100,16 @@ def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Ite
     q_root = genquery.row_iterator("COLL_NAME",
                                    "COLL_PARENT_NAME = '{}'".format(path),
                                    genquery.AS_LIST, ctx)
-    q_root_result = [row[0] for row in q_root]
 
     if not recursive:
-        return q_root_result
+        return (row[0] for row in q_root)
 
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_NAME",
                                   "COLL_PARENT_NAME like '{}/%'".format(path),
                                   genquery.AS_LIST, ctx)
-    q_sub_result = [row[0] for row in q_sub]
 
-    return q_root_result + q_sub_result
+    return (row[0] for row in itertools.chain(q_root, q_sub))
 
 
 def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
