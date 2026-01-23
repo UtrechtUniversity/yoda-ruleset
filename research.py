@@ -1,9 +1,9 @@
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
@@ -682,7 +682,7 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
             "is_locked": is_locked}
 
 
-def _get_data_checksums(ctx: rule.Context, coll: str) -> List:
+def _get_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in the given collection."""
     iter_data = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
@@ -701,7 +701,7 @@ def _get_data_checksums(ctx: rule.Context, coll: str) -> List:
     ]
 
 
-def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List:
+def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in sub-collections."""
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
@@ -720,24 +720,17 @@ def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List:
     ]
 
 
-def _get_empty_collections_checksums(ctx: rule.Context, coll: str, existing_coll_names: List) -> List:
+def _get_empty_collections_checksums(ctx: rule.Context, parent_coll: str) -> List[dict[str, str]]:
     """Retrieve names of empty sub-collections."""
-    iter_sub = genquery.row_iterator(
-        "ORDER(COLL_NAME)",
-        f"COLL_PARENT_NAME like '{coll}%'",
-        genquery.AS_LIST, ctx
-    )
-
-    length = len(coll) + 1
     return [
         {
-            "name": (row[0] + "/")[length:],
+            "name": pathutil.relpath(coll, parent_coll) + "/",
             "size": "",
             "human_readable_size": "",
             "checksum": ""
         }
-        for row in iter_sub
-        if row[0] not in existing_coll_names
+        for coll in collection.subcollections(ctx, parent_coll, True)
+        if collection.is_empty(ctx, coll)
     ]
 
 
@@ -771,7 +764,7 @@ def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -
     manifest = checksums
 
     if empty_colls:
-        empty_checksums = _get_empty_collections_checksums(ctx, coll, checksums)
+        empty_checksums = _get_empty_collections_checksums(ctx, coll)
         manifest += empty_checksums
 
     return {
