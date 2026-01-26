@@ -33,7 +33,7 @@ def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
-def empty(ctx: rule.Context, path: str) -> bool:
+def is_empty(ctx: rule.Context, path: str) -> bool:
     """Check if a collection contains any data objects."""
     return (len(list(genquery.row_iterator(
                      "DATA_ID",
