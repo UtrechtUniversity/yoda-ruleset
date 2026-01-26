@@ -161,7 +161,7 @@ def api_deposit_status(ctx: rule.Context, path: str) -> api.Result:
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
     data = False
-    if not collection.empty(ctx, coll):
+    if not collection.is_empty(ctx, coll):
         if collection.data_count(ctx, coll) == 1 and data_object.exists(ctx, meta_path):
             # Only file is yoda-metadata.json.
             data = False
