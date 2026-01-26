@@ -65,7 +65,10 @@ jobs:
     - name: Wait until Dockerized setup is ready
       shell: bash
       run: |
+        echo "Waiting for portal to be available ..."
         until $(curl -k --output /dev/null --silent --head --fail https://portal.yoda:8443 ); do printf '.' ; sleep 1; done
+        echo "Waiting for EUS to be available ..."
+        until $(curl -k --output /dev/null --silent --head --fail https://eus.yoda:8444 ); do printf '.' ; sleep 1; done
         docker exec provider.yoda sh -c 'while ! pgrep irodsServer > /dev/null  ; do echo Waiting for iRODS to start ...  ; sleep 1; done'
 
     - name: Pull and install latest version of ruleset
