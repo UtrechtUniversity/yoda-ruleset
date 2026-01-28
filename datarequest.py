@@ -999,7 +999,7 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
         # Write data request
         jsonutil.write(ctx, file_path, data)
 
-        # Set ownership for rods to allow system operations        
+        # Set ownership for rods to allow system operations
         msi.set_acl(ctx, "default", "own", "rods", provenance_path)
 
         # Apply initial permission restrictions to researcher
