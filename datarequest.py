@@ -906,7 +906,7 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[st
     # Revoke temporary write permission if current_user doesn't have read access
     if current_user not in readers:
         msi.set_acl(ctx, "default", "null", current_user, file_path)
-    else: # Ensure invoking user has read rights if they are a reader (might have been skipped in file_write)
+    else:  # Ensure invoking user has read rights if they are a reader (might have been skipped in file_write)
         msi.set_acl(ctx, "default", "read", current_user, file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
