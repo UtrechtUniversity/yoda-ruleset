@@ -1,7 +1,7 @@
 """JSON metadata form handling."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -337,8 +337,37 @@ def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
         return api.Error('internal', 'Could not save yoda-metadata.json')
 
 
-"""API to retrieve all information required to load a metadata form in either the research or vault space."""
-api_meta_form_load = api.make()(load)
+@api.make()
+def api_meta_form_load(ctx: rule.Context, coll: str) -> api.Result:
+    """Retrieve all information required to load a metadata form in either the research or vault space.
 
-"""API to validate and store JSON metadata for a given collection."""
-api_meta_form_save = api.make()(save)
+    This produces a JSON struct on stdout. If no transformation is required
+    and no errors prevent loading the form, the JSON will contain the
+    schema, uischema and metadata.
+
+    If a transformation is needed, this is indicated by the
+    'transformation_text' string being present in the output.
+
+    If errors prevent loading the form, or if errors make a transformation
+    impossible, this is indicated by the 'errors' array being present in the
+    output.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to retrieve all information required to load a metadata form from
+
+    :returns: API status
+    """
+    return load(ctx, coll)
+
+
+@api.make()
+def api_meta_form_save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
+    """Validate and store JSON metadata for a given collection.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param coll:     Collection to save metadata on
+    :param metadata: Metadata to save
+
+    :returns: API status
+    """
+    return save(ctx, coll, metadata)

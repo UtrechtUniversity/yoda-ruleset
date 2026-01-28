@@ -1,7 +1,7 @@
 """Functions for group management and group queries."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -298,8 +298,17 @@ def user_role(ctx: rule.Context, username: str, group_name: str) -> str:
     return "none"
 
 
-"""API to get role of user in group."""
-api_group_get_user_role = api.make()(user_role)
+@api.make()
+def api_group_get_user_role(ctx: rule.Context, username: str, group_name: str) -> str:
+    """Get role of user in group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   User to return type of
+    :param group_name: Group name of user
+
+    :returns: User role ('none' | 'reader' | 'normal' | 'manager')
+    """
+    return user_role(ctx, username, group_name)
 
 
 def user_is_datamanager(ctx: rule.Context, category: str, user: str) -> bool:
@@ -1030,8 +1039,29 @@ def group_create(ctx: rule.Context,
         return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
 
 
-"""API to create a new group."""
-api_group_create = api.make()(group_create)
+@api.make()
+def api_group_create(ctx: rule.Context,
+                     group_name: str,
+                     category: str,
+                     subcategory: str,
+                     schema_id: str,
+                     expiration_date: str,
+                     description: str,
+                     data_classification: str) -> api.Result:
+    """Create a new group.
+
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param group_name:          Name of the group to create
+    :param category:            Category of the group to create
+    :param subcategory:         Subcategory of the group to create
+    :param schema_id:           Schema-id for the group to be created
+    :param expiration_date:     Retention period for the group
+    :param description:         Description of the group to create
+    :param data_classification: Data classification of the group to create
+
+    :returns: API status result
+    """
+    return group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification)
 
 
 @api.make()
@@ -1153,8 +1183,17 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
         return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-"""API to add a user to a group."""
-api_group_user_add = api.make()(group_user_add)
+@api.make()
+def api_group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+    """Add a user to a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: Dict with API status result
+    """
+    return group_user_add(ctx, username, group_name)
 
 
 def group_user_update_role(ctx: rule.Context, username: str, group_name: str, new_role: str) -> api.Result:
@@ -1179,8 +1218,18 @@ def group_user_update_role(ctx: rule.Context, username: str, group_name: str, ne
         return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-"""API to update role of a user in a group."""
-api_group_user_update_role = api.make()(group_user_update_role)
+@api.make()
+def api_group_user_update_role(ctx: rule.Context, username: str, group_name: str, new_role: str) -> api.Result:
+    """Update role of a user in a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+    :param new_role:   New role of the user
+
+    :returns: API status result
+    """
+    return group_user_update_role(ctx, username, group_name, new_role)
 
 
 def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: str) -> api.Result:
@@ -1214,8 +1263,17 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
         return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
 
 
-"""API to remove a user from a group."""
-api_group_remove_user_from_group = api.make()(group_remove_user_from_group)
+@api.make()
+def api_group_remove_user_from_group(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+    """Remove a user from a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: API status result
+    """
+    return group_remove_user_from_group(ctx, username, group_name)
 
 
 def sram_enabled(ctx: rule.Context, group_name: str) -> Tuple[bool, str]:

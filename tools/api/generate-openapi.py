@@ -6,7 +6,7 @@ This extracts all Yoda API functions from the ruleset, and generates an OpenAPI
 file based on the function signatures and docstrings.
 """
 
-__copyright__ = 'Copyright (c) 2020-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import argparse
@@ -134,7 +134,6 @@ def is_nullable_type(input: str) -> bool:
 def gen_fn_spec(function_name: str, function_properties: Dict):
     """Generate OpenAPI spec for one function (one path)"""
     doc: str = str(function_properties.get("doc")) if function_properties.get("doc") is not None else ""
-
     props = oDict()
     for arg_name in function_properties["args"]:
         arg_properties = function_properties["args"][arg_name]
@@ -331,14 +330,6 @@ def main(args: argparse.Namespace) -> None:
     print(json.dumps(spec))
 
 
-def _ensure_python_version_okay():
-    if (sys.version_info.major < 3
-            or (sys.version_info.major == 3 and sys.version_info.minor < 9)):
-        print("Error: this script requires Python 3.9 or higher to run.")
-        sys.exit(1)
-
-
 if __name__ == "__main__":
-    _ensure_python_version_okay()
     args = get_args()
     main(args)
