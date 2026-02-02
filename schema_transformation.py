@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 __all__ = ['rule_batch_transform_vault_metadata',
            'rule_batch_vault_metadata_correct_orcid_format',
            'rule_batch_vault_metadata_schema_report',
+           'rule_transform_vault_metadata',
            'rule_get_transformation_info',
            'api_transform_metadata']
 
@@ -65,6 +66,51 @@ def api_transform_metadata(ctx: rule.Context, coll: str, keep_metadata_backup: b
         execute_transformation(ctx, metadata_path, transform, keep_metadata_backup)
     else:
         return api.Error('no_metadata', 'No metadata file found')
+
+
+@rule.make(inputs=[0], outputs=[1, 2])
+def rule_transform_vault_metadata(ctx: rule.Context, coll: str) -> Tuple[str, str]:
+    """Transform a yoda-metadata file in the given vault collection to the active schema.
+
+    :param ctx:           Combined type of a ctx and rei struct
+    :param coll:          Logical path of archived data package
+
+    :returns: tuple where the first element indicates status ('0' is successful
+              transformation, otherwise '1'), and the second element is a string
+              describing the result.
+    """
+    if not user.is_admin(ctx):
+        return ('1', "User is not rodsadmin")
+
+    transform_result = _transform_vault_metadata(ctx, coll)
+    return ('0' if transform_result[0] else '1', transform_result[1])
+
+
+def _transform_vault_metadata(ctx: rule.Context, coll: str) -> Tuple[bool, str]:
+    """Transform a yoda-metadata file in the given vault collection to the active schema.
+
+    :param ctx:           Combined type of a ctx and rei struct
+    :param coll:          Logical path of archived data package
+
+    :returns: tuple where the first element indicates status (True is successful
+              transformation, otherwise False), and the second element is a string
+              describing the result.
+    """
+    if not collection.exists(ctx, coll):
+        return (False, 'Collection not found')
+
+    metadata_path = meta.get_latest_vault_metadata_path(ctx, coll)
+    if metadata_path is None:
+        return (False, 'No metadata file found')
+    else:
+        log.write(ctx, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
+        transform = get(ctx, metadata_path)
+        if transform is None:
+            return (False, 'No transformation found')
+        else:
+            log.write(ctx, "[METADATA] Executing transformation for: " + metadata_path)
+            execute_transformation(ctx, metadata_path, transform)
+            return (True, "ok")
 
 
 def get(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> Callable | None:
@@ -170,6 +216,10 @@ def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch
     pause   = float(pause_s)
     delay   = int(delay_s)
 
+    if not user.is_admin(ctx):
+        log.write(ctx, "Not executing batch vault transform: user is not rodsadmin")
+        return
+
     # Check one batch of metadata schemas.
 
     # Find all research and vault collections, ordered by COLL_ID.
@@ -182,7 +232,6 @@ def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch
     for row in iter:
         coll_id = int(row[0])
         coll_name = row[1]
-        path_parts = coll_name.split('/')
 
         # Only process collections that are directly beneath the apex
         # vault collection, e.g. /zoneName/home/vault-foo/data-package[123],
@@ -192,17 +241,14 @@ def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch
             continue
 
         try:
-            # Get vault package path.
-            vault_package = '/'.join(path_parts[:5])
-            metadata_path = meta.get_latest_vault_metadata_path(ctx, vault_package)
-            log.write(ctx, "[METADATA] Checking whether metadata needs to be transformed: " + metadata_path)
-            if metadata_path != '':
-                transform = get(ctx, metadata_path)
-                if transform is not None:
-                    log.write(ctx, "[METADATA] Executing transformation for: " + metadata_path)
-                    execute_transformation(ctx, metadata_path, transform)
+            result_transform = _transform_vault_metadata(ctx, coll_name)
+            if not result_transform[0]:
+                log.write(ctx, "[METADATA] No schema transformation executed for {}: {}".format(coll_name,
+                                                                                                result_transform[1]))
+
         except Exception as e:
-            log.write(ctx, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
+            log.write(ctx, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name,
+                                                                                                         str(type(e)) + ":" + str(e)))
 
         # Sleep briefly between checks.
         time.sleep(pause)
