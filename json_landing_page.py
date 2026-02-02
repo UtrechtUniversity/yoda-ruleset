@@ -3,7 +3,6 @@
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import urllib.parse
 from datetime import datetime
 from typing import Dict
 
@@ -198,7 +197,6 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     ############################################################################
     persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
     open_access_link = json_data["System"].get("Open_access_Link", "")
-    open_access_link = urllib.parse.quote(open_access_link, safe=":/=")
 
     license_uri = ""
     if no_active_embargo and license == 'Custom' and data_access_restriction.startswith('Open'):

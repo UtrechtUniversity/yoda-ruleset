@@ -5,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import re
+import urllib.parse
 from datetime import datetime
 from traceback import format_exc
 from typing import Dict, List, Tuple
@@ -99,6 +100,7 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
         subPath = vaultPackage[len(split_string) + vaultPackage.find(split_string):]
 
         openAccessLink = 'https://' + davrodsAnonymousVHost + "/" + subPath
+        openAccessLink = urllib.parse.quote(openAccessLink, safe=":/=")
 
     licenseUri = ""
     if "licenseUri" in publication_state:
