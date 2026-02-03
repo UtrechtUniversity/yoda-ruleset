@@ -1,6 +1,6 @@
 """Functions for communicating with SRAM and some utilities."""
 
-__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import datetime
@@ -79,6 +79,11 @@ def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
         log.write(ctx, "get {}".format(url))
 
     response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    if response.status_code != 200:
+        if config.sram_verbose_logging:
+            log.write(ctx, "response: {}".format(response.status_code))
+        return ''
+
     data = response.json()
 
     if config.sram_verbose_logging:
@@ -311,6 +316,11 @@ def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
         log.write(ctx, "get {}".format(url))
 
     response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    if response.status_code != 200:
+        if config.sram_verbose_logging:
+            log.write(ctx, "response: {}".format(response.status_code))
+        return []
+
     data = response.json()
 
     if config.sram_verbose_logging:
