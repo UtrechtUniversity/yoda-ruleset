@@ -12,13 +12,12 @@ from typing import Dict, List
 
 import genquery
 import irods_types
-import jsonschema
 
-import meta_form
 import provenance
 import publication
 import schema as schema_
 import vault
+from metadata_utils import get_json_metadata_errors, humanize_validation_error, is_json_metadata_valid
 from util import *
 
 __all__ = ['rule_meta_validate',
@@ -55,81 +54,6 @@ def metadata_set_schema_id(metadata: Dict, schema_id: str) -> None:
         ['rel',  'describedby'],
         ['href', schema_id]
     ])] + other_links
-
-
-def get_json_metadata_errors(ctx: rule.Context,
-                             metadata_path: str,
-                             metadata: Dict | None = None,
-                             schema: Dict | None = None,
-                             ignore_required: bool = False) -> List:
-    """
-    Validate JSON metadata, and return a list of errors, if any.
-
-    The path to the JSON object must be provided, so that the active schema path
-    can be derived. Optionally, a pre-parsed JSON object may be provided in
-    'metadata'.
-
-    The checked schema is, by default, the active schema for the given metadata path,
-    however it can be overridden by providing a parsed JSON schema as an argument.
-
-    This will throw exceptions on missing metadata / schema files and invalid
-    JSON formats.
-
-    :param ctx:             Combined type of a callback and rei struct
-    :param metadata_path:   Path to the JSON object
-    :param metadata:        Pre-parsed JSON object
-    :param schema:          Schema to check against
-    :param ignore_required: Ignore required fields
-
-    :returns: List of errors in JSON object
-    """
-    def transform_error(e):
-        """Turn a ValidationError into a data structure for the frontend."""
-        return {'message':     e.message,
-                'path':        list(e.path),
-                'schema_path': list(e.schema_path),
-                'validator':   e.validator}
-
-    if schema is None:
-        schema = schema_.get_active_schema(ctx, metadata_path)
-
-    if metadata is None:
-        metadata = jsonutil.read(ctx, metadata_path)
-
-    # Perform validation and filter errors.
-    validator = jsonschema.Draft201909Validator(schema)
-    errors = validator.iter_errors(metadata)
-
-    if ignore_required:
-        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
-
-    return list(map(transform_error, errors))
-
-
-def is_json_metadata_valid(ctx: rule.Context,
-                           metadata_path: str,
-                           metadata: Dict | None = None,
-                           ignore_required: bool = False) -> bool:
-    """Check if json metadata contains no errors.
-
-    Argument 'metadata' may contain a preparsed JSON document, otherwise it
-    is loaded from the provided path.
-
-    :param ctx:             Combined type of a callback and rei struct
-    :param metadata_path:   Path to the JSON object
-    :param metadata:        Pre-parsed JSON object
-    :param ignore_required: Ignore required fields
-
-    :returns: Boolean indicating if JSON metadata is valid
-    """
-    try:
-        return len(get_json_metadata_errors(ctx,
-                                            metadata_path,
-                                            metadata=metadata,
-                                            ignore_required=ignore_required)) == 0
-    except error.UUError:
-        # File may be missing or not valid JSON.
-        return False
 
 
 def get_collection_metadata_path(ctx: rule.Context, coll: str) -> str | None:
@@ -752,7 +676,7 @@ def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cach
     error_list = get_json_metadata_errors(ctx, metadata_path, metadata=metadata, schema=schema_contents)
     match_schema = len(error_list) == 0
     if not match_schema:
-        errors_formatted = [meta_form.humanize_validation_error(e).encode('utf-8') for e in error_list]
+        errors_formatted = [humanize_validation_error(e).encode('utf-8') for e in error_list]
         log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)), write_stdout)
         log.write(ctx, "vault_metadata_matches_schema: Metadata {} of data package {} did not match the schema {}. Error list: {}".format(metadata_path, coll_name, schema_shortname, str(errors_formatted)), write_stdout)
 
