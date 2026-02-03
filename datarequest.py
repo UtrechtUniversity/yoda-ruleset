@@ -858,7 +858,7 @@ def datarequest_process_expired_review_periods(ctx: rule.Context, request_ids: L
         status_set(ctx, request_id, status.REVIEWED)
 
 
-def file_write_and_lock(ctx: rule.Context, coll_path: str, filename: str, data: Dict, readers: List[str]) -> None:
+def file_write(ctx: rule.Context, coll_path: str, filename: str, data: Dict, readers: List[str]) -> None:
     """Grant temporary write permission and write file to disk.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -876,7 +876,7 @@ def file_write_and_lock(ctx: rule.Context, coll_path: str, filename: str, data: 
     jsonutil.write(ctx, file_path, data)
 
     # Grant read permission to readers
-    current_user = user.full_name(ctx)  # Retrieve once
+    current_user = user.full_name(ctx)
 
     # Reorder readers: move current_user to the end if present
     if current_user in readers:
@@ -884,11 +884,30 @@ def file_write_and_lock(ctx: rule.Context, coll_path: str, filename: str, data: 
 
     # Set read ACLs for each reader
     for reader in readers:
-        msi.set_acl(ctx, "default", "read", reader, file_path)
+        # Exclude invoking user to prevent overwriting of temporary write permission
+        if reader != current_user:
+            msi.set_acl(ctx, "default", "read", reader, file_path)
+
+    # Set ownership for rods to allow system operations
+    msi.set_acl(ctx, "default", "own", "rods", file_path)
+
+
+def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[str]) -> None:
+    """Revoke temporary write permission.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param coll_path: Path to collection of file
+    :param filename:  Name of file
+    :param readers:   List of user names that should be given read access to the file
+    """
+    file_path = "{}/{}".format(coll_path, filename)
+    current_user = user.full_name(ctx)
 
     # Revoke temporary write permission if current_user doesn't have read access
     if current_user not in readers:
         msi.set_acl(ctx, "default", "null", current_user, file_path)
+    else:  # Ensure invoking user has read rights if they are a reader (might have been skipped in file_write)
+        msi.set_acl(ctx, "default", "read", current_user, file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
     # appropriate permissions through group membership, e.g. the project managers group)
@@ -983,6 +1002,9 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
 
         # Write data request
         jsonutil.write(ctx, file_path, data)
+
+        # Set ownership for rods to allow system operations
+        msi.set_acl(ctx, "default", "own", "rods", provenance_path)
 
         # Apply initial permission restrictions to researcher
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), provenance_path)
@@ -1221,7 +1243,8 @@ def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: Dict, req
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_write(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, [GROUP_DM, GROUP_PM])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
 
@@ -1302,7 +1325,8 @@ def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: Dict, req
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_write(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
+        file_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, [GROUP_DM, GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
 
@@ -1422,7 +1446,8 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id:
             permitted_to_read = permitted_to_read + data['assign_to'][:]
 
         # Write form data to disk
-        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read)
+        file_write(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read)
+        file_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, permitted_to_read)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
 
@@ -1539,7 +1564,8 @@ def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str
     # Write form data to disk
     try:
         readers = [GROUP_PM] + [reviewer + "#" + user.zone(ctx) for reviewer in datarequest_reviewers_get(ctx, request_id)]
-        file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
+        file_write(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
+        file_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, readers)
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
 
@@ -1637,15 +1663,16 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id:
             datarequest_owner = datarequest_owner_get(ctx, request_id)
             if datarequest_owner is None:
                 raise error.UUError
-            file_write_and_lock(ctx, coll_path, APPROVAL_CONDITIONS + JSON_EXT,
-                                data['approval_conditions'], [datarequest_owner])
+            file_write(ctx, coll_path, APPROVAL_CONDITIONS + JSON_EXT, data['approval_conditions'], [datarequest_owner])
+            file_lock(ctx, coll_path, APPROVAL_CONDITIONS + JSON_EXT, [datarequest_owner])
         except error.UUError:
             return api.Error('write_error', 'Could not write approval conditions to disk')
 
     # Write form data to disk
     try:
         readers = [GROUP_PM] + [reviewer + "#" + user.zone(ctx) for reviewer in datarequest_reviewers_get(ctx, request_id)]
-        file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
+        file_write(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
+        file_lock(ctx, coll_path, EVALUATION + JSON_EXT, readers)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
@@ -1746,7 +1773,7 @@ def datarequest_feedback_write(ctx: rule.Context, request_id: str, feedback: str
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, FEEDBACK + JSON_EXT, feedback, [GROUP_PM])
+        file_write(ctx, coll_path, FEEDBACK + JSON_EXT, feedback, [GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write feedback data to disk.')
 
@@ -1756,6 +1783,12 @@ def datarequest_feedback_write(ctx: rule.Context, request_id: str, feedback: str
                     "{}/{}".format(coll_path, FEEDBACK + JSON_EXT))
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the feedback file to the data request owner.")
+
+    # Lock file after write
+    try:
+        file_lock(ctx, coll_path, FEEDBACK + JSON_EXT, [GROUP_PM])
+    except error.UUError:
+        return api.Error('write_error', 'Could not set permissions on feedback data.')
 
 
 @api.make()
@@ -1808,7 +1841,8 @@ def api_datarequest_preregistration_submit(ctx: rule.Context, data: Dict, reques
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [user.full_name(ctx), GROUP_PM])
+        file_write(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [user.full_name(ctx), GROUP_PM])
+        file_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, [user.full_name(ctx), GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write preregistration data to disk')
 
