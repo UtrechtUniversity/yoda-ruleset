@@ -13,7 +13,7 @@ from genquery import AS_DICT, Query
 
 import folder
 import groups
-import meta
+from metadata_utils import is_json_metadata_valid
 from util import *
 
 __all__ = ['api_deposit_create',
@@ -169,7 +169,7 @@ def api_deposit_status(ctx: rule.Context, path: str) -> api.Result:
             data = True
 
     metadata = False
-    if data_object.exists(ctx, meta_path) and meta.is_json_metadata_valid(ctx, meta_path):
+    if data_object.exists(ctx, meta_path) and is_json_metadata_valid(ctx, meta_path):
         metadata = True
 
     return {"data": data, "metadata": metadata}

@@ -4,7 +4,6 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 from typing import Dict, List, Tuple
 
 import irods_types
@@ -15,6 +14,7 @@ import meta
 import schema as schema_
 import schema_transformation
 import vault
+from metadata_utils import get_json_metadata_errors, humanize_validation_error
 from util import *
 
 __all__ = ['api_meta_form_load',
@@ -69,35 +69,6 @@ def get_coll_lock_count(ctx: rule.Context, path: str, org_metadata: List | None 
         count += 1
 
     return count
-
-
-def humanize_validation_error(e: str) -> str:
-    """Transform a jsonschema validation error such that it is readable by humans.
-
-    :param e: a jsonschema.exceptions.ValidationError
-
-    :returns: a supposedly human-readable description of the error
-    """
-    # Error format: "Creator 1 -> Person Identifier 1 -> Name Identifier Scheme"
-
-    # Make array indices human-readable.
-    path_out = []
-    for _i, x in enumerate(e['path']):
-        if type(x) is int:
-            path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
-        else:
-            path_out += [x.replace('_', ' ')]
-
-    # Get the names of disallowed extra fields.
-    # (the jsonschema library isn't of much help here - we must extract it from the message)
-    if e['validator'] == 'additionalProperties' and len(path_out) == 0:
-        m = re.search('[\'\"]([^\"\']+)[\'\"] was unexpected', e['message'])
-        if m:
-            return 'This extra field is not allowed: ' + m.group(1)
-        else:
-            return 'Extra fields are not allowed'
-    else:
-        return 'This field contains an error: ' + ' -> '.join(path_out)
 
 
 def load(ctx: rule.Context, coll: str) -> api.Result:
@@ -191,11 +162,11 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
                 try:
                     current_schema = schema_.get_schema_by_id(ctx, meta_path, current_schema_id)
                     errors = [humanize_validation_error(x) for x
-                              in meta.get_json_metadata_errors(ctx,
-                                                               meta_path,
-                                                               metadata=metadata,
-                                                               schema=current_schema,
-                                                               ignore_required=True)]
+                              in get_json_metadata_errors(ctx,
+                                                          meta_path,
+                                                          metadata=metadata,
+                                                          schema=current_schema,
+                                                          ignore_required=True)]
                     if errors:
                         return api.Error('validation', 'The metadata file is not compliant with the schema.',
                                          data={'errors': errors})
@@ -213,11 +184,11 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
             if current_schema_id == schema['$id']:
                 # Metadata matches active schema, see if it validates.
                 errors = [humanize_validation_error(x) for x
-                          in meta.get_json_metadata_errors(ctx,
-                                                           meta_path,
-                                                           metadata=metadata,
-                                                           schema=schema,
-                                                           ignore_required=True)]
+                          in get_json_metadata_errors(ctx,
+                                                      meta_path,
+                                                      metadata=metadata,
+                                                      schema=schema,
+                                                      ignore_required=True)]
                 if errors:
                     return api.Error('validation', 'The metadata file is not compliant with the schema.',
                                      data={'errors': errors})
@@ -261,11 +232,11 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
         if current_schema_id == schema['$id']:
             # Metadata matches active schema, see if it validates.
             errors = [humanize_validation_error(x) for x
-                      in meta.get_json_metadata_errors(ctx,
-                                                       meta_path,
-                                                       metadata=metadata,
-                                                       schema=schema,
-                                                       ignore_required=True)]
+                      in get_json_metadata_errors(ctx,
+                                                  meta_path,
+                                                  metadata=metadata,
+                                                  schema=schema,
+                                                  ignore_required=True)]
             if errors:
                 return api.Error('validation', 'The metadata file is not compliant with the schema.',
                                  data={'errors': errors})
@@ -325,7 +296,7 @@ def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
     meta.metadata_set_schema_id(metadata, schema_.get_active_schema_id(ctx, json_path))
 
     # Validate JSON metadata.
-    errors = meta.get_json_metadata_errors(ctx, json_path, metadata, ignore_required=not is_vault)
+    errors = get_json_metadata_errors(ctx, json_path, metadata, ignore_required=not is_vault)
 
     if len(errors) > 0:
         return api.Error('validation', 'Metadata validation failed', data={'errors': errors})

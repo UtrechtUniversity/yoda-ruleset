@@ -10,6 +10,7 @@ import folder
 import meta
 import notifications
 import provenance
+from metadata_utils import is_json_metadata_valid
 from policies_utils import should_transition_submitted_to_accepted_immediately
 from util import *
 
@@ -79,7 +80,7 @@ def can_transition_folder_status(ctx: rule.Context,
         if not data_object.exists(ctx, meta_path):
             return policy.fail('Metadata missing, unable to submit this folder')
 
-        if not meta.is_json_metadata_valid(ctx, meta_path):
+        if not is_json_metadata_valid(ctx, meta_path):
             return policy.fail('Metadata is incomplete or invalid, please open the metadata form for more information')
 
     elif status_to in [constants.research_package_state.ACCEPTED,
