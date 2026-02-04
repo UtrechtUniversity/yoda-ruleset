@@ -25,7 +25,7 @@ def metadata_post(payload: Dict) -> int:
                              timeout=30,
                              verify=config.datacite_tls_verify)
 
-    return response.status_code
+    return response
 
 
 def metadata_put(doi: str, payload: str) -> int:
@@ -41,7 +41,7 @@ def metadata_put(doi: str, payload: str) -> int:
                             timeout=30,
                             verify=config.datacite_tls_verify)
 
-    return response.status_code
+    return response
 
 
 def metadata_get(doi: str) -> int:
@@ -56,10 +56,25 @@ def metadata_get(doi: str) -> int:
                             timeout=30,
                             verify=config.datacite_tls_verify)
 
-    return response.status_code
+    return response
 
 
 def generate_random_id(length: int) -> str:
     """Generate random ID for DOI."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for x in range(int(length)))
+
+
+def get_errors(response: dict) -> str:
+    """Get errors from DataCite response"""
+    error_msg = ''
+
+    if 'errors' in response:
+        errors = response['errors']
+        for error in errors:
+            if 'source' in error:
+                error_msg += "DataCite error from attribute \"" + error['source'] + "\": \"" + error['title'] + "\". "
+            else:
+                error_msg += "DataCite error: \"" + error['title'] + "\". "
+
+    return error_msg

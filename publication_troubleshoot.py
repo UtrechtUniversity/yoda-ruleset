@@ -110,7 +110,8 @@ def check_one_datacite_doi_reg(ctx: rule.Context, data_package: str, doi_name: s
         log.write(ctx, "check_datacite_doi_registration: Error while trying to get {} - {}".format(doi_name, e), write_stdout)
         return False
 
-    status_code = datacite.metadata_get(doi)
+    response = datacite.metadata_get(doi)
+    status_code = response.status_code
     return status_code == 200
 
 
