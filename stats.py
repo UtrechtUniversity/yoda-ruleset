@@ -1,7 +1,7 @@
 """Functions for statistics module."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -47,21 +47,14 @@ def api_resource_browse_group_data(ctx: rule.Context,
         # The maximum allowed number of characters in the group name is 63.
         search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups[:63])
 
+    group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
     if user.is_admin(ctx):
-        groups_research = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
-        groups_deposit = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
-        groups_intake = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
-        groups_grp = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
-        groups = list(set(groups_research + groups_deposit + groups_intake + groups_grp))
+        groups = list(genquery.Query(ctx, "USER_GROUP_NAME", group_filter + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
     else:
         categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories, search_groups)
-
-        groups_research_member = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
-        groups_deposit_member = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
-        groups_intake_member = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
-        groups_grp_member = list(genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
-        groups = list(set(groups_research_member + groups_deposit_member + groups_intake_member + groups_grp_member + groups_dm))
+        groups_member = list(genquery.Query(ctx, "USER_GROUP_NAME", group_filter + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
+        groups = list(set(groups_member + groups_dm))
 
     # groups.sort()
     group_list = []
@@ -70,9 +63,7 @@ def api_resource_browse_group_data(ctx: rule.Context,
         group_list.append([groupname, data_size])
 
     # Sort the list as requested by user
-    sort_reverse = False
-    if sort_order == 'desc':
-        sort_reverse = True
+    sort_reverse = sort_order == 'desc'
     group_list.sort(key=lambda x: x[1][-1] if sort_on == 'size' else x[0], reverse=sort_reverse)
 
     # Only at this point we have the list in correct shape/order and can the limit and offset be applied
@@ -253,7 +244,7 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     min_year = -1
     min_month = -1
 
-    # find minimal registered date registered.
+    # Find minimal registered date.
     iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
                                "META_USER_ATTR_NAME like '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
                                offset=0, limit=1, output=genquery.AS_LIST))
@@ -263,7 +254,7 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         min_month = int(row[0][-5:-3])
 
     if min_month == -1:
-        # if min_month == -1 no minimal date was found. Consequently, stop further processing
+        # No minimum date found; stop further processing.
         return {'storage': [], 'dates': []}
 
     # Prepare storage data
@@ -276,25 +267,27 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     # A group always has 1 distinct category and 1 distinct subcateory
     group_catdata = {}
 
-    # Initialisation
+    # Initialization.
     categories = get_categories(ctx)
+    groups_cache = {category: get_groups_on_categories(ctx, [category]) for category in categories}
+
     for category in categories:
-        # for all groups in category
-        groups = get_groups_on_categories(ctx, [category])
-        for group in groups:
+        for group in groups_cache[category]:
             if group.startswith(('research', 'deposit', 'intake', 'grp')):
                 group_storage[group] = []
-                group_catdata[group] = {'category': category,
-                                        'subcategory': get_group_category_info(ctx, group)['subcategory']}
+                group_catdata[group] = {
+                    'category': category,
+                    'subcategory': get_group_category_info(ctx, group)['subcategory']
+                }
 
     # Loop from earliest data to now and find storage for each group/date combination
     while min_month != current_month or min_year != current_year:
-        date_reference = "{}_{}".format(min_year, '%0*d' % (2, min_month))
+        date_reference = f"{min_year}_{min_month:02}"
         storage_dates.append(date_reference)
 
         for category in categories:
             # for all groups in category
-            groups = get_groups_on_categories(ctx, [category])
+            groups = groups_cache[category]
             for group in groups:
                 if group.startswith(('research', 'deposit', 'intake', 'grp')):
                     storage = get_group_data_sizes(ctx, group, date_reference)
@@ -306,23 +299,26 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
             min_month = 1
             min_year += 1
 
-    date_reference = "{}_{}".format(min_year, '%0*d' % (2, min_month))
+    date_reference = f"{min_year}_{min_month:02}"
     storage_dates.append(date_reference)
 
     for category in categories:
         # for all groups in category
-        groups = get_groups_on_categories(ctx, [category])
+        groups = groups_cache[category]
         for group in groups:
             if group.startswith(('research', 'deposit', 'intake', 'grp')):
                 storage = get_group_data_sizes(ctx, group, date_reference)
                 group_storage[group].append(storage[3])
 
-    all_storage = []
-    for group in group_storage:
-        all_storage.append({'category': group_catdata[group]['category'],
-                            'subcategory': group_catdata[group]['subcategory'],
-                            'groupname': group,
-                            'storage': group_storage[group]})
+    all_storage = [
+        {
+            'category': group_catdata[group]['category'],
+            'subcategory': group_catdata[group]['subcategory'],
+            'groupname': group,
+            'storage': group_storage[group]
+        }
+        for group in group_storage
+    ]
 
     return {'storage': all_storage, 'dates': storage_dates}
 
@@ -371,37 +367,12 @@ def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups:
     if search_groups:
         search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
 
+    group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
+
     for category in categories:
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_GROUP_NAME like 'research-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            groupName = row[0]
-            groups.append(groupName)
-
-        iter = genquery.row_iterator(
-            "USER_NAME",
-            "USER_GROUP_NAME like 'deposit-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            groupName = row[0]
-            groups.append(groupName)
-
-        iter = genquery.row_iterator(
-            "USER_NAME",
-            "USER_GROUP_NAME like 'intake-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            groupName = row[0]
-            groups.append(groupName)
-
-        iter = genquery.row_iterator(
-            "USER_NAME",
-            "USER_GROUP_NAME like 'grp-%%' " + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            group_filter + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
         for row in iter:
