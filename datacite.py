@@ -12,7 +12,7 @@ import requests
 from util import *
 
 
-def metadata_post(payload: Dict) -> int:
+def metadata_post(payload: Dict) -> requests.Response:
     """Register DOI metadata with DataCite."""
     url = "{}/dois".format(config.datacite_rest_api_url)
     auth = (config.datacite_username, config.datacite_password)
@@ -28,7 +28,7 @@ def metadata_post(payload: Dict) -> int:
     return response
 
 
-def metadata_put(doi: str, payload: str) -> int:
+def metadata_put(doi: str, payload: str) -> requests.Response:
     """Update metadata with DataCite."""
     url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -44,7 +44,7 @@ def metadata_put(doi: str, payload: str) -> int:
     return response
 
 
-def metadata_get(doi: str) -> int:
+def metadata_get(doi: str) -> requests.Response:
     """Check with DataCite if DOI is available."""
     url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
     auth = (config.datacite_username, config.datacite_password)
