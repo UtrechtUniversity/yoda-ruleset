@@ -71,6 +71,7 @@ avs_success_data_package_multiversion_first = {
     "org_publication_anonymousAccess": "yes",
     "org_publication_approval_actor": "datamanager#tempZone",
     "org_publication_baseDOI": "10.00012/UU01-X0GU3S",
+    "org_publication_baseDOIMinted": "yes",
     "org_publication_baseRandomId": "X0GU3S",
     "org_publication_combiJsonPath": "/tempZone/yoda/publication/T8D8QU-combi.json",
     "org_publication_dataCiteJsonPath": "/tempZone/yoda/publication/T8D8QU-dataCite.json",
