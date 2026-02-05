@@ -7,10 +7,11 @@
 #                       and add prefix version to DOIAvailable and DOI Minted variables.
 # modify_basedoiminted: If True, this script will copy baseDOIMinted attribute value from new version
 #                       to previous version of data package.
-# 
+# package:              If a data package is specified, this script will perform the above operations 
+#                       only on data packages related to it. If none is specified, operations will
+#                       be performed on all data packages in the zone where the script is executed from.
 #
-# irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/transform-existing-publications.r 
-# '*modify_prefix=False' '*modify_basedoiminted=True'
+# irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/transform-existing-publications.r '*modify_prefix=False' '*modify_basedoiminted=True' '*package=/path/to/collection'
 # 
 import subprocess
 import genquery
@@ -50,7 +51,7 @@ def prefix_transformation(zone, callback):
         subprocess.call(["imeta", "mod", "-C", row[0], row[1], row[2], "n:{}".format(attr_name), "v:{}".format(row[2])])
 
 
-def datapackages_and_versions(zone, callback):
+def datapackages_and_versions(zone, coll_name, callback):
     """Get published data packages and their newer version stored in metadata. 
 
     :param zone:     iRODS zone
@@ -59,12 +60,20 @@ def datapackages_and_versions(zone, callback):
     :returns: List of relevant data packages
     """
     package_list = []
-    
-    datapackages = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME = '{}publication_next_version'".format(zone, constants.UUORGMETADATAPREFIX),
-        genquery.AS_LIST,
-        callback) 
+
+    # If a collection was specified, query data packages related to it; if not, query data packages in the whole zone
+    if coll_name == '':
+        datapackages = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_VALUE",
+            "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME = '{}publication_next_version'".format(zone, constants.UUORGMETADATAPREFIX),
+            genquery.AS_LIST,
+            callback)
+    else: 
+        datapackages = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}publication_next_version'".format(coll_name, constants.UUORGMETADATAPREFIX),
+            genquery.AS_LIST,
+            callback)
 
     # Create list with placeholders for baseDOIMinted values
     for row in datapackages:
@@ -129,19 +138,30 @@ def basedoiminted_correction(zone, list, callback):
 def main(rule_args, callback, rei):
     modify_prefix = global_vars["*modify_prefix"]
     modify_basedoiminted = global_vars["*modify_basedoiminted"]
+    package = global_vars["*package"]
 
+    datapackages = []
     zone = session_vars.get_map(rei)['client_user']['irods_zone']
 
-    if modify_prefix == 'True':
-        try:
-            prefix_transformation(zone, callback)
-        except Exception as e:
-            callback.writeLine("stdout", "prefix_transformation: Error encountered while modifying prefix for existing publications - {}".format(e))
+    # Verify existence of a data package if one is specified
+    if package != '' and len(list(genquery.Query(callback, "COLL_ID", f"COLL_NAME = '{package}'"))) <= 0:
+        callback.writeLine("stdout", "Specified collection was not found.")
+    else:
+        datapackages = datapackages_and_versions(zone, package, callback)
 
-    if modify_basedoiminted == 'True':
-        datapackages = datapackages_and_versions(zone, callback)
-        basedoiminted_correction(zone, datapackages, callback)
+    # If data packages were found, transform AVUs
+    if datapackages:
+        if modify_prefix == 'True':
+            try:
+                prefix_transformation(zone, callback)
+            except Exception as e:
+                callback.writeLine("stdout", "prefix_transformation: Error encountered while modifying prefix for existing publications - {}".format(e))
+
+        if modify_basedoiminted == 'True':
+            basedoiminted_correction(zone, datapackages, callback)
+    else:
+        callback.writeLine("stdout", "No data packages were found.")
 
 
-INPUT *modify_prefix=False, *modify_basedoiminted=True
+INPUT *modify_prefix=False, *modify_basedoiminted=True, *package=
 OUTPUT ruleExecOut
