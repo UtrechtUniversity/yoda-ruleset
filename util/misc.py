@@ -49,13 +49,12 @@ def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
 
     # Define additional set of AVUs with more than one version of publication
     avu_names_version_suffix = {
-        'previous_version', 'baseDOI', 'baseRandomId',
-        'baseDOIMinted'
+        'baseDOI', 'baseDOIMinted', 'baseRandomId', 'previous_version'
     }
 
     # Define additional set of AVUs expected for the first version of a publication, when there are multiple versions
     avu_names_first_version_suffix = {
-        'baseRandomId', 'baseDOI', 'next_version'
+        'baseDOI', 'baseDOIMinted', 'baseRandomId', 'next_version'
     }
 
     # for the second version, all we need is next_version in addition to avu_names_version_suffix
