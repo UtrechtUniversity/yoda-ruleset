@@ -381,22 +381,24 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: s
 
     try:
         if send_method == 'post':
-            httpCode = datacite.metadata_post(datacite_json)
+            response = datacite.metadata_post(datacite_json)
         else:
-            httpCode = datacite.metadata_put(doi, datacite_json)
+            response = datacite.metadata_put(doi, datacite_json)
 
-        if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
+        http_code = response.status_code
+
+        if (send_method == 'post' and http_code == 201) or (send_method == 'put' and http_code == 200):
             publication_state["dataCiteMetadataPosted"] = "yes"
-        elif httpCode in [401, 403, 500, 503, 504]:
+        elif http_code in [401, 403, 500, 503, 504]:
             # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-            log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            log.write(ctx, f"post_metadata_to_datacite: HTTP code {http_code} received. Operation will be retried later. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Retry"
         else:
-            log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            log.write(ctx, f"post_metadata_to_datacite: HTTP code {http_code} received. Unrecoverable error. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
     except ReadTimeout:
         # DataCite timeout.
-        log.write(ctx, "post_metadata_to_datacite: timeout received. Will be retried later")
+        log.write(ctx, "post_metadata_to_datacite: DataCite timeout received. Operation will be retried later.")
         publication_state["status"] = "Retry"
 
 
@@ -412,7 +414,7 @@ def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> No
 
     try:
         # post the DOI only
-        httpCode = datacite.metadata_post({
+        response = datacite.metadata_post({
             'data': {
                 'type': 'dois',
                 'attributes': {
@@ -421,18 +423,20 @@ def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> No
             }
         })
 
-        if httpCode == 201:
+        http_code = response.status_code
+
+        if http_code == 201:
             publication_state["dataCiteMetadataPosted"] = "no"
-        elif httpCode in [401, 403, 500, 503, 504]:
+        elif http_code in [401, 403, 500, 503, 504]:
             # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-            log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            log.write(ctx, f"post_draft_doi_to_datacite: HTTP code {http_code} received. Operation will be retried later. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Retry"
         else:
-            log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            log.write(ctx, f"post_draft_doi_to_datacite: HTTP code {http_code} received. Unrecoverable error. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
     except ReadTimeout:
         # DataCite timeout.
-        log.write(ctx, "post_draft_doi_to_datacite: timeout received. Will be retried later")
+        log.write(ctx, "post_draft_doi_to_datacite: DataCite timeout received. Operation will be retried later.")
         publication_state["status"] = "Retry"
 
 
@@ -446,24 +450,26 @@ def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, ty
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
     try:
-        httpCode = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
+        response = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
 
-        if httpCode == 200:
+        http_code = response.status_code
+
+        if http_code == 200:
             publication_state["dataCiteMetadataPosted"] = "yes"
-        elif httpCode in [401, 403, 412, 500, 503, 504]:
+        elif http_code in [401, 403, 412, 500, 503, 504]:
             # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-            log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+            log.write(ctx, f"remove_metadata_from_datacite: HTTP code {http_code} received. Operation will be retried later. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Retry"
-        elif httpCode == 404:
+        elif http_code == 404:
             # Invalid DOI
-            log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
+            log.write(ctx, f"remove_metadata_from_datacite: HTTP code {http_code}. Invalid DOI. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
         else:
-            log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            log.write(ctx, f"remove_metadata_from datacite: HTTP code {http_code} received. Unrecoverable error. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
     except ReadTimeout:
         # DataCite timeout.
-        log.write(ctx, "remove_metadata_from_datacite: timeout received. Will be retried later")
+        log.write(ctx, "remove_metadata_from_datacite: DataCite timeout received. Operation will be retried later.")
         publication_state["status"] = "Retry"
 
 
@@ -477,23 +483,25 @@ def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
     try:
-        httpCode = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
+        response = datacite.metadata_put(publication_state[type_flag + "DOI"], payload)
 
-        if httpCode == 200:  # 201:
+        http_code = response.status_code
+
+        if http_code == 200:  # 201:
             publication_state[type_flag + "DOIMinted"] = "yes"
-        elif httpCode in [401, 403, 412, 500, 503, 504]:
+        elif http_code in [401, 403, 412, 500, 503, 504]:
             # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-            log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
+            log.write(ctx, f"mint_doi: HTTP code {http_code} received. Operation could be retried later. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Retry"
-        elif httpCode == 400:
-            log.write(ctx, "mint_doi: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix")
+        elif http_code == 400:
+            log.write(ctx, f"mint_doi: HTTP code {http_code} received. Request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
         else:
-            log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+            log.write(ctx, f"mint_doi: HTTP code {http_code} received. Unrecoverable error. {datacite.get_errors(response.json())}")
             publication_state["status"] = "Unrecoverable"
     except ReadTimeout:
         # DataCite timeout.
-        log.write(ctx, "mint_doi: timeout received. Will be retried later")
+        log.write(ctx, "mint_doi: DataCite timeout received. Operation will be retried later.")
         publication_state["status"] = "Retry"
 
 
@@ -722,7 +730,9 @@ def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag
     doi = publication_state[type_flag + "DOI"]
 
     try:
-        http_code = datacite.metadata_get(doi)
+        response = datacite.metadata_get(doi)
+
+        http_code = response.status_code
 
         if http_code == 404:
             publication_state[type_flag + "DOIAvailable"] = "yes"
@@ -735,7 +745,7 @@ def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag
             publication_state["status"] = "Retry"
     except ReadTimeout:
         # DataCite timeout.
-        log.write(ctx, "check_doi_availability: timeout received. Will be retried later")
+        log.write(ctx, "check_doi_availability: DataCite timeout received. Operation will be retried later.")
         publication_state["status"] = "Retry"
 
 
