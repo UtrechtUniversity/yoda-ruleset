@@ -7,16 +7,17 @@
 #                       and add prefix version to DOIAvailable and DOI Minted variables.
 # modify_basedoiminted: If True, this script will copy baseDOIMinted attribute value from new version
 #                       to previous version of data package.
-# package:              If a data package is specified, this script will perform the above operations 
+# package:              If a data package is specified, this script will perform the above operations
 #                       only on data packages related to it. If none is specified, operations will
 #                       be performed on all data packages in the zone where the script is executed from.
 #
 # irule -r irods_rule_engine_plugin-python-instance -F /etc/irods/yoda-ruleset/tools/transform-existing-publications.r '*modify_prefix=False' '*modify_basedoiminted=True' '*package=/path/to/collection'
-# 
+#
 import subprocess
 import genquery
 import session_vars
 import constants
+
 
 def prefix_transformation(zone, callback):
     """Replace 'yoda' prefix with 'version'. Add 'version' prefix to
@@ -32,14 +33,14 @@ def prefix_transformation(zone, callback):
         "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
         "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME LIKE '{}publication_yoda%'".format(zone, org_prefix),
         genquery.AS_TUPLE,
-        callback) 
+        callback)
 
     # Add 'version' prefix to DOIAvailable and DOIMinted AVUs
     add_prefix = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
         "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME in ('{p}publication_DOIAvailable', '{p}publication_DOIMinted')".format(zone, p=org_prefix),
         genquery.AS_TUPLE,
-        callback) 
+        callback)
 
     for row in change_prefix:
         callback.writeLine("stdout", "Changing 'yoda' prefix to 'version' for collection: {}".format(row[0]))
@@ -52,10 +53,11 @@ def prefix_transformation(zone, callback):
 
 
 def datapackages_and_versions(zone, coll_name, callback):
-    """Get published data packages and their newer version stored in metadata. 
+    """Get published data packages and their newer version stored in metadata.
 
-    :param zone:     iRODS zone
-    :param callback: iRODS callback
+    :param zone:        iRODS zone
+    :param coll_name:   iRODS collection name (optional)
+    :param callback:    iRODS callback
 
     :returns: List of relevant data packages
     """
@@ -68,7 +70,7 @@ def datapackages_and_versions(zone, coll_name, callback):
             "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME = '{}publication_next_version'".format(zone, constants.UUORGMETADATAPREFIX),
             genquery.AS_LIST,
             callback)
-    else: 
+    else:
         datapackages = genquery.row_iterator(
             "COLL_NAME, META_COLL_ATTR_VALUE",
             "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}publication_next_version'".format(coll_name, constants.UUORGMETADATAPREFIX),
@@ -106,8 +108,8 @@ def basedoiminted_value(zone, package, callback):
 
 
 def basedoiminted_correction(zone, list, callback):
-    """ Get the baseDOIMinted attribute and value from previous and new version 
-    of data package. If the previous version does not have baseDOIMinted, get the 
+    """ Get the baseDOIMinted attribute and value from previous and new version
+    of data package. If the previous version does not have baseDOIMinted, get the
     value from new version and add it to metadata.
 
     :param zone:     iRODS zone
@@ -128,7 +130,7 @@ def basedoiminted_correction(zone, list, callback):
 
         if row[1] == '':
             callback.writeLine("stdout", "Modify baseDOIMinted attribute for collection: {}".format(row[0]))
-            try:                
+            try:
                 subprocess.call(["imeta", "add", "-C", row[0], "{}publication_baseDOIMinted".format(constants.UUORGMETADATAPREFIX), row[3]])
                 transformed_data_packages.append(row[0])
             except Exception as e:
