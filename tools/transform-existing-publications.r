@@ -23,8 +23,9 @@ def prefix_transformation(zone, coll_name, callback):
     """Replace 'yoda' prefix with 'version'. Add 'version' prefix to
     DOIAvailable and DOIMinted AVUs.
 
-    :param zone:          iRODS zone
-    :param callback:      iRODS callback
+    :param zone:        iRODS zone
+    :param coll_name:   iRODS collection name (optional)
+    :param callback:    iRODS callback
     """
     # Check if specified package (or any package in current zone, if none is specified) still has 'yoda' prefixes or DOIAvailable / DOIMinted AVUs
     if coll_name == '':
