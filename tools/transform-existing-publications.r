@@ -19,33 +19,45 @@ import session_vars
 import constants
 
 
-def prefix_transformation(zone, callback):
+def prefix_transformation(zone, coll_name, callback):
     """Replace 'yoda' prefix with 'version'. Add 'version' prefix to
     DOIAvailable and DOIMinted AVUs.
 
     :param zone:          iRODS zone
     :param callback:      iRODS callback
     """
-    org_prefix = constants.UUORGMETADATAPREFIX
+    # Check if specified package (or any package in current zone, if none is specified) still has 'yoda' prefixes or DOIAvailable / DOIMinted AVUs
+    if coll_name == '':
+        change_prefix = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME LIKE '{}publication_yoda%'".format(zone, constants.UUORGMETADATAPREFIX),
+            genquery.AS_TUPLE,
+            callback)
 
-    # Changing yoda prefix -> version
-    change_prefix = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME LIKE '{}publication_yoda%'".format(zone, org_prefix),
-        genquery.AS_TUPLE,
-        callback)
+        add_prefix = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME in ('{p}publication_DOIAvailable', '{p}publication_DOIMinted')".format(zone, p=constants.UUORGMETADATAPREFIX),
+            genquery.AS_TUPLE,
+            callback)
+    else:
+        change_prefix = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME LIKE '{}publication_yoda%'".format(coll_name, constants.UUORGMETADATAPREFIX),
+            genquery.AS_TUPLE,
+            callback)
 
-    # Add 'version' prefix to DOIAvailable and DOIMinted AVUs
-    add_prefix = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "COLL_ZONE_NAME = '{}' AND META_COLL_ATTR_NAME in ('{p}publication_DOIAvailable', '{p}publication_DOIMinted')".format(zone, p=org_prefix),
-        genquery.AS_TUPLE,
-        callback)
+        add_prefix = genquery.row_iterator(
+            "COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME in ('{p}publication_DOIAvailable', '{p}publication_DOIMinted')".format(coll_name, p=constants.UUORGMETADATAPREFIX),
+            genquery.AS_TUPLE,
+            callback)
 
+    # Replace 'yoda' prefix with 'version'
     for row in change_prefix:
         callback.writeLine("stdout", "Changing 'yoda' prefix to 'version' for collection: {}".format(row[0]))
         subprocess.call(["imeta", "mod", "-C", row[0], row[1], row[2], "n:{}".format(row[1].replace("yoda", "version")), "v:{}".format(row[2])])
 
+    # Add 'version' prefix to DOIAvailable and DOIMinted AVUs
     for row in add_prefix:
         callback.writeLine("stdout", "Adding 'version' prefix to DOIAvailable and DOIMinted AVUs for collection: {}".format(row[0]))
         attr_name = row[1].rsplit('_', 1)[0] + "_version" + row[1].split('_')[-1]
@@ -63,7 +75,7 @@ def datapackages_and_versions(zone, coll_name, callback):
     """
     package_list = []
 
-    # If a collection was specified, query data packages related to it; if not, query data packages in the whole zone
+    # If a collection is specified, query its newer version (if exists); if not, query all data packages with newer versions in current zone
     if coll_name == '':
         datapackages = genquery.row_iterator(
             "COLL_NAME, META_COLL_ATTR_VALUE",
@@ -142,27 +154,21 @@ def main(rule_args, callback, rei):
     modify_basedoiminted = global_vars["*modify_basedoiminted"]
     package = global_vars["*package"]
 
-    datapackages = []
     zone = session_vars.get_map(rei)['client_user']['irods_zone']
 
     # Verify existence of a data package if one is specified
     if package != '' and len(list(genquery.Query(callback, "COLL_ID", f"COLL_NAME = '{package}'"))) <= 0:
         callback.writeLine("stdout", "Specified collection was not found.")
     else:
-        datapackages = datapackages_and_versions(zone, package, callback)
-
-    # If data packages were found, transform AVUs
-    if datapackages:
         if modify_prefix == 'True':
             try:
-                prefix_transformation(zone, callback)
+                prefix_transformation(zone, package, callback)
             except Exception as e:
                 callback.writeLine("stdout", "prefix_transformation: Error encountered while modifying prefix for existing publications - {}".format(e))
 
         if modify_basedoiminted == 'True':
+            datapackages = datapackages_and_versions(zone, package, callback)
             basedoiminted_correction(zone, datapackages, callback)
-    else:
-        callback.writeLine("stdout", "No data packages were found.")
 
 
 INPUT *modify_prefix=False, *modify_basedoiminted=True, *package=
