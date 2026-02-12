@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, List
 
 import genquery
+import time
 
 import groups
 from util import *
@@ -39,6 +40,9 @@ def api_resource_browse_group_data(ctx: rule.Context,
 
     :returns: Dict with paginated collection contents
     """
+    log.write(ctx, "Entering api_resource_browse_group_data()...")
+    tstart_resource_browse_group_data = time.perf_counter()
+
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
@@ -48,19 +52,43 @@ def api_resource_browse_group_data(ctx: rule.Context,
         search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups[:63])
 
     group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
-    if user.is_admin(ctx):
-        groups = list(genquery.Query(ctx, "USER_GROUP_NAME", group_filter + search_sql + "AND USER_ZONE = '{}'".format(user_zone)))
-    else:
-        categories = get_categories(ctx)
-        groups_dm = get_groups_on_categories(ctx, categories, search_groups)
-        groups_member = list(genquery.Query(ctx, "USER_GROUP_NAME", group_filter + search_sql + "AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone)))
-        groups = list(set(groups_member + groups_dm))
+    metadata_filter = "AND META_USER_ATTR_NAME like '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
+    zone_filter = "AND USER_ZONE = '{}' ".format(user_zone)
 
-    # groups.sort()
+    # Query all data sizes
+    stats_query = genquery.Query(ctx,
+                          ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
+                          group_filter + search_sql + metadata_filter + zone_filter,
+                          output=genquery.AS_LIST)
+
     group_list = []
-    for groupname in groups:
-        data_size = get_group_data_sizes(ctx, groupname)
-        group_list.append([groupname, data_size])
+    if user.is_admin(ctx):
+        # Process data sizes for sorting
+        for row in list(stats_query):
+            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+            temp = jsonutil.parse(row[0].replace("'", '"'))
+            
+            # [group_name [research_storage, vault_storage, revision_storage, total_storage]]
+            data_size = [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
+            group_list.append([row[2], data_size])
+    else:
+        # Get groups that user is part of
+        groups_query = genquery.Query(ctx,
+                                    "USER_GROUP_NAME",
+                                    "USER_NAME = '{}'".format(user_name),
+                                    output=genquery.AS_LIST)
+        user_groups = [row[0] for row in groups_query]
+
+        # Process data sizes for sorting
+        for row in list(stats_query):
+            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+            temp = jsonutil.parse(row[0].replace("'", '"'))
+
+            # Filter out groups that user is not part of
+            if row[2] in user_groups:
+                # [group_name [research_storage, vault_storage, revision_storage, total_storage]]
+                data_size = [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
+                group_list.append([row[2], data_size])
 
     # Sort the list as requested by user
     sort_reverse = sort_order == 'desc'
@@ -75,6 +103,10 @@ def api_resource_browse_group_data(ctx: rule.Context,
         members = group.members(ctx, group_data[0])
         group_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
 
+    tend_resource_browse_group_data = time.perf_counter()
+    ttotal_resource_browse_group_data = (tend_resource_browse_group_data - tstart_resource_browse_group_data)
+    log.write(ctx, f"api_resource_browse_group_data() time to execute: {ttotal_resource_browse_group_data} seconds")  
+
     return {'total': len(group_list), 'items': group_list_sorted}
 
 
@@ -87,6 +119,8 @@ def api_resource_full_year_differentiated_group_storage(ctx: rule.Context, group
 
     :returns: API status
     """
+    log.write(ctx, "Entering api_resource_full_year_differentiated_group_storage()...")
+
     # Check permissions for this function
     # Member of this group?
     member_type = groups.user_role(ctx, user.full_name(ctx), group_name)
@@ -132,6 +166,9 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: Storage stats of last month for a list of categories
     """
+    log.write(ctx, "Entering api_resource_category_stats()...")
+    tstart_resource_category_stats = time.perf_counter()
+
     categories = get_categories(ctx)
 
     # Non-admin users don't have access to category storage statistics.
@@ -140,10 +177,10 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
         return {'categories': [], 'external_filter': ''}
 
     # Retrieve storage statistics of groups.
-    iter = list(genquery.Query(ctx,
-                ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
-                "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
-                output=genquery.AS_LIST))
+    iter = genquery.Query(ctx,
+                        ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
+                        "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                        output=genquery.AS_LIST)
 
     # Go through storage statistics of groups.
     storage = {}
@@ -163,10 +200,10 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
             storage[category]['total'] += total
 
     # Retrieve groups and their members.
-    iter = list(genquery.Query(ctx,
-                ['USER_GROUP_NAME', 'USER_NAME'],
-                "USER_TYPE != 'rodsgroup'",
-                output=genquery.AS_LIST))
+    iter = genquery.Query(ctx,
+                        ['USER_GROUP_NAME', 'USER_NAME'],
+                        "USER_TYPE != 'rodsgroup'",
+                        output=genquery.AS_LIST)
 
     # Calculate number of members per type per group.
     members = {}
@@ -219,6 +256,10 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
                         'users': {'internals': len(instance_totals['internals']),
                                   'externals': len(instance_totals['externals'])}})
 
+    tend_resource_category_stats = time.perf_counter()
+    ttotal_resource_category_stats = (tend_resource_category_stats - tstart_resource_category_stats)
+    log.write(ctx, f"api_resource_category_stats() time to execute: {ttotal_resource_category_stats} seconds")    
+
     return {'categories': sorted(all_storage, key=lambda d: d['category']),
             'external_filter': ', '.join(config.external_users_domain_filter)}
 
@@ -237,6 +278,9 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: API status
     """
+    log.write(ctx, "Entering api_resource_monthly_category_stats()...")
+    tstart_resource_monthly_category_stats = time.perf_counter()
+
     current_month = datetime.now().month
     current_year = datetime.now().year
 
@@ -319,6 +363,10 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         }
         for group in group_storage
     ]
+
+    tend_resource_monthly_category_stats = time.perf_counter()
+    ttotal_resource_monthly_category_stats = (tend_resource_monthly_category_stats - tstart_resource_monthly_category_stats)
+    log.write(ctx, f"api_resource_monthly_category_stats time to execute: {ttotal_resource_monthly_category_stats} seconds")
 
     return {'storage': all_storage, 'dates': storage_dates}
 
