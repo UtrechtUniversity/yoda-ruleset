@@ -17,6 +17,8 @@ import sys
 from collections import OrderedDict
 from io import StringIO
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 import psutil
 from irods.column import In
 from irods.exception import NetworkException
@@ -77,7 +79,34 @@ def get_irods_environment(irods_environment_file="/var/lib/irods/.irods/irods_en
         return json.load(f)
 
 
-def setup_session(irods_environment_config, ca_file="/etc/pki/tls/certs/chain.crt"):
+def get_ca_file():
+    for standard_location in ["/etc/irods/localhost_and_chain.crt",
+                              "/etc/ssl/certs/ca-certificates.crt",
+                              "/etc/pki/tls/certs/ca-bundle.crt"]:
+        if os.path.isfile(standard_location):
+            if is_irods_certificate(standard_location) and not is_self_signed(standard_location):
+                # If the certificate is not self-signed we should
+                # use the default CA location instead
+                continue
+            else:
+                return standard_location
+
+    print("Error: could not find CA bundle in a standard location. You will need to configure it (see the README file for details)")
+    sys.exit(1)
+
+
+def is_irods_certificate(path: str) -> bool:
+    return path == "/etc/irods/localhost_and_chain.crt"
+
+
+def is_self_signed(path: str) -> bool:
+    with open(path, "rb") as f:
+        cert_data = f.read()
+    cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+    return cert.subject == cert.issuer
+
+
+def setup_session(irods_environment_config):
     """Use irods environment files to configure a iRODSSession."""
 
     irodsA = os.path.expanduser("~/.irods/.irodsA")
@@ -87,7 +116,7 @@ def setup_session(irods_environment_config, ca_file="/etc/pki/tls/certs/chain.cr
 
     ssl_context = ssl.create_default_context(
         purpose=ssl.Purpose.SERVER_AUTH,
-        cafile=ca_file,
+        cafile=get_ca_file(),
         capath=None,
         cadata=None)
     ssl_settings = {'client_server_negotiation': 'request_server_negotiation',
@@ -193,18 +222,8 @@ def main():
     args = parse_args()
     env = get_irods_environment()
 
-    for ca_file_option in ["/etc/irods/localhost_and_chain.crt",
-                           "/etc/ssl/certs/ca-certificates.crt",
-                           "/etc/pki/tls/certs/ca-bundle.crt"]:
-        if os.path.isfile(ca_file_option):
-            ca_file = ca_file_option
-            break
-    else:
-        print("Error: could not find CA chain file.", file=sys.stderr)
-        sys.exit(1)
-
     try:
-        session = setup_session(env, ca_file=ca_file)
+        session = setup_session(env)
         override_free_dict = parse_cs_values(args.override_free)
         override_total_dict = parse_cs_values(args.override_total)
         local_ufs_resources = get_local_ufs_resources(session)
