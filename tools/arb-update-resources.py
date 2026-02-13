@@ -186,7 +186,7 @@ def call_rule_update_misc(session):
 def is_on_provider():
     with open('/etc/irods/server_config.json', 'r') as f:
         config = json.load(f)
-        return config["icat_host"] == get_hostname()
+        return "icat_host" in config and config["icat_host"] == get_hostname()
 
 
 def main():
