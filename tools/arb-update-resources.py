@@ -114,10 +114,18 @@ def get_local_ufs_resources(session):
 
 def process_ufs_resources(session, resource_names, override_free_dict, override_total_dict, verbose_mode):
     for resource_name in resource_names:
+        if resource_name == "bundleResc":
+            # Silently ignore bundleResc resource, because it is not a regular UFS resource
+            continue
+
         if verbose_mode:
             print("Processing resource {} ...".format(resource_name))
 
         resource = session.resources.get(resource_name)
+
+        if not os.path.exists(resource.vault_path):
+            print(f"Skipping update of resource {resource_name}, because vault path {resource.vault_path} does not exist.")
+            continue
 
         free_space = override_free_dict.get(resource_name, get_volume_free(resource.vault_path))
         total_space = override_total_dict.get(resource_name, get_volume_total(resource.vault_path))
