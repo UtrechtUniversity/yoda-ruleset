@@ -4,7 +4,8 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from datetime import datetime
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 from typing import Dict, List
 
 import genquery
@@ -49,17 +50,16 @@ def api_resource_browse_group_data(ctx: rule.Context,
     search_sql = ""
     if search_groups:
         # The maximum allowed number of characters in the group name is 63.
-        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups[:63])
+        search_sql = "AND USER_GROUP_NAME LIKE '%%{}%%' ".format(search_groups[:63])
 
-    group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
-    metadata_filter = "AND META_USER_ATTR_NAME like '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
+    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
+    metadata_filter = "AND META_USER_ATTR_NAME LIKE '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
     zone_filter = "AND USER_ZONE = '{}' ".format(user_zone)
 
     # Query all data sizes
-    stats_query = genquery.Query(ctx,
+    stats_query = list(genquery.Query(ctx,
                           ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
-                          group_filter + search_sql + metadata_filter + zone_filter,
-                          output=genquery.AS_LIST)
+                          group_filter + search_sql + metadata_filter + zone_filter))
 
     group_list = []
     if user.is_admin(ctx):
@@ -281,27 +281,25 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     log.write(ctx, "Entering api_resource_monthly_category_stats()...")
     tstart_resource_monthly_category_stats = time.perf_counter()
 
-    current_month = datetime.now().month
-    current_year = datetime.now().year
+    user_name = user.name(ctx)
+    user_zone = user.zone(ctx)
+    is_admin = user.is_admin(ctx)
 
-    # Initialize to prevent errors in log when no data has been registered yet.
-    min_year = -1
-    min_month = -1
+    current_date = date(datetime.now().year, datetime.now().month, datetime.now().day)
 
-    # Find minimal registered date.
-    iter = list(genquery.Query(ctx, ['ORDER(META_USER_ATTR_NAME)'],
-                               "META_USER_ATTR_NAME like '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+    # Find minimal registered date
+    iter = list(genquery.Query(ctx, 
+                               ['ORDER(META_USER_ATTR_NAME)'],
+                               "META_USER_ATTR_NAME LIKE '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
                                offset=0, limit=1, output=genquery.AS_LIST))
 
-    for row in iter:
-        min_year = int(row[0][-10:-6])
-        min_month = int(row[0][-5:-3])
-
-    if min_month == -1:
-        # No minimum date found; stop further processing.
+    if iter:  # If item found, save min date
+        min_date = date(int(iter[0][0][-10:-6]), int(iter[0][0][-5:-3]), int(iter[0][0][-2:]))
+    else:  # No minimum date found; stop further processing
         return {'storage': [], 'dates': []}
 
-    # Prepare storage data
+    ### Prepare storage data ###
+
     # Create dict with all groups that will contain list of storage values corresponding to complete range from minimal date till now.
     group_storage = {}
 
@@ -311,48 +309,93 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     # A group always has 1 distinct category and 1 distinct subcateory
     group_catdata = {}
 
-    # Initialization.
-    categories = get_categories(ctx)
-    groups_cache = {category: get_groups_on_categories(ctx, [category]) for category in categories}
+    ### Initialization ###
 
-    for category in categories:
-        for group in groups_cache[category]:
-            if group.startswith(('research', 'deposit', 'intake', 'grp')):
+    # If user not admin, get groups that user is part of
+    user_groups = []
+    if not is_admin:
+        groups_query = genquery.Query(ctx,
+                                    "USER_GROUP_NAME",
+                                    "USER_NAME = '{}' AND USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%'".format(user_name),
+                                    output=genquery.AS_LIST)
+        user_groups = [row[0] for row in groups_query]
+    else:
+        groups_query = genquery.Query(ctx,
+                                    "USER_GROUP_NAME",
+                                    "USER_ZONE = '{}' AND USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%'".format(user_zone),
+                                    output=genquery.AS_LIST)
+        user_groups = [row[0] for row in groups_query]
+
+    # Get category info and initialize group data
+    cat_query = genquery.Query(ctx,
+                                ["ORDER(USER_GROUP_NAME)", "META_USER_ATTR_NAME", "META_USER_ATTR_VALUE"],
+                                "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' AND META_USER_ATTR_NAME IN ('category', 'subcategory')",
+                                output=genquery.AS_LIST)
+
+    category = ''
+    subcategory = ''
+    for row in cat_query:
+        group = row[0]
+        attr_name = row[1]
+        attr_value = row[2]
+        
+        if attr_name == 'category':
+            category = attr_value
+
+        if attr_name == 'subcategory':
+            subcategory = attr_value
+
+        if is_admin:
+            group_storage[group] = []
+            group_catdata[group] = {
+                'category': category,
+                'subcategory': subcategory
+            }
+        else:
+            if group in user_groups:
                 group_storage[group] = []
                 group_catdata[group] = {
                     'category': category,
-                    'subcategory': get_group_category_info(ctx, group)['subcategory']
+                    'subcategory': subcategory
                 }
 
+    # Get full storage data info
+    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
+    metadata_filter = "AND META_USER_ATTR_NAME LIKE '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
+    zone_filter = "AND USER_ZONE = '{}' ".format(user_zone)
+
+    stats_query = list(genquery.Query(ctx,
+                          ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
+                          group_filter + metadata_filter + zone_filter))
+
     # Loop from earliest data to now and find storage for each group/date combination
-    while min_month != current_month or min_year != current_year:
-        date_reference = f"{min_year}_{min_month:02}"
+    record_count = 0
+    while min_date <= current_date:
+        date_reference = f"{min_date.year}_{min_date.month:02}"
         storage_dates.append(date_reference)
+        attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + date_reference
 
-        for category in categories:
-            # for all groups in category
-            groups = groups_cache[category]
-            for group in groups:
-                if group.startswith(('research', 'deposit', 'intake', 'grp')):
-                    storage = get_group_data_sizes(ctx, group, date_reference)
-                    group_storage[group].append(storage[3])
+        for row in stats_query:
+            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+            data_size = jsonutil.parse(row[0].replace("'", '"'))
+            storage_date = row[1]
+            group = row[2]
 
-        # Next time period based on month
-        min_month += 1
-        if min_month > 12:
-            min_month = 1
-            min_year += 1
+            # data_size: [category, research_storage, vault_storage, revision_storage, total_storage]
+            total_storage = data_size[4]
 
-    date_reference = f"{min_year}_{min_month:02}"
-    storage_dates.append(date_reference)
+            # If date reference matches storage date, append total storage value
+            if date_reference in storage_date:
+                group_storage[group].append(total_storage)
 
-    for category in categories:
-        # for all groups in category
-        groups = groups_cache[category]
-        for group in groups:
-            if group.startswith(('research', 'deposit', 'intake', 'grp')):
-                storage = get_group_data_sizes(ctx, group, date_reference)
-                group_storage[group].append(storage[3])
+        # Iterate all groups to initialize current month's data if there was no match in storage data
+        for group in user_groups:
+            if len(group_storage[group]) == record_count:
+                group_storage[group].append(0)                
+
+        # Increment time period by 1 month
+        min_date = min_date + relativedelta(months=+1)
+        record_count += 1
 
     all_storage = [
         {
