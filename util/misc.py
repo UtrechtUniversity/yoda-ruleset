@@ -1,6 +1,6 @@
 """Miscellaneous util functions."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import math
@@ -132,3 +132,9 @@ def remove_empty_objects(d: Dict) -> Dict:
     else:
         # Return the value because it is not a dict or list.
         return d
+
+
+def escape(unsafe: str) -> str:
+    """Escaping Special Characters for GenQuery2."""
+    safe = unsafe.replace("'", "''")
+    return safe

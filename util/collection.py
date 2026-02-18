@@ -4,7 +4,6 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import itertools
 import json
 from functools import reduce
 from typing import Iterable, List, Tuple
@@ -13,50 +12,73 @@ import genquery
 import irods_types
 
 import data_object
+import misc
 import msi
 import rule
 
 
 def exists(ctx: rule.Context, path: str) -> bool:
-    """Check if a collection with the given path exists."""
-    return len(list(genquery.row_iterator(
-               "COLL_ID", "COLL_NAME = '{}'".format(path),
-               genquery.AS_LIST, ctx))) > 0
+    """Check if a collection with the given path exists.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A collection path
+
+    :returns: Boolean indicating if collection exists
+    """
+    path = misc.escape(path)
+    return len(list(genquery.Query(
+                    ctx, "COLL_ID",
+                    f"COLL_NAME = '{path}'",
+                    output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))) > 0
 
 
 def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
-    """Find the owner of a collection. Returns (name, zone) or None."""
+    """Find the owner of a collection. Returns (name, zone) or None.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A collection path
+
+    :returns: Owner of colection or None
+    """
+    path = misc.escape(path)
     owners = list(genquery.row_iterator(
                   "COLL_OWNER_NAME, COLL_OWNER_ZONE",
-                  "COLL_NAME = '{}'".format(path),
+                  f"COLL_NAME = '{path}'",
                   genquery.AS_LIST, ctx))
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
 def is_empty(ctx: rule.Context, path: str) -> bool:
-    """Check if a collection contains any data objects."""
-    return (len(list(genquery.row_iterator(
-                     "DATA_ID",
-                     "COLL_NAME = '{}'".format(path),
-                     genquery.AS_LIST, ctx))) == 0
-            and len(list(genquery.row_iterator(
-                    "DATA_ID",
-                    "COLL_NAME like '{}/%'".format(path),
-                    genquery.AS_LIST, ctx))) == 0)
+    """Check if a collection contains any data objects.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A collection path
+
+    :returns: Boolean indicating if collection is empty
+    """
+    path = misc.escape(path)
+    return len(list(genquery.Query(
+                    ctx, "DATA_ID",
+                    f"COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'",
+                    output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2))) == 0
 
 
 def size(ctx: rule.Context, path: str) -> int:
-    """Get a collection's size in bytes."""
+    """Get a collection's size in bytes.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A collection path
+
+    :returns: Collection size in bytes
+    """
     def func(x: int, row: List) -> int:
         return x + int(row[1])
 
-    return reduce(func,
-                  itertools.chain(genquery.row_iterator("DATA_ID, DATA_SIZE",
-                                                        "COLL_NAME like '{}'".format(path),
-                                                        genquery.AS_LIST, ctx),
-                                  genquery.row_iterator("DATA_ID, DATA_SIZE",
-                                                        "COLL_NAME like '{}/%'".format(path),
-                                                        genquery.AS_LIST, ctx)), 0)
+    path = misc.escape(path)
+    return reduce(func, list(genquery.Query(
+                             ctx, "distinct DATA_ID, DATA_SIZE",
+                             f"COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'",
+                             output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)), 0)
 
 
 def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
@@ -74,11 +96,12 @@ def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
 
 def collection_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
     """Get a collection's collection count (the amount of collections within a collection)."""
-    return sum(1 for _ in genquery.row_iterator(
-               "COLL_ID",
-               "COLL_NAME like '{}/%'".format(path) if recursive else
-               "COLL_PARENT_NAME = '{}' AND COLL_NAME like '{}/%'".format(path, path),
-               genquery.AS_LIST, ctx))
+    path = misc.escape(path)
+    return sum(1 for _ in list(genquery.Query(
+                               ctx, "distinct COLL_ID",
+                               f"COLL_NAME like '{path}/%'" if recursive else
+                               f"COLL_PARENT_NAME = '{path}' AND COLL_NAME like '{path}/%'",
+                               output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)))
 
 
 def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
@@ -96,20 +119,12 @@ def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Ite
 
     :returns: List of all subcollections in a collection
     """
-
-    q_root = genquery.row_iterator("COLL_NAME",
-                                   "COLL_PARENT_NAME = '{}'".format(path),
-                                   genquery.AS_LIST, ctx)
-
-    if not recursive:
-        return (row[0] for row in q_root)
-
-    # Recursive? Return a generator combining both queries.
-    q_sub = genquery.row_iterator("COLL_NAME",
-                                  "COLL_PARENT_NAME like '{}/%'".format(path),
-                                  genquery.AS_LIST, ctx)
-
-    return (row[0] for row in itertools.chain(q_root, q_sub))
+    path = misc.escape(path)
+    return (row[0] for row in list(genquery.Query(
+                                   ctx, "distinct COLL_NAME",
+                                   f"COLL_PARENT_NAME = '{path}' OR COLL_PARENT_NAME like '{path}/%'" if recursive else
+                                   f"COLL_PARENT_NAME = '{path}'",
+                                   output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)))
 
 
 def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
@@ -131,19 +146,12 @@ def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Itera
     def to_absolute(row: List) -> str:
         return '{}/{}'.format(*row)
 
-    q_root = genquery.row_iterator("COLL_NAME, DATA_NAME",
-                                   "COLL_NAME = '{}'".format(path),
-                                   genquery.AS_LIST, ctx)
-
-    if not recursive:
-        return map(to_absolute, q_root)
-
-    # Recursive? Return a generator combining both queries.
-    q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
-                                  "COLL_NAME like '{}/%'".format(path),
-                                  genquery.AS_LIST, ctx)
-
-    return map(to_absolute, itertools.chain(q_root, q_sub))
+    path = misc.escape(path)
+    return map(to_absolute, list(genquery.Query(
+                                 ctx, "distinct COLL_NAME, DATA_NAME",
+                                 f"COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'" if recursive else
+                                 f"COLL_NAME = '{path}'",
+                                 output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)))
 
 
 def create(ctx: rule.Context, path: str, entire_tree: str = '') -> None:
@@ -173,11 +181,13 @@ def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -
     This may raise a error.UUError if the collection does not exist, or when
     the user does not have write permission.
     """
+    path_org = misc.escape(path_org)
+
     if not force:
         create(ctx, path_copy)
 
     for row in genquery.row_iterator("DATA_NAME",
-                                     "COLL_NAME = '{}'".format(path_org),
+                                     f"COLL_NAME = '{path_org}'",
                                      genquery.AS_LIST,
                                      ctx):
         data_obj = row[0]
@@ -187,7 +197,7 @@ def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -
                          force)
 
     for row in genquery.row_iterator("COLL_NAME",
-                                     "COLL_PARENT_NAME = '{}'".format(path_org),
+                                     f"COLL_PARENT_NAME = '{path_org}'",
                                      genquery.AS_LIST,
                                      ctx):
         coll = row[0]
@@ -237,14 +247,15 @@ def empty(ctx: rule.Context, path: str) -> None:
     :param ctx:   Combined type of a callback and rei struct
     :param path:  Path of collection to be emptied
     """
+    path = misc.escape(path)
     for row in genquery.row_iterator("DATA_NAME",
-                                     "COLL_NAME = '{}'".format(path),
+                                     f"COLL_NAME = '{path}'",
                                      genquery.AS_LIST,
                                      ctx):
         data_object.remove(ctx, f"{path}/{row[0]}")
 
     for row in genquery.row_iterator("COLL_NAME",
-                                     "COLL_PARENT_NAME = '{}'".format(path),
+                                     f"COLL_PARENT_NAME = '{path}'",
                                      genquery.AS_LIST,
                                      ctx):
         remove(ctx, f"{path}/{row[0]}")
@@ -275,7 +286,8 @@ def id_from_name(ctx: rule.Context, coll_name: str) -> str:
 
     :returns: Collection id
     """
-    return genquery.Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
+    coll_name = misc.escape(coll_name)
+    return genquery.Query(ctx, "COLL_ID", f"COLL_NAME = '{coll_name}'").first()
 
 
 def name_from_id(ctx: rule.Context, coll_id: str) -> str:
@@ -286,4 +298,4 @@ def name_from_id(ctx: rule.Context, coll_id: str) -> str:
 
     :returns: Collection name
     """
-    return genquery.Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
+    return genquery.Query(ctx, "COLL_NAME", f"COLL_ID = '{coll_id}'").first()
