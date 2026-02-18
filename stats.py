@@ -6,10 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
-from typing import Dict, List
+from typing import List
 
 import genquery
-import time
 
 import groups
 from util import *
@@ -41,73 +40,57 @@ def api_resource_browse_group_data(ctx: rule.Context,
 
     :returns: Dict with paginated collection contents
     """
-    log.write(ctx, "Entering api_resource_browse_group_data()...")
-    tstart_resource_browse_group_data = time.perf_counter()
+    # Find latest registered date
+    date_ref = get_date_reference(ctx, 'desc')
+    if date_ref is not None:
+        latest_date = f"{date_ref.year}_{date_ref.month:02}"
+    else:
+        return {'total': 0, 'items': []}
 
-    user_name = user.name(ctx)
-    user_zone = user.zone(ctx)
-
-    search_sql = ""
+    # Get user's search
+    search_filter = ""
     if search_groups:
-        # The maximum allowed number of characters in the group name is 63.
-        search_sql = "AND USER_GROUP_NAME LIKE '%%{}%%' ".format(search_groups[:63])
+        search_filter = f"AND USER_GROUP_NAME LIKE '%%{search_groups[:63]}%%' "  # Max characters allowed in group name is 63.
 
-    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
-    metadata_filter = "AND META_USER_ATTR_NAME LIKE '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
-    zone_filter = "AND USER_ZONE = '{}' ".format(user_zone)
+    # Query all storage data
+    storage_data = get_storage_data(ctx, search_filter, latest_date)
 
-    # Query all data sizes
-    stats_query = list(genquery.Query(ctx,
-                                      ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
-                                      group_filter + search_sql + metadata_filter + zone_filter))
+    # Initialize group data
+    item_list = []
+    groups_list = get_user_groups(ctx, search_filter)
+    processed_groups = []
 
-    group_list = []
-    if user.is_admin(ctx):
-        # Process data sizes for sorting
-        for row in list(stats_query):
-            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
-            temp = jsonutil.parse(row[0].replace("'", '"'))
+    # Process data sizes for sorting
+    for row in storage_data:
+        # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+        temp = jsonutil.parse(row[0].replace("'", '"'))
 
+        # Filter out groups that user is not part of
+        if row[2] in groups_list:
             # [group_name [research_storage, vault_storage, revision_storage, total_storage]]
             data_size = [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
-            group_list.append([row[2], data_size])
-    else:
-        # Get groups that user is part of
-        groups_query = genquery.Query(ctx,
-                                      "USER_GROUP_NAME",
-                                      "USER_NAME = '{}'".format(user_name),
-                                      output=genquery.AS_LIST)
-        user_groups = [row[0] for row in groups_query]
+            item_list.append([row[2], data_size])
+            processed_groups.append(row[2])
 
-        # Process data sizes for sorting
-        for row in list(stats_query):
-            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
-            temp = jsonutil.parse(row[0].replace("'", '"'))
-
-            # Filter out groups that user is not part of
-            if row[2] in user_groups:
-                # [group_name [research_storage, vault_storage, revision_storage, total_storage]]
-                data_size = [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
-                group_list.append([row[2], data_size])
+    # Set groups that were not processed (for lack of data) to empty
+    for grp in groups_list:
+        if grp not in processed_groups:
+            item_list.append([grp, [0, 0, 0, 0]])
 
     # Sort the list as requested by user
     sort_reverse = sort_order == 'desc'
-    group_list.sort(key=lambda x: x[1][-1] if sort_on == 'size' else x[0], reverse=sort_reverse)
+    item_list.sort(key=lambda x: x[1][-1] if sort_on == 'size' else x[0], reverse=sort_reverse)
 
     # Only at this point we have the list in correct shape/order and can the limit and offset be applied
     # Format for datatables in frontend throughout yoda
-    group_list_sorted = []
-    group_slice = group_list[offset: offset + limit]
+    item_list_sorted = []
+    group_slice = item_list[offset: offset + limit]
 
     for group_data in group_slice:
         members = group.members(ctx, group_data[0])
-        group_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
+        item_list_sorted.append({"name": group_data[0], "size": group_data[1], "member_count": len(list(members))})
 
-    tend_resource_browse_group_data = time.perf_counter()
-    ttotal_resource_browse_group_data = (tend_resource_browse_group_data - tstart_resource_browse_group_data)
-    log.write(ctx, f"api_resource_browse_group_data() time to execute: {ttotal_resource_browse_group_data} seconds")
-
-    return {'total': len(group_list), 'items': group_list_sorted}
+    return {'total': len(item_list), 'items': item_list_sorted}
 
 
 @api.make()
@@ -119,8 +102,6 @@ def api_resource_full_year_differentiated_group_storage(ctx: rule.Context, group
 
     :returns: API status
     """
-    log.write(ctx, "Entering api_resource_full_year_differentiated_group_storage()...")
-
     # Check permissions for this function
     # Member of this group?
     member_type = groups.user_role(ctx, user.full_name(ctx), group_name)
@@ -166,9 +147,6 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: Storage stats of last month for a list of categories
     """
-    log.write(ctx, "Entering api_resource_category_stats()...")
-    tstart_resource_category_stats = time.perf_counter()
-
     categories = get_categories(ctx)
 
     # Non-admin users don't have access to category storage statistics.
@@ -256,10 +234,6 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
                         'users': {'internals': len(instance_totals['internals']),
                                   'externals': len(instance_totals['externals'])}})
 
-    tend_resource_category_stats = time.perf_counter()
-    ttotal_resource_category_stats = (tend_resource_category_stats - tstart_resource_category_stats)
-    log.write(ctx, f"api_resource_category_stats() time to execute: {ttotal_resource_category_stats} seconds")
-
     return {'categories': sorted(all_storage, key=lambda d: d['category']),
             'external_filter': ', '.join(config.external_users_domain_filter)}
 
@@ -278,24 +252,12 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: API status
     """
-    log.write(ctx, "Entering api_resource_monthly_category_stats()...")
-    tstart_resource_monthly_category_stats = time.perf_counter()
-
-    user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-    is_admin = user.is_admin(ctx)
 
     current_date = date(datetime.now().year, datetime.now().month, datetime.now().day)
+    min_date = get_date_reference(ctx, "asc")
 
-    # Find minimal registered date
-    iter = list(genquery.Query(ctx,
-                               ['ORDER(META_USER_ATTR_NAME)'],
-                               "META_USER_ATTR_NAME LIKE '{}%%' and USER_TYPE = 'rodsgroup'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
-                               offset=0, limit=1, output=genquery.AS_LIST))
-
-    if iter:  # If item found, save min date
-        min_date = date(int(iter[0][0][-10:-6]), int(iter[0][0][-5:-3]), int(iter[0][0][-2:]))
-    else:  # No minimum date found; stop further processing
+    if min_date is None:
         return {'storage': [], 'dates': []}
 
     # PREPARE STORAGE DATA
@@ -311,32 +273,19 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
 
     # INITIALIZATION
 
-    # If user not admin, get groups that user is part of
-    user_groups = []
-    if not is_admin:
-        groups_query = genquery.Query(ctx,
-                                      "USER_GROUP_NAME",
-                                      "USER_NAME = '{}' AND USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%'".format(user_name),
-                                      output=genquery.AS_LIST)
-        user_groups = [row[0] for row in groups_query]
-    else:
-        groups_query = genquery.Query(ctx,
-                                      "USER_GROUP_NAME",
-                                      "USER_ZONE = '{}' AND USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%'".format(user_zone),
-                                      output=genquery.AS_LIST)
-        user_groups = [row[0] for row in groups_query]
-
     # Get category info and initialize group data
-    cat_query = genquery.Query(ctx,
-                               ["ORDER(USER_GROUP_NAME)", "META_USER_ATTR_NAME", "META_USER_ATTR_VALUE"],
-                               "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' AND META_USER_ATTR_NAME IN ('category', 'subcategory')",
-                               output=genquery.AS_LIST)
+    zone_filter = "USER_ZONE = '{}' ".format(user_zone)
+    group_filter = "AND USER_GROUP_NAME like 'research-%%' || like 'deposit-%%' || like 'intake-%%' || like 'grp-%%' "
+    meta_filter = "AND META_USER_ATTR_NAME IN ('category', 'subcategory') "
+    category_list = list(genquery.Query(ctx,
+                                        ["ORDER(USER_GROUP_NAME)", "META_USER_ATTR_NAME", "META_USER_ATTR_VALUE"],
+                                        zone_filter + group_filter + meta_filter))
 
-    log.write(ctx, f"user_name: {user_name} | is_admin: {is_admin} | user_groups: {str(user_groups)}")
+    groups_list = get_user_groups(ctx)
 
     category = ''
     subcategory = ''
-    for row in cat_query:
+    for row in category_list:
         group = row[0]
         attr_name = row[1]
         attr_value = row[2]
@@ -347,28 +296,15 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         if attr_name == 'subcategory':
             subcategory = attr_value
 
-        if is_admin:
+        if group in groups_list:
             group_storage[group] = []
             group_catdata[group] = {
                 'category': category,
                 'subcategory': subcategory
             }
-        else:
-            if group in user_groups:
-                group_storage[group] = []
-                group_catdata[group] = {
-                    'category': category,
-                    'subcategory': subcategory
-                }
 
     # Get full storage data info
-    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
-    metadata_filter = "AND META_USER_ATTR_NAME LIKE '{}%%' ".format(constants.UUMETADATAGROUPSTORAGETOTALS)
-    zone_filter = "AND USER_ZONE = '{}' ".format(user_zone)
-
-    stats_query = list(genquery.Query(ctx,
-                                      ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
-                                      group_filter + metadata_filter + zone_filter))
+    storage_data = get_storage_data(ctx)
 
     # Loop from earliest data to now and find storage for each group/date combination
     record_count = 0
@@ -377,7 +313,7 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         storage_dates.append(date_reference)
         attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + date_reference
 
-        for row in stats_query:
+        for row in storage_data:
             # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
             data_size = jsonutil.parse(row[0].replace("'", '"'))
             storage_date = row[1]
@@ -387,11 +323,11 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
             total_storage = data_size[4]
 
             # If date reference matches storage date and group is one of user's groups, append total storage value
-            if date_reference in storage_date and group in user_groups:
+            if date_reference in storage_date and group in groups_list:
                 group_storage[group].append(total_storage)
 
         # Iterate all groups to initialize current month's data if there was no match in storage data
-        for group in user_groups:
+        for group in groups_list:
             if len(group_storage[group]) == record_count:
                 group_storage[group].append(0)
 
@@ -409,70 +345,7 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         for group in group_storage
     ]
 
-    tend_resource_monthly_category_stats = time.perf_counter()
-    ttotal_resource_monthly_category_stats = (tend_resource_monthly_category_stats - tstart_resource_monthly_category_stats)
-    log.write(ctx, f"api_resource_monthly_category_stats time to execute: {ttotal_resource_monthly_category_stats} seconds")
-
     return {'storage': all_storage, 'dates': storage_dates}
-
-
-def get_group_category_info(ctx: rule.Context, groupName: str) -> Dict:
-    """Get category and subcategory for a group.
-
-    :param ctx:       Combined type of a callback and rei struct
-    :param groupName: groupname to get cat/subcat info for
-
-    :returns: A dict with indices 'category' and 'subcategory'.
-    """
-    category = ''
-    subcategory = ''
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME IN('category','subcategory')",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        attrName = row[0]
-        attrValue = row[1]
-
-        if attrName == 'category':
-            category = attrValue
-        elif attrName == 'subcategory':
-            subcategory = attrValue
-
-    return {'category': category, 'subcategory': subcategory}
-
-
-def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups: str = "") -> List:
-    """Get all groups belonging to all given categories.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param categories:    List of categories groups have to be found for
-    :param search_groups: Find specific groups
-
-    :returns: All groups belonging to all given categories
-    """
-    groups = []
-
-    search_sql = ""
-    if search_groups:
-        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
-
-    group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
-
-    for category in categories:
-        iter = genquery.row_iterator(
-            "USER_NAME",
-            group_filter + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            groupName = row[0]
-            groups.append(groupName)
-
-    return groups
 
 
 @rule.make()
@@ -616,6 +489,36 @@ def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
     return 'ok'
 
 
+def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups: str = "") -> List:
+    """Get all groups belonging to all given categories.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param categories:    List of categories groups have to be found for
+    :param search_groups: Find specific groups
+
+    :returns: All groups belonging to all given categories
+    """
+    groups = []
+
+    search_sql = ""
+    if search_groups:
+        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+
+    group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
+
+    for category in categories:
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            group_filter + search_sql + "AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            groupName = row[0]
+            groups.append(groupName)
+
+    return groups
+
+
 def get_categories(ctx: rule.Context) -> List:
     """Get all categories for current user.
 
@@ -668,35 +571,113 @@ def get_groups_on_category(ctx: rule.Context, category: str) -> List:
     return groups
 
 
-def get_group_data_sizes(ctx: rule.Context, group_name: str, ref_period: str | None = None) -> List:
-    """Get group data sizes and return as a list of values.
+def get_date_reference(ctx: rule.Context, order: str) -> datetime.date:
+    """Get first date reference in storage data
 
-    If no reference period is specified return closest to today.
+    :param ctx:           Combined type of a callback and rei struct
+    :param order:         Specified order (ascending or descending)
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param group_name: Name of group to get data sizes of
-    :param ref_period: Reference period written as 'YYYY-MM'
-
-    :returns: List with group data sizes, [research_storage, vault_storage, revision_storage, total_storage]
+    :returns: Date reference in storage data
     """
-    # Get most recent information present for this group
-    if ref_period:
-        md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS + ref_period
+    column_name = ""
+
+    if order == "desc":
+        column_name = "ORDER_DESC(META_USER_ATTR_NAME)"
+    elif order == "asc":
+        column_name = "ORDER(META_USER_ATTR_NAME)"
+
+    # Find registered date
+    iter = list(genquery.Query(ctx,
+                               column_name,
+                               f"META_USER_ATTR_NAME LIKE '{constants.UUMETADATAGROUPSTORAGETOTALS}%%' and USER_TYPE = 'rodsgroup'",
+                               offset=0, limit=1))
+
+    if len(iter) > 0:  # If item found, save date
+        return date(int(iter[0][-10:-6]), int(iter[0][-5:-3]), int(iter[0][-2:]))
+    else:  # No minimum date found = no records
+        return None
+
+
+def get_storage_data(ctx: rule.Context, search_filter="", date_ref="") -> List:
+    """Get all storage data
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param search_filter: For specific search of groups
+    :param date_ref:      For specific date reference
+
+    :returns: All storage data on record
+    """
+    storage_data = []
+    user_zone = user.zone(ctx)
+
+    attr_name = constants.UUMETADATAGROUPSTORAGETOTALS
+
+    if date_ref != "":
+        attr_name += date_ref
+
+    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
+    metadata_filter = f"AND META_USER_ATTR_NAME LIKE '{attr_name}%%' "
+    zone_filter = f"AND USER_ZONE = '{user_zone}' "
+
+    storage_data = list(genquery.Query(ctx,
+                                       ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_GROUP_NAME'],
+                                       group_filter + search_filter + metadata_filter + zone_filter))
+
+    return storage_data
+
+
+def get_user_groups(ctx: rule.Context, search_filter="") -> List:
+    """Get all user groups
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param search_filter: For specific search of groups
+
+    :returns: All groups of current session's user
+    """
+    groups_list = []
+
+    user_name = user.name(ctx)
+    user_zone = user.zone(ctx)
+
+    # Query all storage records
+    group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
+    zone_filter = f"AND USER_ZONE = '{user_zone}' "
+
+    if user.is_admin(ctx):
+        # All groups in zone
+        groups_list = list(genquery.Query(ctx,
+                                          "ORDER(USER_GROUP_NAME)",
+                                          group_filter + zone_filter + search_filter))
     else:
-        md_storage_period = constants.UUMETADATAGROUPSTORAGETOTALS
+        # Groups the user is member of
+        user_filter = f"AND USER_NAME = '{user_name}' "
+        group_member = list(genquery.Query(ctx,
+                                           "ORDER(USER_GROUP_NAME)",
+                                           group_filter + user_filter + search_filter))
 
-    iter = genquery.Query(ctx,
-                          ['META_USER_ATTR_VALUE', 'ORDER_DESC(META_USER_ATTR_NAME)', 'USER_NAME', 'USER_GROUP_NAME'],
-                          "META_USER_ATTR_NAME like '" + md_storage_period + "%%' AND USER_NAME = '" + group_name + "'",
-                          offset=0, limit=1, output=genquery.AS_LIST)
+        for grp in group_member:
+            if grp not in groups_list:
+                groups_list.append(grp)
 
-    for row in list(iter):
-        # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
-        temp = jsonutil.parse(row[0].replace("'", '"'))
-        # [research_storage, vault_storage, revision_storage, total_storage]
-        return [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
+        # Groups the user is datamanager of
+        dmgroup_member = list(genquery.Query(ctx,
+                                             "ORDER(USER_GROUP_NAME)",
+                                             "USER_GROUP_NAME LIKE 'datamanager-%' " + user_filter))
 
-    return [0, 0, 0, 0]
+        categories = []
+        for grp in dmgroup_member:
+            cat = grp.replace("datamanager-", "", 1)
+            categories.append(cat)
+
+        group_dm = list(genquery.Query(ctx,
+                                       "ORDER(USER_GROUP_NAME)",
+                                       group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {str(categories)}"))
+
+        for grp in group_dm:
+            if grp not in groups_list:
+                groups_list.append(grp)
+
+    return groups_list
 
 
 def rule_resource_research(rule_args, callback, rei):
