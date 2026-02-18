@@ -4,9 +4,10 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from datetime import datetime, date
-from dateutil.relativedelta import relativedelta
+from datetime import date, datetime
 from typing import List
+
+from dateutil.relativedelta import relativedelta
 
 import genquery
 
