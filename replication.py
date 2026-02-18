@@ -1,6 +1,6 @@
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import random
@@ -33,10 +33,11 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
         # exists, we will catch the exception below, however the SQL error would still result in log
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
         # if an AVU is added after this check.
+        coll_name = misc.escape(pathutil.dirname(path))
+        data_name = pathutil.basename(path)
         already_has_avu = len(list(genquery.Query(ctx,
                                                   ['DATA_ID'],
-                                                  "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(
-                                                      pathutil.dirname(path), pathutil.basename(path), replication_avu_name),
+                                                  f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}' AND META_DATA_ATTR_NAME = '{replication_avu_name}'",
                                                   offset=0, limit=1, output=genquery.AS_LIST))) > 0
 
         if not already_has_avu:

@@ -32,11 +32,6 @@ def folder_new_name_check(folder_name: str) -> Tuple[bool, str]:
     if len(folder_name) == 0:
         return False, api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
 
-    # TODO remove when upgrade to GenQuery 2
-    # This check should only be done on new folders, since may have old folders with apostrophes
-    if '\'' in folder_name:
-        return False, api.Error('invalid_foldername', 'It is not allowed to use apostrophes in a folder name')
-
     # Name should not contain '\\' or '/'
     if '/' in folder_name or '\\' in folder_name:
         return False, api.Error('invalid_foldername', 'It is not allowed to use slashes in the new folder name')
@@ -120,10 +115,6 @@ def folder_copy_check(ctx: rule.Context, folder_path: str, new_folder_path: str,
     verb_past = 'copied' if copy else 'moved'
     if len(new_folder_path) == 0:
         return False, api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
-
-    # TODO remove when upgrade to GenQuery 2
-    if '\'' in new_folder_path:
-        return False, api.Error('invalid_foldername', 'It is not allowed to use apostrophes in a folder name')
 
     try:
         validate_filepath(new_folder_path)
@@ -341,6 +332,7 @@ def api_research_list_temporary_files(ctx: rule.Context, coll: str) -> api.Resul
         return []
 
     list_cleanup_files = []
+    coll = misc.escape(coll)
     for uw_file in config.temporary_files:
         if "?" in uw_file or "*" in uw_file:
             wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
@@ -387,11 +379,6 @@ def api_research_file_copy(ctx: rule.Context, filepath: str, new_filepath: str, 
         validate_filename(data_name)
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
-
-    # TODO remove when upgrade to GenQuery 2
-    # This check should only be done on new folders, since may have old folders with apostrophes
-    if '\'' in coll:
-        return api.Error('invalid_filepath', 'It is not allowed to copy a file to a folder with an apostrophe in the name')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
@@ -526,11 +513,6 @@ def api_research_file_move(ctx: rule.Context, filepath: str, new_filepath: str, 
         validate_filename(data_name)
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
-
-    # TODO remove when upgrade to GenQuery 2
-    # This check should only be done on new folders, since may have old folders with apostrophes
-    if '\'' in coll:
-        return api.Error('invalid_filepath', 'It is not allowed to move a file to a folder with an apostrophe in the name')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
@@ -684,6 +666,7 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
 
 def _get_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in the given collection."""
+    coll = misc.escape(coll)
     iter_data = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         f"COLL_NAME = '{coll}' AND DATA_REPL_STATUS = '1'",
@@ -703,6 +686,7 @@ def _get_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[st
 
 def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in sub-collections."""
+    coll = misc.escape(coll)
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
         f"COLL_NAME like '{coll}/%' AND DATA_REPL_STATUS = '1'",

@@ -1,7 +1,7 @@
 """Utility / convenience functions for data object IO."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import binascii
@@ -13,17 +13,26 @@ import irods_types
 
 import constants
 import error
+import misc
 import msi
 import pathutil
 import rule
 
 
 def exists(ctx: rule.Context, path: str) -> bool:
-    """Check if a data object with the given path exists."""
-    return len(list(genquery.row_iterator(
-               "DATA_ID",
-               "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
-               genquery.AS_LIST, ctx))) > 0
+    """Check if a data object with the given path exists.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: A data object path
+
+    :returns: Boolean indicating if data object exists
+    """
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
+    return len(list(genquery.Query(
+               ctx, "DATA_ID",
+               f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+               output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))) > 0
 
 
 def get_properties(ctx: rule.Context, data_id: str, resource: str) -> Dict | None:
@@ -76,11 +85,12 @@ def size(ctx: rule.Context, path: str) -> int | None:
 
     :returns: Data object's size or None if object is not found
     """
-
-    iter = genquery.row_iterator(
-        "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
-        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
-        genquery.AS_LIST, ctx
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
+    iter = genquery.Query(
+        ctx, "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
+        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        output=genquery.AS_LIST
     )
 
     for row in iter:
@@ -98,9 +108,11 @@ def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> boo
 
     :returns: Boolean indicating if data object has replicas with specified replica statuses
     """
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
     iter = genquery.row_iterator(
         "DATA_REPL_STATUS",
-        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
         genquery.AS_LIST, ctx
     )
 
@@ -233,7 +245,7 @@ def name_from_id(ctx: rule.Context, data_id: str) -> str | None:
 
     :returns: Data object name
     """
-    x = genquery.Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
+    x = genquery.Query(ctx, "COLL_NAME, DATA_NAME", f"DATA_ID = '{data_id}'").first()
     if x is not None:
         return '/'.join(x)
 
@@ -248,8 +260,10 @@ def id_from_path(ctx: rule.Context, path: str) -> str:
 
     :returns: Data object id
     """
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
     return genquery.Query(ctx, "DATA_ID",
-                          "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path)).first()
+                          f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'").first()
 
 
 def decode_checksum(checksum: str) -> str:
@@ -267,10 +281,12 @@ def decode_checksum(checksum: str) -> str:
 
 def get_group_owners(ctx: rule.Context, path: str) -> List:
     """Return list of groups of data object, each entry being name of the group and the zone."""
-    parent, basename = pathutil.chop(path)
-    groups = list(genquery.row_iterator(
-        "USER_NAME, USER_ZONE",
-        "COLL_NAME = '{}' and DATA_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'".format(parent, basename),
-        genquery.AS_LIST, ctx
-    ))
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
+
+    groups = list(genquery.Query(
+        ctx, "USER_NAME, USER_ZONE",
+        f"COLL_NAME = '{coll_name}' and DATA_NAME = '{data_name}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
+        output=genquery.AS_LIST))
+
     return groups

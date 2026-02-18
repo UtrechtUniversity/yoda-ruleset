@@ -1,7 +1,7 @@
 """Utility / convenience functions for dealing with AVUs."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -12,6 +12,7 @@ from typing import Dict, Iterable, List, Tuple
 import genquery
 
 import log
+import misc
 import msi
 import pathutil
 import rule
@@ -24,22 +25,24 @@ Avu.unit  = Avu.u
 
 def of_data(ctx: rule.Context, path: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given data object."""
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
     return (Avu(*x) for x in genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                                 "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
+                                                 f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"))
 
 
 def of_coll(ctx: rule.Context, coll: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given collection."""
+    coll = misc.escape(coll)
     return (Avu(*x) for x in genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-                                                 "COLL_NAME = '{}'".format(coll)))
+                                                 f"COLL_NAME = '{coll}'"))
 
 
 def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
     """Get the value corresponding to an attr for a given collection."""
-    iter = genquery.Query(
-        ctx,
-        "META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME = '{}' AND COLL_NAME = '{}'".format(attr, coll))
+    coll = misc.escape(coll)
+    iter = genquery.Query(ctx, "META_COLL_ATTR_VALUE",
+                               f"META_COLL_ATTR_NAME = '{attr}' AND COLL_NAME = '{coll}'")
 
     for row in iter:
         return row
@@ -48,10 +51,8 @@ def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
 
 def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> Dict:
     """Get the value corresponding to an attr for a given user."""
-    iter = genquery.Query(
-        ctx,
-        "META_USER_ATTR_VALUE",
-        "META_USER_ATTR_NAME = '{}' AND USER_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(attr, user))
+    iter = genquery.Query(ctx, "META_USER_ATTR_VALUE",
+                               f"META_USER_ATTR_NAME = '{attr}' AND USER_NAME = '{user}' AND USER_TYPE != 'rodsgroup'")
 
     for row in iter:
         return row
@@ -80,15 +81,17 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
         else:
             return ('{}/{}'.format(row[0], row[1]), type, row[2], row[3], row[4])
 
+    path = misc.escape(path)
+
     collection_root = genquery.row_iterator(
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-        "COLL_PARENT_NAME = '{}'".format(path),
+        f"COLL_PARENT_NAME = '{path}'",
         genquery.AS_LIST, ctx)
     collection_root = (to_absolute(x, "collection") for x in collection_root)
 
     data_objects_root = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-        "COLL_NAME = '{}'".format(path),
+        f"COLL_NAME = '{path}'",
         genquery.AS_LIST, ctx)
     data_objects_root = (to_absolute(x, "data_object") for x in data_objects_root)
 
@@ -97,13 +100,13 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
 
     collection_sub = genquery.row_iterator(
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-        "COLL_PARENT_NAME like '{}/%'".format(path),
+        f"COLL_PARENT_NAME like '{path}/%'",
         genquery.AS_LIST, ctx)
     collection_sub = (to_absolute(x, "collection") for x in collection_sub)
 
     data_objects_sub = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-        "COLL_NAME like '{}/%'".format(path),
+        f"COLL_NAME like '{path}/%'",
         genquery.AS_LIST, ctx)
     data_objects_sub = (to_absolute(x, "data_object") for x in data_objects_sub)
 
@@ -113,13 +116,13 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
 def of_group(ctx: rule.Context, group: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given group."""
     return (Avu(*x) for x in genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                                                 "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+                                                 f"USER_NAME = '{group}' AND USER_TYPE = 'rodsgroup'"))
 
 
 def of_user(ctx: rule.Context, group: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given group."""
     return (Avu(*x) for x in genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                                                 "USER_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(group)))
+                                                 f"USER_NAME = '{group}' AND USER_TYPE != 'rodsgroup'"))
 
 
 def set_on_data(ctx: rule.Context, path: str, a: str, v: str) -> None:
