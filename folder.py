@@ -699,13 +699,16 @@ rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group
 
 def get_org_metadata(ctx: rule.Context, path: str, object_type: pathutil.ObjectType = pathutil.ObjectType.COLL) -> List[Tuple[str, str]]:
     """Obtain a (k,v) list of all organisation metadata on a given collection or data object."""
-    typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
-
-    return list(genquery.Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
-                               "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
-                               + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
-                               if object_type is pathutil.ObjectType.DATA
-                               else " AND COLL_NAME = '{}'".format(path))))
+    prefix = constants.UUORGMETADATAPREFIX
+    if object_type is pathutil.ObjectType.DATA:
+        coll_name, data_name = pathutil.chop(path)
+        coll_name = misc.escape(coll_name)
+        return list(genquery.Query(ctx, 'META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE',
+                                   f"META_DATA_ATTR_NAME like '{prefix}%' AND COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"))
+    else:
+        path = misc.escape(path)
+        return list(genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                   f"META_COLL_ATTR_NAME like '{prefix}%' AND COLL_NAME = '{path}'"))
 
 
 def get_locks(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]] | None = None, object_type: pathutil.ObjectType = pathutil.ObjectType.COLL) -> List[str]:

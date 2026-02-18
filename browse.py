@@ -77,21 +77,22 @@ def api_browse_folder(ctx: rule.Context,
     zone = user.zone(ctx)
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
+    coll_escaped = misc.escape(coll)
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
+                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'",
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME like '/{zone}/home/%vault-%'",
                       offset=offset, limit=limit, output=AS_DICT)
     else:
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+        qcoll = Query(ctx, ccols, f"COLL_PARENT_NAME = '{coll_escaped}'",
                       offset=offset, limit=limit, output=AS_DICT)
 
     colls = list(map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)]))
 
-    qdata = Query(ctx, dcols, "COLL_NAME = '{}' AND DATA_REPL_STATUS > '0'".format(coll),
+    qdata = Query(ctx, dcols, f"COLL_NAME = '{coll_escaped}' AND DATA_REPL_STATUS > '0'",
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
     datas = list(map(transform, list(qdata)))
 
@@ -161,16 +162,17 @@ def api_browse_collections(ctx: rule.Context,
     zone = user.zone(ctx)
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
+    coll_escaped = misc.escape(coll)
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
+                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'",
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME like '/{zone}/home/%vault-%'",
                       offset=offset, limit=limit, output=AS_DICT)
     else:
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+        qcoll = Query(ctx, ccols, f"COLL_PARENT_NAME = '{coll_escaped}'",
                       offset=offset, limit=limit, output=AS_DICT)
 
     colls = list(map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)]))
