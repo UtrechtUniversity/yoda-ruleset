@@ -670,13 +670,14 @@ def get_user_groups(ctx: rule.Context, search_filter="") -> List:
             cat = grp.replace("datamanager-", "", 1)
             categories.append(cat)
 
-        group_dm = list(genquery.Query(ctx,
-                                       "ORDER(USER_GROUP_NAME)",
-                                       group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {str(categories)}"))
+        if len(categories) > 0:
+            group_dm = list(genquery.Query(ctx,
+                                           "ORDER(USER_GROUP_NAME)",
+                                           group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {str(categories)}"))
 
-        for grp in group_dm:
-            if grp not in groups_list:
-                groups_list.append(grp)
+            for grp in group_dm:
+                if grp not in groups_list:
+                    groups_list.append(grp)
 
     return groups_list
 
