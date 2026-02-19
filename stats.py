@@ -5,7 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import date, datetime
-from typing import List
+from typing import List, Optional
 
 import genquery
 from dateutil.relativedelta import relativedelta
@@ -571,7 +571,7 @@ def get_groups_on_category(ctx: rule.Context, category: str) -> List:
     return groups
 
 
-def get_date_reference(ctx: rule.Context, order: str) -> datetime.date:
+def get_date_reference(ctx: rule.Context, order: str) -> Optional[date]:
     """Get first date reference in storage data
 
     :param ctx:           Combined type of a callback and rei struct
@@ -598,7 +598,7 @@ def get_date_reference(ctx: rule.Context, order: str) -> datetime.date:
         return None
 
 
-def get_storage_data(ctx: rule.Context, search_filter="", date_ref="") -> List:
+def get_storage_data(ctx: rule.Context, search_filter: str = "", date_ref: str = "") -> List:
     """Get all storage data
 
     :param ctx:           Combined type of a callback and rei struct
@@ -626,7 +626,7 @@ def get_storage_data(ctx: rule.Context, search_filter="", date_ref="") -> List:
     return storage_data
 
 
-def get_user_groups(ctx: rule.Context, search_filter="") -> List:
+def get_user_groups(ctx: rule.Context, search_filter: str = "") -> List:
     """Get all user groups
 
     :param ctx:           Combined type of a callback and rei struct
