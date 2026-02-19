@@ -7,9 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import date, datetime
 from typing import List
 
-from dateutil.relativedelta import relativedelta
-
 import genquery
+from dateutil.relativedelta import relativedelta
 
 import groups
 from util import *
