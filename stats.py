@@ -260,8 +260,6 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
     if min_date is None:
         return {'storage': [], 'dates': []}
 
-    # PREPARE STORAGE DATA
-
     # Create dict with all groups that will contain list of storage values corresponding to complete range from minimal date till now.
     group_storage = {}
 
@@ -270,8 +268,6 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
 
     # A group always has 1 distinct category and 1 distinct subcateory
     group_catdata = {}
-
-    # INITIALIZATION
 
     # Get category info and initialize group data
     zone_filter = "USER_ZONE = '{}' ".format(user_zone)
@@ -312,19 +308,22 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         date_reference = f"{min_date.year}_{min_date.month:02}"
         storage_dates.append(date_reference)
         attr_name = constants.UUMETADATAGROUPSTORAGETOTALS + date_reference
+        skip_group = []
 
         for row in storage_data:
-            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
-            data_size = jsonutil.parse(row[0].replace("'", '"'))
             storage_date = row[1]
             group = row[2]
 
-            # data_size: [category, research_storage, vault_storage, revision_storage, total_storage]
-            total_storage = data_size[4]
+            # If date reference matches storage date and group is one of user's groups, append total storage value.
+            if group not in skip_group and group in groups_list and date_reference in storage_date:
+                # There might be old data that have ' instead of " in the json.
+                data_size = jsonutil.parse(row[0].replace("'", '"'))
 
-            # If date reference matches storage date and group is one of user's groups, append total storage value
-            if date_reference in storage_date and group in groups_list:
+                # data_size: [category, research_storage, vault_storage, revision_storage, total_storage]
+                total_storage = data_size[4]
+
                 group_storage[group].append(total_storage)
+                skip_group.append(group)
 
         # Iterate all groups to initialize current month's data if there was no match in storage data
         for group in groups_list:
