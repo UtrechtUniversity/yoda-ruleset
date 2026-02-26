@@ -58,24 +58,22 @@ def api_resource_browse_group_data(ctx: rule.Context,
     # Initialize group data
     item_list = []
     groups_list = get_user_groups(ctx, search_filter)
-    processed_groups = []
 
     # Process data sizes for sorting
     for row in storage_data:
-        # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
-        temp = jsonutil.parse(row[0].replace("'", '"'))
-
         # Filter out groups that user is not part of
         if row[2] in groups_list:
+            # the replace is merely here due to earlier (erroneous0 values that were added as '' in json where this should have been ""
+            temp = jsonutil.parse(row[0].replace("'", '"'))
+
             # [group_name [research_storage, vault_storage, revision_storage, total_storage]]
             data_size = [int(temp[1]), int(temp[2]), int(temp[3]), int(temp[4])]
             item_list.append([row[2], data_size])
-            processed_groups.append(row[2])
+            groups_list.remove(row[2])
 
     # Set groups that were not processed (for lack of data) to empty
     for grp in groups_list:
-        if grp not in processed_groups:
-            item_list.append([grp, [0, 0, 0, 0]])
+        item_list.append([grp, [0, 0, 0, 0]])
 
     # Sort the list as requested by user
     sort_reverse = sort_order == 'desc'
