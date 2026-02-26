@@ -152,10 +152,17 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
     if len(categories) == 0:
         return {'categories': [], 'external_filter': ''}
 
+    # Find latest registered date
+    date_ref = get_date_reference(ctx, 'desc')
+
+    attr_name = constants.UUMETADATAGROUPSTORAGETOTALS
+    if date_ref is not None:
+        attr_name += f"{date_ref.year}_{date_ref.month:02}"
+
     # Retrieve storage statistics of groups.
     iter = genquery.Query(ctx,
                           ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
-                          "META_USER_ATTR_NAME like '{}%%'".format(constants.UUMETADATAGROUPSTORAGETOTALS),
+                          "META_USER_ATTR_NAME like '{}%%'".format(attr_name),
                           output=genquery.AS_LIST)
 
     # Go through storage statistics of groups.
@@ -608,7 +615,6 @@ def get_storage_data(ctx: rule.Context, search_filter: str = "", date_ref: str =
     user_zone = user.zone(ctx)
 
     attr_name = constants.UUMETADATAGROUPSTORAGETOTALS
-
     if date_ref != "":
         attr_name += date_ref
 
