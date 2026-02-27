@@ -24,6 +24,8 @@ from vault import copy_folder_to_research
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
+    if config.enable_nfs_resource:
+        data_path = data_path.replace("/var/lib/irods/", "/nfs/")
     ret = msi.stat_vault(ctx, resc_name, data_path, '', '')
     return (ret['arguments'][2], ret['arguments'][3])
 
@@ -447,7 +449,7 @@ basic_integration_tests = [
      "check": lambda x: x},
     {"name": "msvc.msi_dir_list.dir",
      "test": lambda ctx: _call_dir_list(ctx, "/var/lib/irods/Vault1_1/yoda", "dev001_1"),
-     "check": lambda x: len(x) == len([entry for entry in os.listdir("/var/lib/irods/Vault1_1/yoda") if os.path.isdir("/var/lib/irods/Vault1_1/yoda/" + entry)])},
+     "check": lambda x: x},
     {"name": "msvc.msi_dir_list.dir_not_exist",
      "test": lambda ctx: _call_dir_list_check_exc(ctx, '/var/lib/irods/Vault1_2/yoda/doesnotexist', 'dev001_2'),
      "check": lambda x: x},
@@ -896,6 +898,8 @@ def _call_file_checksum_either_resc(ctx, filename):
 
        :returns: output of file checksum microservice
     """
+    if config.enable_nfs_resource:
+        filename = filename.replace("/var/lib/irods/", "/nfs/")
     try:
         vault_filename = filename.replace("VaultX", "Vault1_1")
         ret = msi.file_checksum(ctx, vault_filename, 'dev001_1', '')
@@ -915,9 +919,13 @@ def _call_file_checksum_check_exc(ctx, filename, resc_name):
 
 
 def _call_dir_list(ctx, dirname, resc_name):
+    if config.enable_nfs_resource:
+        dirname = dirname.replace("/var/lib/irods/", "/nfs/")
     ret = msi.dir_list(ctx, dirname, resc_name, "")
     print(ret['arguments'][2])
-    return json.loads(ret['arguments'][2])
+    result_len = len(json.loads(ret['arguments'][2]))
+    dir_len = len([entry for entry in os.listdir(dirname) if os.path.isdir(dirname + '/' + entry)])
+    return result_len == dir_len
 
 
 def _test_is_user_external(ctx, username):

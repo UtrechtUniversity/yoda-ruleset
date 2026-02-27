@@ -211,7 +211,7 @@ def move(ctx: rule.Context, path_org: str, path_move: str, force: bool = True) -
     copy(ctx, path_org, path_move, force)
     msi.rm_coll(ctx,
                 path_org,
-                '',
+                'forceFlag=' if force else '',
                 irods_types.BytesBuf())
 
 
