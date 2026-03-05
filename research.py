@@ -30,15 +30,15 @@ __all__ = ['api_research_folder_add',
 
 def folder_new_name_check(folder_name: str) -> Tuple[bool, str]:
     if len(folder_name) == 0:
-        return False, api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
+        return False, api.Error('missing_foldername', 'Missing folder name. Please add a folder name.')
 
     # Name should not contain '\\' or '/'
     if '/' in folder_name or '\\' in folder_name:
-        return False, api.Error('invalid_foldername', 'It is not allowed to use slashes in the new folder name')
+        return False, api.Error('invalid_foldername', 'It is not allowed to use slashes in a folder name.')
 
     # name should not be '.' or '..'
     if folder_name in ('.', '..'):
-        return False, api.Error('invalid_foldername', 'it is not allowed to name the folder {}'.format(folder_name))
+        return False, api.Error('invalid_foldername', 'It is not allowed to name a folder as \'{}\'.'.format(folder_name))
 
     return True, ""
 
@@ -60,41 +60,48 @@ def api_research_folder_add(ctx: rule.Context, coll: str, new_folder_name: str) 
         return error_response
 
     try:
-        validate_filepath(coll_target)
-    except ValidationError:
-        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
+        validate_filepath(coll_target, max_len=1024)
+    except ValidationError as ve:
+        if ve.reason.name == "INVALID_LENGTH":
+            return api.Error('invalid_foldername', 'New folder path is too long. Please choose a shorter name for your new folder.')
+        else:
+            return api.Error('invalid_foldername', 'New folder path is not valid. Please choose another name for your new folder.')
+
+    # path must not contain traversal sequences
+    if coll_target.startswith('./') or coll_target.startswith('../') or '/./' in coll_target or '/../' in coll_target:
+        return api.Error('invalid_foldername', 'New folder path contains traversal sequences ./ or ../ which are not allowed.')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return api.Error('invalid_destination', 'It is not possible to add folder ' + new_folder_name + ' at this location')
+        return api.Error('invalid_destination', 'It is not possible to add folder \'' + new_folder_name + '\' at this location.')
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return api.Error('not_allowed', 'It is not possible to add folders in the vault')
+        return api.Error('not_allowed', 'It is not possible to add folders in the vault.')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders')
+        return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders to the current folder.')
 
     # Collection exists?
     if not collection.exists(ctx, coll):
-        return api.Error('invalid_foldername', 'The selected folder to add a new folder to does not exist')
+        return api.Error('invalid_foldername', 'The current folder you\'re trying to add a new folder to does not exist.')
 
     # Folder not locked?
     if folder.is_locked(ctx, coll):
-        return api.Error('not_allowed', 'The indicated folder is locked so no new folders can be added to it')
+        return api.Error('not_allowed', 'The current folder is locked so no new folders can be added to it.')
 
     # new collection exists?
     if collection.exists(ctx, coll_target):
-        return api.Error('invalid_foldername', 'The folder already exists. Please choose another name')
+        return api.Error('invalid_foldername', 'The new folder already exists. Please choose another name.')
 
     # All requirements OK
     try:
         collection.create(ctx, coll_target)
     except msi.Error:
-        return api.Error('internal', 'Something went wrong. Please try again')
+        return api.Error('internal', 'Something went wrong. Please try again.')
 
     return api.Result.ok()
 
