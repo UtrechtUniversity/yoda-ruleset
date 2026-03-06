@@ -151,7 +151,7 @@ config = Config(environment=None,
                 vault_copy_multithread_enabled=True,
                 user_max_connections_enabled=False,
                 user_max_connections_number=4,
-                enable_nfs_resource=True)
+                enable_nfs_resource=False)
 
 # }}}
 
