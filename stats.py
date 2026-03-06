@@ -673,9 +673,11 @@ def get_user_groups(ctx: rule.Context, search_filter: str = "") -> List:
             categories.append(cat)
 
         if len(categories) > 0:
+            quoted_categories = [f"'{e}'" for e in categories]
+            categories_string = f"({','.join(quoted_categories)})"
             group_dm = list(genquery.Query(ctx,
                                            "ORDER(USER_GROUP_NAME)",
-                                           group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {str(categories)}"))
+                                           group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {categories_string}"))
 
             for grp in group_dm:
                 if grp not in groups_list:
