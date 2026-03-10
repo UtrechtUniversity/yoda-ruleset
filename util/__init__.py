@@ -37,6 +37,7 @@ if 'unittest' not in sys.modules:
     import resources
     import arb_data_manager
     import cached_data_manager
+    import pregenerated_data_manager
     import irods_type_info
     import schema_utils
     import diff_data

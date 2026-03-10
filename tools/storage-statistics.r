@@ -8,12 +8,18 @@ run {
 
 	# Retrieve current timestamp.
 	msiGetIcatTime(*timestamp, "human");
-	writeLine('stdout', '[' ++ *timestamp ++ '] Gathering storage statistics');
+	writeLine('stdout', '[' ++ *timestamp ++ '] Gathering storage statistics ...');
 
-        *result = rule_resource_store_storage_statistics();
+	*result = rule_resource_store_storage_statistics();
 
-        writeLine('stdout', 'Status: Finished gathering storage statistics');
-        writeLine('stdout', *result);
+	writeLine('stdout', 'Status: Finished gathering storage statistics.');
+	writeLine('stdout', *result);
+
+	*resultp = rule_resource_store_pregenerated_exportdata();
+
+	writeLine('stdout', 'Status: Finished pregenerating export data.');
+	writeLine('stdout', *resultp);
+
 
 }
 input null

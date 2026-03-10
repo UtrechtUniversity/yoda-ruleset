@@ -12,6 +12,7 @@ import time
 import traceback
 import uuid
 from subprocess import PIPE, Popen
+from typing import List
 
 import data_access_token
 import folder
@@ -19,6 +20,7 @@ import groups
 import meta
 import research
 import schema
+from stats import get_resource_monthly_category_stats
 from util import api, avu, collection, config, constants, data_object, diff_data, group, jsonutil, log, measure_coverage, msi, resources, rule, user
 from vault import copy_folder_to_research
 
@@ -255,6 +257,80 @@ def _test_groups_data(ctx, test_group, attribute, value):
             and "deposit-pilot" in group_names
             and "datamanager-test-automation" in group_names
             and test_group not in group_names)
+
+
+def _test_statistics_exportdata(ctx: rule.Context) -> List[str]:
+    """Test function to calculate statistics export data
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: List of unexpected test results
+
+    """
+    errors: List[str] = []
+
+    # We run a statistics update to ensure that statistics AVUs are
+    # available.
+    statistics_update_command = ["/bin/irule",
+                                 "-r",
+                                 "irods_rule_engine_plugin-irods_rule_language-instance",
+                                 "-F",
+                                 "/etc/irods/yoda-ruleset/tools/storage-statistics.r"]
+    Popen(statistics_update_command, stdout=PIPE)
+
+    # Retrieve export data
+    exportdata = get_resource_monthly_category_stats(ctx)
+
+    # Basic tests of output structure
+    if "storage" not in exportdata:
+        errors.append("Storage section missing")
+    if "dates" not in exportdata:
+        errors.append("Dates section missing")
+    if "metadata" not in exportdata:
+        errors.append("Metadata section missing")
+    if len(errors) > 0:
+        # Other tests depend on the structure of the export data
+        # meeting the expected format, so it does not make sense to
+        # continue if we have errors at this point.
+        return errors
+
+    # Storage tests
+    storagedata = exportdata['storage']
+    if len(storagedata) < 20:
+        errors.append("Fewer groups in storage data than expected: " + str(len(storagedata)))
+
+    research_initial_data = [d for d in storagedata if d['groupname'] == "research-initial"]
+    if len(research_initial_data) == 0:
+        errors.append("Research-initial not found in storage data")
+    elif len(research_initial_data) > 1:
+        errors.append("Research-initial is present multiple times in storage data")
+    else:
+        category = research_initial_data[0].get('category', 'category not found')
+        if category != "test-automation":
+            errors.append("Research-initial has unexpected category: " + category)
+        subcategory = research_initial_data[0].get('subcategory', 'subcategory not found')
+        if subcategory != "initial":
+            errors.append("Research-initial has unexpected subcategory: " + subcategory)
+        storagefigures = research_initial_data[0].get('storage')
+        if len(storagefigures) == 0:
+            errors.append("No storage figures found for research-initial")
+        elif storagefigures[-1] < 1000000:
+            errors.append("Last storage figure for research-initial is lower than expected: "
+                          + str(storagefigures[-1]))
+
+    # Dates test
+    dates = exportdata['dates']
+    if len(dates) == 0:
+        errors.append("No dates in export data.")
+
+    # Metadata tests
+    metadata = exportdata['metadata']
+    if "timestamp" not in metadata:
+        errors.append("Timestamp missing in metadata")
+    if "readable_timestamp" not in metadata:
+        errors.append("Human-readable timestamp missing in metadata")
+
+    return errors
 
 
 def _test_schema_active_schema_deposit_from_default(ctx):
@@ -646,6 +722,9 @@ basic_integration_tests = [
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
      "check": lambda x: isinstance(json.loads(x['arguments'][0]), dict)},
+    {"name": "statistics.exportdata",
+     "test": lambda ctx: _test_statistics_exportdata(ctx),
+     "check": lambda x: x == []},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
