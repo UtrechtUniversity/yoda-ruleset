@@ -1,6 +1,6 @@
 """Functions for provenance handling."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -74,14 +74,15 @@ def provenance_copy_log(ctx: rule.Context, source: str, target: str) -> None:
     """
     try:
         # Retrieve all provenance logs on source collection.
-        iter = genquery.row_iterator(
-            "order_desc(META_COLL_ATTR_VALUE)",
-            "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (source),
-            genquery.AS_LIST, ctx
-        )
+        coll = misc.escape(source)
+        logs = list(genquery.Query(
+            ctx, "order_desc(META_COLL_ATTR_VALUE)",
+            f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+            output=genquery.AS_LIST
+        ))
 
         # Set provenance logs on target collection.
-        for row in iter:
+        for row in logs:
             avu.associate_to_coll(ctx, target, constants.UUPROVENANCELOG, row[0])
 
         log.write(ctx, "rule_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
@@ -98,15 +99,16 @@ def get_provenance_log(ctx: rule.Context, coll: str) -> List:
     :returns: Provenance log as a list
     """
     provenance_log = []
+    coll = misc.escape(coll)
 
     # Retrieve all provenance logs on a folder.
-    iter = genquery.row_iterator(
-        "order_desc(META_COLL_ATTR_VALUE)",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (coll),
-        genquery.AS_LIST, ctx
-    )
+    logs = list(genquery.Query(
+        ctx, "order_desc(META_COLL_ATTR_VALUE)",
+        f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+        output=genquery.AS_LIST
+    ))
 
-    for row in iter:
+    for row in logs:
         log_item = jsonutil.parse(row[0])
         provenance_log.append(log_item)
 

@@ -122,8 +122,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         is_locked = folder.is_locked(ctx, coll, org_metadata)
-        # Do not allow editing of files in folders with apostrophes in name
-        can_edit = is_member and not is_locked and '\'' not in subpath
+        can_edit = is_member and not is_locked
 
         # Analyze a possibly existing metadata JSON file.
         meta_path = meta.get_collection_metadata_path(ctx, coll)
