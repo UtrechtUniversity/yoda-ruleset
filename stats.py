@@ -4,8 +4,10 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import copy
+import time
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import genquery
 from dateutil.relativedelta import relativedelta
@@ -17,6 +19,7 @@ __all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_full_year_differentiated_group_storage',
+           'rule_resource_store_pregenerated_exportdata',
            'rule_resource_store_storage_statistics',
            'rule_resource_research',
            'rule_resource_vault']
@@ -257,6 +260,74 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: API status
     """
+
+    pregenerated_data_time_threshold = int(time.time()) - 72 * 3600
+    try:
+        pregenerated_data = pregenerated_data_manager.pregenerated_data_load("statistics-export")
+    except Exception as e:
+        log.write(ctx, "Error while loading pregenerated data for statistics export: " + str(e)
+                  + ". Generating data instead.")
+        pregenerated_data = None
+
+    if (pregenerated_data is None
+            or pregenerated_data['metadata']['timestamp'] < pregenerated_data_time_threshold):
+        data = get_resource_monthly_category_stats(ctx)
+        data.pop('metadata')
+        return data
+        # Don't save this data as pregenerated data. The pregenerated data
+        # needs to be created by the rods user in order to ensure that it includes
+        # all data, rather than only the data that the current user has access to.
+    else:
+        return filter_pregenerated_exportdata(ctx, pregenerated_data)
+
+
+def filter_pregenerated_exportdata(ctx: rule.Context, inputdata: Dict) -> Dict:
+    """Filter pregenerated statistics export data for use by the frontend
+       code. The main goal of this function is to filter out data that the
+       present user should not have access to. We also remove metadata, because
+       it's not needed in the frontend.
+
+       :param ctx:       Combined type of a callback and rei struct
+       :param inputdata: Pregenerated data
+
+       :returns: Filtered data
+    """
+    output_storagedata = []
+    user_accessible_groups = set(get_user_groups(ctx))
+
+    for groupdata in inputdata['storage']:
+        if groupdata.get('groupname', '') in user_accessible_groups:
+            output_storagedata.append(groupdata)
+
+    return {'storage': output_storagedata,
+            'dates': copy.deepcopy(inputdata['dates'])
+            }
+
+
+@rule.make()
+def rule_resource_store_pregenerated_exportdata(ctx: rule.Context) -> None:
+    """Collects and store pregenerated data for the statistics export function.
+
+       :param ctx: Combined type of a callback and rei struct
+
+       :raises Exception: if unable to store the pregenerated data
+    """
+    data = get_resource_monthly_category_stats(ctx)
+    try:
+        pregenerated_data_manager.pregenerated_data_save("statistics-export", data)
+    except Exception as e:
+        log.write(ctx, "Unable to store pregenerated data for statistics export: " + str(e))
+        raise e
+
+
+def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
+    """Collect monthly category statistics for the export function in the portal.
+
+       :param ctx:  Combined type of a callback and rei struct
+
+       :returns:       Dictionary with monthly category statistics
+
+    """
     user_zone = user.zone(ctx)
 
     current_date = date(datetime.now().year, datetime.now().month, datetime.now().day)
@@ -349,7 +420,11 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         for group in group_storage
     ]
 
-    return {'storage': all_storage, 'dates': storage_dates}
+    timestamp = int(time.time())
+    readable_timestamp = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%SZ')
+    metadata = {'timestamp': timestamp, 'readable_timestamp': readable_timestamp}
+
+    return {'storage': all_storage, 'dates': storage_dates, 'metadata': metadata}
 
 
 @rule.make()
@@ -629,7 +704,7 @@ def get_storage_data(ctx: rule.Context, search_filter: str = "", date_ref: str =
     return storage_data
 
 
-def get_user_groups(ctx: rule.Context, search_filter: str = "") -> List:
+def get_user_groups(ctx: rule.Context, search_filter: str = "") -> List[str]:
     """Get all user groups
 
     :param ctx:           Combined type of a callback and rei struct
