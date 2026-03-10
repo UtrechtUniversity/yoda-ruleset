@@ -36,7 +36,7 @@ jobs:
     - name: Determine Yoda repository branch
       shell: bash
       run: |
-        if [ "${{ steps.extract_branch.outputs.branch }}" =~ ^"release-" ]; then
+        if [[ "${{ steps.extract_branch.outputs.branch }}" =~ ^"release-" ]]; then
           echo "branch=${{ steps.extract_branch.outputs.branch }}" >> $GITHUB_OUTPUT
         else
           echo "branch=development" >> $GITHUB_OUTPUT
