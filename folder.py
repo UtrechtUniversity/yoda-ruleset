@@ -703,6 +703,7 @@ def get_org_metadata(ctx: rule.Context, path: str, object_type: pathutil.ObjectT
     if object_type is pathutil.ObjectType.DATA:
         coll_name, data_name = pathutil.chop(path)
         coll_name = misc.escape(coll_name)
+        data_name = misc.escape(data_name)
         return list(genquery.Query(ctx, 'META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE',
                                    f"META_DATA_ATTR_NAME like '{prefix}%' AND COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"))
     else:

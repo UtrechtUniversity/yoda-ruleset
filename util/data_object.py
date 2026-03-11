@@ -29,6 +29,7 @@ def exists(ctx: rule.Context, path: str) -> bool:
     """
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
     return len(list(genquery.Query(
                ctx, "DATA_ID",
                f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
@@ -87,6 +88,7 @@ def size(ctx: rule.Context, path: str) -> int | None:
     """
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
     iter = genquery.Query(
         ctx, "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
         f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
@@ -110,6 +112,7 @@ def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> boo
     """
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
     iter = genquery.row_iterator(
         "DATA_REPL_STATUS",
         f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
@@ -262,6 +265,8 @@ def id_from_path(ctx: rule.Context, path: str) -> str:
     """
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
+
     return genquery.Query(ctx, "DATA_ID",
                           f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'").first()
 
@@ -283,6 +288,7 @@ def get_group_owners(ctx: rule.Context, path: str) -> List:
     """Return list of groups of data object, each entry being name of the group and the zone."""
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
 
     groups = list(genquery.Query(
         ctx, "USER_NAME, USER_ZONE",

@@ -280,7 +280,7 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
         # if an AVU is added after this check.
         coll_name = misc.escape(pathutil.dirname(path))
-        data_name = pathutil.basename(path)
+        data_name = misc.escape(pathutil.basename(path))
         already_has_avu = len(list(genquery.Query(ctx,
                                                   ['DATA_ID'],
                                                   f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}' AND META_DATA_ATTR_NAME = '{revision_avu_name}'",

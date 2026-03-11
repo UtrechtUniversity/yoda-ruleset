@@ -27,6 +27,7 @@ def of_data(ctx: rule.Context, path: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given data object."""
     coll_name, data_name = pathutil.chop(path)
     coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
     return (Avu(*x) for x in genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
                                                  f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"))
 
