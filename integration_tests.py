@@ -8,6 +8,7 @@ __all__ = ['rule_run_integration_tests']
 import json
 import os
 import re
+import subprocess
 import time
 import traceback
 import uuid
@@ -276,7 +277,7 @@ def _test_statistics_exportdata(ctx: rule.Context) -> List[str]:
                                  "irods_rule_engine_plugin-irods_rule_language-instance",
                                  "-F",
                                  "/etc/irods/yoda-ruleset/tools/storage-statistics.r"]
-    Popen(statistics_update_command, stdout=PIPE)
+    subprocess.run(statistics_update_command)
 
     # Retrieve export data
     exportdata = get_resource_monthly_category_stats(ctx)
