@@ -11,9 +11,11 @@
 import argparse
 import json
 import os
+import signal
 import socket
 import ssl
 import sys
+import time
 from collections import OrderedDict
 from io import StringIO
 
@@ -26,6 +28,12 @@ from irods.models import Resource
 from irods.password_obfuscation import decode as password_decode
 from irods.rule import Rule
 from irods.session import iRODSSession
+
+
+SOFT_TIMEOUT = 50    # Try to stop scrip gracefully after soft timeout
+HARD_TIMEOUT = 55    # Forcefully stop script after hard timeout
+BEGIN_TS = time.time()
+SOFT_TIMEOUT_TS = BEGIN_TS + SOFT_TIMEOUT
 
 
 def get_hostname():
@@ -143,6 +151,7 @@ def get_local_ufs_resources(session):
 
 def process_ufs_resources(session, resource_names, override_free_dict, override_total_dict, verbose_mode):
     for resource_name in resource_names:
+        check_soft_timeout()
         if resource_name == "bundleResc":
             # Silently ignore bundleResc resource, because it is not a regular UFS resource
             continue
@@ -226,7 +235,20 @@ def is_on_provider():
         return "icat_host" in config and config["icat_host"] == get_hostname()
 
 
+def check_soft_timeout():
+    if time.time() > SOFT_TIMEOUT_TS:
+        print("Soft timeout exceeded. Stopping ARB update script gracefully.")
+        sys.exit(5)
+
+
+def handle_hard_timeout(signum, frame):
+    print("Hard timeout exceeded. Aborting ARB update script.")
+    sys.exit(5)
+
+
 def main():
+    signal.signal(signal.SIGALRM, handle_hard_timeout)
+    signal.alarm(HARD_TIMEOUT)
     args = parse_args()
     env = get_irods_environment()
 
@@ -234,6 +256,7 @@ def main():
         session = setup_session(env)
         override_free_dict = parse_cs_values(args.override_free)
         override_total_dict = parse_cs_values(args.override_total)
+        check_soft_timeout()
         local_ufs_resources = get_local_ufs_resources(session)
         process_ufs_resources(session,
                               local_ufs_resources,
@@ -242,6 +265,7 @@ def main():
                               args.verbose)
 
         if is_on_provider():
+            check_soft_timeout()
             if args.verbose:
                 print("Updating misc resources ...")
             call_rule_update_misc(session)
