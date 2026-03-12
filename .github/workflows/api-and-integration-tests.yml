@@ -103,6 +103,14 @@ jobs:
         docker exec portal.yoda sh -c 'set -x ; cd /var/www/yoda && git status'
         docker exec portal.yoda sh -c 'set -x ; touch /var/www/yoda/*.wsgi'
 
+    - name: Wait until iRODS is ready for integration tests
+      shell: bash
+      run: |
+        cd yoda/docker/compose
+        echo "Waiting for iRODS to be available for integration tests ..."
+        docker exec provider.yoda /bin/bash -c "until nc -vz provider.yoda 1247 >& /dev/null ; do print '.'; sleep 1; done"
+        echo "iRODS is ready for integration tests."
+
     - name: Run integration tests
       shell: bash
       run: |
