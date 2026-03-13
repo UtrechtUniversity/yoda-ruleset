@@ -103,13 +103,13 @@ acPostProcForDeleteUser {
 	writeString("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
-# Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
 pep_api_auth_request_pre(*instanceName, *comm, *request) {
-    # XXX: These attributes currently cannot be extracted in python.
+    # This PEP is still fired for authentication of the anonymous user.
     *user_name = *comm.user_user_name;
     *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
 
+    # It looks like this PEP is only used for the anonymous user. Check user name to be sure.
     if ( *user_name == "anonymous" ) {
        *access_allowed = '';
        rule_check_anonymous_access_allowed(*client_addr, *access_allowed);
@@ -121,12 +121,32 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
 
     *max_connections_exceeded = '';
     rule_check_max_connections_exceeded(*max_connections_exceeded);
-		if ( *max_connections_exceeded == "true" ) {
-		    writeString("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
-		    failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
-		}
+    if ( *max_connections_exceeded == "true" ) {
+        writeString("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
+        failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
+    }
 
-    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
+    # p1 suffix specifies which PEP has printed this message
+    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p1]");
+}
+
+pep_api_authenticate_pre(*instanceName, *comm, *request, *response) {
+    # This PEP is used for authentication of all PAM users and the rods account, but not
+    # for the anonymous account.
+    # XXX: These attributes currently cannot be extracted in python.
+    *user_name = *comm.user_user_name;
+    *zone_name = *comm.user_rods_zone;
+    *client_addr = *comm.client_addr
+
+    *max_connections_exceeded = '';
+    rule_check_max_connections_exceeded(*max_connections_exceeded);
+    if ( *max_connections_exceeded == "true" ) {
+        writeString("serverLog", "Refused access for *user_name#*zone_name, max connections exceeded.");
+        failmsg(-1, "Refused access for *user_name#*zone_name, max connections exceeded.");
+    }
+
+    # p2 suffix specifies which PEP has printed this message
+    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p2]");
 }
 
 # Enforce server to use TLS encryption.
