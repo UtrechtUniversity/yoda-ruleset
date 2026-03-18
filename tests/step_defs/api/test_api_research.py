@@ -26,6 +26,18 @@ def api_research_folder_add(user, folder, collection):
     )
 
 
+@given(parsers.parse("the Yoda research folder add API is queried for a long folder and {collection}"), target_fixture="api_response")
+def api_research_long_folder_add(user, collection):
+    folder = "abcdefghijklmnopqrstuvwxyz"
+    folder *= 40
+
+    return api_request(
+        user,
+        "research_folder_add",
+        {"coll": collection, "new_folder_name": folder}
+    )
+
+
 @given(parsers.parse("the Yoda research folder copy API is queried with {folder}, {copy}, and {collection}"), target_fixture="api_response")
 def api_research_folder_copy(user, folder, copy, collection):
     return api_request(
@@ -46,6 +58,18 @@ def api_research_folder_move(user, folder, move, collection):
 
 @given(parsers.parse("the Yoda research folder rename API is queried with {folder_old}, {folder} and {collection}"), target_fixture="api_response")
 def api_research_folder_rename(user, folder_old, folder, collection):
+    return api_request(
+        user,
+        "research_folder_rename",
+        {"new_folder_name": folder, "coll": collection, "org_folder_name": folder_old}
+    )
+
+
+@given(parsers.parse("the Yoda research folder rename API is queried for a long folder, {folder_old} and {collection}"), target_fixture="api_response")
+def api_research_long_folder_rename(user, folder_old, collection):
+    folder = "abcdefghijklmnopqrstuvwxyz"
+    folder *= 40
+
     return api_request(
         user,
         "research_folder_rename",
@@ -219,6 +243,13 @@ def file_renamed_not_exist(user, file_renamed, collection):
 @then(parsers.parse("file {file} exists in {move_collection}"))
 def file_move_exists(user, file, move_collection):
     assert object_exists(user, file, move_collection)
+
+
+@then(parsers.parse("long folder does not exist in {collection}"))
+def long_folder_not_exist(user, collection):
+    folder = "abcdefghijklmnopqrstuvwxyz"
+    folder *= 40
+    assert not object_exists(user, folder, collection)
 
 
 @then("checksum manifest is returned")

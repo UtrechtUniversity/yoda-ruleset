@@ -22,6 +22,38 @@ Feature: Research API
             | /tempZone/home/research-initial | api_test_folder's           |
 
 
+    Scenario Outline: Research folder add max length
+        Given user researcher is authenticated
+        And the Yoda research folder add API is queried for a long folder and <collection>
+        Then the response status code is "400"
+        And long folder does not exist in <collection>
+
+        Examples:
+            | collection                      |
+            | /tempZone/home/research-initial |
+
+
+    Scenario Outline: Research folder add traversal sequence
+        Given user researcher is authenticated
+        And the Yoda research folder add API is queried with <folder> and <collection>
+        Then the response status code is "400"
+        And folder <folder> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder             |
+            | /tempZone/home/research-initial | ../api_test_folder |
+
+
+    Scenario Outline: Research folder add parent traversal sequence
+        Given user researcher is authenticated
+        And the Yoda research folder add API is queried with <folder> and <collection>
+        Then the response status code is "400"
+
+        Examples:
+            | collection                         | folder          |
+            | /tempZone/home/research-initial/.. | api_test_folder |
+
+
     Scenario Outline: Research folder copy
         Given user researcher is authenticated
         And the Yoda research folder copy API is queried with <folder>, <copy>, and <collection>
@@ -60,6 +92,38 @@ Feature: Research API
             | collection                      | folder_old              | folder                    |
             | /tempZone/home/research-initial | api_test_folder         | api_test_folder_renamed   |
             | /tempZone/home/research-initial | api_test_folder_renamed | api_test_folder_renamed's |
+
+
+    Scenario Outline: Research folder rename max length
+        Given user researcher is authenticated
+        And the Yoda research folder rename API is queried for a long folder, <folder_old> and <collection>
+        Then the response status code is "400"
+        And long folder does not exist in <collection>
+
+        Examples:
+            | collection                      | folder_old              |
+            | /tempZone/home/research-initial | api_test_folder_renamed |
+
+
+    Scenario Outline: Research folder rename traversal sequence
+        Given user researcher is authenticated
+        And the Yoda research folder rename API is queried with <folder_old>, <folder> and <collection>
+        Then the response status code is "400"
+        And folder <folder> does not exist in <collection>
+
+        Examples:
+            | collection                      | folder_old              | folder             |
+            | /tempZone/home/research-initial | api_test_folder_renamed | ../api_test_folder |
+
+
+    Scenario Outline: Research folder rename parent traversal sequence
+        Given user researcher is authenticated
+        And the Yoda research folder rename API is queried with <folder_old>, <folder> and <collection>
+        Then the response status code is "400"
+
+        Examples:
+            | collection                         | folder_old              | folder             |
+            | /tempZone/home/research-initial/.. | api_test_folder_renamed | ../api_test_folder |
 
 
     Scenario Outline: Research file copy
