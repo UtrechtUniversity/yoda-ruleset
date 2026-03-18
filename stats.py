@@ -60,7 +60,7 @@ def api_resource_browse_group_data(ctx: rule.Context,
 
     # Initialize group data
     item_list = []
-    groups_list = get_user_groups(ctx, search_filter)
+    groups_list = get_user_groups_for_stats(ctx, search_filter)
 
     # Process data sizes for sorting
     for row in storage_data:
@@ -293,7 +293,7 @@ def filter_pregenerated_exportdata(ctx: rule.Context, inputdata: Dict) -> Dict:
        :returns: Filtered data
     """
     output_storagedata = []
-    user_accessible_groups = set(get_user_groups(ctx))
+    user_accessible_groups = set(get_user_groups_for_stats(ctx))
 
     for groupdata in inputdata['storage']:
         if groupdata.get('groupname', '') in user_accessible_groups:
@@ -353,7 +353,7 @@ def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
                                         ["ORDER(USER_GROUP_NAME)", "META_USER_ATTR_NAME", "META_USER_ATTR_VALUE"],
                                         zone_filter + group_filter + meta_filter))
 
-    groups_list = get_user_groups(ctx)
+    groups_list = get_user_groups_for_stats(ctx)
 
     category = ''
     subcategory = ''
@@ -704,24 +704,28 @@ def get_storage_data(ctx: rule.Context, search_filter: str = "", date_ref: str =
     return storage_data
 
 
-def get_user_groups(ctx: rule.Context, search_filter: str = "") -> List[str]:
-    """Get all user groups
+def get_user_groups_for_stats(ctx: rule.Context, search_filter: str = "", user_name: Optional[str] = None, zone_name: Optional[str] = None) -> List[str]:
+    """Get list of groups that a user has access to as a regular member, group manager or data manager.
+       The results are limited to types of groups relevant for statistics
+       (research, deposit, intake and legacy grp).
 
     :param ctx:           Combined type of a callback and rei struct
     :param search_filter: For specific search of groups
+    :param user_name:     Name of user (None: current user)
+    :param zone_name:     Name of user zone (None: zone of current user)
 
     :returns: All groups of current session's user
     """
     groups_list = []
 
-    user_name = user.name(ctx)
-    user_zone = user.zone(ctx)
+    user_name = user.name(ctx) if user_name is None else user_name
+    user_zone = user.zone(ctx) if zone_name is None else zone_name
 
     # Query all storage records
     group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
     zone_filter = f"AND USER_ZONE = '{user_zone}' "
 
-    if user.is_admin(ctx):
+    if user.is_admin(ctx, f"{user_name}#{user_zone}"):
         # All groups in zone
         groups_list = list(genquery.Query(ctx,
                                           "ORDER(USER_GROUP_NAME)",
