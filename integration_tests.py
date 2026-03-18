@@ -21,7 +21,7 @@ import groups
 import meta
 import research
 import schema
-from stats import get_resource_monthly_category_stats
+from stats import get_resource_monthly_category_stats, get_user_groups_for_stats
 from util import api, avu, collection, config, constants, data_object, diff_data, group, jsonutil, log, measure_coverage, msi, resources, rule, user
 from vault import copy_folder_to_research
 
@@ -726,6 +726,21 @@ basic_integration_tests = [
     {"name": "statistics.exportdata",
      "test": lambda ctx: _test_statistics_exportdata(ctx),
      "check": lambda x: x == []},
+    {"name": "statistics.get_user_groups_for_stats.rods.without_filter",
+     "test": lambda ctx: get_user_groups_for_stats(ctx),
+     "check": lambda x: len(x) >= 25 and "research-default-1" in x},
+    {"name": "statistics.get_user_groups_for_stats.rods.with_filter",
+     "test": lambda ctx: get_user_groups_for_stats(ctx, search_filter="AND USER_GROUP_NAME = 'research-default-1'"),
+     "check": lambda x: x == ["research-default-1"]},
+    {"name": "statistics.get_user_groups_for_stats.researcher",
+     "test": lambda ctx: get_user_groups_for_stats(ctx, user_name="researcher"),
+     "check": lambda x: sorted(x) == sorted(['deposit-pilot', 'grp-intake-initial', 'grp-intake-test', 'intake-test2', 'research-core-0', 'research-core-1', 'research-core-2', 'research-dag-0', 'research-default-0', 'research-default-1', 'research-default-2', 'research-default-3', 'research-epos-msl-0', 'research-hptlab-0', 'research-hptlab-1', 'research-initial', 'research-initial1', 'research-revisions', 'research-smoke-test', 'research-teclab-0', 'research-teclab-1', 'research-vollmer-0'])},
+    {"name": "statistics.get_user_groups_for_stats.datamanager",
+     "test": lambda ctx: get_user_groups_for_stats(ctx, user_name="datamanager"),
+     "check": lambda x: sorted(x) == sorted(['grp-datamanager-initial', 'grp-datamanager-test', 'grp-datamanager-test2', 'grp-intake-initial', 'grp-intake-test', 'intake-test2', 'research-smoke-test', 'deposit-pilot', 'deposit-pilot1', 'research-core-0', 'research-core-1', 'research-core-2', 'research-dag-0', 'research-default-0', 'research-default-1', 'research-default-2', 'research-default-3', 'research-epos-msl-0', 'research-hptlab-0', 'research-hptlab-1', 'research-initial', 'research-initial1', 'research-revisions', 'research-teclab-0', 'research-teclab-1', 'research-vollmer-0'])},
+    {"name": "statistics.get_user_groups_for_stats.viewer",
+     "test": lambda ctx: get_user_groups_for_stats(ctx, user_name="viewer"),
+     "check": lambda x: sorted(x) == sorted(['deposit-pilot', 'deposit-pilot1'])},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
