@@ -31,8 +31,6 @@ def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str
         group_type = group_name.split('-')[0]
 
     disable_join_requests = True
-    if config.sram_flow == 'join_request':
-        disable_join_requests = False
 
     # Add current user as CO admin if username is a valid email.
     # Fallback to CO default admins if username is not a valid email.
@@ -238,33 +236,6 @@ def sram_connect_service_collaboration(ctx: rule.Context, short_name: str) -> bo
         log.write(ctx, "response: {}".format(response.status_code))
 
     return response.status_code == 201
-
-
-def invitation_mail_group_add_user(ctx: rule.Context, group_name: str, username: str, co_identifier: str) -> str:
-    """Send invitation email to newly added user to the group.
-
-    :param ctx: Combined type of a ctx and rei struct
-    :param group_name: Name of the group the user is to invited to join
-    :param username: Name of the user to be invited
-    :param co_identifier: SRAM identifier of the group included in the invitation link
-
-    :returns: Sends the invitation mail to the user
-    """
-
-    return mail.send(ctx,
-                     to=username,
-                     cc='',
-                     actor=user.full_name(ctx),
-                     subject=("Invitation to join collaboration {}".format(group_name)),
-                     body="""Dear {},
-
-You have been invited by {} to join a collaboration page.
-
-The following link will take you directly to SRAM: {}/registration?collaboration={}
-
-With kind regards,
-Yoda
-""".format(username.split('@')[0], session_vars.get_map(ctx.rei)["client_user"]["user_name"], config.sram_rest_api_url, co_identifier))
 
 
 def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str, new_role: str) -> bool:
