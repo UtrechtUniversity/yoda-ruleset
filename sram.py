@@ -5,13 +5,27 @@ __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
+import uuid
 from typing import Dict, List
 
 import requests
-import session_vars
 
-import mail
 from util import *
+
+
+def is_valid_uuid(uuid_string: str) -> bool:
+    """Check if string is a valid UUID version 4.
+
+    :param uuid_string: String to validate as UUID 4
+
+    :returns: Boolean indictating if string is a valid UUID
+    """
+    try:
+        uuid_obj = uuid.UUID(uuid_string, version=4)
+    except ValueError:
+        return False
+
+    return str(uuid_obj) == uuid_string
 
 
 def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
@@ -70,6 +84,10 @@ def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
 
     :returns: Unique id of the user
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return ''
+
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
@@ -108,6 +126,10 @@ def sram_delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
 
     :returns: Boolean indicating of deletion of collaboration succeeded
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return False
+
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
@@ -131,6 +153,14 @@ def sram_delete_collaboration_membership(ctx: rule.Context, co_identifier: str, 
 
     :returns: Boolean indicating of deletion of collaboration membership succeeded
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return False
+
+    if not is_valid_uuid(uuid):
+        log.write(ctx, f"error: User uuid is invalid {uuid}")
+        return False
+
     url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uuid)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
@@ -155,6 +185,10 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
 
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return False
+
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     # Request SRAM to lookup poosible existing invitation for this user.
@@ -248,6 +282,14 @@ def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, 
 
     :returns: Boolean indicating that updation of collaboration membership succeeded
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return False
+
+    if not is_valid_uuid(uuid):
+        log.write(ctx, f"error: User uuid is invalid {uuid}")
+        return False
+
     url = "{}/api/collaborations/v1/{}/members".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
@@ -280,6 +322,10 @@ def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
 
     :returns: List of emails of the SRAM Collaboration members
     """
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return []
+
     url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
