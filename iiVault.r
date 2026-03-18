@@ -98,63 +98,6 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
         }
 }
 
-# \brief Rule to grant read access to the vault package managed by a datamanger.
-#
-# \param[in] path
-# \param[out] status
-#
-iiGrantReadAccessToResearchGroup(*path, *status) {
-  *status = "Unknown";
-
-  # Vault packages start four directories deep
-  *pathElems = split(*path, "/");
-  if (size(*pathElems) != 4) {
-    *status = "PermissionDenied";
-    succeed;
-  }
-  *vaultGroupName = elem(*pathElems, 2);
-  *baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
-  *researchGroup = IIGROUPPREFIX ++ *baseGroupName;
-  *actor = uuClientFullName;
-  *aclKv.actor = *actor;
-  *err = errormsg(msiSudoObjAclSet("recursive", "read", *researchGroup, *path, *aclKv), *msg);
-  if (*err < 0) {
-    *status = "PermissionDenied";
-    succeed;
-  } else {
-    *status = "Success";
-    succeed;
-  }
-}
-
-# \brief Rule to revoke read access to the vault package managed by a datamanger.
-#
-# \param[in] path
-# \param[out] status
-#
-iiRevokeReadAccessToResearchGroup(*path, *status) {
-  *status = "Unknown";
-
-  *pathElems = split(*path, "/");
-  if (size(*pathElems) != 4) {
-    *status = "PermissionDenied";
-    succeed;
-  }
-  *vaultGroupName = elem(*pathElems, 2);
-  *baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
-  *researchGroup = IIGROUPPREFIX ++ *baseGroupName;
-  *actor = uuClientFullName;
-  *aclKv.actor = *actor;
-  *err = errormsg(msiSudoObjAclSet("recursive", "null", *researchGroup, *path, *aclKv), *msg);
-  if (*err < 0) {
-    *status = "PermissionDenied";
-    succeed;
-  } else {
-    *status = "Success";
-    succeed;
-  }
-}
-
 # \brief Perform admin operations on the vault
 #
 iiAdminVaultActions() {

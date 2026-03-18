@@ -927,25 +927,18 @@ def change_read_access_group(ctx: rule.Context, coll: str, actor: str, group: st
 
     :returns: 2-Tuple of boolean successfully changed, API status if error
     """
+    acl_kv = msi.kvpair(ctx, "actor", actor)
     try:
         if grant:
-            # Workaround for https://github.com/irods/irods/issues/8265
-            # msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
-            status = ctx.iiGrantReadAccessToResearchGroup(coll, "")['arguments'][1]
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", group, coll, acl_kv)
         else:
-            # Workaround for https://github.com/irods/irods/issues/8265
-            #  msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
-            status = ctx.iiRevokeReadAccessToResearchGroup(coll, "")['arguments'][1]
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", group, coll, acl_kv)
     except Exception:
         policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, group, "1", "read")
         if bool(policy_error):
             return False, api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
         else:
             return False, api.Error('ErrorACLs', str(policy_error))
-
-    # Workaround for https://github.com/irods/irods/issues/8265
-    if status != "Success":
-        return False, api.Error('ErrorACLs', 'Could not set read access of {}.'.format(coll))
 
     return True, ''
 
