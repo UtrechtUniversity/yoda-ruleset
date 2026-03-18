@@ -576,7 +576,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         # First create the group. Note that the actor will become a groupmanager
         if not len(schema_id):
             schema_id = config.default_yoda_schema
-        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', 'unspecified')
+        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', '', 'unspecified')
 
         if response:
             new_group = True
@@ -894,9 +894,6 @@ def rule_group_check_external_user(ctx: rule.Context, username: str) -> str:
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
-    if config.enable_sram:
-        # All users are internal when SRAM is enabled.
-        return '0'
 
     if yoda_names.is_internal_user(username):
         return '0'
@@ -991,7 +988,8 @@ def group_create(ctx: rule.Context,
                  schema_id: str,
                  expiration_date: str,
                  description: str,
-                 data_classification: str) -> api.Result:
+                 data_classification: str,
+                 sram_co: bool) -> api.Result:
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -1002,6 +1000,7 @@ def group_create(ctx: rule.Context,
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
+    :param sram_co:             Create SRAM CO if True
 
     :returns: API status result
     """
@@ -1009,7 +1008,7 @@ def group_create(ctx: rule.Context,
         co_identifier = ''
 
         # Post SRAM collaboration and connect to service if SRAM is enabled.
-        if config.enable_sram:
+        if config.enable_sram and sram_co:
             response_sram = sram.sram_post_collaboration(ctx, group_name, description)
 
             if "error" in response_sram:
@@ -1030,6 +1029,11 @@ def group_create(ctx: rule.Context,
         status = response[8]
         message = response[9]
         if status == '0':
+            if config.enable_sram and not sram_co:
+                username = user.name(ctx) if yoda_names.is_email_username(user.name(ctx)) else config.sram_co_default_admins[0]
+                sram.sram_put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
+                # Mark user as invited.
+                msi.sudo_obj_meta_add(ctx, user.user_and_zone(ctx), "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
         elif status in {'-1089000', '-809000', '-806000'}:
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
@@ -1047,7 +1051,8 @@ def api_group_create(ctx: rule.Context,
                      schema_id: str,
                      expiration_date: str,
                      description: str,
-                     data_classification: str) -> api.Result:
+                     data_classification: str,
+                     sram_co: bool) -> api.Result:
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
@@ -1058,10 +1063,11 @@ def api_group_create(ctx: rule.Context,
     :param expiration_date:     Retention period for the group
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
+    :param sram_co:             If True, create a SRAM CO
 
     :returns: API status result
     """
-    return group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification)
+    return group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, description, data_classification, sram_co)
 
 
 @api.make()
@@ -1170,10 +1176,7 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
         if status == '0':
             # Send invitation mail for SRAM CO.
             if config.enable_sram and sram_group:
-                if config.sram_flow == 'join_request':
-                    sram.invitation_mail_group_add_user(ctx, group_name, username.split('#')[0], co_identifier)
-                elif config.sram_flow == 'invitation':
-                    sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
+                sram.sram_put_collaboration_invitation(ctx, group_name, username.split('#')[0], co_identifier)
                 # Mark user as invited.
                 msi.sudo_obj_meta_add(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
@@ -1366,16 +1369,10 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
 
             # Not invited and not yet in the CO.
             if member not in invited and member.split('#')[0] not in co_members:
-                if config.sram_flow == 'join_request':
-                    sram.invitation_mail_group_add_user(ctx, group_name, member.split('#')[0], co_identifier)
-                    msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
-                    continue
-                elif config.sram_flow == 'invitation':
-                    sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
-                    msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
-                    continue
+                sram.sram_put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                log.write(ctx, "User {} invited to group {}".format(member, group_name))
+                continue
 
             # Member is group manager and in the CO.
             if member in managers and member.split('#')[0] in co_members:

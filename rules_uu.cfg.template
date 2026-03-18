@@ -63,8 +63,13 @@ temporary_files                =
 enable_sram                    =
 sram_rest_api_url              =
 sram_api_key                   =
+sram_service_entity_id         =
 sram_verbose_logging           =
 sram_tls_verify                =
+sram_co_default_label          =
+sram_co_logo                   =
+sram_co_default_admins         =
+sram_external_users_co         =
 
 arb_enabled                    =
 arb_exempt_resources           =

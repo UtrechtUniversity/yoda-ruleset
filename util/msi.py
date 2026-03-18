@@ -147,7 +147,6 @@ atomic_apply_metadata_operations, AtomicApplyMetadataOperationsError = make('_at
 
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
 sudo_obj_meta_add, SudoObjMetaAddError = make('SudoObjMetaAdd', 'Could not add metadata as admin')
-sudo_obj_meta_set, SudoObjMetaSetError = make('SudoObjMetaSet', 'Could not set metadata as admin')
 sudo_obj_meta_remove, SudoObjMetaRemoveError = make('SudoObjMetaRemove', 'Could not remove metadata as admin')
 
 touch, TouchError = make('_touch', 'Could not update the data object or collection')
