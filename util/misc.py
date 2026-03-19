@@ -5,6 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import math
 import time
+import uuid
 from collections import OrderedDict
 from typing import Dict
 
@@ -138,3 +139,18 @@ def escape(unsafe: str) -> str:
     """Escaping Special Characters for GenQuery2."""
     safe = unsafe.replace("'", "''")
     return safe
+
+
+def is_valid_uuid(uuid_string: str) -> bool:
+    """Check if string is a valid UUID version 4.
+
+    :param uuid_string: String to validate as UUID 4
+
+    :returns: Boolean indictating if string is a valid UUID
+    """
+    try:
+        uuid_obj = uuid.UUID(uuid_string, version=4)
+    except (TypeError, ValueError):
+        return False
+
+    return str(uuid_obj) == uuid_string
