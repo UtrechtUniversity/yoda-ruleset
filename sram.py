@@ -13,7 +13,16 @@ import requests
 from util import *
 
 
-def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
+def _request_headers() -> Dict[str, str]:
+    """Return SRAM API request headers with bearer token."""
+    return {
+        'Content-Type': 'application/json',
+        'charset': 'UTF-8',
+        'Authorization': f'bearer {config.sram_api_key}'
+    }
+
+
+def post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -22,8 +31,7 @@ def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str
 
     :returns: JSON object with new collaboration details
     """
-    url = "{}/api/collaborations/v1".format(config.sram_rest_api_url)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1"
 
     group_type = ''
     if group_name.split('-')[0] in ('research', 'datamanager', 'priv', 'deposit'):
@@ -49,18 +57,18 @@ def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str
     }
 
     if config.sram_verbose_logging:
-        log.write(ctx, "post {}: {}".format(url, payload))
+        log.write(ctx, f"post_collaboration post {url}: {payload}")
 
-    response = requests.post(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.post(url, json=payload, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
     data = response.json()
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(data))
+        log.write(ctx, f"post_collaboration response: {data}")
 
     return data
 
 
-def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
+def get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
     """Get SRAM Collaboration member uid.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -70,40 +78,38 @@ def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
     :returns: Unique id of the user
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"get_uid error: CO identifier is invalid {co_identifier}")
         return ''
 
-    url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}"
 
     if config.sram_verbose_logging:
-        log.write(ctx, "get {}".format(url))
+        log.write(ctx, f"get_uid get {url}")
 
-    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.get(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
     if response.status_code != 200:
         if config.sram_verbose_logging:
-            log.write(ctx, "response: {}".format(response.status_code))
+            log.write(ctx, f"get_uid response: {response.status_code}")
         return ''
 
     data = response.json()
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(data))
+        log.write(ctx, f"get_uid response: {data}")
 
     uid = ''
     for key in data['collaboration_memberships']:
-        yoda_name = user_name.split('#')[0]
         sram_name = key['user']['email']
-        if yoda_name.lower() == sram_name.lower():
+        if user_name.lower() == sram_name.lower():
             uid = key['user']['uid']
 
     if config.sram_verbose_logging:
-        log.write(ctx, "user_name: {}, uuid: {}".format(user_name.split('#')[0], uid))
+        log.write(ctx, f"get_uid user_name: {user_name}, uuid: {uid}")
 
     return uid
 
 
-def sram_delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
+def delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
     """Delete SRAM Collaborative Organisation.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -112,24 +118,23 @@ def sram_delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
     :returns: Boolean indicating of deletion of collaboration succeeded
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"delete_collaboration error: CO identifier is invalid {co_identifier}")
         return False
 
-    url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}"
 
     if config.sram_verbose_logging:
-        log.write(ctx, "post {}".format(url))
+        log.write(ctx, f"delete_collaboration post {url}")
 
-    response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.delete(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"delete_collaboration response: {response.status_code}")
 
     return response.status_code == 204
 
 
-def sram_delete_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str) -> bool:
+def delete_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str) -> bool:
     """Delete SRAM Collaborative Organisation membership.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -139,28 +144,27 @@ def sram_delete_collaboration_membership(ctx: rule.Context, co_identifier: str, 
     :returns: Boolean indicating of deletion of collaboration membership succeeded
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"delete_collaboration_membership error: CO identifier is invalid {co_identifier}")
         return False
 
     if not misc.is_valid_uuid(uuid):
-        log.write(ctx, f"error: User uuid is invalid {uuid}")
+        log.write(ctx, f"delete_collaboration_membership error: User uuid is invalid {uuid}")
         return False
 
-    url = "{}/api/collaborations/v1/{}/members/{}".format(config.sram_rest_api_url, co_identifier, uuid)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}/members/{uuid}"
 
     if config.sram_verbose_logging:
-        log.write(ctx, "post {}".format(url))
+        log.write(ctx, f"delete_collaboration_membership post {url}")
 
-    response = requests.delete(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.delete(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"delete_collaboration_membership response: {response.status_code}")
 
     return response.status_code == 204
 
 
-def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, username: str, co_identifier: str) -> bool:
+def put_collaboration_invitation(ctx: rule.Context, group_name: str, username: str, co_identifier: str) -> bool:
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:           Combined type of a ctx and rei struct
@@ -171,31 +175,29 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"put_collaboration_invitation error: CO identifier is invalid {co_identifier}")
         return False
 
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
-
     # Request SRAM to lookup poosible existing invitation for this user.
-    url = "{}/api/invitations/v1/invitations/{}".format(config.sram_rest_api_url, co_identifier)
+    url = f"{config.sram_rest_api_url}/api/invitations/v1/invitations/{co_identifier}"
 
     if config.sram_verbose_logging:
-        log.write(ctx, "get: {}".format(url))
+        log.write(ctx, f"put_collaboration_invitation get: {url}")
 
-    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.get(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"put_collaboration_invitation response: {response.status_code}")
 
     if response.status_code != 200:
-        log.write(ctx, "Error retrieving existing invitations: {}".format(response.status_code))
+        log.write(ctx, f"put_collaboration_invitation error: unable to retrieve existing invitations - http {response.status_code}")
         return False
 
     if response.status_code == 200:
         for invite in response.json():
             if invite['invitation']['email'] == username and invite['status'] == 'open':
                 if config.sram_verbose_logging:
-                    log.write(ctx, "Invitation for {} already exists".format(username))
+                    log.write(ctx, f"put_collaboration_invitation error: invitation for {username} already exists")
                 return True
 
     # Now plus a year.
@@ -209,7 +211,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     # Build SRAM payload.
     payload = {
         "collaboration_identifier": co_identifier,
-        "message": "Invitation to join Yoda group {}".format(group_name),
+        "message": f"Invitation to join Yoda group {group_name}",
         "intended_role": "member",
         "invitation_expiry_date": epoch_date,
         "invites": [
@@ -217,19 +219,19 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
         ],
         "groups": []
     }
-    url = "{}/api/invitations/v1/collaboration_invites".format(config.sram_rest_api_url)
+    url = f"{config.sram_rest_api_url}/api/invitations/v1/collaboration_invites"
     if config.sram_verbose_logging:
-        log.write(ctx, "put {}: {}".format(url, payload))
+        log.write(ctx, f"put_collaboration_invitation put {url}: {payload}")
 
-    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.put(url, json=payload, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"put_collaboration_invitation response: {response.status_code}")
 
     return response.status_code == 201
 
 
-def sram_connect_service_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
+def connect_service_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
     """Connect a service to an existing SRAM collaboration.
 
     :param ctx:           Combined type of a ctx and rei struct
@@ -238,11 +240,10 @@ def sram_connect_service_collaboration(ctx: rule.Context, co_identifier: str) ->
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"connect_service_collaboration error: CO identifier is invalid {co_identifier}")
         return False
 
     url = f"{config.sram_rest_api_url}/api/collaborations_services/v1/connect_collaboration_service/{co_identifier}"
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     # Build SRAM payload.
     payload = {
@@ -250,17 +251,17 @@ def sram_connect_service_collaboration(ctx: rule.Context, co_identifier: str) ->
     }
 
     if config.sram_verbose_logging:
-        log.write(ctx, "put {}: {}".format(url, payload))
+        log.write(ctx, f"connect_service_collaboration put {url}: {payload}")
 
-    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.put(url, json=payload, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"connect_service_collaboration response: {response.status_code}")
 
     return response.status_code == 201
 
 
-def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str, new_role: str) -> bool:
+def update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid: str, new_role: str) -> bool:
     """Update SRAM Collaborative Organisation membership.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -271,15 +272,14 @@ def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, 
     :returns: Boolean indicating that updation of collaboration membership succeeded
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"update_collaboration_membership error: CO identifier is invalid {co_identifier}")
         return False
 
     if not misc.is_valid_uuid(uuid):
-        log.write(ctx, f"error: User uuid is invalid {uuid}")
+        log.write(ctx, f"update_collaboration_membership error: User uuid is invalid {uuid}")
         return False
 
-    url = "{}/api/collaborations/v1/{}/members".format(config.sram_rest_api_url, co_identifier)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}/members"
 
     if new_role == 'manager':
         role = 'admin'
@@ -292,17 +292,17 @@ def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, 
     }
 
     if config.sram_verbose_logging:
-        log.write(ctx, "put {}".format(url))
+        log.write(ctx, f"update_collaboration_membership put {url}")
 
-    response = requests.put(url, json=payload, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.put(url, json=payload, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(response.status_code))
+        log.write(ctx, f"update_collaboration_membership response: {response.status_code}")
 
     return response.status_code == 201
 
 
-def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
+def get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
     """Get SRAM Collaboration members.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -311,32 +311,31 @@ def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
     :returns: List of emails of the SRAM Collaboration members
     """
     if not misc.is_valid_uuid(co_identifier):
-        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        log.write(ctx, f"get_co_members error: CO identifier is invalid {co_identifier}")
         return []
 
-    url = "{}/api/collaborations/v1/{}".format(config.sram_rest_api_url, co_identifier)
-    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
+    url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}"
 
     if config.sram_verbose_logging:
-        log.write(ctx, "get {}".format(url))
+        log.write(ctx, f"get_co_members get {url}")
 
-    response = requests.get(url, headers=headers, timeout=30, verify=config.sram_tls_verify)
+    response = requests.get(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
     if response.status_code != 200:
         if config.sram_verbose_logging:
-            log.write(ctx, "response: {}".format(response.status_code))
+            log.write(ctx, f"get_co_members response: {response.status_code}")
         return []
 
     data = response.json()
 
     if config.sram_verbose_logging:
-        log.write(ctx, "response: {}".format(data))
+        log.write(ctx, f"get_co_members response: {data}")
 
     co_members = []
     for key in data['collaboration_memberships']:
         co_members.append(key['user']['email'])
 
     if config.sram_verbose_logging:
-        log.write(ctx, "collaboration_members: {}".format(co_members))
+        log.write(ctx, f"get_co_members members: {co_members}")
 
     return co_members
 
@@ -354,7 +353,7 @@ def get_co_identifier(ctx: rule.Context, group_name: str) -> Optional[str]:
 
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
+        f"USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{group_name}'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
