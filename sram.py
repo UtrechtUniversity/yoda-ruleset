@@ -5,27 +5,12 @@ __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
-import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 
+import genquery
 import requests
 
 from util import *
-
-
-def is_valid_uuid(uuid_string: str) -> bool:
-    """Check if string is a valid UUID version 4.
-
-    :param uuid_string: String to validate as UUID 4
-
-    :returns: Boolean indictating if string is a valid UUID
-    """
-    try:
-        uuid_obj = uuid.UUID(uuid_string, version=4)
-    except ValueError:
-        return False
-
-    return str(uuid_obj) == uuid_string
 
 
 def sram_post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
@@ -84,7 +69,7 @@ def sram_get_uid(ctx: rule.Context, co_identifier: str, user_name: str) -> str:
 
     :returns: Unique id of the user
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return ''
 
@@ -126,7 +111,7 @@ def sram_delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
 
     :returns: Boolean indicating of deletion of collaboration succeeded
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return False
 
@@ -153,11 +138,11 @@ def sram_delete_collaboration_membership(ctx: rule.Context, co_identifier: str, 
 
     :returns: Boolean indicating of deletion of collaboration membership succeeded
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return False
 
-    if not is_valid_uuid(uuid):
+    if not misc.is_valid_uuid(uuid):
         log.write(ctx, f"error: User uuid is invalid {uuid}")
         return False
 
@@ -185,7 +170,7 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
 
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return False
 
@@ -252,7 +237,7 @@ def sram_connect_service_collaboration(ctx: rule.Context, co_identifier: str) ->
 
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return False
 
@@ -285,11 +270,11 @@ def sram_update_collaboration_membership(ctx: rule.Context, co_identifier: str, 
 
     :returns: Boolean indicating that updation of collaboration membership succeeded
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return False
 
-    if not is_valid_uuid(uuid):
+    if not misc.is_valid_uuid(uuid):
         log.write(ctx, f"error: User uuid is invalid {uuid}")
         return False
 
@@ -325,7 +310,7 @@ def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
 
     :returns: List of emails of the SRAM Collaboration members
     """
-    if not is_valid_uuid(co_identifier):
+    if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
         return []
 
@@ -354,3 +339,26 @@ def sram_get_co_members(ctx: rule.Context, co_identifier: str) -> List[str]:
         log.write(ctx, "collaboration_members: {}".format(co_members))
 
     return co_members
+
+
+def get_co_identifier(ctx: rule.Context, group_name: str) -> Optional[str]:
+    """Retrieve the SRAM CO identifier of a Yoda group if the group is a SRAM CO.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group
+
+    :returns: Return SRAM CO identifier if the Yoda group is a SRAM CO else None
+    """
+    if not config.enable_sram:
+        return None
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'co_identifier' AND USER_GROUP_NAME = '{}'".format(group_name),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        if row[0] and misc.is_valid_uuid(row[0]):
+            return row[0]
+
+    return None
