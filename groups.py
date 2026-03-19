@@ -1030,11 +1030,13 @@ def group_create(ctx: rule.Context,
         if status == '0':
             # Put SRAM invitation if SRAM is enabled, group is NOT a SRAM CO, user is external and not member of external users CO.
             if config.enable_sram:
-                username = user.name(ctx) if yoda_names.is_email_username(user.name(ctx)) else config.sram_co_default_admins[0]
-                if not sram_co and not yoda_names.is_internal_user(username) and username not in sram.get_co_members(ctx, config.sram_external_users_co):
+                username, zone = user.from_str(ctx, user.name(ctx))
+                if (not sram_co and yoda_names.is_email_username(username)
+                   and not yoda_names.is_internal_user(username)
+                   and not sram.is_user_co_member(ctx, config.sram_external_users_co, username)):
                     sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
                     # Mark user as invited.
-                    msi.sudo_obj_meta_add(ctx, user.user_and_zone(ctx), "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    msi.sudo_obj_meta_add(ctx, user.name(ctx), "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
         elif status in {'-1089000', '-809000', '-806000'}:
             return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
@@ -1159,10 +1161,10 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
     """
     try:
         co_identifier = sram.get_co_identifier(ctx, group_name)
-
+        user_name, zone = user.from_str(ctx, username)
         # Group is a SRAM CO.
-        if co_identifier and not yoda_names.is_email_username(username):
-            return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(username, group_name))
+        if co_identifier and not yoda_names.is_email_username(user_name):
+            return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(user_name, group_name))
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1170,19 +1172,16 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
         if status == '0':
             put_invite = False
             if co_identifier:
-                co_members = sram.get_co_members(ctx, co_identifier)
                 # Put SRAM invitation if group is a SRAM CO and user is not member yet.
-                if username not in co_members:
+                if not sram.is_user_co_member(ctx, co_identifier, user_name):
                     put_invite = True
-            elif not co_identifier:
-                co_identifier = config.sram_external_users_co
-                co_members = sram.get_co_members(ctx, co_identifier)
+            elif not co_identifier and not yoda_names.is_internal_user(user_name):
                 # Put SRAM invitation if group is not a SRAM CO, user is external and user is not member yet.
-                if username not in co_members and not yoda_names.is_internal_user(username):
+                if not sram.is_user_co_member(ctx, config.sram_external_users_co, user_name):
                     put_invite = True
 
             if put_invite:
-                sram.put_collaboration_invitation(ctx, group_name, username, co_identifier)
+                sram.put_collaboration_invitation(ctx, group_name, user_name, co_identifier)
                 # Mark user as invited.
                 msi.sudo_obj_meta_add(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
@@ -1261,7 +1260,7 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
         # Remove user from CO if group is a SRAM CO.
         co_identifier = sram.get_co_identifier(ctx, group_name)
         if co_identifier:
-            uid = sram.get_uid(ctx, co_identifier, username)
+            uid = sram.get_co_member_uid(ctx, co_identifier, username)
             if uid == '':
                 return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
             elif not sram.delete_collaboration_membership(ctx, co_identifier, uid):
@@ -1328,7 +1327,7 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
                 break
 
         log.write(ctx, "Get members of group {} from SRAM".format(group_name))
-        co_members = sram.get_co_members(ctx, co_identifier)
+        co_members = [member['email'] for member in sram.get_co_members(ctx, co_identifier)]
 
         log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
         for member in members:
@@ -1356,7 +1355,7 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
 
             # Member is group manager and in the CO.
             if member in managers and member.split('#')[0] in co_members:
-                uid = sram.get_uid(ctx, co_identifier, member)
+                uid = sram.get_co_member_uid(ctx, co_identifier, member)
                 if uid == '':
                     log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
                 elif sram.update_collaboration_membership(ctx, co_identifier, uid, "manager"):
