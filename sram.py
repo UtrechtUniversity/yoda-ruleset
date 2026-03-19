@@ -244,20 +244,23 @@ def sram_put_collaboration_invitation(ctx: rule.Context, group_name: str, userna
     return response.status_code == 201
 
 
-def sram_connect_service_collaboration(ctx: rule.Context, short_name: str) -> bool:
+def sram_connect_service_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
     """Connect a service to an existing SRAM collaboration.
 
-    :param ctx:        Combined type of a ctx and rei struct
-    :param short_name: Short name of the group collaboration
+    :param ctx:           Combined type of a ctx and rei struct
+    :param co_identifier: SRAM identifier of the Co to connect the service to
 
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
-    url = "{}/api/collaborations_services/v1/connect_collaboration_service".format(config.sram_rest_api_url)
+    if not is_valid_uuid(co_identifier):
+        log.write(ctx, f"error: CO identifier is invalid {co_identifier}")
+        return False
+
+    url = f"{config.sram_rest_api_url}/api/collaborations_services/v1/connect_collaboration_service/{co_identifier}"
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'bearer ' + config.sram_api_key}
 
     # Build SRAM payload.
     payload = {
-        "short_name": short_name,
         "service_entity_id": config.sram_service_entity_id
     }
 
