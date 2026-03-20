@@ -1177,7 +1177,8 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
                     put_invite = True
             elif not co_identifier and not yoda_names.is_internal_user(user_name):
                 # Put SRAM invitation if group is not a SRAM CO, user is external and user is not member yet.
-                if not sram.is_user_co_member(ctx, config.sram_external_users_co, user_name):
+                co_identifier = config.sram_external_users_co
+                if not sram.is_user_co_member(ctx, co_identifier, user_name):
                     put_invite = True
 
             if put_invite:
