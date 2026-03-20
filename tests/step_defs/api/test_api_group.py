@@ -1,7 +1,7 @@
 # coding=utf-8
 """Group API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2023, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from collections import OrderedDict
@@ -76,10 +76,11 @@ def api_group_create(user, group_name):
         {"group_name": group_name,
          "category": cat_and_subcat,
          "subcategory": cat_and_subcat,
-         "schema_id": "default-2",
+         "schema_id": "default-3",
          "expiration_date": "",
          "description": "",
-         "data_classification": "public"}
+         "data_classification": "public",
+         "sram_co": False}
     )
 
 
@@ -92,10 +93,11 @@ def api_group_create_deposit(user, group_name):
         {"group_name": group_name,
          "category": cat_and_subcat,
          "subcategory": cat_and_subcat,
-         "schema_id": "default-3",
+         "schema_id": "dag-0",
          "expiration_date": "",
          "description": "",
-         "data_classification": ""}
+         "data_classification": "",
+         "sram_co": False}
     )
 
 
@@ -111,7 +113,8 @@ def api_datamanager_group_create(user, group_name):
          "schema_id": "",
          "expiration_date": "",
          "description": "",
-         "data_classification": ""}
+         "data_classification": "",
+         "sram_co": False}
     )
 
 
@@ -299,10 +302,10 @@ def then_user_update_persisted(user, new_user, group_name):
 @given(parsers.parse('the Yoda API for processing csv group data API is queried for data "{data_id}"'), target_fixture="api_response")
 def api_group_import_csv_data(user, data_id):
     headers_and_data = {
-        "csvtestgroup": "category,subcategory,groupname,manager,member,member,viewer,member\rdefault-2,default-2,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com",
-        "csvtestgroup1": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test,2030-01-01,default-2",
-        "csv-missing-header": "category,,groupname,manager,expiration_date,schema_id\rdefault-2,default-2,csvtestgroup1,datamanager@yoda.test",
-        "csv-missing-entry": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-2,,csvtestgroup1,datamanager@yoda.test",
+        "csvtestgroup": "category,subcategory,groupname,manager,member,member,viewer,member\rdefault-3,default-3,csvtestgroup,datamanager@yoda.test,researcher@yoda.test,functionaladminpriv@yoda.test,viewer@yoda.test,researcher1@example.com",
+        "csvtestgroup1": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-3,default-3,csvtestgroup1,datamanager@yoda.test,2030-01-01,default-3",
+        "csv-missing-header": "category,,groupname,manager,expiration_date,schema_id\rdefault-3,default-3,csvtestgroup1,datamanager@yoda.test",
+        "csv-missing-entry": "category,subcategory,groupname,manager,expiration_date,schema_id\rdefault-3,,csvtestgroup1,datamanager@yoda.test",
     }
     return api_request(
         user,

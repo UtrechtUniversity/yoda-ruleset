@@ -576,8 +576,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         # First create the group. Note that the actor will become a groupmanager
         if not len(schema_id):
             schema_id = config.default_yoda_schema
-        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', '', 'unspecified')
-
+        response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', 'unspecified', False)
         if response:
             new_group = True
             message += "Group '{}' created.".format(group_name)
@@ -894,6 +893,9 @@ def rule_group_check_external_user(ctx: rule.Context, username: str) -> str:
 
     :returns: String indicating if user is external ('1': yes, '0': no)
     """
+    if config.enable_sram:
+        # All users are internal when SRAM is enabled.
+        return '0'
 
     if yoda_names.is_internal_user(username):
         return '0'
