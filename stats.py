@@ -403,7 +403,12 @@ def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
 
         # Iterate all groups to initialize current month's data if there was no match in storage data
         for group in groups_list:
-            if len(group_storage[group]) == record_count:
+            if group not in group_storage:
+                # This can happen if we have a group without a matching group collection
+                log.write(ctx, f"Warning: ignoring group {group} for category statistics, because storage data not found "
+                               + "(possibly a group without a group collection?)")
+                continue
+            elif len(group_storage[group]) == record_count:
                 group_storage[group].append(0)
 
         # Increment time period by 1 month
