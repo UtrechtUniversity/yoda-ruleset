@@ -9,7 +9,7 @@
         "functionaladmingroup":    {"username": "functionaladmingroup",    "password": "test"},
         "functionaladmincategory": {"username": "functionaladmincategory", "password": "test"},
         "functionaladminpriv":     {"username": "functionaladminpriv",     "password": "test"},
-        "technicaladmin":          {"username": "technicaladmin@yoda.test","password": "test"},
+        "technicaladmin":          {"username": "technicaladmin",          "password": "test"},
         "projectmanager":          {"username": "projectmanager",          "password": "test"},
         "dacmember":               {"username": "dacmember",               "password": "test"}
     }
