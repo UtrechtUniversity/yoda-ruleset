@@ -354,3 +354,26 @@ def get_co_identifier(ctx: rule.Context, group_name: str) -> Optional[str]:
             return row[0]
 
     return None
+
+
+def is_user_marked_invited(ctx: rule.Context, username: str, group_name: str) -> bool:
+    """Check in user metadata if user is marked as invited to SRAM CO.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group user is invited to
+
+    :returns: Boolean indicating where the user is marked as invited to SRAM CO
+    """
+    attr_name = f"{constants.UUORGMETADATAPREFIX}sram_invited"
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        f"USER_GROUP_NAME = '{username}' AND META_USER_ATTR_NAME = '{attr_name}'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if row[0] == group_name:
+            return True
+
+    return False
