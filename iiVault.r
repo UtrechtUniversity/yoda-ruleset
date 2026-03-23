@@ -28,6 +28,11 @@ iiAdminVaultIngest() {
 	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
 }
 
+# TODO
+iiVaultGetRetirementActor(*folder, *actor, *actionActor) {
+        # TODO: retrieve retirement action actor
+}
+
 # \brief Perform admin operations on the vault
 #
 iiAdminVaultActions() {
@@ -38,6 +43,12 @@ iiAdminVaultActions() {
 #
 iiAdminVaultArchive(*coll, *action) {
 	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *action, "", "", 0, *out);
+}
+
+# \brief Prepare to retire a data package in the vault
+#
+iiAdminVaultRetire() {
+	msiExecCmd("admin-vault-retire.sh", uuClientFullName, "", "", 0, *out);
 }
 
 # \brief Perform copy to research from vault

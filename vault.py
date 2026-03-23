@@ -22,6 +22,7 @@ import meta_form
 import notifications
 import policies_datamanager
 import policies_datapackage_status
+import vault_retire
 from util import *
 from vault_utils import get_copy_irsync_command, get_sanity_checks_results_copy_to_research_paths, get_sanity_checks_results_copy_to_vault_paths
 
@@ -812,6 +813,9 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         "package_doi": package_doi,
         "embargo_end_date": meta_embargo_access.get("Embargo_End_Date", ""),
         "data_access_restriction": meta_embargo_access.get("Data_Access_Restriction", "")
+    }
+    result["retire"] = {
+        "status": vault_retire.vault_retirement_status(ctx, path)
     }
     if config.enable_data_package_archive:
         import vault_archive
