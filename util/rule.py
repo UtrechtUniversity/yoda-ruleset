@@ -5,8 +5,11 @@ __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import traceback
 from enum import Enum
 from typing import Callable, Dict, List
+
+import log
 
 
 class Context:
@@ -89,7 +92,14 @@ def make(inputs: List | None = None, outputs: List | None = None, transform: Cal
     def deco(f: Callable) -> Callable:
         def r(rule_args: List, callback: object, rei: object) -> None:
             a = rule_args if inputs is None else [rule_args[i] for i in inputs]
-            result = f(Context(callback, rei), *a)
+
+            ctx = Context(callback, rei)
+            try:
+                result = f(ctx, *a)
+            except Exception as e:
+                log.write(ctx, "Uncaught exception while executing rule: "
+                          + traceback.format_exc())
+                raise e
 
             if result is None:
                 return
