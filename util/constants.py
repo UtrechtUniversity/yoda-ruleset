@@ -1,6 +1,6 @@
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -71,6 +71,7 @@ IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IIARCHIVEATTRNAME     = UUORGMETADATAPREFIX + 'archival_status'
+IIRETIREATTRNAME      = UUORGMETADATAPREFIX + 'retirement_status'
 IIBAGITOR             = UUORGMETADATAPREFIX + 'bagitor'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
 IICOPYRETRYCOUNT      = UUORGMETADATAPREFIX + 'retry_count'
@@ -173,6 +174,28 @@ class vault_archive_state(Enum):
 
     def __str__(self) -> str:
         return self.name
+
+
+class vault_retirement_state(Enum):
+    """Vault package retirement states."""
+
+    # Values are as they appear in AVU values.
+    ACTIVE                    = ''
+    RETIREMENT_REQUESTED      = 'RETIREMENT_REQUESTED'
+    RETIREMENT_APPROVED       = 'RETIREMENT_APPROVED'
+    RETIRED                   = 'RETIRED'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+# List of valid retirement transitions (src, dst)
+retirement_transitions = [(vault_retirement_state(x),
+                           vault_retirement_state(y))
+                          for x, y in [('', 'RETIREMENT_REQUESTED'),
+                                       ('RETIREMENT_REQUESTED', ''),
+                                       ('RETIREMENT_REQUESTED', 'RETIREMENT_APPROVED'),
+                                       ('RETIREMENT_APPROVED', 'RETIRED')]]
 
 
 # List of valid replica states.
