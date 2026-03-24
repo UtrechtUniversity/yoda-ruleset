@@ -1513,7 +1513,7 @@ def set_submitter(ctx: rule.Context, path: str, actor: str) -> None:
 
 
 def get_submitter(ctx: rule.Context, path: str) -> str:
-    """Set submitter of data package for publication."""
+    """Get submitter of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
 
@@ -1530,7 +1530,7 @@ def set_approver(ctx: rule.Context, path: str, actor: str) -> None:
 
 
 def get_approver(ctx: rule.Context, path: str) -> str:
-    """Set approver of data package for publication."""
+    """Get approver of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
 
