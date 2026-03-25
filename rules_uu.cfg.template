@@ -76,4 +76,8 @@ arb_exempt_resources           =
 arb_min_gb_free                =
 arb_min_percent_free           =
 
+matomo_tracking_enabled        =
+matomo_server_fqdn             =
+matomo_site_id                 =
+
 pregenerated_data_dir          =

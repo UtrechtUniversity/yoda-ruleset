@@ -82,7 +82,11 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     if template_name == "emptylandingpage.html.j2":
         persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
         tm = Template(template)
-        landing_page = tm.render(persistent_identifier_datapackage=persistent_identifier_datapackage)
+        landing_page = tm.render(
+            matomo_tracking_enabled=config.matomo_tracking_enabled,
+            matomo_server_fqdn=config.matomo_server_fqdn,
+            matomo_site_id=config.matomo_site_id,
+            persistent_identifier_datapackage=persistent_identifier_datapackage)
         return landing_page
 
     ############################################################################
@@ -245,5 +249,8 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         covered_geolocation_place=covered_geolocation_place,
         random_id=random_id,
         base_doi=base_doi,
+        matomo_tracking_enabled=config.matomo_tracking_enabled,
+        matomo_server_fqdn=config.matomo_server_fqdn,
+        matomo_site_id=config.matomo_site_id,
         versions=versions,
     )
