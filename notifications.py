@@ -154,7 +154,7 @@ def api_notifications_dismiss(ctx: rule.Context, identifier: str) -> api.Result:
     :param identifier: Identifier of notification message
     """
     user_name = user.name(ctx)
-    key = "{}_{}".format(NOTIFICATION_KEY, str(identifier))
+    key = f"{NOTIFICATION_KEY}_{identifier}"
     value = avu.get_attr_val_of_user(ctx, user_name, key)
     msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", key, value, "", "")
 
@@ -166,17 +166,17 @@ def api_notifications_dismiss_all(ctx: rule.Context) -> api.Result:
     :param ctx: Combined type of a callback and rei struct
     """
     user_name = user.name(ctx)
-    key = "{}_%".format(NOTIFICATION_KEY)
+    key = f"{NOTIFICATION_KEY}_%"
 
-    # Retrieve list of AVUs of user.
-    avus = [(avu.attr, avu.value, avu.unit) for avu in avu.of_group(ctx, user_name)]
+    # Retrieve list of notifcation AVUs of user.
+    avus = list(genquery.Query(
+        ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+        f"USER_NAME = '{user_name}' AND USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME like '{key}'")
+    )
 
-    # Filter list of AVUs.
-    avus_filtered = [avu for avu in avus if avu.wildcard_filter(avu, key, "%", "%")]
-
-    # Remove filtered AVUs.
-    for (a_, v_, u_) in avus_filtered:
-        msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", a_, v_, u_, "")
+    # Remove notifcation AVUs.
+    for (attr, value, unit) in avus:
+        msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", attr, value, unit, "")
 
 
 def send_notification(ctx: rule.Context, to: str, actor: str, message: str) -> api.Result:
