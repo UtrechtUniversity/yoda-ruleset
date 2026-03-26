@@ -4,9 +4,12 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from typing import List
+
 import genquery
 
 import constants
+import folder
 import groups
 import policies_retirement_status
 from util import *
@@ -49,17 +52,12 @@ def api_vault_request_retirement(ctx: rule.Context, coll: str) -> api.Result:
 
     :returns: API status
     """
-    # check collection is in vault
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.VAULT:
         return api.Error('invalid_path', 'Invalid vault path.')
 
-    # check valid status transition
-    # update provenance log
-    # notify technical admin
     ret = request_retirement_status_transition(ctx, coll, constants.vault_retirement_state.RETIREMENT_REQUESTED)
 
-    # update status
     if ret[0] == '':
         log.write(ctx, 'api_vault_request_retirement: iiAdminVaultRetire')
         ctx.iiAdminVaultRetire()
@@ -77,17 +75,12 @@ def api_vault_cancel_retirement(ctx: rule.Context, coll: str) -> api.Result:
 
     :returns: API status
     """
-    # check collection is in vault
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.VAULT:
         return api.Error('invalid_path', 'Invalid vault path.')
 
-    # check valid status transition
-    # update provenance log
-    # notify datamanager / technicaladmin
     ret = request_retirement_status_transition(ctx, coll, constants.vault_retirement_state.ACTIVE)
 
-    # update status
     if ret[0] == '':
         log.write(ctx, 'api_vault_cancel_retirement: iiAdminVaultRetire')
         ctx.iiAdminVaultRetire()
@@ -105,17 +98,12 @@ def api_vault_approve_retirement(ctx: rule.Context, coll: str) -> api.Result:
 
     :returns: API status
     """
-    # check collection is in vault
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.VAULT:
         return api.Error('invalid_path', 'Invalid vault path.')
 
-    # check valid status transition
-    # update provenance log
-    # notify datamanager
     ret = request_retirement_status_transition(ctx, coll, constants.vault_retirement_state.RETIREMENT_APPROVED)
 
-    # update status
     if ret[0] == '':
         log.write(ctx, 'api_vault_approve_retirement: iiAdminVaultRetire')
         ctx.iiAdminVaultRetire()
@@ -185,7 +173,7 @@ def is_transition_pending(ctx: rule.Context, coll_id: str) -> bool:
     return False
 
 
-def request_retirement_status_transition(ctx: rule.Context, coll: str, new_status: str) -> List:
+def request_retirement_status_transition(ctx: rule.Context, coll: str, new_status: constants.vault_retirement_state) -> List:
     """Request vault retirement status transition action.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -229,8 +217,11 @@ def request_retirement_status_transition(ctx: rule.Context, coll: str, new_statu
         return ['PermissionDenied', 'Illegal status transition']
 
     # Attach action AVUs
-    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'retirement_action_' + coll_id, jsonutil.dump([coll, str(new_status), actor]))
-    avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'retirement_status_action_' + coll_id, 'PENDING')
+    try:
+        avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'retirement_action_' + coll_id, jsonutil.dump([coll, new_status.value, actor]))
+        avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'retirement_status_action_' + coll_id, 'PENDING')
+    except msi.Error:
+        return ['InternalError', 'Something went wrong with the request']
 
     return ['', '']
 
@@ -242,36 +233,67 @@ def process_retirement_status_transition(ctx: rule.Context) -> None:
     """
     # Check user here is rods
     if user.name(ctx) != "rods":
-        log.write(ctx, "Error in process_retirement_status_transition: Insufficient permissions - status transitions can only be performed by rods.")
+        log.write(ctx, "process_retirement_status_transition: Insufficient permissions - status transitions can only be performed by rods.")
+        return
 
-    # Scan for pending actions
+    # Scan for pending transitions
     action_iter = genquery.row_iterator(
-        "COLL_NAME, COLL_ID",
+        "COLL_NAME, META_COLL_ATTR_VALUE",
         f"META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}retirement_action_%'",
         genquery.AS_LIST,
         ctx
     )
-    if len(list(action_iter)) < 1:
-        log.write(ctx, "Error in process_retirement_status_transition: no folder with pending actions found. Ignoring...")
 
-    for row in action_iter:
-        coll_id = row[1]
-
-        log.write(ctx, f"action_iter_row: {row}")
+    for action_row in action_iter:
+        # Initialize data
+        data = jsonutil.parse(action_row[1])
+        coll = data[0]
+        coll_id = collection.id_from_name(ctx, coll)
+        new_status = data[1]
+        current_status = vault_retirement_status(ctx, coll)
+        actor = data[2]
 
         # Scan for pending status transitions
         status_iter = genquery.row_iterator(
-            "COLL_NAME, COLL_ID",
+            "COLL_NAME",
             f"META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}retirement_status_action_{coll_id}' AND META_COLL_ATTR_VALUE = 'PENDING'",
             genquery.AS_LIST,
             ctx
         )
 
-    # TODO: pick up new status and actor from AVU
+        for status_row in status_iter:
+            # Check that transitions come from the same group collection
+            if action_row[0] != status_row[0]:
+                continue
 
-    # TODO: check current status in case transition already happened
+            # Check current status in case transition already happened
+            if new_status == current_status:
+                continue
 
-    # TODO: assign AVUs (status, requester actor, approval actor if any)
+            # Check again if transition is legal
+            is_legal = policies_retirement_status.can_transition_retirement_status(ctx, coll, constants.vault_retirement_state(current_status), constants.vault_retirement_state(new_status))
+            if not is_legal:
+                log.write(ctx, f"process_retirement_status_transition: Illegal status transition from {current_status} to {new_status}.")
+                continue
+            else:
+                # Set retirement AVUs
+                try:
+                    if new_status == constants.vault_retirement_state.ACTIVE.value:  # If retirement has been denied or cancelled, remove AVU
+                        avu.rm_from_coll(ctx, coll, constants.IIRETIREATTRNAME, current_status)
+                    else:
+                        avu.set_on_coll(ctx, coll, constants.IIRETIREATTRNAME, new_status)
+                except msi.Error:
+                    log.write(ctx, "process_retirement_status_transition: msiError - Could not set retirement AVUs.")
+                    continue
+
+                # Remove action AVUs
+                try:
+                    avu.rm_from_coll(ctx, action_row[0], f"{constants.UUORGMETADATAPREFIX}retirement_action_{coll_id}", action_row[1])
+                    avu.rm_from_coll(ctx, status_row[0], f"{constants.UUORGMETADATAPREFIX}retirement_status_action_{coll_id}", "PENDING")
+                except msi.Error:
+                    log.write(ctx, "process_retirement_status_transition: msiError - Could not remove action AVUs.")
+
+    log.write(ctx, f"process_retirement_status_transition: Successfully transitioned to {new_status} by {actor} on {coll}")
 
 
 @rule.make()
