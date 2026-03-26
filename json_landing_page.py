@@ -49,8 +49,10 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
                                                json_schema: Dict,
                                                random_id: str,
                                                base_doi: str,
-                                               versions: Dict) -> str:
-    """Get the landing page of published YoDa metadata as a string.
+                                               versions: Dict,
+                                               is_retired: bool,
+                                               is_archived: bool) -> str:
+    """Get the landing page of published Yoda metadata as a string.
 
     :param ctx:             Combined type of a ctx and rei struct
     :param zone:            Zone name
@@ -60,34 +62,28 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     :param random_id:       Random ID of the publication
     :param base_doi:        Base DOI of the publication
     :param versions:        Dict containing all the versions of the publication
+    :param is_retired:      Whether the data package is retired
+    :param is_archived:     Whether the data package is archived
 
     :return: Output HTML landing page
     """
-    # Landing page creation is part of the publication process
-    # Read user & system metadata from corresponding combi JSON file
+    # Read and clean metadata.
     json_data = jsonutil.read(ctx, combi_json_path)
-
-    # Remove empty objects to prevent empty fields on landingpage.
     json_data = misc.remove_empty_objects(json_data)
 
-    # Load the Jinja template.
-    landingpage_template_path = "/{}/yoda/templates/{}".format(zone, template_name)
+    # Load and prepare Jinja template.
+    landingpage_template_path = f"/{zone}/yoda/templates/{template_name}"
     template = data_object.read(ctx, landingpage_template_path)
+    tm = jinja2.Environment(autoescape=True).from_string(template)
 
-    # Enable autoescaping for all templates.
-    Template = jinja2.Environment(autoescape=True).from_string
-
-    # Pre work input for render process.
-    # When empty landing page, take a short cut
+    # Handle empty landing page (depublication).
     if template_name == "emptylandingpage.html.j2":
         persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
-        tm = Template(template)
-        landing_page = tm.render(
+        return tm.render(
             matomo_tracking_enabled=config.matomo_tracking_enabled,
             matomo_server_fqdn=config.matomo_server_fqdn,
             matomo_site_id=config.matomo_site_id,
             persistent_identifier_datapackage=persistent_identifier_datapackage)
-        return landing_page
 
     ############################################################################
     # Embargo
@@ -107,47 +103,48 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     data_access_restriction = json_data["Data_Access_Restriction"]
     data_classification = json_data["Data_Classification"]
 
+    # Extract keywords from multiple sources.
     keywords = []
-    for keyword in json_data.get("Tag", []):
-        keywords.append({'subject': keyword, 'subjectScheme': 'Keyword'})
+    for keyword in json_data.get("Tag", []):  # from core-2 and default-3 Tag is renamed to Keyword
+        keywords.append({"subject": keyword, "subjectScheme": "Keyword"})
 
-    # From core-2 and default-3 Tag is renamed to Keyword
     if "TreeKeyword" in json_data:
-        keywords.extend(json_data.get("TreeKeyword"))
+        keywords.extend(json_data["TreeKeyword"])
     else:
-        for keyword in json_data.get('Keyword', []):
-            keywords.append({'subject': keyword, 'subjectScheme': 'Keyword'})
+        for keyword in json_data.get("Keyword", []):
+            keywords.append({"subject": keyword, "subjectScheme": "Keyword"})
 
+    # Extract discipline names from schema.
     try:
         disciplines = []
-        discipline_ids = json_data["Discipline"]
-        schema_disc_ids = json_schema["definitions"]["optionsDiscipline"]["enum"]
-        schema_disc_names = json_schema["definitions"]["optionsDiscipline"]["enumNames"]
-        for id in discipline_ids:
-            index = schema_disc_ids.index(id)
-            disciplines.append(schema_disc_names[index])
-    except KeyError:
+        discipline_ids = json_data.get("Discipline", [])
+        if discipline_ids:
+            schema_disc_ids = json_schema["definitions"]["optionsDiscipline"]["enum"]
+            schema_disc_names = json_schema["definitions"]["optionsDiscipline"]["enumNames"]
+            disciplines = [schema_disc_names[schema_disc_ids.index(id)] for id in discipline_ids]
+    except (KeyError, ValueError, IndexError):
         disciplines = []
 
+    # Extract data type name from schema.
     try:
         datatype = ""
-        datatype_id = json_data["Data_Type"]
-        schema_dt_ids = json_schema["definitions"]["optionsDataType"]["enum"]
-        schema_dt_names = json_schema["definitions"]["optionsDataType"]["enumNames"]
-        index = schema_dt_ids.index(datatype_id)
-        datatype = schema_dt_names[index]
-    except KeyError:
+        datatype_id = json_data.get("Data_Type")
+        if datatype_id:
+            schema_dt_ids = json_schema["definitions"]["optionsDataType"]["enum"]
+            schema_dt_names = json_schema["definitions"]["optionsDataType"]["enumNames"]
+            datatype = schema_dt_names[schema_dt_ids.index(datatype_id)]
+    except (KeyError, ValueError, IndexError):
         datatype = ""
 
+    # Extract language name from schema.
     try:
         language = ""
-        language_id = json_data["Language"]
-        schema_lang_ids = json_schema["definitions"]["optionsISO639-1"]["enum"]
-        schema_lang_names = json_schema["definitions"]["optionsISO639-1"]["enumNames"]
-        index = schema_lang_ids.index(language_id)
-        # Language variable must be kept in unicode, otherwise landing page fails to build with a language with non-ascii characters
-        language = schema_lang_names[index]
-    except KeyError:
+        language_id = json_data.get("Language")
+        if language_id:
+            schema_lang_ids = json_schema["definitions"]["optionsISO639-1"]["enum"]
+            schema_lang_names = json_schema["definitions"]["optionsISO639-1"]["enumNames"]
+            language = schema_lang_names[schema_lang_ids.index(language_id)]
+    except (KeyError, ValueError, IndexError):
         language = ""
 
     ############################################################################
@@ -159,8 +156,8 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     funding_reference = json_data.get("Funding_Reference", [])
     covered_geolocation_place = json_data.get("Covered_Geolocation_Place", {})
 
+    # Combine related resources from both old and new field names.
     all_related_resources = json_data.get("Related_Datapackage", [])
-    # From core-2 and default-3 Related_Datapackage is renamed to Related_Resource
     all_related_resources.extend(json_data.get("Related_Resource", []))
 
     ############################################################################
@@ -174,27 +171,30 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     # Convert lab identifiers to lab names.
     try:
         labs = []
-        schema_labids = json_schema["definitions"]["optionsLabs"]["enum"]
-        schema_labnames = json_schema["definitions"]["optionsLabs"]["enumNames"]
-        for id in labids:
-            index = schema_labids.index(id)
-            labs.append(schema_labnames[index])
-    except KeyError:
+        if labids:
+            schema_labids = json_schema["definitions"]["optionsLabs"]["enum"]
+            schema_labnames = json_schema["definitions"]["optionsLabs"]["enumNames"]
+            labs = [schema_labnames[schema_labids.index(id)] for id in labids]
+    except (KeyError, ValueError, IndexError):
         labs = []
 
-    # Geo specific keywords
-    keywords.extend(json_data.get("Apparatus", []))                       # teclab-0, teclab-1, hptlab-0, hptlab-1
-    keywords.extend(json_data.get("Material", []))                        # teclab-0, teclab-1, hptlab-0, hptlab-1
-    keywords.extend(json_data.get("Measured_Property", []))               # teclab-0, teclab-1, hptlab-0, hptlab-1
-    keywords.extend(json_data.get("Monitoring", []))                      # teclab-0, teclab-1, hptlab-0
-    keywords.extend(json_data.get("Main_Setting", []))                    # teclab-0, teclab-1
-    keywords.extend(json_data.get("Process_Hazard", []))                  # teclab-0, teclab-1
-    keywords.extend(json_data.get("Geological_Structure", []))            # teclab-0, teclab-1
-    keywords.extend(json_data.get("Software", []))                        # teclab-0, teclab-1
-    keywords.extend(json_data.get("Geomorphological_Feature", []))        # teclab-1
-    keywords.extend(json_data.get("Pore_Fluid", []))                      # hptlab-1
-    keywords.extend(json_data.get("Ancillary_Equipment", []))             # hptlab-1
-    keywords.extend(json_data.get("Inferred_Deformation_Behaviour", []))  # hptlab-1
+    # Geo specific keywords.
+    geo_keyword_fields = [
+        "Apparatus",                       # teclab-0, teclab-1, hptlab-0, hptlab-1
+        "Material",                        # teclab-0, teclab-1, hptlab-0, hptlab-1
+        "Measured_Property",               # teclab-0, teclab-1, hptlab-0, hptlab-1
+        "Monitoring",                      # teclab-0, teclab-1, hptlab-0
+        "Main_Setting",                    # teclab-0, teclab-1
+        "Process_Hazard",                  # teclab-0, teclab-1
+        "Geological_Structure",            # teclab-0, teclab-1
+        "Software",                        # teclab-0, teclab-1
+        "Geomorphological_Feature",        # teclab-1
+        "Pore_Fluid",                      # hptlab-1
+        "Ancillary_Equipment",             # hptlab-1
+        "Inferred_Deformation_Behaviour",  # hptlab-1
+    ]
+    for field in geo_keyword_fields:
+        keywords.extend(json_data.get(field, []))
 
     ############################################################################
     # System metadata
@@ -202,10 +202,11 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
     open_access_link = json_data["System"].get("Open_access_Link", "")
 
+    # Determine license URI.
     license_uri = ""
-    if no_active_embargo and license == 'Custom' and data_access_restriction.startswith('Open'):
+    if no_active_embargo and license == "Custom" and data_access_restriction.startswith("Open"):
         license_uri = open_access_link
-    elif license != 'Custom':
+    elif license != "Custom":
         license_uri = json_data["System"].get("License_URI", "")
 
     # Format last modified and publication date.
@@ -214,8 +215,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     publication_date_time = parser.parse(json_data["System"]["Publication_Date"])
     publication_date = publication_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
 
-    tm = Template(template)
-    # Add custom function to transform a persistent identifier to URI.
+    # Add custom template functions.
     tm.globals["persistent_identifier_to_uri"] = persistent_identifier_to_uri
 
     # Render landingpage template.
@@ -249,8 +249,10 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         covered_geolocation_place=covered_geolocation_place,
         random_id=random_id,
         base_doi=base_doi,
+        versions=versions,
+        is_retired=is_retired,
+        is_archived=is_archived,
         matomo_tracking_enabled=config.matomo_tracking_enabled,
         matomo_server_fqdn=config.matomo_server_fqdn,
         matomo_site_id=config.matomo_site_id,
-        versions=versions,
     )
