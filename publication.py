@@ -1,6 +1,6 @@
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -21,6 +21,7 @@ import provenance
 import research
 import schema
 import vault
+import vault_retire
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -523,37 +524,54 @@ def generate_landing_page_url(ctx: rule.Context, publication_config: Dict, publi
 
 
 def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
-    """Generate a dataCite compliant XML based up yoda-metadata.json.
+    """Generate landingpage based up yoda-metadata.json metadata and system metadata.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
-    :param publish:            Publication or depublication
+    :param publish:            "publish" for publication or "depublish" for depublication
     """
-    combiJsonPath = publication_state["combiJsonPath"]
+    combi_json_path = publication_state["combiJsonPath"]
     random_id = publication_state["randomId"]
-    vaultPackage = publication_state["vaultPackage"]
+    vault_package = publication_state["vaultPackage"]
 
-    json_schema = schema.get_active_schema(ctx, vaultPackage)
-    temp_coll, coll = pathutil.chop(combiJsonPath)
+    json_schema = schema.get_active_schema(ctx, vault_package)
+    temp_coll, coll = pathutil.chop(combi_json_path)
     landing_page_path = temp_coll + "/" + random_id + ".html"
 
-    # Get all DOI versions
-    if "baseDOI" in publication_state:
-        base_doi = publication_state["baseDOI"]
-        versions = get_all_versions(ctx, vaultPackage, publication_state["baseDOI"])[0]
-    else:
-        base_doi = ''
-        versions = []
+    # Check vault acrhive state.
+    is_archived = False
+    if config.enable_data_package_archive:
+        import vault_archive  # noqa: F406
+        is_archived = vault_archive.vault_archival_status(ctx, coll) == "archived"
 
-    if publish == "publish":
-        template_name = 'landingpage.html.j2'
-    else:
-        template_name = 'emptylandingpage.html.j2'
+    # Check vault retire state.
+    is_retired = vault_retire.vault_retirement_status == constants.vault_retirement_state.RETIRED
 
-    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema, random_id, base_doi, versions)
+    # Check vault retire state.
+    is_retired = vault_retire.vault_retirement_status == constants.vault_retirement_state.RETIRED
+
+    # Get DOI and versions.
+    base_doi = publication_state.get("baseDOI", "")
+    versions = get_all_versions(ctx, vault_package, base_doi)[0] if base_doi else []
+
+    # Select template based on publish state.
+    template_name = "landingpage.html.j2" if publish == "publish" else "emptylandingpage.html.j2"
+
+    # Generate and write landing page.
+    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(
+        ctx,
+        user.zone(ctx),
+        template_name,
+        combi_json_path,
+        json_schema,
+        random_id,
+        base_doi,
+        versions,
+        is_archived,
+        is_retired
+    )
 
     data_object.write(ctx, landing_page_path, landing_page_html)
-
     publication_state["landingPagePath"] = landing_page_path
 
 
