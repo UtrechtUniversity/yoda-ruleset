@@ -61,6 +61,10 @@ def api_vault_approve_retirement(user, vault, data_package):
 
 @then(parsers.parse('data package in {vault} retirement status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
+    # Status ACTIVE is empty.
+    if status == "ACTIVE":
+        status = ""
+
     for _i in range(36):
         _, body = api_request(
             user,

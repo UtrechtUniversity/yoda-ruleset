@@ -85,37 +85,52 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
 
     :raises Exception: When latest metadata is not found
     """
-    temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
-    davrodsAnonymousVHost = publication_config["davrodsAnonymousVHost"]
+    davrods_anonymous_vhost = publication_config["davrodsAnonymousVHost"]
+    vault_package = publication_state["vaultPackage"]
+    random_id = publication_state["randomId"]
+    combi_json_path = f"/{user.zone(ctx)}{constants.IIPUBLICATIONCOLLECTION}/{random_id}-combi.json"
+    version_doi = publication_state["versionDOI"]
+    last_modified_date = publication_state["lastModifiedDateTime"]
+    publication_date = publication_state["publicationDate"]
 
-    vaultPackage = publication_state["vaultPackage"]
-    randomId = publication_state["randomId"]
-    combiJsonPath = temp_coll + "/" + randomId + "-combi.json"
-    versionDOI = publication_state["versionDOI"]
-    lastModifiedDateTime = publication_state["lastModifiedDateTime"]
-    publicationDate = publication_state["publicationDate"]
-
-    openAccessLink = ''
+    # Build open access link if applicable.
+    open_access_link = ""
     if publication_state["accessRestriction"].startswith("Open"):
-        split_string = '/home/'
-        subPath = vaultPackage[len(split_string) + vaultPackage.find(split_string):]
+        subpath = vault_package.split('/home/', 1)[1]
+        open_access_link = urllib.parse.quote(
+            f"https://{davrods_anonymous_vhost}/{subpath}",
+            safe=":/="
+        )
 
-        openAccessLink = 'https://' + davrodsAnonymousVHost + "/" + subPath
-        openAccessLink = urllib.parse.quote(openAccessLink, safe=":/=")
+    # Get license URI if present.
+    license_uri = publication_state.get("licenseUri", "")
 
-    licenseUri = ""
-    if "licenseUri" in publication_state:
-        licenseUri = publication_state["licenseUri"]
+    # Retrieve and validate metadata.
+    metadata_json_path = meta.get_latest_vault_metadata_path(ctx, vault_package)
+    if metadata_json_path is None:
+        raise Exception("Latest vault metadata not found")
 
-    # metadataJsonPath contains latest json
-    metadataJsonPath = meta.get_latest_vault_metadata_path(ctx, vaultPackage)
-    if metadataJsonPath is None:
-        raise Exception
+    metadata = jsonutil.read(ctx, metadata_json_path)
 
-    # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-    json_datacite.json_datacite_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, versionDOI, publicationDate, openAccessLink, licenseUri)
+    # Add system metadata.
+    metadata['System'] = {
+        'Last_Modified_Date': last_modified_date,
+        'Persistent_Identifier_Datapackage': {
+            'Identifier_Scheme': 'DOI',
+            'Identifier': version_doi
+        },
+        'Publication_Date': publication_date,
+        'Open_access_Link': open_access_link,
+        'License_URI': license_uri
+    }
 
-    publication_state["combiJsonPath"] = combiJsonPath
+    retirement_date = get_retirement_date(ctx, vault_package)
+    if retirement_date:
+        metadata['System']['Withdrawn_Date'] = retirement_date
+
+    # Write combined metadata to file.
+    jsonutil.write(ctx, combi_json_path, metadata)
+    publication_state["combiJsonPath"] = combi_json_path
 
 
 def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
@@ -312,6 +327,31 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
+def get_retirement_date(ctx: rule.Context, vault_package: str) -> str:
+    """Determine the time of retirement as a datetime with UTC offset.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+
+    :return: Retire date in ISO8601 format
+    """
+    iter = genquery.row_iterator(
+        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # row contains json encoded [str(int(time.time())), action, actor]
+        log_item_list = jsonutil.parse(row[1])
+        if log_item_list[1] == "retired":
+            publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+
+            # ISO8601-fy
+            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+
+    return ""
+
+
 def generate_preliminary_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
@@ -358,7 +398,7 @@ def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
     datacite_json_path = temp_coll + "/" + randomId + "-dataCite.json"
 
     # Based on content of *combiJsonPath, get DataciteJson as string
-    datacite_json = json_datacite.json_datacite_create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
+    datacite_json = json_datacite.create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
 
     data_object.write(ctx, datacite_json_path, jsonutil.dump(datacite_json))
 
@@ -608,20 +648,22 @@ def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config:
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
-    publicHost = publication_config["publicHost"]
-    yodaInstance = publication_config["yodaInstance"]
-    yodaPrefix = publication_config["yodaPrefix"]
-    # randomId = publication_state["randomId"]  ##### in case of base? ###### revert to original
-    combiJsonPath = publication_state["combiJsonPath"]
+    public_host = publication_config["publicHost"]
+    yoda_instance = publication_config["yodaInstance"]
+    yoda_prefix = publication_config["yodaPrefix"]
+    combi_json_path = publication_state["combiJsonPath"]
 
-    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + random_id + ".json"
-    copy_result = ctx.iiGenericSecureCopy(argv, combiJsonPath, '')
-    error = copy_result['arguments'][2]
-    if int(error) >= 0:
+    remote_destination = f"inbox /var/www/moai/metadata/{yoda_instance}/{yoda_prefix}/{random_id}.json"
+    remote_path = f"{public_host} {remote_destination}"
+
+    copy_result = ctx.iiGenericSecureCopy(remote_path, combi_json_path, '')
+    error_code = int(copy_result['arguments'][2])
+
+    if error_code >= 0:
         publication_state["oaiUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
-        log.write(ctx, "copy_metadata_to_moai: " + error)
+        log.write(ctx, f"copy_metadata_to_moai: {error_code}")
 
 
 def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:

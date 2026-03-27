@@ -22,46 +22,7 @@ spdx_map = {
 }
 
 
-def json_datacite_create_combi_metadata_json(ctx: rule.Context,
-                                             metadataJsonPath: str,
-                                             combiJsonPath: str,
-                                             lastModifiedDateTime: str,
-                                             yodaDOI: str,
-                                             publicationDate: str,
-                                             openAccessLink: str,
-                                             licenseUri: str) -> None:
-    """Frontend function to add system info to yoda-metadata in json format.
-
-    :param ctx:                  Combined type of a callback and rei struct
-    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
-    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-                                 other are system info parameters
-    :param lastModifiedDateTime: Last modification time of publication
-    :param yodaDOI:              DOI of publication
-    :param publicationDate:      Date of publication
-    :param openAccessLink:       Open access link to data of publication
-    :param licenseUri:           URI to license of publication
-    """
-    # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = jsonutil.read(ctx, metadataJsonPath)
-
-    # add System info
-    metaDict['System'] = {
-        'Last_Modified_Date': lastModifiedDateTime,
-        'Persistent_Identifier_Datapackage': {
-            'Identifier_Scheme': 'DOI',
-            'Identifier': yodaDOI
-        },
-        'Publication_Date': publicationDate,
-        'Open_access_Link': openAccessLink,
-        'License_URI': licenseUri
-    }
-
-    # Write combined data to file at location combiJsonPath
-    jsonutil.write(ctx, combiJsonPath, metaDict)
-
-
-def json_datacite_create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> Dict:
+def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> Dict:
     """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -362,6 +323,10 @@ def get_dates(combi: Dict) -> List:
                 dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
         except KeyError:
             pass
+
+    withdrawn_date = combi['System'].get('Withdrawn_Date')
+    if withdrawn_date is not None:
+        dates.append({'date': withdrawn_date, 'dateType': 'Withdrawn'})
 
     return dates
 
