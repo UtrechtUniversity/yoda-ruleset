@@ -124,7 +124,7 @@ def wrapper(ctx: rule.Context, to: str, actor: str, subject: str, body: str) -> 
 
 @rule.make(inputs=[0], outputs=[1, 2])
 def rule_mail_test(ctx: rule.Context, to: str) -> Tuple[str, str]:
-    if not user.is_admin(ctx):
+    if not user.is_rodsadmin(ctx):
         return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 
     return wrapper(ctx,

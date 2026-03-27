@@ -210,7 +210,7 @@ def precheck_folder_secure(ctx: rule.Context, coll: str) -> bool:
 
     :returns: True when successful
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "folder_secure: User is not rodsadmin")
         return False
 

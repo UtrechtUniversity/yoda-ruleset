@@ -368,7 +368,7 @@ def api_group_data(ctx: rule.Context) -> Dict:
 
 def internal_api_group_data(ctx: rule.Context) -> Dict:
     # This is the entry point for integration tests against api_group_data
-    if user.is_admin(ctx):
+    if user.is_rodsadmin(ctx):
         groups = getGroupsData(ctx)
     else:
         groups    = getGroupsData(ctx)
@@ -461,7 +461,7 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
     # Sort categories: 'System' first, then all others alphabetically
     subcat_ordered_group_hierarchy = OrderedDict(sorted(subcat_ordered_group_hierarchy.items(), key=lambda item: (item[0] != 'System', item[0].lower())))
 
-    return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    return {'group_hierarchy': subcat_ordered_group_hierarchy, 'user_type': user.get_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def user_is_a_datamanager(ctx: rule.Context) -> bool:
@@ -503,7 +503,7 @@ def api_group_process_csv(ctx: rule.Context, csv_header_and_data: str, allow_upd
 
     """
     # Only admins and datamanagers are allowed to use this functionality.
-    if not user.is_admin(ctx) and not user_is_a_datamanager(ctx):
+    if not user.is_rodsadmin(ctx) and not user_is_a_datamanager(ctx):
         return api.Error('errors', ['Insufficient rights to perform this operation'])
 
     # Step 1: Parse the data in the uploaded file.
@@ -536,7 +536,7 @@ def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
     errors = []
 
     can_add_category = user.is_member_of(ctx, 'priv-category-add')
-    is_admin = user.is_admin(ctx)
+    is_admin = user.is_rodsadmin(ctx)
 
     for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
@@ -872,7 +872,7 @@ def rule_group_remove_external_user(ctx: rule.Context, username: str, userzone: 
       :returns:        HTTP status code of remove request, or "0"
                        if insufficient permissions.
    """
-    if user.is_admin(ctx):
+    if user.is_rodsadmin(ctx):
         ret = removeExternalUser(ctx, username, userzone)
         ctx.writeString("serverLog", "Status code for removing external user "
                                      + username + "#" + userzone
@@ -1307,7 +1307,7 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
 
     :param ctx: Combined type of a ctx and rei struct
     """
-    if not user.is_admin(ctx):
+    if not user.is_rodsadmin(ctx):
         return
 
     if not config.enable_sram:

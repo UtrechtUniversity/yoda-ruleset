@@ -96,7 +96,7 @@ def can_transition_folder_status(ctx: rule.Context,
 
     elif status_from is constants.research_package_state.ACCEPTED and status_to is constants.research_package_state.FOLDER:
         actor = user.user_and_zone(ctx)
-        if not user.is_admin(ctx, actor):
+        if not user.is_rodsadmin(ctx, actor):
             return policy.fail('Only a rodsadmin is allowed to secure a folder to the vault')
 
     return policy.succeed()

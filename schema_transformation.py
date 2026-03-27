@@ -79,7 +79,7 @@ def rule_transform_vault_metadata(ctx: rule.Context, coll: str) -> Tuple[str, st
               transformation, otherwise '1'), and the second element is a string
               describing the result.
     """
-    if not user.is_admin(ctx):
+    if not user.is_rodsadmin(ctx):
         return ('1', "User is not rodsadmin")
 
     transform_result = _transform_vault_metadata(ctx, coll)
@@ -216,7 +216,7 @@ def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch
     pause   = float(pause_s)
     delay   = int(delay_s)
 
-    if not user.is_admin(ctx):
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "Not executing batch vault transform: user is not rodsadmin")
         return
 

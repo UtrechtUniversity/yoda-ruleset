@@ -1297,7 +1297,7 @@ def rule_vault_grant_readers_vault_access(ctx: rule.Context, dry_run: str, verbo
 
     log.write(ctx, "grant_readers_vault_access started.")
 
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is not rodsadmin")
         return '1'
 
@@ -1364,7 +1364,7 @@ def vault_process_status_transitions(ctx: rule.Context, coll: str, new_coll_stat
     :return: List with status and statusinfo
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return ['1', 'Insufficient permissions - should only be called by rodsadmin']
 
@@ -1426,7 +1426,7 @@ def vault_request_status_transitions(ctx: rule.Context, coll: str, new_vault_sta
     :return: List with status and statusinfo
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         if new_vault_status == constants.vault_package_state.PUBLISHED:
             log.write(ctx, "Publication request - User is no rodsadmin")
             return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']

@@ -39,7 +39,7 @@ def can_coll_create(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed 
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
     if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_admin(ctx, actor):
+        if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_rodsadmin(ctx, actor):
             return policy.fail('Parent folder is locked')
 
     if pathutil.info(coll).space is pathutil.Space.INTAKE:
@@ -53,11 +53,11 @@ def can_coll_delete(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed 
     """Disallow deleting collections in locked folders and collections containing locked folders."""
     log.debug(ctx, 'check coll delete <{}>'.format(coll))
 
-    if re.match(r'^/[^/]+/home/[^/]+$', coll) and not user.is_admin(ctx, actor):
+    if re.match(r'^/[^/]+/home/[^/]+$', coll) and not user.is_rodsadmin(ctx, actor):
         return policy.fail('Cannot delete or move collections directly under /home')
 
     if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if not user.is_admin(ctx, actor) and folder.has_locks(ctx, coll):
+        if not user.is_rodsadmin(ctx, actor) and folder.has_locks(ctx, coll):
             return policy.fail('Folder or subfolder is locked')
 
     if pathutil.info(coll).space is pathutil.Space.INTAKE:
@@ -80,13 +80,13 @@ def can_data_create(ctx: rule.Context, actor: str, path: str) -> policy.Succeed 
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_locked(ctx, pathutil.dirname(path)):
             # Parent coll locked?
-            if not user.is_admin(ctx, actor):
+            if not user.is_rodsadmin(ctx, actor):
                 return policy.fail('Folder is locked')
         elif folder.is_data_locked(ctx, path):
             # If the parent coll is not locked, there might still be a lock on
             # an existing destination data object (though this situation cannot
             # arise through portal actions).
-            if not user.is_admin(ctx, actor):
+            if not user.is_rodsadmin(ctx, actor):
                 return policy.fail('Destination is locked')
 
     if pathutil.info(path).space is pathutil.Space.INTAKE:
@@ -101,7 +101,7 @@ def can_data_write(ctx: rule.Context, actor: str, path: str) -> policy.Succeed |
 
     # Disallow writing to locked objects in research and deposit folders.
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
+        if folder.is_data_locked(ctx, path) and not user.is_rodsadmin(ctx, actor):
             return policy.fail('Data object is locked')
 
     # Disallow writing to locked datasets in intake.
@@ -113,11 +113,11 @@ def can_data_write(ctx: rule.Context, actor: str, path: str) -> policy.Succeed |
 
 
 def can_data_delete(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
-    if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_admin(ctx, actor):
+    if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_rodsadmin(ctx, actor):
         return policy.fail('Cannot delete or move data directly under /home')
 
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if not user.is_admin(ctx, actor) and folder.is_data_locked(ctx, path):
+        if not user.is_rodsadmin(ctx, actor) and folder.is_data_locked(ctx, path):
             return policy.fail('Folder is locked')
 
     if pathutil.info(path).space is pathutil.Space.INTAKE:
@@ -399,7 +399,7 @@ def py_acPreProcForModifyAVUMetadata(ctx: rule.Context,
           and attr in [constants.UUORGMETADATAPREFIX + "revision_scheduled",
                        constants.UUORGMETADATAPREFIX + "replication_scheduled"]):
         # Research or deposit organizational metadata.
-        if user.is_admin(ctx, actor):
+        if user.is_rodsadmin(ctx, actor):
             return policy.succeed()
 
         if option in ['add']:
@@ -408,7 +408,7 @@ def py_acPreProcForModifyAVUMetadata(ctx: rule.Context,
             return policy.fail('Only "add" operations allowed on attribute')
 
     elif space is pathutil.Space.VAULT and attr == constants.IIVAULTSTATUSATTRNAME:
-        if not user.is_admin(ctx, actor):
+        if not user.is_rodsadmin(ctx, actor):
             return policy.fail('No permission to change vault status')
 
         x = policies_datapackage_status.can_set_datapackage_status_attr(ctx, actor, obj_name, value)
@@ -421,14 +421,14 @@ def py_acPreProcForModifyAVUMetadata(ctx: rule.Context,
         # Research package metadata, set when saving the metadata form.
         # Allow if object is not locked.
 
-        if (not folder.is_locked(ctx, obj_name)) or user.is_admin(ctx, actor):
+        if (not folder.is_locked(ctx, obj_name)) or user.is_rodsadmin(ctx, actor):
             return policy.succeed()
         else:
             return policy.fail('Folder is locked')
 
     elif space is pathutil.Space.DATAREQUEST and attr == datarequest.DATAREQUESTSTATUSATTRNAME:
         # Check if user is permitted to change the status
-        if not user.is_admin(ctx, actor):
+        if not user.is_rodsadmin(ctx, actor):
             return policy.fail('No permission to change datarequest status')
 
         # Datarequest status change. Validate.
@@ -453,7 +453,7 @@ def py_acPreProcForModifyAVUMetadata_mod(ctx: rule.Context,
                                          b_value: str,
                                          b_unit: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
-    if user.is_admin(ctx, actor):
+    if user.is_rodsadmin(ctx, actor):
         return policy.succeed()
 
     if obj_type not in ['-d', '-C']:
@@ -469,7 +469,7 @@ def py_acPreProcForModifyAVUMetadata_mod(ctx: rule.Context,
 @policy.require()
 def py_acPreProcForModifyAVUMetadata_cp(ctx: rule.Context, option: str, t_src: str, t_dst: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
     actor = user.user_and_zone(ctx)
-    if user.is_admin(ctx, actor):
+    if user.is_rodsadmin(ctx, actor):
         return policy.succeed()
 
     if t_dst not in ['-d', '-C']:
@@ -525,7 +525,7 @@ def pep_api_mod_access_control_pre(ctx: rule.Context,
                                    mod_access_control_inp: object) -> policy.Succeed | policy.Fail:
     log.debug(ctx, 'pep_api_mod_access_control_pre')
     actor = user.user_and_zone(ctx)
-    if user.is_admin(ctx, actor):
+    if user.is_rodsadmin(ctx, actor):
         return policy.succeed()
 
     path = str(mod_access_control_inp.path)
@@ -548,7 +548,7 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     actor = user.user_and_zone(ctx)
 
     # No restrictions for rodsadmin and priv group.
-    if user.is_admin(ctx, actor):
+    if user.is_rodsadmin(ctx, actor):
         return policy.succeed()
 
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):

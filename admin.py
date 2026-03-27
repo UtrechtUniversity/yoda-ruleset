@@ -20,7 +20,7 @@ def api_admin_has_access(ctx: rule.Context) -> api.Result:
     :returns: True if the user has the admin access, False otherwise.
     """
     # Check if user is admin.
-    is_admin = user.is_admin(ctx)
+    is_admin = user.is_rodsadmin(ctx)
 
     # Check if user is in the priv-admin group.
     in_priv_group = user.is_member_of(ctx, "priv-admin")

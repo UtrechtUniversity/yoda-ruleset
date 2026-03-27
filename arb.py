@@ -19,7 +19,7 @@ def rule_resource_update_resc_arb_data(ctx: rule.Context, resc_name: str, bytes_
     :param bytes_free:  Free size on this resource, in bytes
     :param bytes_total: Total size of this resource, in bytes
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "Error: insufficient permissions to run ARB data update rule.")
         return
 
@@ -54,7 +54,7 @@ def rule_resource_update_misc_arb_data(ctx: rule.Context) -> None:
 
        :param ctx: Combined type of a callback and rei struct
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "Error: insufficient permissions to run ARB data update rule.")
         return
 

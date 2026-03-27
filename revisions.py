@@ -349,7 +349,7 @@ def rule_revision_batch(ctx: rule.Context,
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
 
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "The revision creation job can only be started by a rodsadmin user.")
         return
 
@@ -737,7 +737,7 @@ def _update_revision_store_acls(ctx: rule.Context) -> None:
        :raises Exception: if current user is not a rodsadmin
     """
     revision_store = get_revision_store_path(user.zone(ctx))
-    if user.user_type(ctx) == 'rodsadmin':
+    if user.is_rodsadmin(ctx):
         try:
             msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
             msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
@@ -765,7 +765,7 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
 
        :raises Exception:       If rule is executed by non-rodsadmin user
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
 
     if has_spool_data(constants.PROC_REVISION_CLEANUP_SCAN):
@@ -844,7 +844,7 @@ def rule_revisions_cleanup_scan(ctx: rule.Context, revision_strategy_name: str, 
 
        :raises Exception:       If rule is executed by non-rodsadmin user
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
 
     log.write(ctx, 'Revision cleanup scan job starting.')
@@ -944,7 +944,7 @@ def rule_revisions_cleanup_process(ctx: rule.Context, revision_strategy_name: st
     :raises Exception:       If rule is executed by non-rodsadmin user
     """
 
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         raise Exception("The revision cleanup jobs can only be started by a rodsadmin user.")
 
     log.write(ctx, 'Revision cleanup job processing starting.')

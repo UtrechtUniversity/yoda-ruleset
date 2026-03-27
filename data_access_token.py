@@ -168,7 +168,7 @@ def get_all_tokens(ctx: rule.Context) -> List:
     :returns: Valid tokens
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         return []
 
     if not token_database_initialized():

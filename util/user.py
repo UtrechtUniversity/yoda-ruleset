@@ -74,7 +74,7 @@ def exists(ctx: 'rule.Context', user: str | User) -> bool:
     return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() in ["rodsuser", "rodsadmin"]
 
 
-def user_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
+def get_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
     """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
@@ -93,9 +93,9 @@ def user_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
                           "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
 
 
-def is_admin(ctx: 'rule.Context', user: str | User | None = None) -> bool:
-    """Check if user is an admin."""
-    return user_type(ctx, user) == 'rodsadmin'
+def is_rodsadmin(ctx: 'rule.Context', user: str | User | None = None) -> bool:
+    """Check if user is an rodsadmin."""
+    return get_type(ctx, user) == 'rodsadmin'
 
 
 def is_member_of(ctx: 'rule.Context', group: str, user: str | User | None = None) -> bool:

@@ -106,7 +106,7 @@ def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
         if toplevel_collection:
             locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
-            return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
+            return (locked_state['locked'] or locked_state['frozen']) and not user.is_rodsadmin(ctx, actor)
         else:
             # Lock status could not be determined. Assume data object is not locked.
             log.debug(ctx, "Could not determine lock state of data object " + path)
@@ -159,7 +159,7 @@ def is_coll_in_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
         if toplevel_collection:
             locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
-            return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
+            return (locked_state['locked'] or locked_state['frozen']) and not user.is_rodsadmin(ctx, actor)
         else:
             # Lock status could not be determined. Assume collection is not locked.
             log.debug(ctx, "Could not determine lock state of data object " + coll)
@@ -211,7 +211,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         if toplevel_collection:
             locked_state = object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
-            return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
+            return (locked_state['locked'] or locked_state['frozen']) and not user.is_rodsadmin(ctx, actor)
         else:
             log.debug(ctx, "Could not determine lock state of data object " + coll)
             # Pretend presence of a lock so no unwanted data gets deleted
@@ -227,7 +227,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
-            return not user.is_admin(ctx, actor)
+            return not user.is_rodsadmin(ctx, actor)
 
         # Could be a dataset based on a data object
         iter = genquery.row_iterator(
@@ -238,7 +238,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
-            return not user.is_admin(ctx, actor)
+            return not user.is_rodsadmin(ctx, actor)
 
         # There is no lock present
         return False

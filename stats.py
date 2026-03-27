@@ -109,7 +109,7 @@ def api_resource_full_year_differentiated_group_storage(ctx: rule.Context, group
     if member_type not in ['reader', 'normal', 'manager']:
         category = groups.group_category(ctx, group_name)
         if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
-            if user.user_type(ctx) != 'rodsadmin':
+            if not user.is_rodsadmin(ctx):
                 return api.Error('not_allowed', 'Insufficient permissions')
 
     labels = []
@@ -612,7 +612,7 @@ def get_categories(ctx: rule.Context) -> List:
     """
     categories = []
 
-    if user.is_admin(ctx):
+    if user.is_rodsadmin(ctx):
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE",
             "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
@@ -730,7 +730,7 @@ def get_user_groups_for_stats(ctx: rule.Context, search_filter: str = "", user_n
     group_filter = "USER_GROUP_NAME LIKE 'research-%%' || LIKE 'deposit-%%'  || LIKE 'intake-%%' || LIKE 'grp-%%' "
     zone_filter = f"AND USER_ZONE = '{user_zone}' "
 
-    if user.is_admin(ctx, f"{user_name}#{user_zone}"):
+    if user.is_rodsadmin(ctx, f"{user_name}#{user_zone}"):
         # All groups in zone
         groups_list = list(genquery.Query(ctx,
                                           "ORDER(USER_GROUP_NAME)",
