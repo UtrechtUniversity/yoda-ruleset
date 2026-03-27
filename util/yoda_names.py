@@ -1,6 +1,6 @@
 """This class contains utility functions that process names of Yoda entities (e.g. category names, user names, etc.)"""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -17,7 +17,11 @@ def is_valid_category(name: str) -> bool:
 
     :returns: boolean value that indicates whether this name is a valid category name
     """
-    return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
+    return (
+        re.search(r"^[a-z0-9\-]+$", name) is not None
+        and not name.startswith("-")
+        and not name.endswith("-")
+    )
 
 
 def is_valid_subcategory(name: str) -> bool:
@@ -27,7 +31,9 @@ def is_valid_subcategory(name: str) -> bool:
 
     :returns: boolean value that indicates whether this name is a valid subcategory name
     """
-    return is_valid_category(name)
+    return (
+        re.search(r"^[A-Za-z0-9 ,._()-]+$", name) is not None
+    )
 
 
 def is_valid_groupname(name: str) -> bool:

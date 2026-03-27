@@ -1,6 +1,6 @@
 """Unit tests for the yoda_names utils functions"""
 
-__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -18,7 +18,10 @@ class UtilYodaNamesTest(TestCase):
         self.assertEqual(is_valid_category("foo"), True)
         self.assertEqual(is_valid_category("foo123"), True)
         self.assertEqual(is_valid_category("foo-bar"), True)
-        self.assertEqual(is_valid_category("foo_bar"), True)
+        self.assertEqual(is_valid_category("foo_bar"), False)
+        self.assertEqual(is_valid_category("Foo"), False)
+        self.assertEqual(is_valid_category("-foo"), False)
+        self.assertEqual(is_valid_category("foo-"), False)
 
     def test_is_valid_subcategory(self):
         self.assertEqual(is_valid_subcategory(""), False)
@@ -26,6 +29,10 @@ class UtilYodaNamesTest(TestCase):
         self.assertEqual(is_valid_subcategory("foo123"), True)
         self.assertEqual(is_valid_subcategory("foo-bar"), True)
         self.assertEqual(is_valid_subcategory("foo_bar"), True)
+        self.assertEqual(is_valid_subcategory("Foo Bar"), True)
+        self.assertEqual(is_valid_subcategory("Foo, Bar."), True)
+        self.assertEqual(is_valid_subcategory("Foo (Bar)"), True)
+        self.assertEqual(is_valid_subcategory("foo/bar"), False)
 
     def test_is_valid_groupname(self):
         self.assertEqual(is_valid_groupname(""), False)
