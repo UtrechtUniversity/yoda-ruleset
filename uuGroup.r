@@ -703,7 +703,7 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 # \param[out] status  '0' on success, non-zero on failure - as string value!
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *co_identifier, *status, *message) {
+uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *description, *dataClassification, *co_identifier, *sram_co, *status, *message) {
 	*status  = '0';
 	*message = "An internal error occurred";
 
@@ -735,6 +735,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *d
 	*kv."description"         = *description;
 	*kv."data_classification" = *dataClassification;
 	*kv."co_identifier"		  = *co_identifier;
+	*kv."sram_co"			  = *sram_co;
 
 	# Shoot first, ask questions later.
         *status = str(errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv)));
@@ -753,6 +754,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *expiration_date, *d
 			*description,
 			*dataClassification,
 			*co_identifier,
+			*sram_co,
 			*allowed,
 			*reason
 		);

@@ -67,7 +67,7 @@ def getGroupsData(ctx: rule.Context) -> Iterable[Any]:
             "invited": []
         })
 
-        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory", "sram_co"]:
             group[attr] = value
         elif attr in ('description', 'expiration_date'):
             # Deal with legacy use of '.' for empty description metadata and expiration date.
@@ -144,7 +144,7 @@ def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
             }
 
         # Update group with this information.
-        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory", "sram_co"]:
             group[attr] = value
         elif attr == "description" or attr == "expiration_date":
             # Deal with legacy use of '.' for empty description metadata and expiration date.
@@ -443,6 +443,7 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
             'expiration_date': group.get('expiration_date', ''),
             'data_classification': group.get('data_classification', ''),
             'creation_date': creation_dates.get(coll_name, ''),
+            'sram_co': group.get('sram_co', ''),
             'members': members
         }
 
@@ -1027,9 +1028,9 @@ def group_create(ctx: rule.Context,
         if name_conflicts_exist:
             return api.Error('group_exists', msg)
 
-        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, '', '')['arguments']
-        status = response[8]
-        message = response[9]
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, expiration_date, description, data_classification, co_identifier, str(sram_co), '', '')['arguments']
+        status = response[9]
+        message = response[10]
         if status == '0':
             # Put SRAM invitation if SRAM is enabled, group is NOT a SRAM CO, user is external and not member of external users CO.
             if config.enable_sram:
@@ -1109,6 +1110,8 @@ def api_group_delete(ctx: rule.Context, group_name: str) -> api.Result:
     :returns: API status result
     """
     try:
+        co_identifier = sram.get_co_identifier(ctx, group_name)
+
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
         status = response[1]
         message = response[2]
@@ -1116,7 +1119,6 @@ def api_group_delete(ctx: rule.Context, group_name: str) -> api.Result:
             return api.Error('policy_error', message)
 
         # Delete SRAM collaboration if group is a SRAM group.
-        co_identifier = sram.get_co_identifier(ctx, group_name)
         if co_identifier and not sram.delete_collaboration(ctx, co_identifier):
             return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
 
