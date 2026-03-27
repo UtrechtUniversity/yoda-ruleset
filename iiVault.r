@@ -69,34 +69,6 @@ iiVaultStatus(*folder, *vaultStatus) {
 	}
 }
 
-# \brief Retrieve actor of action on vault folder
-#
-# \param[in]  folder      Path of action vault folder
-# \param[out] actionActor Actor of action on vault folder
-#
-iiVaultGetActionActor(*folder, *actor, *actionActor) {
-	# Retrieve vault folder collection id.
-	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
-	        *collId = *row.COLL_ID;
-	}
-
-        # Retrieve vault folder action actor.
-        *actionActor = "";
-        foreach(*row in SELECT ORDER_DESC(META_COLL_MODIFY_TIME), COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
-                *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
-                if (*err < 0) {
-                        writeString("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
-                } else {
-                        writeString("serverLog", "iiVaultGetActionActor: org_vault_action_*collId actor is *actionActor");
-                }
-                break;
-        }
-
-        # Fallback actor (rodsadmin).
-        if (*actionActor == "") {
-                *actionActor = *actor;
-        }
-}
 
 # \brief Perform admin operations on the vault
 #

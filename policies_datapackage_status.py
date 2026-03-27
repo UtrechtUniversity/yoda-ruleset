@@ -1,7 +1,7 @@
 """Policy check functions for data package status transitions."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
@@ -67,7 +67,7 @@ def post_status_transition(ctx: rule.Context,
                            status: str) -> None:
     """Post data package status transition actions."""
     status = constants.vault_package_state(status)
-    actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]
+    actor = vault.get_latest_action_actor(ctx, path) or actor
 
     if status is constants.vault_package_state.UNPUBLISHED:
         provenance_log = provenance.get_provenance_log(ctx, path)

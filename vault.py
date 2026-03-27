@@ -4,6 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 import os
 import re
 import subprocess
@@ -1754,3 +1755,25 @@ def get_current_metadata_schema_data_package(ctx: rule.Context, coll: str) -> st
     metadata = jsonutil.read(ctx, metadata_path)
 
     return meta.metadata_get_schema_id(metadata)
+
+
+def get_latest_action_actor(ctx: rule.Context, path: str) -> str | None:
+    """
+    Retrieve actor of latest action on vault folder.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to vault data package
+
+    :returns: Actor of latest action on vault folder (None if there is no latest actor)
+    """
+    try:
+        coll_id = collection.id_from_name(ctx, path)
+        action = list(genquery.Query(
+                      ctx, "META_COLL_ATTR_VALUE",
+                      f"META_COLL_ATTR_NAME = 'org_vault_action_{coll_id}'",
+                      order_by="META_COLL_MODIFY_TIME desc",
+                      output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))
+        action = json.loads(action[0][0])
+        return action[2]
+    except Exception:
+        return None
