@@ -179,7 +179,7 @@ uuGroupIsGroupManagerInCategory(*actor, *category, *isGroupManager) {
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiration_date, *schema_id, *description, *dataClassification, *co_identifier, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiration_date, *schema_id, *description, *dataClassification, *co_identifier, *sram_co, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	*allowed = 0;
@@ -392,6 +392,8 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			else{
 				*reason = "The CO Identifier is invalid";
 			}
+		} else if (*attribute == "sram_co") {
+			*allowed = 1;
 		} else {
 			*reason = "Invalid group attribute name.";
 		}

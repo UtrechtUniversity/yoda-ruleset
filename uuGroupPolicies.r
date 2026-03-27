@@ -88,6 +88,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*policyKv."description",
 				*policyKv."data_classification",
 				*policyKv."co_identifier",
+				*policyKv."sram_co",
 				*allowed, *reason
 			);
 
@@ -588,6 +589,9 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		}
 		if (*policyKv."co_identifier" != "") {
 			errorcode(msiSudoObjMetaSet(*groupName, "-u", "co_identifier", *policyKv."co_identifier", "", ""));
+		}
+		if (*policyKv."sram_co" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "sram_co", *policyKv."sram_co", "", ""));
 		}
 	}
 

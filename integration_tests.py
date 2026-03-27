@@ -356,7 +356,7 @@ def _test_schema_active_schema_vault_research_override(ctx):
 
 
 def _test_schema_active_schema_vault_without_research(ctx):
-    ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "")
+    ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "", "")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
     ctx.uuGroupRemove("vault-without-research", "", "")
     return result
