@@ -1,12 +1,7 @@
 """Functions and rules for troubleshooting published data packages."""
 
-__copyright__ = 'Copyright (c) 2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2024-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
-
-__all__ = [
-    'api_batch_troubleshoot_published_data_packages',
-    'rule_batch_troubleshoot_published_data_packages'
-]
 
 import json
 from datetime import datetime
@@ -20,6 +15,11 @@ import datacite
 from meta import vault_metadata_matches_schema
 from publication import get_publication_config
 from util import *
+
+__all__ = [
+    'api_batch_troubleshoot_published_data_packages',
+    'rule_batch_troubleshoot_published_data_packages'
+]
 
 
 def find_full_package_path(ctx: rule.Context, package_name: str, write_stdout: bool) -> Union[str, None]:
