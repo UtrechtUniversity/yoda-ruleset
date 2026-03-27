@@ -333,7 +333,7 @@ def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_pack
     # Only write_stdout when in human mode and api_call is not enabled
     write_stdout = not api_call and (mode == 'human')
     # Check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is not rodsadmin", write_stdout)
         return {}
 

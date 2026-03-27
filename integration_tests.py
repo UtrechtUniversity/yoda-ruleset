@@ -877,11 +877,11 @@ basic_integration_tests = [
     {"name":   "util.user.exists.no",
      "test": lambda ctx: user.exists(ctx, "rododendron"),
      "check": lambda x: not x},
-    {"name":   "util.user.is_admin.yes",
-     "test": lambda ctx: user.is_admin(ctx, "rods"),
+    {"name":   "util.user.is_rodsadmin.yes",
+     "test": lambda ctx: user.is_rodsadmin(ctx, "rods"),
      "check": lambda x: x},
-    {"name":   "util.user.is_admin.no",
-     "test": lambda ctx: user.is_admin(ctx, "researcher"),
+    {"name":   "util.user.is_rodsadmin.no",
+     "test": lambda ctx: user.is_rodsadmin(ctx, "researcher"),
      "check": lambda x: not x},
     {"name":   "util.user.is_member_of.yes",
      "test": lambda ctx: user.is_member_of(ctx, "research-initial", "researcher"),
@@ -893,10 +893,10 @@ basic_integration_tests = [
      "test": lambda ctx: user.number_of_connections(ctx),
      "check": lambda x: isinstance(x, int) and x > 0},
     {"name":   "util.user.usertype.rodsadmin",
-     "test": lambda ctx: user.user_type(ctx, "rods"),
+     "test": lambda ctx: user.get_type(ctx, "rods"),
      "check": lambda x: x == "rodsadmin"},
     {"name":   "util.user.usertype.rodsuser",
-     "test": lambda ctx: user.user_type(ctx, "researcher"),
+     "test": lambda ctx: user.get_type(ctx, "researcher"),
      "check": lambda x: x == "rodsuser"},
     {"name":   "is_user_external.internal",
      "test": lambda ctx: _test_is_user_external(ctx, "researcher@yoda.dev"),
@@ -944,7 +944,7 @@ def rule_run_integration_tests(ctx, tests):
         log.write(ctx, "Error: integration tests can only run on development environment.")
         return ""
 
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "Error: integration tests can only be run by a rodsadmin user.")
         return ""
 

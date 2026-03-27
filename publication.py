@@ -223,7 +223,7 @@ def set_update_publication_state(ctx: rule.Context, vault_package: str) -> str:
     :returns: String with state of publication state update
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
@@ -763,7 +763,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
@@ -1109,7 +1109,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
     log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
@@ -1256,7 +1256,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
     log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
@@ -1468,7 +1468,7 @@ def rule_update_publication(ctx: rule.Context,
     :param update_landingpage: Flag that indicates updating landingpage
     :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
     """
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin", True)
         return
 
@@ -1526,7 +1526,7 @@ def update_publication(ctx: rule.Context,
     log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
@@ -1782,7 +1782,7 @@ def rule_lift_embargos_on_data_access(ctx: rule.Context) -> str:
     :returns: Status of lifting the embargo indications
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 

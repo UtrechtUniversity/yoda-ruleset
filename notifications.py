@@ -197,7 +197,7 @@ Yoda system
 
 @rule.make(inputs=[0, 1], outputs=[2, 3])
 def rule_mail_notification_report(ctx: rule.Context, to: str, notifications: str) -> Tuple[str, str]:
-    if not user.is_admin(ctx):
+    if not user.is_rodsadmin(ctx):
         return '0', 'Only rodsadmin can send test mail'
 
     return mail.wrapper(ctx,
@@ -222,7 +222,7 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
     :param ctx: Combined type of a callback and rei struct
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
         return
 
@@ -324,7 +324,7 @@ def rule_process_groups_expiration_date(ctx: rule.Context) -> None:
     :param ctx: Combined type of a callback and rei struct
     """
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "group expiration date - Insufficient permissions - should only be called by rodsadmin")
         return
 
@@ -380,7 +380,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
         return
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "inactive research group - Insufficient permissions - should only be called by rodsadmin")
         return
 
@@ -503,7 +503,7 @@ def rule_process_data_access_token_expiry(ctx: rule.Context) -> None:
         return
 
     # check permissions - rodsadmin only
-    if user.user_type(ctx) != 'rodsadmin':
+    if not user.is_rodsadmin(ctx):
         log.write(ctx, "data access token - Insufficient permissions - should only be called by rodsadmin")
         return
 
