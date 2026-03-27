@@ -564,7 +564,7 @@ def generate_landing_page_url(ctx: rule.Context, publication_config: Dict, publi
 
 
 def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
-    """Generate landingpage based up yoda-metadata.json metadata and system metadata.
+    """Generate landingpage based upon yoda-metadata.json metadata and system metadata.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
@@ -578,7 +578,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
     temp_coll, coll = pathutil.chop(combi_json_path)
     landing_page_path = temp_coll + "/" + random_id + ".html"
 
-    # Check vault acrhive state.
+    # Check vault archive state.
     is_archived = False
     if config.enable_data_package_archive:
         import vault_archive  # noqa: F406
