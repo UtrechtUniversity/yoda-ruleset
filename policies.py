@@ -14,6 +14,7 @@ import policies_datapackage_status
 import policies_datarequest_status
 import policies_folder_status
 import policies_intake
+import policies_retirement_status
 import replication
 import revisions
 import vault
@@ -502,13 +503,14 @@ def py_acPostProcForModifyAVUMetadata(ctx: rule.Context,
     if attr == constants.IISTATUSATTRNAME and info.space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
-
     elif info.space is pathutil.Space.VAULT:
         if attr == constants.IIVAULTSTATUSATTRNAME:
             policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
-        elif attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
+        if attr == constants.IIRETIREATTRNAME:
+            status = constants.vault_retirement_state.ACTIVE.value if option in ['rm', 'rmw'] else value
+            policies_retirement_status.post_status_transition(ctx, obj_name, status)
+        if attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
             vault.update_archive(ctx, obj_name, attr)
-
     # Send emails after datarequest status transition if appropriate
     elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
         policies_datarequest_status.post_status_transition(ctx, obj_name, value)

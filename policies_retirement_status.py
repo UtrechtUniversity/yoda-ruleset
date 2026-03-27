@@ -4,6 +4,8 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
+
 import notifications
 import provenance
 import vault
@@ -24,6 +26,7 @@ def can_transition_retirement_status(ctx: rule.Context,
                                      coll: str,
                                      status_from: str,
                                      status_to: str) -> policy.Succeed | policy.Fail:
+    """Check if retirement status transition action is legal."""
     transition = (constants.vault_retirement_state(status_from),
                   constants.vault_retirement_state(status_to))
     if transition not in constants.retirement_transitions:
@@ -38,51 +41,60 @@ def can_transition_retirement_status(ctx: rule.Context,
 
 
 def post_status_transition(ctx: rule.Context,
-                           path: str,
-                           actor: str,
+                           coll: str,
                            status: str) -> None:
-    """Post data package status transition actions."""
+    """Post retirement status transition actions."""
     status = constants.vault_retirement_state(status)
-    # actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2] # TODO: iiAdminVaultRetire
+
+    iter = list(genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        f"META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}retirement_action_%' AND META_COLL_ATTR_VALUE like '%{coll}%{status.value}%'",
+        genquery.AS_LIST,
+        ctx
+    ))
+    data = jsonutil.parse(iter[0][1])
+    actor = data[2]
 
     # Datamanager requests retirement
     if status is constants.vault_retirement_state.RETIREMENT_REQUESTED:
-        provenance.log_action(ctx, actor, path, "requested retirement")
+        provenance.log_action(ctx, actor, coll, "requested retirement")
 
-        vault_retire.set_requester(ctx, path, actor)
+        vault_retire.set_retirement_requester(ctx, coll, actor)
 
         message = "Data package submitted for retirement"
         # TODO: notify all technical admins
 
-    # Technical admin approves retirement request
-    elif status is constants.vault_retirement_state.RETIREMENT_APPROVED:
-        provenance.log_action(ctx, actor, path, "approved retirement")
+    # # Technical admin approves retirement request
+    # elif status is constants.vault_retirement_state.RETIREMENT_APPROVED:
+    #     provenance.log_action(ctx, actor, coll, "approved retirement")
 
-        # TODO: set approver?
+    #     # TODO: set approver
 
-        # Send notifications to requester
-        requester = vault_retire.get_requester(ctx, path)
-        message = "Data package approved for retirement"
-        notifications.set(ctx, actor, requester, path, message)
+    #     # Send notifications to requester
+    #     requester = vault_retire.get_retirement_requester(ctx, coll)
+    #     message = "Data package approved for retirement"
+    #     notifications.set(ctx, actor, requester, coll, message)
 
     # Technical admin cancels/denies retirement request
     # Datamanager cancels retirement request
-    elif status is constants.vault_retirement_state.ACITVE:
-        provenance.log_action(ctx, actor, path, "cancelled retirement")
+    elif status is constants.vault_retirement_state.ACTIVE:
+        provenance.log_action(ctx, actor, coll, "cancelled retirement")
 
         # Send notifications to requester or technical admin
-        requester = vault_retire.get_requester(ctx, path)
+        requester = vault_retire.get_retirement_requester(ctx, coll)
         message = "Data package request for retirement cancelled"
-        if actor == requester:  # Requester cancelled request
-            notifications.set(ctx, actor, requester, path, message)
-        # TODO: elif send notification to technical admin
+        if actor != requester:  # Technical admin cancelled -> notify requester
+            notifications.set(ctx, actor, requester, coll, message)
+        else:  # Requested cancelled -> notify technical admins
+            # TODO: get approver
+            log.write(ctx, "Requester cancelled")
 
-    # System retires package
-    elif status is constants.vault_retirement_state.RETIRED:
-        provenance.log_action(ctx, "system", path, "retired")
+    # # System retires package
+    # elif status is constants.vault_retirement_state.RETIRED:
+    #     provenance.log_action(ctx, "system", coll, "retired")
 
-        # Send notifications to requester and technical admin
-        requester = vault_retire.get_requester(ctx, path)
-        message = "Data package retired"
-        notifications.set(ctx, actor, requester, path, message)
-        # TODO: notify approver
+    #     # Send notifications to requester and technical admin
+    #     requester = vault_retire.get_retirement_requester(ctx, coll)
+    #     message = "Data package retired"
+    #     notifications.set(ctx, actor, requester, coll, message)
+    #     # TODO: notify approver too

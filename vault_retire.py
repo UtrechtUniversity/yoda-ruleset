@@ -112,14 +112,17 @@ def api_vault_approve_retirement(ctx: rule.Context, coll: str) -> api.Result:
         return api.Error(ret[0], ret[1])
 
 
-def set_requester(ctx: rule.Context, path: str, actor: str) -> None:
-    """Set submitter of data package for retirement."""
+def set_retirement_requester(ctx: rule.Context, path: str, actor: str) -> None:
+    """Set submitter of data package retirement request."""
     attribute = constants.UUORGMETADATAPREFIX + "retirement_request_actor"
-    avu.set_on_coll(ctx, path, attribute, actor)
+    try:
+        avu.set_on_coll(ctx, path, attribute, actor)
+    except msi.Error:
+        log.write(ctx, "set_retirement_requester: msiError - could not set retirement requester AVU.")
 
 
-def get_requester(ctx: rule.Context, path: str) -> str:
-    """Get submitter of data package for retirement."""
+def get_retirement_requester(ctx: rule.Context, path: str) -> str:
+    """Get submitter of data package retirement request."""
     attribute = constants.UUORGMETADATAPREFIX + "retirement_request_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
 
@@ -129,14 +132,17 @@ def get_requester(ctx: rule.Context, path: str) -> str:
         return ""
 
 
-def set_approver(ctx: rule.Context, path: str, actor: str) -> None:
-    """Set approver of data package for retirement."""
+def set_retirement_approver(ctx: rule.Context, path: str, actor: str) -> None:
+    """Set approver of data package retirement request."""
     attribute = constants.UUORGMETADATAPREFIX + "retirement_approval_actor"
-    avu.set_on_coll(ctx, path, attribute, actor)
+    try:
+        avu.set_on_coll(ctx, path, attribute, actor)
+    except msi.Error:
+        log.write(ctx, "set_retirement_approver: msiError - could not set retirement approver AVU.")
 
 
-def get_approver(ctx: rule.Context, path: str) -> str:
-    """Get approver of data package for retirement."""
+def get_retirement_approver(ctx: rule.Context, path: str) -> str:
+    """Get approver of data package retirement request."""
     attribute = constants.UUORGMETADATAPREFIX + "retirement_approval_actor"
     org_metadata = dict(folder.get_org_metadata(ctx, path))
 
@@ -196,15 +202,21 @@ def request_retirement_status_transition(ctx: rule.Context, coll: str, new_statu
     if new_status == constants.vault_retirement_state.RETIREMENT_REQUESTED:  # Only datamanager can request retirement
         is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
         if not is_datamanager:
-            return ['PermissionDenied', 'Insufficient permissions: package retirement can only be requested by a datamanager.']
+            log.write(ctx, "Retirement request - User is not datamanager.")
+            return ['PermissionDenied', 'Insufficient permissions: data package retirement can only be requested by a datamanager.']
     elif new_status == constants.vault_retirement_state.RETIREMENT_APPROVED:  # Only rodsadmin can approve retirement
         if user.user_type(ctx) != 'rodsadmin':
-            log.write(ctx, "Retirement approval request - User is not rodsadmin")
-            return ['PermissionDenied', 'Insufficient permissions: retirement status transition to approved can only be requested by a rodsadmin.']
+            log.write(ctx, "Retirement approval request - User is not rodsadmin.")
+            return ['PermissionDenied', 'Insufficient permissions: approval of data package retirement request can only be requested by a rodsadmin.']
     elif new_status == constants.vault_retirement_state.RETIRED:  # Retirement is performed by system
         if user.user_type(ctx) != 'rodsadmin':
-            log.write(ctx, "Retirement request - User is not rodsadmin")
-            return ['PermissionDenied', 'Insufficient permissions: retirement status transition to retired can only be requested by a rodsadmin.']
+            log.write(ctx, "Retirement process - User is not rodsadmin.")
+            return ['PermissionDenied', 'Insufficient permissions: retirement of data package can only be executed by a rodsadmin.']
+    elif new_status == constants.vault_retirement_state.ACTIVE:  # Cancellation of retirement can be done by datamanager and technicaladmins only
+        is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+        if not is_datamanager and user.user_type(ctx) != 'rodsadmin':
+            log.write(ctx, "Retirement cancel request - User is not datamanager and not rodsadmin.")
+            return ['PermissionDenied', 'Insufficient permissions: cancellation of data package retirement request can only be requested by a datamanager or a rodsadmin.']
 
     # Check if package is currently pending for another status transition
     if is_transition_pending(ctx, coll_id):
@@ -286,14 +298,13 @@ def process_retirement_status_transition(ctx: rule.Context) -> None:
                     log.write(ctx, "process_retirement_status_transition: msiError - Could not set retirement AVUs.")
                     continue
 
-                # Remove action AVUs
+                # Remove action AVUs (status only, action will be removed later)
                 try:
-                    avu.rm_from_coll(ctx, action_row[0], f"{constants.UUORGMETADATAPREFIX}retirement_action_{coll_id}", action_row[1])
                     avu.rm_from_coll(ctx, status_row[0], f"{constants.UUORGMETADATAPREFIX}retirement_status_action_{coll_id}", "PENDING")
                 except msi.Error:
                     log.write(ctx, "process_retirement_status_transition: msiError - Could not remove action AVUs.")
 
-    log.write(ctx, f"process_retirement_status_transition: Successfully transitioned to {new_status} by {actor} on {coll}")
+    log.write(ctx, f"process_retirement_status_transition: Successfully transitioned to {str(new_status)} by {actor} on {coll}")
 
 
 @rule.make()
