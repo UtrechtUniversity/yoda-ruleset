@@ -3,7 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
@@ -732,6 +732,30 @@ def _get_empty_collections_checksums(ctx: rule.Context, parent_coll: str) -> Lis
     ]
 
 
+def get_summary_manifest(ctx: rule.Context, coll: str) -> Dict:
+    """Produce summary info on a collection, including number and size of files.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+
+    :returns: Dict with summary info
+    """
+    # Get checksums for data objects.
+    checksums = _get_data_checksums(ctx, coll) + _get_sub_data_checksums(ctx, coll)
+    num_files = len(checksums)
+    num_checksums = sum(1 for obj in checksums if obj['checksum'])
+
+    # Calculate the total size of the data objects.
+    total_size = misc.human_readable_size(sum(obj['size'] for obj in checksums))
+
+    return {
+        "files": num_files,
+        "size": total_size,
+        "checksums": checksums,
+        "num_checksums": num_checksums
+    }
+
+
 def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -> api.Result:
     """Produce number of files, total file size and checksum manifest of data objects in a collection.
 
@@ -750,25 +774,18 @@ def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -
     if space not in valid_spaces:
         return api.Error('invalidpath', 'The given path is not in a research, deposit, or vault space')
 
-    # Get checksums for data objects.
-    checksums = _get_data_checksums(ctx, coll) + _get_sub_data_checksums(ctx, coll)
-    num_files = len(checksums)
-    num_checksums = sum(1 for obj in checksums if obj['checksum'])
-
-    # Calculate the total size of the data objects.
-    total_size = misc.human_readable_size(sum(obj['size'] for obj in checksums))
-
+    pre_summary = get_summary_manifest(ctx, coll)
     # Initialize the manifest response.
-    manifest = checksums
+    manifest = pre_summary['checksums']
 
     if empty_colls:
         empty_checksums = _get_empty_collections_checksums(ctx, coll)
         manifest += empty_checksums
 
     return {
-        "files": num_files,
-        "size": total_size,
-        "checksums": num_checksums,
+        "files": pre_summary['num_files'],
+        "size": pre_summary['total_size'],
+        "checksums": pre_summary['num_checksums'],
         "manifest": manifest
     }
 
