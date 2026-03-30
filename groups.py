@@ -1264,18 +1264,18 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
             return api.Error('policy_error', message)
 
         # Remove user from CO if group is a SRAM CO.
+        user_name, _ = user.from_str(ctx, username)
         co_identifier = sram.get_co_identifier(ctx, group_name)
         if co_identifier:
-            uid = sram.get_co_member_uid(ctx, co_identifier, username)
+            uid = sram.get_co_member_uid(ctx, co_identifier, user_name)
             if uid == '':
-                return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(username))
+                return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(user_name))
             elif not sram.delete_collaboration_membership(ctx, co_identifier, uid):
-                return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(username, group_name))
+                return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(user_name, group_name))
         else:
-            user_name, _ = user.from_str(ctx, username)
             if not yoda_names.is_internal_user(user_name) and sram.is_user_marked_invited(ctx, user_name, group_name):
                 # Remove invitation metadata.
-                msi.sudo_obj_meta_remove(ctx, user, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
         return api.Result.ok()
     except Exception:
@@ -1317,12 +1317,13 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
         managers = group['managers']
         invited = group['invited']
         description = group.get('description', '')
+        sram_co = (group.get('sram_co', '') == "True")
 
         log.write(ctx, "Sync group {} with SRAM".format(group_name))
         co_identifier = sram.get_co_identifier(ctx, group_name)
 
         # Post collaboration group is not yet already SRAM enabled.
-        if not co_identifier:
+        if not co_identifier and sram_co:
             response_sram = sram.post_collaboration(ctx, group_name, description)
 
             if "error" in response_sram:
@@ -1413,11 +1414,13 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
                 # Remove invitation metadata if user is member of the external users CO.
                 if username in co_members and member in invited:
                     log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
-                    msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    if sram.is_user_marked_invited(ctx, username, group_name):
+                        msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                 # Put invite and add invitation metadata if user is not member of the external users CO.
                 elif username not in co_members and member not in invited:
                     sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
-                    msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    if not sram.is_user_marked_invited(ctx, username, group_name):
+                        msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                     log.write(ctx, f"User {username} invited to group {group_name}")
 
     log.write(ctx, "Finished syncing external users with SRAM")
