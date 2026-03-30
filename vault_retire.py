@@ -12,6 +12,7 @@ import constants
 import folder
 import groups
 import policies_retirement_status
+import research
 from util import *
 
 __all__ = ['api_vault_retirement_status',
@@ -150,6 +151,33 @@ def get_retirement_approver(ctx: rule.Context, path: str) -> str:
         return org_metadata[attribute]
     else:
         return ""
+
+
+def get_retirement_manifest(ctx: rule.Context, coll: str) -> api.Result:
+    """Produce manifest with summary data for a retired data package.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+
+    :returns: Dict with number of files, total file size and checksum manifest
+    """
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'The given path does not exist')
+
+    # Validate the space type.
+    space, _, _, _ = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalidpath', 'The given path is not in a vault space')
+
+    pre_summary = research.get_summary_manifest(ctx, coll)
+
+    # TODO support adding custom retirement reason
+    return {
+        "files": pre_summary['num_files'],
+        "size": pre_summary['total_size'],
+        "retired": True,
+        "retired_reason": "This data package was retired."
+    }
 
 
 def is_transition_pending(ctx: rule.Context, coll_id: str) -> bool:

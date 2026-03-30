@@ -679,8 +679,11 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
     manifest_path = temp_coll + "/" + random_id + "-manifest.json"
 
     # Only retrieve manifest for open access vault packages.
-    if publication_state["accessRestriction"].startswith("Open"):
+    if publication_state["accessRestriction"].startswith("Open") and not publication_state["retirement"]:
         manifest = research.research_manifest(ctx, vault_package, empty_colls=True)['manifest']
+    # TODO made this up, is there an actual state somewhere we use?
+    elif publication_state["retirement"]:
+        manifest = vault_retire.get_retirement_manifest(ctx, vault_package)['manifest']
     else:
         manifest = []
     data_object.write(ctx, manifest_path, json.dumps(manifest))
