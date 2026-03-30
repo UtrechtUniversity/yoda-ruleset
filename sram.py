@@ -108,10 +108,6 @@ def delete_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid:
         log.write(ctx, f"delete_collaboration_membership error: CO identifier is invalid {co_identifier}")
         return False
 
-    if not misc.is_valid_uuid(uuid):
-        log.write(ctx, f"delete_collaboration_membership error: User uuid is invalid {uuid}")
-        return False
-
     url = f"{config.sram_rest_api_url}/api/collaborations/v1/{co_identifier}/members/{uuid}"
 
     if config.sram_verbose_logging:
