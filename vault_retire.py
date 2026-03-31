@@ -4,10 +4,12 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 from typing import List
 
 import genquery
 
+import admin
 import constants
 import folder
 import groups
@@ -207,6 +209,28 @@ def is_transition_pending(ctx: rule.Context, coll_id: str) -> bool:
     return False
 
 
+def get_latest_actor(ctx: rule.Context, path: str) -> str | None:
+    """
+    Retrieve actor of latest retirement action.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to vault data package
+
+    :returns: Actor of latest retirement action.
+    """
+    try:
+        coll_id = collection.id_from_name(ctx, path)
+        iter = list(genquery.Query(
+                    ctx, "META_COLL_ATTR_VALUE",
+                    f"META_COLL_ATTR_NAME = 'org_retirement_action_{coll_id}'",
+                    order_by="META_COLL_MODIFY_TIME desc",
+                    output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))
+        action = json.loads(iter[0][0])
+        return action[2]
+    except Exception:
+        return None
+
+
 def request_retirement_status_transition(ctx: rule.Context, coll: str, new_status: constants.vault_retirement_state) -> List:
     """Request vault retirement status transition action.
 
@@ -220,29 +244,36 @@ def request_retirement_status_transition(ctx: rule.Context, coll: str, new_statu
     actor = user.full_name(ctx)
     coll_id = collection.id_from_name(ctx, coll)
 
+    zone = user.zone(ctx)
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
     category = groups.group_category(ctx, vault_group_name)
-    zone = user.zone(ctx)
-    actor_group_path = '/' + zone + '/home/datamanager-' + category
+
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+    is_admin = admin.is_admin(ctx, user.name(ctx))
+
+    # Determine group collection
+    actor_group_path = '/' + zone + '/home/'
+    if is_datamanager:
+        actor_group_path += 'datamanager-' + category
+    else:
+        actor_group_path += folder.collection_group_name(ctx, coll)
 
     # Check permissions for status transitions
     if new_status == constants.vault_retirement_state.RETIREMENT_REQUESTED:  # Only datamanager can request retirement
-        is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
         if not is_datamanager:
             log.write(ctx, "Retirement request - User is not datamanager.")
             return ['PermissionDenied', 'Insufficient permissions: data package retirement can only be requested by a datamanager.']
     elif new_status == constants.vault_retirement_state.RETIREMENT_APPROVED:  # Only rodsadmin can approve retirement
-        if user.user_type(ctx) != 'rodsadmin':
+        if not is_admin:
             log.write(ctx, "Retirement approval request - User is not rodsadmin.")
             return ['PermissionDenied', 'Insufficient permissions: approval of data package retirement request can only be requested by a rodsadmin.']
     elif new_status == constants.vault_retirement_state.RETIRED:  # Retirement is performed by system
-        if user.user_type(ctx) != 'rodsadmin':
+        if not is_admin:
             log.write(ctx, "Retirement process - User is not rodsadmin.")
             return ['PermissionDenied', 'Insufficient permissions: retirement of data package can only be executed by a rodsadmin.']
     elif new_status == constants.vault_retirement_state.ACTIVE:  # Cancellation of retirement can be done by datamanager and technicaladmins only
-        is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
-        if not is_datamanager and user.user_type(ctx) != 'rodsadmin':
+        if not is_datamanager and not is_admin:
             log.write(ctx, "Retirement cancel request - User is not datamanager and not rodsadmin.")
             return ['PermissionDenied', 'Insufficient permissions: cancellation of data package retirement request can only be requested by a datamanager or a rodsadmin.']
 
@@ -257,11 +288,10 @@ def request_retirement_status_transition(ctx: rule.Context, coll: str, new_statu
         return ['PermissionDenied', 'Illegal status transition']
 
     # Attach action AVUs
-    try:
-        avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'retirement_action_' + coll_id, jsonutil.dump([coll, new_status.value, actor]))
-        avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'retirement_status_action_' + coll_id, 'PENDING')
-    except msi.Error:
-        return ['InternalError', 'Something went wrong with the request']
+
+    # TODO: technical admins have no access, grant temporary admin access?
+    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'retirement_action_' + coll_id, jsonutil.dump([coll, new_status.value, actor]))
+    avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'retirement_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
 
