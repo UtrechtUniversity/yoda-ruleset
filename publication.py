@@ -21,7 +21,7 @@ import provenance
 import research
 import schema
 import vault
-import vault_retire
+import vault_deaccession
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -124,9 +124,9 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
         'License_URI': license_uri
     }
 
-    retirement_date = get_retirement_date(ctx, vault_package)
-    if retirement_date:
-        metadata['System']['Withdrawn_Date'] = retirement_date
+    deaccession_date = get_deaccession_date(ctx, vault_package)
+    if deaccession_date:
+        metadata['System']['Withdrawn_Date'] = deaccession_date
 
     # Write combined metadata to file.
     jsonutil.write(ctx, combi_json_path, metadata)
@@ -327,13 +327,13 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
-def get_retirement_date(ctx: rule.Context, vault_package: str) -> str:
-    """Determine the time of retirement as a datetime with UTC offset.
+def get_deaccession_date(ctx: rule.Context, vault_package: str) -> str:
+    """Determine the time of deaccession as a datetime with UTC offset.
 
     :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
-    :return: Retire date in ISO8601 format
+    :return: Deaccession date in ISO8601 format
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
@@ -343,7 +343,7 @@ def get_retirement_date(ctx: rule.Context, vault_package: str) -> str:
     for row in iter:
         # row contains json encoded [str(int(time.time())), action, actor]
         log_item_list = jsonutil.parse(row[1])
-        if log_item_list[1] == "retired":
+        if log_item_list[1] == "deaccession_complete":
             publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
@@ -584,11 +584,11 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
         import vault_archive  # noqa: F406
         is_archived = vault_archive.vault_archival_status(ctx, coll) == "archived"
 
-    # Check vault retire state.
-    is_retired = vault_retire.vault_retirement_status == constants.vault_retirement_state.RETIRED
+    # Check vault deaccession state.
+    is_deaccession_complete = vault_deaccession.vault_deaccession_status == constants.vault_deaccession_state.DEACCESSION_COMPLETE
 
-    # Check vault retire state.
-    is_retired = vault_retire.vault_retirement_status == constants.vault_retirement_state.RETIRED
+    # Check vault deaccession state.
+    is_deaccession_complete = vault_deaccession.vault_deaccession_status == constants.vault_deaccession_state.DEACCESSION_COMPLETE
 
     # Get DOI and versions.
     base_doi = publication_state.get("baseDOI", "")
@@ -608,7 +608,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
         base_doi,
         versions,
         is_archived,
-        is_retired
+        is_deaccession_complete
     )
 
     data_object.write(ctx, landing_page_path, landing_page_html)
@@ -679,11 +679,11 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
     manifest_path = temp_coll + "/" + random_id + "-manifest.json"
 
     # Only retrieve manifest for open access vault packages.
-    if publication_state["accessRestriction"].startswith("Open") and not publication_state["retirement"]:
+    if publication_state["accessRestriction"].startswith("Open") and not publication_state["deaccession"]:
         manifest = research.research_manifest(ctx, vault_package, empty_colls=True)['manifest']
     # TODO made this up, is there an actual state somewhere we use?
-    elif publication_state["retirement"]:
-        manifest = vault_retire.get_retirement_manifest(ctx, vault_package)['manifest']
+    elif publication_state["deaccession"]:
+        manifest = vault_deaccession.get_deaccession_manifest(ctx, vault_package)['manifest']
     else:
         manifest = []
     data_object.write(ctx, manifest_path, json.dumps(manifest))

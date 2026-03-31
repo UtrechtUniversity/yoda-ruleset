@@ -8,30 +8,30 @@ import admin
 import notifications
 import provenance
 import vault
-import vault_retire
+import vault_deaccession
 from util import *
 
 
 def pre_status_transition(ctx: rule.Context,
                           coll: str,
-                          current: constants.vault_retirement_state,
-                          new: constants.vault_retirement_state) -> policy.Succeed | policy.Fail:
+                          current: constants.vault_deaccession_state,
+                          new: constants.vault_deaccession_state) -> policy.Succeed | policy.Fail:
     """Placeholder for action taken before status transition."""
 
     return policy.succeed()
 
 
-def can_transition_retirement_status(ctx: rule.Context,
-                                     coll: str,
-                                     status_from: str,
-                                     status_to: str) -> policy.Succeed | policy.Fail:
-    """Check if retirement status transition action is legal."""
-    transition = (constants.vault_retirement_state(status_from),
-                  constants.vault_retirement_state(status_to))
-    if transition not in constants.retirement_transitions:
+def can_transition_deaccession_status(ctx: rule.Context,
+                                      coll: str,
+                                      status_from: str,
+                                      status_to: str) -> policy.Succeed | policy.Fail:
+    """Check if deaccession status transition action is legal."""
+    transition = (constants.vault_deaccession_state(status_from),
+                  constants.vault_deaccession_state(status_to))
+    if transition not in constants.deaccession_transitions:
         return policy.fail('Illegal status transition')
 
-    # If vault package is not unpublished, published, or depublished then retirement cannot be requested
+    # If vault package is not unpublished, published, or depublished then deaccession cannot be requested
     vault_status = vault.get_coll_vault_status(ctx, coll)
     if vault_status not in [constants.vault_package_state.UNPUBLISHED, constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED]:
         return policy.fail('Illegal status transition')
@@ -42,22 +42,22 @@ def can_transition_retirement_status(ctx: rule.Context,
 def post_status_transition(ctx: rule.Context,
                            coll: str,
                            status: str) -> None:
-    """Post retirement status transition actions."""
-    status = constants.vault_retirement_state(status)
-    actor = vault_retire.get_latest_actor(ctx, coll)
+    """Post deaccession status transition actions."""
+    status = constants.vault_deaccession_state(status)
+    actor = vault_deaccession.get_latest_actor(ctx, coll)
     if not actor:
         log.write(ctx, "post_status_transition: action actor could not be determined.")  # TODO: block the rest of the function? or just use empty string?
 
-    # Datamanager requests retirement
-    if status is constants.vault_retirement_state.RETIREMENT_REQUESTED:
+    # Datamanager requests deaccession
+    if status is constants.vault_deaccession_state.DEACCESSION_REQUESTED:
         # Update provenance log
-        provenance.log_action(ctx, actor, coll, "requested retirement")
+        provenance.log_action(ctx, actor, coll, "requested deaccession")
 
         # Set actor
-        vault_retire.set_retirement_requester(ctx, coll, actor)
+        vault_deaccession.set_deaccession_requester(ctx, coll, actor)
 
         # Send notifications to admins
-        message = "Data package submitted for retirement"
+        message = "Data package submitted for deaccession"
 
         admins = admin.get_admins(ctx)
         if len(admins) > 0:
@@ -66,30 +66,30 @@ def post_status_transition(ctx: rule.Context,
         else:
             log.write(ctx, "post_status_transition: could not notify admins.")
 
-    # Admin approves retirement request
-    elif status is constants.vault_retirement_state.RETIREMENT_APPROVED:
+    # Admin approves deaccession request
+    elif status is constants.vault_deaccession_state.DEACCESSION_APPROVED:
         # Update provenance log
-        provenance.log_action(ctx, actor, coll, "approved retirement")
+        provenance.log_action(ctx, actor, coll, "approved deaccession")
 
         # Set actor
-        vault_retire.set_retirement_approver(ctx, coll, actor)
+        vault_deaccession.set_deaccession_approver(ctx, coll, actor)
 
         # Send notifications to requester
-        message = "Data package approved for retirement"
+        message = "Data package approved for deaccession"
 
-        requester = vault_retire.get_retirement_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
         notifications.set(ctx, actor, requester, coll, message)
 
-    # Admin cancels/denies retirement request
-    # Datamanager cancels retirement request
-    elif status is constants.vault_retirement_state.ACTIVE:
+    # Admin cancels/denies deaccession request
+    # Datamanager cancels deaccession request
+    elif status is constants.vault_deaccession_state.ACTIVE:
         # Update provenance log
-        provenance.log_action(ctx, actor, coll, "cancelled retirement")
+        provenance.log_action(ctx, actor, coll, "cancelled deaccession")
 
         # Send notifications to requester or admins
-        message = "Data package request for retirement cancelled"
+        message = "Data package request for deaccession cancelled"
 
-        requester = vault_retire.get_retirement_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
         if actor != requester:  # Admin cancelled -> notify requester
             notifications.set(ctx, actor, requester, coll, message)
         else:  # Requested cancelled -> notify admins
@@ -100,18 +100,18 @@ def post_status_transition(ctx: rule.Context,
             else:
                 log.write(ctx, "post_status_transition: could not notify admins.")
 
-    # System retires package
-    elif status is constants.vault_retirement_state.RETIRED:
+    # System deaccessions package
+    elif status is constants.vault_deaccession_state.DEACCESSION_COMPLETE:
         # Update provenance log
-        provenance.log_action(ctx, "system", coll, "retired")
+        provenance.log_action(ctx, "system", coll, "deaccessioned")
 
         # Send notifications to requester and technical admin
-        message = "Data package retired"
+        message = "Data package deaccessioned"
 
         actors = []
-        requester = vault_retire.get_retirement_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
         actors.append(requester)
-        approver = vault_retire.get_retirement_approver(ctx, coll)
+        approver = vault_deaccession.get_deaccession_approver(ctx, coll)
         actors.append(approver)
 
         for actor in actors:
