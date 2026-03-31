@@ -50,20 +50,20 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
                                                random_id: str,
                                                base_doi: str,
                                                versions: Dict,
-                                               is_retired: bool,
+                                               is_deaccession_complete: bool,
                                                is_archived: bool) -> str:
     """Get the landing page of published Yoda metadata as a string.
 
-    :param ctx:             Combined type of a ctx and rei struct
-    :param zone:            Zone name
-    :param template_name:   Name of landingpage template
-    :param combi_json_path: Path to combined metadata JSON file
-    :param json_schema:     Dict holding entire contents of metadata.json for the category involved
-    :param random_id:       Random ID of the publication
-    :param base_doi:        Base DOI of the publication
-    :param versions:        Dict containing all the versions of the publication
-    :param is_retired:      Whether the data package is retired
-    :param is_archived:     Whether the data package is archived
+    :param ctx:                         Combined type of a ctx and rei struct
+    :param zone:                        Zone name
+    :param template_name:               Name of landingpage template
+    :param combi_json_path:             Path to combined metadata JSON file
+    :param json_schema:                 Dict holding entire contents of metadata.json for the category involved
+    :param random_id:                   Random ID of the publication
+    :param base_doi:                    Base DOI of the publication
+    :param versions:                    Dict containing all the versions of the publication
+    :param is_deaccession_complete:     Whether the data package is deaccessioned
+    :param is_archived:                 Whether the data package is archived
 
     :return: Output HTML landing page
     """
@@ -250,7 +250,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         random_id=random_id,
         base_doi=base_doi,
         versions=versions,
-        is_retired=is_retired,
+        is_deaccession_complete=is_deaccession_complete,
         is_archived=is_archived,
         matomo_tracking_enabled=config.matomo_tracking_enabled,
         matomo_server_fqdn=config.matomo_server_fqdn,

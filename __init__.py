@@ -55,7 +55,7 @@ from schema_transformations   import *
 from settings                 import *
 from stats                    import *
 from vault                    import *
-from vault_retire             import *
+from vault_deaccession        import *
 from epic                     import *
 
 # Import certain modules only when enabled.

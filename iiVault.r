@@ -40,10 +40,10 @@ iiAdminVaultArchive(*coll, *action) {
 	msiExecCmd("admin-vault-archive.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *action, "", "", 0, *out);
 }
 
-# \brief Prepare to retire a data package in the vault
+# \brief Prepare to deaccession a data package in the vault
 #
-iiAdminVaultRetire() {
-	msiExecCmd("admin-vault-retire.sh", uuClientFullName, "", "", 0, *out);
+iiAdminVaultDeaccession() {
+	msiExecCmd("admin-vault-deaccession.sh", uuClientFullName, "", "", 0, *out);
 }
 
 # \brief Perform copy to research from vault

@@ -67,19 +67,19 @@ UUUSERMETADATAROOT = 'usr'
 UUFLATINDEX = 'FlatIndex'
 """Flat unstructured index fields."""
 
-IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
-IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
-IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
-IIARCHIVEATTRNAME     = UUORGMETADATAPREFIX + 'archival_status'
-IIRETIREATTRNAME      = UUORGMETADATAPREFIX + 'retirement_status'
-IIBAGITOR             = UUORGMETADATAPREFIX + 'bagitor'
-IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
-IICOPYRETRYCOUNT      = UUORGMETADATAPREFIX + 'retry_count'
-IICOPYLASTRUN         = UUORGMETADATAPREFIX + 'last_run'
-DELETE_RESEARCH_COPY   = UUORGMETADATAPREFIX + 'delete_research_copy'
-DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
+IILOCKATTRNAME          = UUORGMETADATAPREFIX + 'lock'
+IISTATUSATTRNAME        = UUORGMETADATAPREFIX + 'status'
+IIVAULTSTATUSATTRNAME   = UUORGMETADATAPREFIX + 'vault_status'
+IIARCHIVEATTRNAME       = UUORGMETADATAPREFIX + 'archival_status'
+IIDEACCESSIONATTRNAME   = UUORGMETADATAPREFIX + 'deaccession_status'
+IIBAGITOR               = UUORGMETADATAPREFIX + 'bagitor'
+IICOPYPARAMSNAME        = UUORGMETADATAPREFIX + 'copy_to_vault_params'
+IICOPYRETRYCOUNT        = UUORGMETADATAPREFIX + 'retry_count'
+IICOPYLASTRUN           = UUORGMETADATAPREFIX + 'last_run'
+DELETE_RESEARCH_COPY    = UUORGMETADATAPREFIX + 'delete_research_copy'
+DATA_PACKAGE_REFERENCE  = UUORGMETADATAPREFIX + 'data_package_reference'
 
-SCHEMA_USER_SELECTABLE = UUORGMETADATAPREFIX + 'schema_user_selectable'
+SCHEMA_USER_SELECTABLE  = UUORGMETADATAPREFIX + 'schema_user_selectable'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
@@ -176,26 +176,26 @@ class vault_archive_state(Enum):
         return self.name
 
 
-class vault_retirement_state(Enum):
-    """Vault package retirement states."""
+class vault_deaccession_state(Enum):
+    """Vault package deaccession states."""
 
     # Values are as they appear in AVU values.
     ACTIVE                    = ''
-    RETIREMENT_REQUESTED      = 'RETIREMENT_REQUESTED'
-    RETIREMENT_APPROVED       = 'RETIREMENT_APPROVED'
-    RETIRED                   = 'RETIRED'
+    DEACCESSION_REQUESTED      = 'DEACCESSION_REQUESTED'
+    DEACCESSION_APPROVED       = 'DEACCESSION_APPROVED'
+    DEACCESSION_COMPLETE       = 'DEACCESSION_COMPLETE'
 
     def __str__(self) -> str:
         return self.name
 
 
-# List of valid retirement transitions (src, dst)
-retirement_transitions = [(vault_retirement_state(x),
-                           vault_retirement_state(y))
-                          for x, y in [('', 'RETIREMENT_REQUESTED'),
-                                       ('RETIREMENT_REQUESTED', ''),
-                                       ('RETIREMENT_REQUESTED', 'RETIREMENT_APPROVED'),
-                                       ('RETIREMENT_APPROVED', 'RETIRED')]]
+# List of valid deaccession transitions (src, dst)
+deaccession_transitions = [(vault_deaccession_state(x),
+                            vault_deaccession_state(y))
+                           for x, y in [('', 'DEACCESSION_REQUESTED'),
+                                        ('DEACCESSION_REQUESTED', ''),
+                                        ('DEACCESSION_REQUESTED', 'DEACCESSION_APPROVED'),
+                                        ('DEACCESSION_APPROVED', 'DEACCESSION_COMPLETE')]]
 
 
 # List of valid replica states.
