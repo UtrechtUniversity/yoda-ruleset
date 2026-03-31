@@ -142,3 +142,13 @@ def number_of_connections(ctx: 'rule.Context') -> int:
         return 0
 
     return connections
+
+
+def get_rodsadmins(ctx: 'rule.Context') -> list:
+    """Get all rodsadmin users."""
+    rodsadmins = []
+    for row in genquery.row_iterator("USER_NAME",
+                                     "USER_TYPE = 'rodsadmin'",
+                                     genquery.AS_LIST, ctx):
+        rodsadmins.append(row[0])
+    return rodsadmins
