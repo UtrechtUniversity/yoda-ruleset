@@ -28,11 +28,6 @@ iiAdminVaultIngest() {
 	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
 }
 
-# TODO
-iiVaultGetRetirementActor(*folder, *actor, *actionActor) {
-        # TODO: retrieve retirement action actor
-}
-
 # \brief Perform admin operations on the vault
 #
 iiAdminVaultActions() {
