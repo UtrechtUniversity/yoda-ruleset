@@ -1,7 +1,7 @@
 """Functions to handle data requests."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -723,8 +723,13 @@ def datarequest_sync_avus(ctx: rule.Context, request_id: str) -> None:
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
     data = datarequest_get(ctx, request_id)
 
+    # Only set a subset of the datarequest as AVUs.
+    data = json.loads(data)
+    title = data.get('datarequest', {}).get('study_information', {}).get('title')
+    filtered_data = {'title': title} if title else {}
+
     # Re-set the AVUs
-    jsonutil.set_on_object(ctx, file_path, "data_object", "root", data)
+    jsonutil.set_on_object(ctx, file_path, "data_object", "root", json.dumps(filtered_data))
 
 
 ###################################################
@@ -1015,9 +1020,6 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
         jsonutil.write(ctx, file_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write datarequest to disk.')
-
-    # Set the proposal fields as AVUs on the proposal JSON file
-    jsonutil.set_on_object(ctx, file_path, "data_object", "root", json.dumps(data))
 
     # If draft, set status
     if draft:
