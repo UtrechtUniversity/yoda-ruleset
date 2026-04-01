@@ -6,10 +6,6 @@
       "type": "string",
       "maxLength": 255
     },
-    "stringLong": {
-      "type": "string",
-      "maxLength": 2700
-    },
     "person": {
       "type": "object",
       "properties": {
@@ -176,7 +172,7 @@
       "description": "In this section, please specify as detailed as possible which data you request from which cohort (Baby & Child or Child & Adolescent) and which wave(s). If applicable, please also list any specific criteria (e.g. only data of children of whom mothers smoked during pregnancy).",
       "properties": {
         "abstract": {
-          "$ref": "#/definitions/stringLong",
+          "type": "string",
           "title": "Abstract",
           "description": "Please provide a summary of your data request."
         },
@@ -185,7 +181,7 @@
           "title": "Data"
         },
         "specific_criteria": {
-          "$ref": "#/definitions/stringLong",
+          "type": "string",
           "title": "Specific criteria",
           "description": "If applicable, please provide the specific criteria that should be applied to your data selection."
         },
@@ -245,17 +241,17 @@
                       "title": "Title of the study"
                     },
                     "research_questions": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Research questions",
                       "description": "List each research question included in this study. When specifying your research questions, it is good practice to use only two new concepts per research question. For example, split up your questions into a simple format: “Does X lead to Y?” and “Is the relationship between X and Y moderated by Z?”. By splitting up the research questions here, you can more easily describe the statistical test for each research question later."
                     },
                     "hypotheses": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Hypotheses",
                       "description": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A ≠ B). If directional, state the direction. You may also provide a rationale for each hypothesis."
                     },
                     "data_returned": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Returned files and total size thereof",
                       "description": "As outlined in the Data Access Protocol and in the Data Transfer Agreement, researchers are required to return the processed and analyzed data and the scripts used to process and analyze the data to the secure Yoda folder after publication of the project results. In order to prepare for the return of these data, we ask you to indicate what type of data files you will be returning and to estimate the total size of these files. Please provide a description and an estimate of the file sizes here."
                     }
@@ -272,22 +268,22 @@
                   "title": "Variables",
                   "properties": {
                     "variables": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Variables",
                       "description": "Describe all variables that will be used as IVs (predictors), DVs (outcomes), or covariates in your study. Label them accordingly. If you are using a scale or an index, state the construct the scale/index represents, which items the scale/index will consist of, and how these items will be aggregated. When the aggregation is based on exploratory factor analysis (EFA) or confirmatory factor analysis (CFA), also specify the relevant details (EFA: rotation, how the number of factors will be determined, how best fit will be selected, CFA: how loadings will be specified, how fit will be assessed, which residuals variance terms will be correlated). If you are using any categorical variables, state how you will code them in the statistical analyses."
                     },
                     "unit_of_analysis": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Unit of analysis",
                       "description": "Which units of analysis (respondents, cases, etc.) will be included or excluded in your study? Taking these inclusion and exclusion criteria into account, indicate the expected sample size of the data you’ll be using for your statistical analyses. If you have a research question about a certain group you may need to exclude participants based on one or more characteristics. Be very specific when describing these characteristics so that readers will be able to redo your moves easily."
                     },
                     "missing_data": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Missing data",
                       "description": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will use in the statistical analyses. Based on this information, provide a new expected sample size."
                     },
                     "statistical_outliers": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Statistical outliers",
                       "description": "How will you define what a statistical outlier is in your data and what will you do when you encounter them? If you plan to remove outliers, provide a new expected sample size. If you expect to remove many outliers or if you are unsure about your outlier handling strategy, it is good practice to preregister analyses including and excluding outliers. Note that this will be the definitive expected sample size for your study and you will use this number to do any power analyses."
                     }
@@ -301,12 +297,12 @@
                   "title": "Knowledge of data",
                   "properties": {
                     "prior_publication": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Prior publication/dissemination",
                       "description": "List the publications, working papers, and conference presentations you have worked on that are based on the dataset you will use. For each work, list the variables you analyzed, but limit yourself to variables that are relevant to the proposed analysis. If the dataset is longitudinal, also state which wave of the dataset you analyzed. Specify the previous works for each co-author separately."
                     },
                     "prior_knowledge": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Prior knowledge",
                       "description": "Disclose any prior knowledge you may have about the dataset that is relevant for the proposed analysis. If you do not have any prior knowledge of it, please state so. Your prior knowledge could stem from working with the data first-hand, from reading previously published research, or from codebooks. Provide prior knowledge for every author separately. Indirect knowledge about the hypothesized association does not preclude a confirmatory analysis but should be transparently reported in this section. However, direct knowledge about the association between the variables in your hypothesis may indicate that you are unable to make unbiased analytic decisions to test this hypothesis."
                     }
@@ -320,37 +316,37 @@
                   "title": "Analyses",
                   "properties": {
                     "statistical_models": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Statistical models",
                       "description": "For each hypothesis, describe the statistical model you will use to test the hypothesis. Include the type of model (e.g., ANOVA, multiple regression, SEM) and the specification of the model. Specify any interactions and post-hoc analyses and remember that any test not included here must be labeled as an exploratory test in the final paper."
                     },
                     "effect_size": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Effect size",
                       "description": "If applicable, specify a predicted effect size or a minimum effect size of interest for all the effects tested in your statistical analyses."
                     },
                     "statistical_power": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Statistical power",
                       "description": "Present the statistical power available to detect the predicted effect size or the smallest effect size of interest. Use the sample size after updating for missing data and outliers."
                     },
                     "inference_criteria": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Inference criteria",
                       "description": "What criteria will you use to make inferences? Describe the information you will use (e.g. specify the p-values, effect sizes, confidence intervals, Bayes factors, specific model fit indices), as well as cut-off criteria, where appropriate. Will you be using one-or two-tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this, and if so, how?"
                     },
                     "assumption_violation": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Assumption violation/Model non-convergence",
                       "description": "What will you do should your data violate assumptions, your model not converge, or some other analytic problem arises?"
                     },
                     "reliability_and_robustness_testing": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Reliability and robustness testing",
                       "description": "Provide a series of decisions or tests about evaluating the strength, reliability, or robustness of your finding. This may include within-study replication attempts, additional covariates, cross-validation, applying weights, selectively applying constraints in an SEM context (e.g., comparing model fit statistics), overfitting adjustment techniques used, or some other simulation/sampling/bootstrapping method."
                     },
                     "exploratory_analysis": {
-                      "$ref": "#/definitions/stringLong",
+                      "type": "string",
                       "title": "Exploratory analysis",
                       "description": "If you plan to explore your dataset to look for unexpected differences or relationships, describe those tests here. If reported, add them to the final paper under a heading that clearly differentiates this exploratory part of your study from the confirmatory part."
                     }
