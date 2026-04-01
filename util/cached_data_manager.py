@@ -31,7 +31,7 @@ class CachedDataManager:
         """
         raise Exception("Context string not provided by CacheDataManager.")
 
-    def _get_original_data(self, ctx: 'rule.Context', keyname: str) -> None:
+    def _get_original_data(self, ctx: 'rule.Context', keyname: str) -> str:
         """This function is called when data needs to be retrieved from the original
            (non-cached) location.
 
