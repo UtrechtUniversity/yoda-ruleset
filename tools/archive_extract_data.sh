@@ -67,6 +67,17 @@ validate_arguments() {
     
     # Mode-specific validations
     if [[ "$MODE" == "archive" ]]; then
+        # In archive mode, source collection must not end with '/'
+        if [[ "$SOURCE_PATH" != "/" && "$SOURCE_PATH" == */ ]]; then
+            cat <<EOF >&2
+ERROR: In archive mode, source path must not end with '/'
+  Provided: $SOURCE_PATH
+
+Please use source collection path without a trailing slash.
+EOF
+            errors=$((errors+1))
+        fi
+
         # For archive mode, check that target is not inside source
         local normalized_source="${SOURCE_PATH%/}"
         local normalized_target="${TARGET_PATH%/*}"  # Get parent path
