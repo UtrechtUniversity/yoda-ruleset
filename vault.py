@@ -15,6 +15,7 @@ from typing import Dict, List, Tuple
 import genquery
 from dateutil import parser
 
+import admin
 import folder
 import groups
 import meta
@@ -732,6 +733,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         research_group_name = 'research-' + '-'.join(group_parts[1:])
 
     member_type = groups.user_role(ctx, user.full_name(ctx), research_group_name)
+    is_admin = admin.is_admin(ctx, user.name(ctx))
 
     # Retrieve vault folder status.
     status = get_coll_vault_status(ctx, path).value
@@ -804,6 +806,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         "status": status,
         "metadata": metadata,
         "member_type": member_type,
+        "is_admin": is_admin,
         "has_datamanager": has_datamanager,
         "is_datamanager": is_datamanager,
         "vault_action_pending": vault_action_pending,
