@@ -15,6 +15,8 @@ import uuid
 from subprocess import PIPE, Popen
 from typing import List
 
+import genquery
+
 import data_access_token
 import folder
 import groups
@@ -23,7 +25,7 @@ import research
 import schema
 from stats import get_resource_monthly_category_stats, get_user_groups_for_stats
 from util import api, avu, collection, config, constants, data_object, diff_data, group, jsonutil, log, measure_coverage, msi, resources, rule, user
-from vault import copy_folder_to_research
+from vault import copy_acls_from_parent, copy_folder_to_research
 
 
 def _call_msvc_stat_vault(ctx, resc_name, data_path):
@@ -892,6 +894,9 @@ basic_integration_tests = [
     {"name":   "util.user.number_of_connection",
      "test": lambda ctx: user.number_of_connections(ctx),
      "check": lambda x: isinstance(x, int) and x > 0},
+    {"name":   "util.user.to_from_id",
+     "test": lambda ctx: user.name_from_id(ctx, user.id_from_name(ctx, "researcher")),
+     "check": lambda x: x == "researcher"},
     {"name":   "util.user.usertype.rodsadmin",
      "test": lambda ctx: user.get_type(ctx, "rods"),
      "check": lambda x: x == "rodsadmin"},
@@ -904,6 +909,9 @@ basic_integration_tests = [
     {"name":   "is_user_external.external",
      "test": lambda ctx: _test_is_user_external(ctx, "researcher@externaldomain.nl"),
      "check": lambda x: x == 0},
+    {"name":   "vault.copy_acls_from_parent",
+     "test": lambda ctx: _test_copy_acls_from_parent(ctx),
+     "check": lambda x: x == []},
     {"name": "hashes_collection.script",
      "test": lambda ctx: _test_hashes_collection_script(ctx),
      "check": lambda x: x == '3d87794f290780e470a90b6f2a545144838577395d13d95ca3899fdb4fd705fb'},
@@ -1169,6 +1177,51 @@ def test_hashes_on_identical_collections(ctx):
     collection.remove(ctx, coll2)
 
     return hash1 == hash2
+
+
+def _test_copy_acls_from_parent(ctx: rule.Context) -> List[str]:
+    """Test for vault.copy_acls_from_parent
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: list of unexpected issues
+    """
+    test_id = str(uuid.uuid4())
+    zone = user.zone(ctx)
+    main_path = f"/{zone}/home/rods/test-copy-acls-from-parent"
+    sub_path = f"{main_path}/{test_id}"
+    test_read_user = "datamanager"
+    test_write_user = "researcher"
+    test_own_user = "projectmanager"
+
+    if not collection.exists(ctx, main_path):
+        collection.create(ctx, main_path)
+
+    msi.set_acl(ctx, "default", "read", test_read_user, main_path)
+    msi.set_acl(ctx, "default", "write", test_write_user, main_path)
+    msi.set_acl(ctx, "default", "own", test_own_user, main_path)
+
+    collection.create(ctx, sub_path)
+    copy_acls_from_parent(ctx, sub_path, "default")
+
+    acls_result = list(genquery.Query(
+        ctx, "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
+        f"COLL_NAME = '{sub_path}'",
+        output=genquery.AS_LIST))
+    acls_with_names_result = [(user.name_from_id(ctx, acl[0]), acl[1]) for acl in acls_result]
+
+    unexpected_results = []
+
+    if (test_read_user, "read_object") not in acls_with_names_result:
+        print("Read privileges not copied")
+    if (test_write_user, "modify_object") not in acls_with_names_result:
+        print("Write privileges not copied")
+    if (test_own_user, "own") not in acls_with_names_result:
+        print("Ownership privileges not copied")
+
+    collection.remove(ctx, sub_path)
+    collection.remove(ctx, main_path)
+    return unexpected_results
 
 
 def _test_copy_folder_to_research(ctx):

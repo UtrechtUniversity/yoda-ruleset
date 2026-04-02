@@ -119,6 +119,15 @@ def name_from_id(ctx: 'rule.Context', user_id: str) -> str:
     return ''
 
 
+def id_from_name(ctx: 'rule.Context', user_name: str) -> str:
+    """Retrieve user ID based on user name."""
+    for row in genquery.row_iterator("USER_ID",
+                                     "USER_NAME = '{}'".format(user_name),
+                                     genquery.AS_LIST, ctx):
+        return row[0]
+    return ''
+
+
 def number_of_connections(ctx: 'rule.Context') -> int:
     """Get number of active connections from client user."""
     connections = 0
