@@ -1,7 +1,7 @@
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -501,7 +501,7 @@ def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
 
             # Fix ACLs.
             try:
-                ctx.iiCopyACLsFromParent(license_file, 'default')
+                copy_acls_from_parent(ctx, license_file, "default")
             except Exception:
                 log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
@@ -1200,6 +1200,43 @@ def set_vault_permissions(ctx: rule.Context, coll: str, target: str) -> bool:
         msi.set_acl(ctx, "recursive", "admin:read", name, target)
 
     return True
+
+
+def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> None:
+    """
+    When inheritance is missing we need to copy ACLs when introducing new data in vault package.
+
+    :param ctx:            Combined type of a ctx and rei struct
+    :param path:           Path of object that needs the permissions of parent
+    :param recursive_flag: Either "default" for no recursion or "recursive"
+    """
+    parent = os.path.dirname(path)
+
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
+        "COLL_NAME = '" + parent + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        access_name = row[0]
+        user_id = int(row[1])
+        user_name = user.name_from_id(ctx, user_id)
+
+        # iRODS keeps ACLs for deleted users in the iCAT database (https://github.com/irods/irods/issues/7778),
+        # so we need to skip ACLs referring to users that no longer exist.
+        if user_name == "":
+            continue
+
+        if access_name == "own":
+            log.write(ctx, "copy_acls_from_parent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            msi.set_acl(ctx, recursive_flag, "own", user_name, path)
+        elif access_name == "read_object":
+            log.write(ctx, "copy_acls_from_parent: granting read to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            msi.set_acl(ctx, recursive_flag, "read", user_name, path)
+        elif access_name == "modify_object":
+            log.write(ctx, "copy_acls_from_parent: granting write to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            msi.set_acl(ctx, recursive_flag, "write", user_name, path)
 
 
 def reader_needs_access(ctx: rule.Context, group_name: str, coll: str) -> bool:

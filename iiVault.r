@@ -22,39 +22,6 @@ iiGenericSecureCopy(*argv, *origin_path, *err) {
         }
 }
 
-# \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
-#
-# \param[in] path 		path of object that needs the permissions of parent
-# \param[in] recursiveFlag 	either "default" for no recursion or "recursive"
-#
-iiCopyACLsFromParent(*path, *recursiveFlag) {
-        uuChopPath(*path, *parent, *child);
-
-        foreach(*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *parent) {
-                *accessName = *row.COLL_ACCESS_NAME;
-                *userId = *row.COLL_ACCESS_USER_ID;
-                *userFound = false;
-
-                foreach(*user in SELECT USER_NAME WHERE USER_ID = *userId) {
-                        *userName = *user.USER_NAME;
-                        *userFound = true;
-                }
-
-                if (*userFound) {
-                        if (*accessName == "own") {
-                                writeString("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-                                msiSetACL(*recursiveFlag, "own", *userName, *path);
-                        } else if (*accessName == "read_object") {
-                                writeString("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-                                msiSetACL(*recursiveFlag, "read", *userName, *path);
-                        } else if (*accessName == "modify_object") {
-                                writeString("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-                                msiSetACL(*recursiveFlag, "write", *userName, *path);
-                        }
-                }
-        }
-}
-
 # \brief Perform a vault ingest as rodsadmin.
 #
 iiAdminVaultIngest() {

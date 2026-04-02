@@ -23,6 +23,7 @@ import meta
 import provenance
 import schema
 import schema_transformations
+import vault
 from util import *
 
 
@@ -45,7 +46,7 @@ def execute_transformation(ctx: rule.Context, metadata_path: str, transform: Cal
         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
         jsonutil.write(ctx, new_path, metadata)
-        copy_acls_from_parent(ctx, new_path, "default")
+        vault.copy_acls_from_parent(ctx, new_path, "default")
         provenance.log_action(ctx, "system", coll, "updated metadata schema")
         log.write(ctx, "Transformed %s" % (new_path))
     else:
@@ -161,44 +162,6 @@ def rule_get_transformation_info(ctx: rule.Context, json_path: str) -> Tuple[str
         output = ('true', html(transform))
 
     return output
-
-
-def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> None:
-    """
-    When inheritance is missing we need to copy ACLs when introducing new data in vault package.
-
-    :param ctx:            Combined type of a ctx and rei struct
-    :param path:           Path of object that needs the permissions of parent
-    :param recursive_flag: Either "default" for no recursion or "recursive"
-    """
-    parent = os.path.dirname(path)
-
-    iter = genquery.row_iterator(
-        "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
-        "COLL_NAME = '" + parent + "'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        access_name = row[0]
-        user_id = int(row[1])
-
-        user_name = user.name_from_id(ctx, user_id)
-
-        # iRODS keeps ACLs for deleted users in the iCAT database (https://github.com/irods/irods/issues/7778),
-        # so we need to skip ACLs referring to users that no longer exist.
-        if user_name == "":
-            continue
-
-        if access_name == "own":
-            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            msi.set_acl(ctx, recursive_flag, "own", user_name, path)
-        elif access_name == "read_object":
-            log.write(ctx, "iiCopyACLsFromParent: granting read to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            msi.set_acl(ctx, recursive_flag, "read", user_name, path)
-        elif access_name == "modify_object":
-            log.write(ctx, "iiCopyACLsFromParent: granting write to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            msi.set_acl(ctx, recursive_flag, "write", user_name, path)
 
 
 @rule.make(inputs=[0, 1, 2, 3], outputs=[])
@@ -328,7 +291,7 @@ def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s:
                     new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
                     log.write(ctx, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
                     jsonutil.write(ctx, new_path, result['metadata'])
-                    copy_acls_from_parent(ctx, new_path, "default")
+                    vault.copy_acls_from_parent(ctx, new_path, "default")
                     provenance.log_action(ctx, "system", coll, "updated person identifier metadata")
                     log.write(ctx, "Transformed ORCIDs for: %s" % (new_path))
                 elif result['data_changed']:

@@ -1,7 +1,7 @@
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -14,6 +14,7 @@ import data_object
 import log
 import msi
 import rule
+import vault
 
 
 def manifest(ctx: rule.Context, coll: str) -> str:
@@ -73,7 +74,7 @@ def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
 
     if ret.get("code", -1) < 0:
         raise Exception("Archive creation failed: {}".format(ret))
-    ctx.iiCopyACLsFromParent(archive, "default")
+    vault.copy_acls_from_parent(ctx, archive, "default")
 
 
 def extract(ctx: rule.Context, archive: str, coll: str, resource: str = '0') -> None:
