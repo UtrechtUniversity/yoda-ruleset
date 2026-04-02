@@ -1,7 +1,7 @@
 """JSON metadata handling."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -537,7 +537,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     current_json_data = json.loads(json.dumps(current_json))
 
     try:
-        callback.iiCopyACLsFromParent(dest, 'default')
+        vault.copy_acls_from_parent(ctx, dest, "default")
     except Exception:
         set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
         return

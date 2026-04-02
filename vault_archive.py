@@ -1,7 +1,7 @@
 """Functions to archive vault data packages."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -16,6 +16,7 @@ import groups
 import meta
 import notifications
 import provenance
+import vault
 from util import *
 
 __all__ = ['api_vault_archive',
@@ -242,7 +243,7 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
 
         extract_archive(ctx, coll)
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
-        ctx.iiCopyACLsFromParent(coll + "/original", "recursive")
+        vault.copy_acls_from_parent(ctx, coll + "/original", "recursive")
         collection.remove(ctx, coll + "/archive", force=True)
         data_object.remove(ctx, coll + "/archive.tar", force=True)
 
