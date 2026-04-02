@@ -24,15 +24,13 @@ def pre_status_transition(ctx: rule.Context,
         and new in [constants.research_package_state.LOCKED,
                     constants.research_package_state.SUBMITTED]:
         # Backwards compatibility for folders that hold deprecated SECURED status.
-        # Clear action log coming from SECURED state.
+        # Clear provenance log coming from SECURED or FOLDER state.
         # SECURED -> LOCKED and SECURED -> SUBMITTED
-        if current is constants.research_package_state.SECURED:
-            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
-
-        # Clear action log coming from FOLDER state.
         # FOLDER -> LOCKED and FOLDER -> SUBMITTED
-        if current is constants.research_package_state.FOLDER:
-            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
+        if current in [constants.research_package_state.SECURED,
+                       constants.research_package_state.FOLDER]:
+            if not avu.rmw_from_coll(ctx, coll, f"{constants.UUORGMETADATAPREFIX}action_log", "%", catch=True):
+                return policy.fail('Could not clear provenance log')
 
         # Add locks to folder, descendants and ancestors
         x = ctx.iiFolderLockChange(coll, 'lock', '')
@@ -43,15 +41,16 @@ def pre_status_transition(ctx: rule.Context,
                constants.research_package_state.REJECTED,
                constants.research_package_state.SECURED]:
         # Backwards compatibility for folders that hold deprecated SECURED status.
-        # Clear action log coming from SECURED state.
+        # Clear provenance log coming from SECURED state.
         # SECURED -> FOLDER
         if current is constants.research_package_state.SECURED:
-            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
+            if not avu.rmw_from_coll(ctx, coll, f"{constants.UUORGMETADATAPREFIX}action_log", "%", catch=True):
+                return policy.fail('Could not clear provenance log')
 
         # Remove locks from folder, descendants and ancestors
         x = ctx.iiFolderLockChange(coll, 'unlock', '')
         if x['arguments'][2] != '0':
-            return policy.fail('Could not lock folder')
+            return policy.fail('Could not unlock folder')
 
     return policy.succeed()
 

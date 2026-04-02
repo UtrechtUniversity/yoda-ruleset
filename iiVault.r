@@ -55,6 +55,12 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
         }
 }
 
+# \brief Perform a vault ingest as rodsadmin.
+#
+iiAdminVaultIngest() {
+	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
+}
+
 # \brief Perform admin operations on the vault
 #
 iiAdminVaultActions() {
