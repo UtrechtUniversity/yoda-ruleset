@@ -774,18 +774,25 @@ def research_manifest(ctx: rule.Context, coll: str, empty_colls: bool = False) -
     if space not in valid_spaces:
         return api.Error('invalidpath', 'The given path is not in a research, deposit, or vault space')
 
-    pre_summary = get_summary_manifest(ctx, coll)
+    # Get checksums for data objects.
+    checksums = _get_data_checksums(ctx, coll) + _get_sub_data_checksums(ctx, coll)
+    num_files = len(checksums)
+    num_checksums = sum(1 for obj in checksums if obj['checksum'])
+
+    # Calculate the total size of the data objects.
+    total_size = misc.human_readable_size(sum(obj['size'] for obj in checksums))
+
     # Initialize the manifest response.
-    manifest = pre_summary['checksums']
+    manifest = checksums
 
     if empty_colls:
         empty_checksums = _get_empty_collections_checksums(ctx, coll)
         manifest += empty_checksums
 
     return {
-        "files": pre_summary['num_files'],
-        "size": pre_summary['total_size'],
-        "checksums": pre_summary['num_checksums'],
+        "files": num_files,
+        "size": total_size,
+        "checksums": num_checksums,
         "manifest": manifest
     }
 

@@ -44,17 +44,14 @@ def post_status_transition(ctx: rule.Context,
                            status: str) -> None:
     """Post deaccession status transition actions."""
     status = constants.vault_deaccession_state(status)
-    actor = vault_deaccession.get_latest_actor(ctx, coll)
-    if not actor:
-        log.write(ctx, "post_status_transition: action actor could not be determined.")  # TODO: block the rest of the function? or just use empty string?
 
     # Datamanager requests deaccession
     if status is constants.vault_deaccession_state.DEACCESSION_REQUESTED:
-        # Update provenance log
-        provenance.log_action(ctx, actor, coll, "requested deaccession")
+        # Get actor
+        actor = vault_deaccession.get_deaccession_actor(ctx, coll, "request")
 
-        # Set actor
-        vault_deaccession.set_deaccession_requester(ctx, coll, actor)
+        # Update provenance log
+        provenance.log_action(ctx, actor, coll, "submitted for deaccession")
 
         # Send notifications to admins
         message = "Data package submitted for deaccession"
@@ -62,56 +59,65 @@ def post_status_transition(ctx: rule.Context,
         admins = admin.get_admins(ctx)
         if len(admins) > 0:
             for adm in admins:
-                notifications.set(ctx, actor, adm, coll, message)
+                if adm != "rods":  # Skip rods
+                    notifications.set(ctx, actor, adm, coll, message)
         else:
             log.write(ctx, "post_status_transition: could not notify admins.")
 
     # Admin approves deaccession request
     elif status is constants.vault_deaccession_state.DEACCESSION_APPROVED:
-        # Update provenance log
-        provenance.log_action(ctx, actor, coll, "approved deaccession")
+        # Get actor
+        actor = vault_deaccession.get_deaccession_actor(ctx, coll, "approval")
 
-        # Set actor
-        vault_deaccession.set_deaccession_approver(ctx, coll, actor)
+        # Update provenance log
+        provenance.log_action(ctx, actor, coll, "approved for deaccession")
 
         # Send notifications to requester
         message = "Data package approved for deaccession"
 
-        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_actor(ctx, coll, "request")
         notifications.set(ctx, actor, requester, coll, message)
+
+        vault_deaccession.initialize_deaccession(ctx, coll)
 
     # Admin cancels/denies deaccession request
     # Datamanager cancels deaccession request
     elif status is constants.vault_deaccession_state.ACTIVE:
+        # Get actor
+        actor = vault_deaccession.get_deaccession_actor(ctx, coll, "cancelation")
+
         # Update provenance log
-        provenance.log_action(ctx, actor, coll, "cancelled deaccession")
+        provenance.log_action(ctx, actor, coll, "withdrawn from deaccession")
 
         # Send notifications to requester or admins
-        message = "Data package request for deaccession cancelled"
+        message = "Data package withdrawn from deaccession"
 
-        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_actor(ctx, coll, "request")
         if actor != requester:  # Admin cancelled -> notify requester
             notifications.set(ctx, actor, requester, coll, message)
-        else:  # Requested cancelled -> notify admins
+        else:  # Requester cancelled -> notify admins
             admins = admin.get_admins(ctx)
             if len(admins) > 0:
                 for adm in admins:
-                    notifications.set(ctx, actor, adm, coll, message)
+                    if adm != "rods":  # Skip rods
+                        notifications.set(ctx, actor, adm, coll, message)
             else:
                 log.write(ctx, "post_status_transition: could not notify admins.")
+
+        vault_deaccession.cleanup_deaccession_cancel(ctx, coll)
 
     # System deaccessions package
     elif status is constants.vault_deaccession_state.DEACCESSION_COMPLETE:
         # Update provenance log
         provenance.log_action(ctx, "system", coll, "deaccessioned")
 
-        # Send notifications to requester and technical admin
+        # Send notifications to requester and approver
         message = "Data package deaccessioned"
 
         actors = []
-        requester = vault_deaccession.get_deaccession_requester(ctx, coll)
+        requester = vault_deaccession.get_deaccession_actor(ctx, coll, "request")
         actors.append(requester)
-        approver = vault_deaccession.get_deaccession_approver(ctx, coll)
+        approver = vault_deaccession.get_deaccession_actor(ctx, coll, "approval")
         actors.append(approver)
 
         for actor in actors:

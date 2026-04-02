@@ -343,7 +343,7 @@ def get_deaccession_date(ctx: rule.Context, vault_package: str) -> str:
     for row in iter:
         # row contains json encoded [str(int(time.time())), action, actor]
         log_item_list = jsonutil.parse(row[1])
-        if log_item_list[1] == "deaccession_complete":
+        if log_item_list[1] == "deaccessioned":
             publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
@@ -679,11 +679,8 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
     manifest_path = temp_coll + "/" + random_id + "-manifest.json"
 
     # Only retrieve manifest for open access vault packages.
-    if publication_state["accessRestriction"].startswith("Open") and not publication_state["deaccession"]:
+    if publication_state["accessRestriction"].startswith("Open"):
         manifest = research.research_manifest(ctx, vault_package, empty_colls=True)['manifest']
-    # TODO made this up, is there an actual state somewhere we use?
-    elif publication_state["deaccession"]:
-        manifest = vault_deaccession.get_deaccession_manifest(ctx, vault_package)['manifest']
     else:
         manifest = []
     data_object.write(ctx, manifest_path, json.dumps(manifest))

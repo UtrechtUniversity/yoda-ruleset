@@ -42,8 +42,8 @@ iiAdminVaultArchive(*coll, *action) {
 
 # \brief Prepare to deaccession a data package in the vault
 #
-iiAdminVaultDeaccession() {
-	msiExecCmd("admin-vault-deaccession.sh", uuClientFullName, "", "", 0, *out);
+iiAdminVaultDeaccession(*coll, *status) {
+	msiExecCmd("admin-vault-deaccession.sh", uuClientFullName ++ " " ++ *coll ++ " " ++ *status, "", "", 0, *out);
 }
 
 # \brief Perform copy to research from vault

@@ -32,12 +32,12 @@ def api_vault_data_package(user, vault):
     return body["data"]["items"][0]["name"]
 
 
-@given(parsers.parse("the Yoda vault request deaccession API is queried on datapackage in {vault}"), target_fixture="api_response")
-def api_vault_request_deaccession(user, vault, data_package):
+@given(parsers.parse("the Yoda vault request deaccession API is queried with {reason} on datapackage in {vault}"), target_fixture="api_response")
+def api_vault_request_deaccession(user, reason, vault, data_package):
     return api_request(
         user,
         "vault_request_deaccession",
-        {"coll": vault + "/" + data_package}
+        {"coll": vault + "/" + data_package, "reason": reason}
     )
 
 
