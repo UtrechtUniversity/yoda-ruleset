@@ -1,5 +1,5 @@
 processDeaccessionActions() {
-	rule_process_deaccession_status_transitions();
+	rule_process_deaccession_status_transitions(*actor, *coll, *status);
 }
-input null
+input *actor="", *coll="", *status=""
 output ruleExecOut

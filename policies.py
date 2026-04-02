@@ -506,7 +506,7 @@ def py_acPostProcForModifyAVUMetadata(ctx: rule.Context,
     elif info.space is pathutil.Space.VAULT:
         if attr == constants.IIVAULTSTATUSATTRNAME:
             policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
-        if attr == constants.IIDEACCESSIONATTRNAME:
+        if attr == constants.IIDEACCESSIONSTATUSATTRNAME:
             status = constants.vault_deaccession_state.ACTIVE.value if option in ['rm', 'rmw'] else value
             policies_deaccession_status.post_status_transition(ctx, obj_name, status)
         if attr.startswith(constants.UUORGMETADATAPREFIX) and attr != constants.IIARCHIVEATTRNAME:
