@@ -1,7 +1,7 @@
 """Functions for handling schema updates within any yoda-metadata file."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
@@ -20,6 +20,7 @@ from typing import Callable, Dict, Tuple
 import genquery
 
 import meta
+import provenance
 import schema
 import schema_transformations
 from util import *
@@ -45,7 +46,7 @@ def execute_transformation(ctx: rule.Context, metadata_path: str, transform: Cal
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
         jsonutil.write(ctx, new_path, metadata)
         copy_acls_from_parent(ctx, new_path, "default")
-        ctx.rule_provenance_log_action("system", coll, "updated metadata schema")
+        provenance.log_action(ctx, "system", coll, "updated metadata schema")
         log.write(ctx, "Transformed %s" % (new_path))
     else:
         raise AssertionError()
@@ -328,7 +329,7 @@ def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s:
                     log.write(ctx, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
                     jsonutil.write(ctx, new_path, result['metadata'])
                     copy_acls_from_parent(ctx, new_path, "default")
-                    ctx.rule_provenance_log_action("system", coll, "updated person identifier metadata")
+                    provenance.log_action(ctx, "system", coll, "updated person identifier metadata")
                     log.write(ctx, "Transformed ORCIDs for: %s" % (new_path))
                 elif result['data_changed']:
                     log.write(ctx, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
