@@ -2,7 +2,7 @@
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2025, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2026, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 #\ Generic secure copy functionality
@@ -54,21 +54,6 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
                 }
         }
 }
-
-
-# \brief Retrieve current vault folder status
-#
-# \param[in]  folder	    Path of vault folder
-# \param[out] folderStatus  Current status of vault folder
-#
-iiVaultStatus(*folder, *vaultStatus) {
-	*vaultStatusKey = IIVAULTSTATUSATTRNAME;
-	*vaultStatus = UNPUBLISHED;
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *vaultStatusKey) {
-		*vaultStatus = *row.META_COLL_ATTR_VALUE;
-	}
-}
-
 
 # \brief Perform admin operations on the vault
 #
