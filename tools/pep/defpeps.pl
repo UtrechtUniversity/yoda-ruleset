@@ -3,7 +3,7 @@
 use 5.12.0;
 use warnings;
 
-# Generates Python pep rule prototypes based on TAB-separated peps.sh output
+# Generates Python pep rule prototypes based on TAB-separated peps-to-csv.sh output
 
 sub snake {
     # camelCase -> snake_case
