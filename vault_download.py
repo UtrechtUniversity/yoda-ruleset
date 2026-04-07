@@ -1,12 +1,13 @@
 """Functions to download vault data packages."""
 
-__copyright__ = 'Copyright (c) 2023-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
 
 import notifications
 import provenance
+import vault_archive
 from util import *
 
 __all__ = ['api_vault_download',
@@ -55,7 +56,7 @@ def vault_download(ctx: rule.Context, actor: str, coll: str) -> str:
 
 
 def vault_download_archive(ctx: rule.Context, coll: str) -> str:
-    if bagit.status(ctx, coll) != "bagit":
+    if vault_archive.vault_archival_status(ctx, coll) != "bagit":
         return "Invalid"
     try:
         actor = vault_bagitor(ctx, coll)
@@ -98,7 +99,7 @@ def api_vault_download(ctx: rule.Context, coll: str) -> api.Result:
     if not vault_downloadable(ctx, coll):
         return "Invalid"
 
-    if bagit.status(ctx, coll):
+    if vault_archive.vault_archival_status(ctx, coll):
         return "Invalid"
 
     try:
