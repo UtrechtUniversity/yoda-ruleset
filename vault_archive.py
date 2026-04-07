@@ -105,8 +105,14 @@ def vault_archivable(ctx: rule.Context, coll: str) -> bool:
     return False
 
 
-def vault_archival_status(ctx: rule.Context, coll: str) -> str:
-    return bagit.status(ctx, coll)
+def vault_archival_status(ctx: rule.Context, coll: str) -> str | bool:
+    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
+                                     genquery.AS_LIST,
+                                     ctx):
+        return row[0]
+
+    return False
 
 
 def create_archive(ctx: rule.Context, coll: str) -> None:
@@ -151,7 +157,7 @@ def extract_archive(ctx: rule.Context, coll: str) -> None:
 def vault_archive(ctx: rule.Context, actor: str, coll: str) -> str:
     try:
         # Prepare for archival.
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archive")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVE.value)
         provenance.log_action(ctx, actor, coll, "archive scheduled", False)
 
         # Send notifications to datamanagers.
@@ -175,11 +181,11 @@ def vault_archive(ctx: rule.Context, actor: str, coll: str) -> str:
 
 
 def vault_create_archive(ctx: rule.Context, coll: str) -> str:
-    if vault_archival_status(ctx, coll) != "archive":
+    if vault_archival_status(ctx, coll) != constants.vault_archive_state.ARCHIVE.value:
         return "Invalid"
     try:
         log.write(ctx, "Start archival of data package <{}>".format(coll))
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archiving")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVING.value)
         collection.create(ctx, coll + "/archive")
         if data_object.exists(ctx, coll + "/License.txt"):
             data_object.copy(ctx, coll + "/License.txt", coll + "/archive/License.txt")
@@ -187,7 +193,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
         create_archive(ctx, coll)
         collection.remove(ctx, coll + "/archive", force=True)
 
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVED.value)
         provenance.log_action(ctx, "system", coll, "archive completed", False)
         log.write(ctx, "Finished archival of data package <{}>".format(coll))
 
@@ -214,7 +220,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
 def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
     try:
         # Prepare for unarchival.
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extract")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACT.value)
         provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
         log.write(ctx, "Request retrieval of data package <{}> from tape".format(coll))
         ctx.daget(package_archive_path(ctx, coll), config.data_package_archive_fqdn)
@@ -235,11 +241,11 @@ def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
 
 
 def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
-    if vault_archival_status(ctx, coll) != "extract":
+    if vault_archival_status(ctx, coll) != constants.vault_archive_state.EXTRACT.value:
         return "Invalid"
     try:
         log.write(ctx, "Start unarchival of data package <{}>".format(coll))
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACTING.value)
 
         extract_archive(ctx, coll)
         collection.rename(ctx, coll + "/archive/data", coll + "/original")
@@ -247,7 +253,7 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
         collection.remove(ctx, coll + "/archive", force=True)
         data_object.remove(ctx, coll + "/archive.tar", force=True)
 
-        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extracting")
+        avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACTING.value)
         provenance.log_action(ctx, "system", coll, "unarchive completed", False)
         log.write(ctx, "Finished unarchival of data package <{}>".format(coll))
 
@@ -261,15 +267,17 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
 
 
 def update(ctx: rule.Context, coll: str, attr: str | None) -> None:
-    if pathutil.info(coll).space == pathutil.Space.VAULT and attr not in (constants.IIARCHIVEATTRNAME, constants.UUPROVENANCELOG) and vault_archival_status(ctx, coll) == "archived":
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update")
+    if (pathutil.info(coll).space == pathutil.Space.VAULT
+       and attr not in (constants.IIARCHIVEATTRNAME, constants.UUPROVENANCELOG)
+       and vault_archival_status(ctx, coll) == constants.vault_archive_state.ARCHIVED.value):
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.UPDATE.value)
         ctx.daget(package_archive_path(ctx, coll), config.data_package_archive_fqdn)
 
 
 def vault_update_archive(ctx: rule.Context, coll: str) -> str:
     try:
         log.write(ctx, "Start update of archived data package <{}>".format(coll))
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "updating")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.UPDATING.value)
 
         extract_archive(ctx, coll)
         data_object.remove(ctx, coll + "/archive.tar", force=True)
@@ -277,7 +285,7 @@ def vault_update_archive(ctx: rule.Context, coll: str) -> str:
         create_archive(ctx, coll)
         collection.remove(ctx, coll + "/archive", force=True)
 
-        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archived")
+        avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVED.value)
         log.write(ctx, "Finished update of archived data package <{}>".format(coll))
         return "Success"
     except Exception:
@@ -307,7 +315,7 @@ def api_vault_archive(ctx: rule.Context, coll: str) -> api.Result:
         return "Invalid"
 
     try:
-        ctx.iiAdminVaultArchive(coll, "archive")
+        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.ARCHIVE.value)
         return "Success"
     except Exception:
         return "Failure"
@@ -341,11 +349,11 @@ def api_vault_extract(ctx: rule.Context, coll: str) -> api.Result:
     if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
         return "Access denied"
 
-    if vault_archival_status(ctx, coll) != "archived":
+    if vault_archival_status(ctx, coll) != constants.vault_archive_state.ARCHIVED.value:
         return "Invalid"
 
     try:
-        ctx.iiAdminVaultArchive(coll, "extract")
+        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.EXTRACT.value)
         return "Success"
     except Exception:
         return "Failure"

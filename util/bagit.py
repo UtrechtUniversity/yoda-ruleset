@@ -9,7 +9,6 @@ import itertools
 import genquery
 import irods_types
 
-import constants
 import data_object
 import log
 import msi
@@ -42,16 +41,6 @@ def manifest(ctx: rule.Context, coll: str) -> str:
                                   ctx))
         if row[0] != coll or not row[1].startswith("yoda-metadata")
     ]) + "\n"
-
-
-def status(ctx: rule.Context, coll: str) -> str | bool:
-    for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
-                                     genquery.AS_LIST,
-                                     ctx):
-        return row[0]
-
-    return False
 
 
 def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:

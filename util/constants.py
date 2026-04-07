@@ -159,6 +159,22 @@ folder_transitions = [(research_package_state(x),
                                    ('SECURED',   'SUBMITTED')]]
 
 
+class vault_archive_state(Enum):
+    """Vault archive states."""
+
+    # Values are as they appear in AVU values.
+    ARCHIVE    = 'archive'
+    ARCHIVING  = 'archiving'
+    ARCHIVED   = 'archived'
+    EXTRACT    = 'extract'
+    EXTRACTING = 'extracting'
+    UPDATE     = 'update'
+    UPDATING   = 'updating'
+
+    def __str__(self) -> str:
+        return self.name
+
+
 # List of valid replica states.
 class replica_status(Enum):
     STALE_REPLICA        = 0  # Replica is no longer known to be good
