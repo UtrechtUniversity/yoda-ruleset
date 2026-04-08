@@ -156,7 +156,7 @@ def post_status_transition(ctx: rule.Context,
     elif status is constants.research_package_state.ACCEPTED:
         # Actor is system for deposit groups or if research group has no datamanager.
         try:
-            datamanager_exists = folder.datamanager_exists(ctx, path)
+            datamanager_exists = folder.get_datamanager_coll(ctx, path) is not None
         except ValueError as e:
             log.write(ctx, f"Unable to determine whether <{path}> has data managers: {str(e)}")
             datamanager_exists = False
