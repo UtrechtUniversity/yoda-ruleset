@@ -68,6 +68,11 @@
         </header>
 
         <main>
+            {% if not no_active_embargo and data_access_restriction.startswith('Open') %}
+            <div class="alert alert-warning mb-0 content">
+                This data package is embargoed until {{embargo_end_date}}.
+            </div>
+            {% endif %}
             <div>
                 <div class="row content">
                     <div class="col-lg-8">

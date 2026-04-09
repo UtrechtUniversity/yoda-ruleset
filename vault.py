@@ -744,10 +744,17 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
 
     # Check if collection is vault package.
     metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
+    meta_embargo_access = {}
     if metadata_path is None:
         return {'member_type': member_type, 'is_datamanager': is_datamanager}
     else:
-        metadata = True
+        # Read the metadata file, might fail if we do not have read acess.
+        try:
+            meta_embargo_access = jsonutil.read(ctx, metadata_path)
+            metadata = True
+        except Exception:
+            metadata = False
+
         # Retrieve all published versions
         base_doi, package_doi, all_versions = get_all_published_versions(ctx, path)
 
@@ -802,7 +809,9 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         "research_group_access": research_group_access,
         "all_versions": all_versions,
         "base_doi": base_doi,
-        "package_doi": package_doi
+        "package_doi": package_doi,
+        "embargo_end_date": meta_embargo_access.get("Embargo_End_Date", ""),
+        "data_access_restriction": meta_embargo_access.get("Data_Access_Restriction", "")
     }
     if config.enable_data_package_archive:
         import vault_archive
