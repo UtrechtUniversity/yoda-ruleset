@@ -1098,10 +1098,18 @@ def api_group_get_description(ctx: rule.Context, group_name: str) -> api.Result:
 
     :returns: Description of the group
     """
-    ruleResult = ctx.uuGroupGetDescription(group_name, '')
+    description = ""
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        f"USER_GROUP_NAME = '{group_name}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'description'",
+        genquery.AS_LIST, ctx
+    )
 
-    description = ruleResult["arguments"][1]
-    return description
+    for value, in iter:
+        description = value
+        break
+
+    return description if description != "." else ""
 
 
 @api.make()

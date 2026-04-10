@@ -422,25 +422,6 @@ uuGroupGetCategory(*groupName, *category, *subcategory) {
 
 }
 
-# \brief Get a group's description.
-#
-# \param[in]  groupName
-# \param[out] description
-#
-uuGroupGetDescription(*groupName, *description) {
-	*description = "";
-	foreach (
-		*item in
-		SELECT META_USER_ATTR_VALUE
-		WHERE  USER_GROUP_NAME     = '*groupName'
-		  AND  META_USER_ATTR_NAME = 'description'
-	) {
-		if (*item."META_USER_ATTR_VALUE" != ".") {
-			*description = *item."META_USER_ATTR_VALUE";
-		}
-	}
-}
-
 # \brief Get a list of a group's members.
 #
 # If addTypePrefix is true, usernames will be prefixed with 'r:', 'n:',
