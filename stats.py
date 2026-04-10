@@ -148,7 +148,7 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
 
     :returns: Storage stats of last month for a list of categories
     """
-    categories = get_categories(ctx)
+    categories = groups.get_categories(ctx) if user.is_rodsadmin(ctx) else groups.get_datamanager_categories(ctx)
 
     # Non-admin users don't have access to category storage statistics.
     # This makes sure the table is not presented in the frontend.
@@ -601,42 +601,6 @@ def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups:
             groups.append(groupName)
 
     return groups
-
-
-def get_categories(ctx: rule.Context) -> List:
-    """Get all categories for current user.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: All categories for current user
-    """
-    categories = []
-
-    if user.is_rodsadmin(ctx):
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE",
-            "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
-            genquery.AS_LIST, ctx
-        )
-
-        for row in iter:
-            categories.append(row[0])
-    else:
-        iter = genquery.row_iterator(
-            "USER_NAME",
-            "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-            genquery.AS_LIST, ctx
-        )
-
-        for row in iter:
-            datamanagerGroupname = row[0]
-
-            if user.is_member_of(ctx, datamanagerGroupname):
-                # Example: 'datamanager-initial' is groupname of datamanager, second part is category
-                temp = '-'.join(datamanagerGroupname.split('-')[1:])
-                categories.append(temp)
-
-    return categories
 
 
 def get_groups_on_category(ctx: rule.Context, category: str) -> List:
