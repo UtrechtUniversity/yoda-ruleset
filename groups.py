@@ -11,7 +11,6 @@ from typing import Any, Dict, Iterable, List, Tuple
 
 import genquery
 import requests
-import session_vars
 
 import schema
 import sram
@@ -43,22 +42,18 @@ __all__ = ['api_group_data',
            'rule_external_users_sram_sync']
 
 
-def getGroupsData(ctx: rule.Context) -> Iterable[Any]:
+def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     """Return groups and related data."""
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
-    iter = genquery.row_iterator(
+    group_attrs = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
-        name = row[0]
-        attr = row[1]
-        value = row[2]
-
+    for name, attr, value in group_attrs:
         group = groups.setdefault(name, {
             "name": name,
             "managers": [],
@@ -71,70 +66,60 @@ def getGroupsData(ctx: rule.Context) -> Iterable[Any]:
             group[attr] = value
         elif attr in ('description', 'expiration_date'):
             # Deal with legacy use of '.' for empty description metadata and expiration date.
-            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
             group["managers"].append(value)
 
     # Second query: obtain list of groups with memberships.
-    iter = genquery.row_iterator(
+    group_members = genquery.row_iterator(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
-        name = row[0]
-        user = row[1]
-        zone = row[2]
+    for group_name, user_name, user_zone in group_members:
+        if group_name in (user_name, 'rodsadmin', 'public'):
+            continue
 
-        if name not in (user, 'rodsadmin', 'public'):
-            user = user + "#" + zone
-            if name.startswith("read-"):
-                # Match read-* group with research-* or initial-* group.
-                name = name[5:]
-                for prefix in ("research-", "initial-"):
-                    group = groups.get(prefix + name)
-                    if group:
-                        group["read"].append(user)
-                        break
-            elif not name.startswith("vault-"):
-                group = groups.get(name)
-                if group:
-                    group["members"].append(user)
+        user = f"{user_name}#{user_zone}"
+        if name.startswith("read-"):
+            # Match read-* group with research-* group.
+            group = groups.get(f"research-{group_name[5:]}")
+            if group:
+                group["read"].append(user)
+        elif not group_name.startswith("vault-"):
+            group = groups.get(group_name)
+            if group:
+                group["members"].append(user)
 
     # Third query: obtain list of invited SRAM users.
     if config.enable_sram:
-        iter = genquery.row_iterator(
+        sram_invites = genquery.row_iterator(
             "META_USER_ATTR_VALUE, USER_NAME, USER_ZONE",
             "USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME = '{}'".format(constants.UUORGMETADATAPREFIX + "sram_invited"),
             genquery.AS_LIST, ctx
         )
-        for row in iter:
-            name = row[0]
-            user = row[1] + "#" + row[2]
-            group = groups.get(name)
+        for group_name, user_name, user_zone in sram_invites:
+            user = f"{user_name}#{user_zone}"
+            group = groups.get(group_name)
             if group:
                 group["invited"].append(user)
 
     return groups.values()
 
 
-def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
+def get_group_data(ctx: rule.Context, name: str) -> Dict | None:
     """Get data for one group."""
     group = None
 
-    # First query: obtain a list of group attributes.
-    iter = genquery.row_iterator(
+    # First query: obtain a list group attributes.
+    group_attrs = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(name),
+        f"USER_GROUP_NAME = '{name}' AND USER_TYPE = 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
-        attr = row[0]
-        value = row[1]
-
+    for attr, value in group_attrs:
         if group is None:
             group = {
                 "name": name,
@@ -143,12 +128,10 @@ def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
                 "read": []
             }
 
-        # Update group with this information.
         if attr in ["schema_id", "data_classification", "category", "subcategory", "sram_co"]:
             group[attr] = value
-        elif attr == "description" or attr == "expiration_date":
+        elif attr in ('description', 'expiration_date'):
             # Deal with legacy use of '.' for empty description metadata and expiration date.
-            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
             group["managers"].append(value)
@@ -157,40 +140,30 @@ def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
         return group
 
     # Second query: obtain group memberships.
-    iter = genquery.row_iterator(
+    group_members = genquery.row_iterator(
         "USER_NAME, USER_ZONE",
-        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        f"USER_GROUP_NAME = '{name}' AND USER_TYPE != 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
-        user = row[0]
-        zone = row[1]
-
+    for user, zone in group_members:
         if name not in (user, 'rodsadmin', 'public'):
-            group["members"].append(user + "#" + zone)
+            group["members"].append(f"{user}#{zone}")
 
-    if name.startswith("research-"):
-        name = name[9:]
-    elif name.startswith("initial-"):
-        name = name[8:]
-    else:
+    if not name.startswith("research-"):
         return group
 
     # Third query: obtain group read memberships.
-    name = "read-" + name
-    iter = genquery.row_iterator(
+    read_group = "read-" + name[9:]
+    group_readers = genquery.row_iterator(
         "USER_NAME, USER_ZONE",
-        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'".format(name),
+        f"USER_GROUP_NAME = '{read_group}' AND USER_TYPE != 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
-        user = row[0]
-        zone = row[1]
-
-        if user != name:
-            group["read"].append(user + "#" + zone)
+    for user, zone in group_readers:
+        if user != read_group:
+            group["read"].append(f"{user}#{zone}")
 
     return group
 
@@ -284,9 +257,9 @@ def user_role(ctx: rule.Context, username: str, group_name: str) -> str:
 
     :returns: User role ('none' | 'reader' | 'normal' | 'manager')
     """
-    group = getGroupData(ctx, group_name)
+    group = get_group_data(ctx, group_name)
     if '#' not in username:
-        username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+        username = f"{username}#{user.zone(ctx)}"
 
     if group:
         if username in group["managers"]:
@@ -370,9 +343,9 @@ def api_group_data(ctx: rule.Context) -> Dict:
 def internal_api_group_data(ctx: rule.Context) -> Dict:
     # This is the entry point for integration tests against api_group_data
     if user.is_rodsadmin(ctx):
-        groups = getGroupsData(ctx)
+        groups = get_groups_data(ctx)
     else:
-        groups    = getGroupsData(ctx)
+        groups    = get_groups_data(ctx)
         full_name = user.full_name(ctx)
 
         categories = getDatamanagerCategories(ctx)
@@ -639,7 +612,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         if delete_users:
             # build list of current users
             currentusers = []
-            for prefix in ['read-', 'initial-', 'research-']:
+            for prefix in ['read-', 'research-']:
                 iter = genquery.row_iterator(
                     "USER_GROUP_NAME, USER_NAME, USER_ZONE",
                     "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(group_name.split('-')[1:])),
@@ -699,9 +672,9 @@ def _are_roles_equivalent(a: str, b: str) -> bool:
 
 
 def group_user_exists(ctx: rule.Context, group_name: str, username: str, include_readonly: bool) -> bool:
-    group = getGroupData(ctx, group_name)
+    group = get_group_data(ctx, group_name)
     if '#' not in username:
-        username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+        username = f"{username}#{user.zone(ctx)}"
 
     if group:
         if not include_readonly:
@@ -1309,7 +1282,7 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
         return
 
     log.write(ctx, "Start syncing groups with SRAM")
-    groups = getGroupsData(ctx)
+    groups = get_groups_data(ctx)
 
     for group in groups:
         group_name = group["name"]
@@ -1395,7 +1368,7 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
     log.write(ctx, "Starting SRAM external users synchronization")
     try:
         co_members = [member['email'] for member in sram.get_co_members(ctx, config.sram_external_users_co)]
-        groups = getGroupsData(ctx)
+        groups = get_groups_data(ctx)
     except Exception as e:
         log.write(ctx, f"SRAM sync failed during data fetch: {e}")
         return
