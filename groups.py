@@ -195,44 +195,41 @@ def getGroupData(ctx: rule.Context, name: str) -> Dict | None:
     return group
 
 
-def getCategories(ctx: rule.Context) -> List[str]:
-    """Get a list of all group categories."""
-    categories = []
+def get_categories(ctx: rule.Context) -> List[str]:
+    """Get a list of all group categories.
 
-    iter = genquery.row_iterator(
-        "ORDER_DESC(META_USER_ATTR_VALUE)",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
-        genquery.AS_LIST, ctx
-    )
+    :param ctx:      Combined type of a ctx and rei struct
 
-    for row in iter:
-        categories.append(row[0])
+    :returns: List of all group categories
+    """
+    categories = list(genquery.Query(
+                      ctx, "ORDER_DESC(META_USER_ATTR_VALUE)",
+                      "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
+                      output=genquery.AS_LIST))
 
-    return categories
-
-
-def getDatamanagerCategories(ctx: rule.Context) -> List:
-    """Get a list of all datamanager group categories."""
-    categories = []
-
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        datamanager_group = row[0]
-
-        if user.is_member_of(ctx, datamanager_group):
-            # Example: 'datamanager-initial' is groupname of datamanager, second part is category
-            category = '-'.join(datamanager_group.split('-')[1:])
-            categories.append(category)
-
-    return categories
+    return [category for category, in categories]
 
 
-def getSubcategories(ctx: rule.Context, category: str) -> List:
+def get_datamanager_categories(ctx: rule.Context) -> List[str]:
+    """Get a list of all categories where current user is datamanager.
+
+    :param ctx:      Combined type of a ctx and rei struct
+
+    :returns: List of all categories where current user is datamanager
+    """
+    datamanager_groups = list(genquery.Query(
+                              ctx, 'USER_GROUP_NAME',
+                              f"USER_NAME = '{user.name(ctx)}' AND USER_ZONE = '{user.zone(ctx)}' AND USER_GROUP_NAME like 'datamanager-%'",
+                              output=genquery.AS_LIST))
+
+    # Example: 'datamanager-initial' is groupname of datamanager, second part is category.
+    return [
+        '-'.join(group_name.split('-')[1:])
+        for group_name, in datamanager_groups
+    ]
+
+
+def get_subcategories(ctx: rule.Context, category: str) -> List[str]:
     """Get a list of all subcategories within a given group category.
 
     :param ctx:      Combined type of a ctx and rei struct
@@ -240,39 +237,31 @@ def getSubcategories(ctx: rule.Context, category: str) -> List:
 
     :returns: List of all subcategories within a given group category
     """
-    categories = set()    # Unique subcategories.
-    groupCategories = {}  # Group name => { category => .., subcategory => .. }
+    subcategories = set()  # Unique subcategories.
+    group_metadata = {}    # Group name => { category => .., subcategory => .. }
 
-    # Collect metadata of each group into `groupCategories` until both
+    # Collect metadata of each group into `group_metadata` until both
     # the category and subcategory are available, then add the subcategory
     # to `categories` if the category name matches.
-    iter = genquery.row_iterator(
-        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
-        genquery.AS_LIST, ctx
-    )
+    groups = list(genquery.Query(
+                  ctx, "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+                  "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN('category','subcategory')",
+                  output=genquery.AS_LIST))
 
-    for row in iter:
-        group = row[0]
-        key = row[1]
-        value = row[2]
+    for group_name, attr_name, attr_value in groups:
+        if group_name not in group_metadata:
+            group_metadata[group_name] = {}
 
-        if group not in groupCategories:
-            groupCategories[group] = {}
+        group_metadata[group_name][attr_name] = attr_value
 
-        if key in ['category', 'subcategory']:
-            groupCategories[group][key] = value
+        # Check if metadata is complete.
+        if 'category' in group_metadata[group_name] and 'subcategory' in group_metadata[group_name]:
+            # Filter on category.
+            if group_metadata[group_name]['category'] == category:
+                subcategories.add(group_metadata[group_name]['subcategory'])
+            del group_metadata[group_name]
 
-        if ('category' in groupCategories[group]
-           and 'subcategory' in groupCategories[group]):
-            # Metadata complete, now filter on category.
-            if groupCategories[group]['category'] == category:
-                # Bingo, add to the subcategory list.
-                categories.add(groupCategories[group]['subcategory'])
-
-            del groupCategories[group]
-
-    return list(categories)
+    return sorted(subcategories)
 
 
 def user_role(ctx: rule.Context, username: str, group_name: str) -> str:
@@ -375,7 +364,7 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
         groups    = getGroupsData(ctx)
         full_name = user.full_name(ctx)
 
-        categories = getDatamanagerCategories(ctx)
+        categories = get_datamanager_categories(ctx)
 
         # Filter groups (only return groups user is part of)
         groups = list(filter(
@@ -547,10 +536,10 @@ def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
 
         # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
-            if category not in getCategories(ctx):
+            if category not in get_categories(ctx):
                 # Insufficient permissions to add new category.
                 errors.append('Category {} does not exist and cannot be created due to insufficient permissions.'.format(category))
-            elif subcategory not in getSubcategories(ctx, category):
+            elif subcategory not in get_subcategories(ctx, category):
                 # Insufficient permissions to add new subcategory.
                 errors.append('Subcategory {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
 
@@ -747,7 +736,7 @@ def rule_group_user_exists(ctx: rule.Context, group_name: str, user_name: str, i
 @api.make()
 def api_group_categories(ctx: rule.Context) -> api.Result:
     """Retrieve category list."""
-    return getCategories(ctx)
+    return get_categories(ctx)
 
 
 @api.make()
@@ -759,7 +748,7 @@ def api_group_subcategories(ctx: rule.Context, category: str) -> api.Result:
 
     :returns: Subcategory list of specified category
     """
-    return getSubcategories(ctx, category)
+    return get_subcategories(ctx, category)
 
 
 def provisionExternalUser(ctx: rule.Context, username: str, creatorUser: str, creatorZone: str) -> int:
