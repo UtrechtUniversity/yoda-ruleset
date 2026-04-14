@@ -5,9 +5,11 @@ __copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+from datetime import date, datetime
 from typing import List
 
 import genquery
+from dateutil.relativedelta import relativedelta
 
 import admin
 import constants
@@ -23,12 +25,14 @@ __all__ = ['api_vault_deaccession_status',
            'api_vault_request_deaccession',
            'api_vault_cancel_deaccession',
            'api_vault_approve_deaccession',
-           'rule_process_deaccession_status_transitions']
+           'rule_process_deaccession_status_transitions',
+           'rule_pending_deaccession_deletion']
 
 DEACCESSION_REASON_ATTRNAME = constants.UUORGMETADATAPREFIX + 'deaccession_reason'
 DEACCESSION_REQUESTACTOR_ATTRNAME = constants.UUORGMETADATAPREFIX + "deaccession_request_actor"
 DEACCESSION_APPROVALACTOR_ATTRNAME = constants.UUORGMETADATAPREFIX + "deaccession_approval_actor"
 DEACCESSION_CANCELATIONACTOR_ATTRNAME = constants.UUORGMETADATAPREFIX + "deaccession_cancelation_actor"
+DEACCESSION_MANIFEST_FILE = 'deaccession-manifest.json'
 
 
 # Deaccession utils {{{
@@ -65,6 +69,28 @@ def get_deaccession_actor(ctx: rule.Context, coll: str, action: str) -> str:
         return org_metadata[attribute]
     else:
         return ""
+
+
+def get_deaccession_date(ctx: rule.Context, vault_package: str) -> datetime | None:
+    """Determine the time of deaccession as a datetime with UTC offset.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+
+    :return: Deaccession date in ISO8601 format
+    """
+    iter = genquery.row_iterator(
+        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # row contains json encoded [str(int(time.time())), action, actor]
+        log_item_list = jsonutil.parse(row[1])
+        if log_item_list[1] == "deaccessioned":
+            return datetime.fromtimestamp(int(log_item_list[0]))
+
+    return None
 # }}}
 
 
@@ -447,16 +473,15 @@ def generate_deaccession_manifest(ctx: rule.Context, coll: str) -> str:
     original_path = f"{coll}/original"
     pre_manifest = research.research_manifest(ctx, original_path)
     manifest = {
-        "files": pre_manifest['files'],
-        "size": pre_manifest['size'],
+        "num_files": pre_manifest['files'],
         "num_checksums": pre_manifest['checksums'],
+        "size": pre_manifest['size'],
         "checksums": pre_manifest['manifest'],
-        "deaccession_complete": True,
-        "deaccession_complete_reason": get_deaccession_reason(ctx, coll)
+        "reason": get_deaccession_reason(ctx, coll)
     }
 
     # Write manifest file to data package
-    manifest_path = f"{coll}/deaccession-manifest.json"
+    manifest_path = f"{coll}/{DEACCESSION_MANIFEST_FILE}"
     try:
         data_object.write(ctx, manifest_path, json.dumps(manifest, indent=4))
     except msi.Error:
@@ -519,4 +544,177 @@ def initialize_deaccession(ctx: rule.Context, coll: str) -> None:
         # Set PENDING state for publication update
         avu.set_on_coll(ctx, coll, f"{constants.UUORGMETADATAPREFIX}cronjob_publication_update", constants.CRONJOB_STATE['PENDING'])
         publication.set_update_publication_state(ctx, coll)
+# }}}
+
+
+# Deaccession finalization flow {{{
+def get_deaccessioned_packages_to_delete(ctx: rule.Context) -> list:
+    """Get deaccessioned data packages that still retain original data.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of deaccessioned data packages that still retain original data.
+    """
+    pending_deletion = []
+
+    deaccessioned = list(genquery.Query(ctx,
+                                        "COLL_NAME",
+                                        f"META_COLL_ATTR_NAME = '{constants.IIDEACCESSIONSTATUSATTRNAME}' AND META_COLL_ATTR_VALUE = '{constants.vault_deaccession_state.DEACCESSION_COMPLETE.value}'",
+                                        output=genquery.AS_LIST))
+    for coll in deaccessioned:
+        original = list(genquery.Query(ctx,
+                                       "COLL_NAME",
+                                       f"COLL_NAME like '%original' AND COLL_PARENT_NAME = '{coll[0]}'",
+                                       output=genquery.AS_LIST))
+        if len(original) > 0:
+            pending_deletion.append(coll[0])
+
+    return pending_deletion
+
+
+def cooldown_passed(ctx: rule.Context, deaccession_date: datetime) -> bool:
+    """Check that cooldown period has passed since deaccession date.
+
+    :param ctx:                 Combined type of a callback and rei struct
+    :param deaccession_date:    Deaccession date (timestamp)
+
+    :returns: True if cooldown period passed, False otherwise
+    """
+    cooldown = config.deaccession_cooldown
+    cooldown_date = deaccession_date.date() + relativedelta(days=cooldown)
+    now = date.today()
+
+    if now > cooldown_date:
+        return True
+    else:
+        return False
+
+
+def change_after_deaccession(ctx: rule.Context, coll: str) -> bool:
+    """Check provenance log for any change after deaccession.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param coll:    Deaccessioned vault data package
+
+    :returns: True if provenance log shows any change since deaccession, False otherwise
+    """
+    # Determine vault status of data package
+    vault_status = vault.get_coll_vault_status(ctx, coll)
+
+    # Retrieve provenance log
+    provenance_logs = list(genquery.Query(ctx,
+                                          "ORDER_DESC(META_COLL_ATTR_VALUE)",
+                                          f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUPROVENANCELOG}'",
+                                          output=genquery.AS_LIST))
+
+    if len(provenance_logs) > 0:
+        for i in range(len(provenance_logs)):
+            current_log = jsonutil.parse(provenance_logs[i][0])
+            prev_log = jsonutil.parse(provenance_logs[i + 1][0])
+
+            if vault_status == constants.vault_package_state.PUBLISHED:  # If package is published, last 2 logs should be 'publication updated' and 'deaccessioned'
+                if current_log[1] == "publication updated" and prev_log[1] == "deaccessioned":
+                    return False
+                else:
+                    return True
+            else:  # If package is not published, last log should be 'deaccessioned'
+                if current_log[1] == "deaccessioned":
+                    return False
+                else:
+                    return True
+
+    return True
+
+
+def deaccession_manifest_present(ctx: rule.Context, coll: str) -> bool:
+    """Check existence of deaccession manifest file.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param coll:    Deaccessioned vault data package
+
+    :returns: True if deaccession manifest file is present, False otherwise
+    """
+    return len(list(genquery.Query(ctx,
+                                   "DATA_NAME",
+                                   f"DATA_NAME = '{DEACCESSION_MANIFEST_FILE}' AND COLL_NAME = '{coll}'",
+                                   output=genquery.AS_LIST))) > 0
+
+
+def deaccession_delete_original(ctx: rule.Context, coll: str) -> None:
+    """Delete original data.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param coll:    Deaccessioned vault data package
+    """
+    original_path = f"{coll}/original"
+
+    # Give rods ownership of original data
+    try:
+        msi.set_acl(ctx, "recursive", "admin:own", "rods", original_path)
+    except msi.Error:
+        log.write(ctx, "deaccession_delete_original: msiError - Could not give rods ownership of original data.")
+        return
+
+    # Delete original data
+    try:
+        collection.remove(ctx, original_path, True)
+    except msi.Error:
+        log.write(ctx, "deaccession_delete_original: msiError - Could not delete original data.")
+        return
+
+    log.write(ctx, f"deaccession_delete_original: Successfully deleted original data of data package {coll}")
+
+
+def pending_deaccession_deletion(ctx: rule.Context) -> None:
+    """Rule interface for checking for deaccessioned packages that have pending data deletion.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # Check user here is rods
+    if user.name(ctx) != "rods":
+        log.write(ctx, "pending_deaccession_deletion: Insufficient permissions - deaccession data deletion can only be performed by rods.")
+        return
+
+    # Retrieve deaccessioned packages pending deletion
+    pending_deletion = get_deaccessioned_packages_to_delete(ctx)
+    if pending_deletion:
+        for coll in pending_deletion:
+            deaccession_date = get_deaccession_date(ctx, coll)
+
+            # Check that cooldown period has passed
+            if cooldown_passed(ctx, deaccession_date):
+                log.write(ctx, f"pending_deaccession_deletion: Processing package {coll}...")
+
+                # Confirm nothing changed in log after deaccession date
+                if change_after_deaccession(ctx, coll):
+                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Provenance log is missing or shows change after deaccession.")
+                    continue
+
+                # Confirm that package is deaccessioned
+                deaccession_status = vault_deaccession_status(ctx, coll)
+                if constants.vault_deaccession_state(deaccession_status) != constants.vault_deaccession_state.DEACCESSION_COMPLETE:
+                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package is not deaccessioned.")
+                    continue
+
+                # Confirm that package is in valid vault state (UNPUBLISHED, PUBLISHED, DEPUBLISHED)
+                vault_status = vault.get_coll_vault_status(ctx, coll)
+                if vault_status not in [constants.vault_package_state.UNPUBLISHED, constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED]:
+                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package is not in a valid vault state.")
+                    continue
+
+                # Confirm that package contains deaccession manifest file
+                if not deaccession_manifest_present(ctx, coll):
+                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package has no deaccession manifest file.")
+                    continue
+
+                deaccession_delete_original(ctx, coll)
+
+
+@rule.make()
+def rule_pending_deaccession_deletion(ctx: rule.Context) -> None:
+    """Rule interface for checking for deaccessioned packages that have pending data deletion.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    pending_deaccession_deletion(ctx)
 # }}}
