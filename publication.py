@@ -299,10 +299,10 @@ def get_publication_date(ctx: rule.Context, vault_package: str) -> str:
             publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
-            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z')
 
     my_date = datetime.now()
-    return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
 def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
@@ -321,10 +321,10 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
         my_date = datetime.fromtimestamp(int(log_item_list[0]))
-        return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+        return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
     my_date = datetime.now()
-    return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
 def get_deaccession_date(ctx: rule.Context, vault_package: str) -> str:
@@ -347,7 +347,7 @@ def get_deaccession_date(ctx: rule.Context, vault_package: str) -> str:
             publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
-            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z')
 
     return ""
 

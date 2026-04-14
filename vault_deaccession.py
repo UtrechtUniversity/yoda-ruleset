@@ -458,7 +458,7 @@ def generate_deaccession_manifest(ctx: rule.Context, coll: str) -> str:
     # Write manifest file to data package
     manifest_path = f"{coll}/deaccession-manifest.json"
     try:
-        data_object.write(ctx, manifest_path, json.dumps(manifest))
+        data_object.write(ctx, manifest_path, json.dumps(manifest, indent=4))
     except msi.Error:
         return "Could not generate deaccession manifest."
 
