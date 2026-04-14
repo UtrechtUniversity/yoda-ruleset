@@ -124,7 +124,7 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
         'License_URI': license_uri
     }
 
-    deaccession_date = get_deaccession_date(ctx, vault_package)
+    deaccession_date = vault_deaccession.get_deaccession_date(ctx, vault_package).strftime('%Y-%m-%dT%H:%M:%S%z')
     if deaccession_date:
         metadata['System']['Withdrawn_Date'] = deaccession_date
 
@@ -299,10 +299,10 @@ def get_publication_date(ctx: rule.Context, vault_package: str) -> str:
             publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
-            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z')
+            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
     my_date = datetime.now()
-    return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+    return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
 def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
@@ -325,31 +325,6 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
 
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-
-
-def get_deaccession_date(ctx: rule.Context, vault_package: str) -> str:
-    """Determine the time of deaccession as a datetime with UTC offset.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: Deaccession date in ISO8601 format
-    """
-    iter = genquery.row_iterator(
-        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        # row contains json encoded [str(int(time.time())), action, actor]
-        log_item_list = jsonutil.parse(row[1])
-        if log_item_list[1] == "deaccessioned":
-            publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-
-            # ISO8601-fy
-            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z')
-
-    return ""
 
 
 def generate_preliminary_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
@@ -585,10 +560,8 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
         is_archived = vault_archive.vault_archival_status(ctx, coll) == "archived"
 
     # Check vault deaccession state.
-    is_deaccession_complete = vault_deaccession.vault_deaccession_status == constants.vault_deaccession_state.DEACCESSION_COMPLETE
-
-    # Check vault deaccession state.
-    is_deaccession_complete = vault_deaccession.vault_deaccession_status == constants.vault_deaccession_state.DEACCESSION_COMPLETE
+    deaccession_status = vault_deaccession.vault_deaccession_status(ctx, vault_package)
+    is_deaccession_complete = constants.vault_deaccession_state(deaccession_status) == constants.vault_deaccession_state.DEACCESSION_COMPLETE
 
     # Get DOI and versions.
     base_doi = publication_state.get("baseDOI", "")
@@ -607,8 +580,8 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
         random_id,
         base_doi,
         versions,
+        is_deaccession_complete,
         is_archived,
-        is_deaccession_complete
     )
 
     data_object.write(ctx, landing_page_path, landing_page_html)
@@ -772,6 +745,16 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
         log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
         publication_state["status"] = "Unrecoverable"
         return
+
+    # Revoke anonymous access on original data if data package is deaccessioned
+    deaccession_status = vault_deaccession.vault_deaccession_status(ctx, vault_package)
+    if constants.vault_deaccession_state(deaccession_status) == constants.vault_deaccession_state.DEACCESSION_COMPLETE:
+        try:
+            msi.set_acl(ctx, "recursive", "null", "anonymous", f"{vault_package}/original")
+        except Exception:
+            log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
+            publication_state["status"] = "Unrecoverable"
+            return
 
     # We cannot set "null" as value in a kvp as this will crash msi_json_objops if we ever perform a uuKvp2JSON on it.
     if access_level == "null":
