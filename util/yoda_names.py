@@ -21,6 +21,7 @@ def is_valid_category(name: str) -> bool:
         re.search(r"^[a-z0-9\-]+$", name) is not None
         and not name.startswith("-")
         and not name.endswith("-")
+        and len(name) < 2700
     )
 
 
@@ -33,6 +34,7 @@ def is_valid_subcategory(name: str) -> bool:
     """
     return (
         re.search(r"^[A-Za-z0-9 ,._()-]+$", name) is not None
+        and len(name) < 2700
     )
 
 
@@ -43,7 +45,12 @@ def is_valid_groupname(name: str) -> bool:
 
     :returns: boolean value that indicates whether this name is a valid group name
     """
-    return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None and len(name) < 64
+    return (
+        re.search(r"^[a-z0-9\-]+$", name) is not None
+        and not name.startswith("-")
+        and not name.endswith("-")
+        and len(name) < 64
+    )
 
 
 def is_email_username(name: str) -> bool:
