@@ -124,9 +124,9 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
         'License_URI': license_uri
     }
 
-    deaccession_date = vault_deaccession.get_deaccession_date(ctx, vault_package).strftime('%Y-%m-%dT%H:%M:%S%z')
+    deaccession_date = vault_deaccession.get_deaccession_date(ctx, vault_package)
     if deaccession_date:
-        metadata['System']['Withdrawn_Date'] = deaccession_date
+        metadata['System']['Withdrawn_Date'] = deaccession_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
     # Write combined metadata to file.
     jsonutil.write(ctx, combi_json_path, metadata)

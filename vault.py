@@ -818,7 +818,8 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         "data_access_restriction": meta_embargo_access.get("Data_Access_Restriction", "")
     }
     result["deaccession"] = {
-        "status": vault_deaccession.vault_deaccession_status(ctx, path)
+        "status": vault_deaccession.vault_deaccession_status(ctx, path),
+        "reason": vault_deaccession.get_deaccession_reason(ctx, path)
     }
     if config.enable_data_package_archive:
         import vault_archive
