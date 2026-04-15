@@ -68,6 +68,11 @@
         </header>
 
         <main>
+            {% if is_deaccession_complete %}
+            <div class="alert alert-warning mb-0 content">
+                 This data package is deaccessioned. This means that the contents are no longer available.
+            </div>
+            {% endif %}
             {% if not no_active_embargo and data_access_restriction.startswith('Open') %}
             <div class="alert alert-warning mb-0 content">
                 This data package is embargoed until {{embargo_end_date}}.
@@ -90,15 +95,6 @@
                                 <span property="dc:accessRights">{{ data_access_restriction }}</span>
                             </div>
                             <p class="description" property="dc:description">{{ description }}</p>
-                            {% if is_deaccession_complete %}
-                            <div class="deaccession-warning bg-warning p-2 m-2" style="--bs-bg-opacity: .6;">
-                                <p>
-                                  Note that <b>this data package has been deaccessioned.</b>
-                                <br>
-                                This means that most of the contents are not available.
-                                </p>
-                            </div>
-                            {% endif %}
                             <div class="keywords">
                                 <label>Keywords</label>
                                 {% for keyword in keywords %}
