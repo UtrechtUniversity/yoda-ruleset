@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import genquery
 import requests
@@ -183,16 +183,18 @@ def get_categories(ctx: rule.Context) -> List[str]:
     return [category for category, in categories]
 
 
-def get_datamanager_categories(ctx: rule.Context) -> List[str]:
+def get_datamanager_categories(ctx: rule.Context, username: Optional[str] = None) -> List[str]:
     """Get a list of all categories where current user is datamanager.
 
     :param ctx:      Combined type of a ctx and rei struct
+    :param username: Name of user to check for (None for current user)
 
     :returns: List of all categories where current user is datamanager
     """
+    effective_user = user.name(ctx) if username is None else username
     datamanager_groups = list(genquery.Query(
                               ctx, 'USER_GROUP_NAME',
-                              f"USER_NAME = '{user.name(ctx)}' AND USER_ZONE = '{user.zone(ctx)}' AND USER_GROUP_NAME like 'datamanager-%'",
+                              f"USER_NAME = '{effective_user}' AND USER_ZONE = '{user.zone(ctx)}' AND USER_GROUP_NAME like 'datamanager-%'",
                               output=genquery.AS_LIST))
 
     # Example: 'datamanager-initial' is groupname of datamanager, second part is category.
