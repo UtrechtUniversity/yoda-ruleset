@@ -584,46 +584,37 @@ def cooldown_passed(ctx: rule.Context, deaccession_date: datetime) -> bool:
     cooldown_date = deaccession_date.date() + relativedelta(days=cooldown)
     now = date.today()
 
-    if now > cooldown_date:
-        return True
-    else:
-        return False
+    return now > cooldown_date
 
 
-def change_after_deaccession(ctx: rule.Context, coll: str) -> bool:
-    """Check provenance log for any change after deaccession.
+def deaccession_provenance_present(ctx: rule.Context, coll: str) -> bool:
+    """Check provenance log for deaccession logs.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param coll:    Deaccessioned vault data package
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Deaccessioned vault data package
 
-    :returns: True if provenance log shows any change since deaccession, False otherwise
+    :returns: True if all deaccession logs are present in the provenance log, False otherwise
     """
-    # Determine vault status of data package
-    vault_status = vault.get_coll_vault_status(ctx, coll)
-
-    # Retrieve provenance log
+    # Retrieve provenance log.
     provenance_logs = list(genquery.Query(ctx,
                                           "ORDER_DESC(META_COLL_ATTR_VALUE)",
                                           f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUPROVENANCELOG}'",
                                           output=genquery.AS_LIST))
 
-    if len(provenance_logs) > 0:
-        for i in range(len(provenance_logs)):
-            current_log = jsonutil.parse(provenance_logs[i][0])
-            prev_log = jsonutil.parse(provenance_logs[i + 1][0])
+    if not provenance_logs:
+        return True
 
-            if vault_status == constants.vault_package_state.PUBLISHED:  # If package is published, last 2 logs should be 'publication updated' and 'deaccessioned'
-                if current_log[1] == "publication updated" and prev_log[1] == "deaccessioned":
-                    return False
-                else:
-                    return True
-            else:  # If package is not published, last log should be 'deaccessioned'
-                if current_log[1] == "deaccessioned":
-                    return False
-                else:
-                    return True
+    # Verify that deaccession logs are present in the provenance log.
+    required_actions = {"submitted for deaccession", "approved for deaccession", "deaccessioned"}
+    found_actions = set()
 
-    return True
+    # Check if all required deaccession logs are in the provenance log.
+    for log_entry in provenance_logs:
+        parsed_log = jsonutil.parse(log_entry[0])
+        if parsed_log[1] in required_actions:
+            found_actions.add(parsed_log[1])
+
+    return found_actions == required_actions
 
 
 def deaccession_manifest_present(ctx: rule.Context, coll: str) -> bool:
@@ -665,14 +656,15 @@ def deaccession_delete_original(ctx: rule.Context, coll: str) -> None:
     log.write(ctx, f"deaccession_delete_original: Successfully deleted original data of data package {coll}")
 
 
-def pending_deaccession_deletion(ctx: rule.Context) -> None:
+@rule.make()
+def rule_pending_deaccession_deletion(ctx: rule.Context) -> None:
     """Rule interface for checking for deaccessioned packages that have pending data deletion.
 
     :param ctx: Combined type of a callback and rei struct
     """
     # Check user here is rods
     if user.name(ctx) != "rods":
-        log.write(ctx, "pending_deaccession_deletion: Insufficient permissions - deaccession data deletion can only be performed by rods.")
+        log.write(ctx, "rule_pending_deaccession_deletion: Insufficient permissions - deaccession data deletion can only be performed by rods.")
         return
 
     # Retrieve deaccessioned packages pending deletion
@@ -683,38 +675,29 @@ def pending_deaccession_deletion(ctx: rule.Context) -> None:
 
             # Check that cooldown period has passed
             if cooldown_passed(ctx, deaccession_date):
-                log.write(ctx, f"pending_deaccession_deletion: Processing package {coll}...")
+                log.write(ctx, f"rule_pending_deaccession_deletion: Processing package {coll}...")
 
-                # Confirm nothing changed in log after deaccession date
-                if change_after_deaccession(ctx, coll):
-                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Provenance log is missing or shows change after deaccession.")
+                # Confirm that all deaccession logs are present in the provenance log
+                if not deaccession_provenance_present(ctx, coll):
+                    log.write(ctx, "rule_pending_deaccession_deletion: Cannot delete - Provenance log is missing or shows change after deaccession.")
                     continue
 
                 # Confirm that package is deaccessioned
                 deaccession_status = vault_deaccession_status(ctx, coll)
                 if constants.vault_deaccession_state(deaccession_status) != constants.vault_deaccession_state.DEACCESSION_COMPLETE:
-                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package is not deaccessioned.")
+                    log.write(ctx, "rule_pending_deaccession_deletion: Cannot delete - Package is not deaccessioned.")
                     continue
 
                 # Confirm that package is in valid vault state (UNPUBLISHED, PUBLISHED, DEPUBLISHED)
                 vault_status = vault.get_coll_vault_status(ctx, coll)
                 if vault_status not in [constants.vault_package_state.UNPUBLISHED, constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLISHED]:
-                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package is not in a valid vault state.")
+                    log.write(ctx, "rule_pending_deaccession_deletion: Cannot delete - Package is not in a valid vault state.")
                     continue
 
                 # Confirm that package contains deaccession manifest file
                 if not deaccession_manifest_present(ctx, coll):
-                    log.write(ctx, "pending_deaccession_deletion: Cannot delete - Package has no deaccession manifest file.")
+                    log.write(ctx, "rule_pending_deaccession_deletion: Cannot delete - Package has no deaccession manifest file.")
                     continue
 
                 deaccession_delete_original(ctx, coll)
-
-
-@rule.make()
-def rule_pending_deaccession_deletion(ctx: rule.Context) -> None:
-    """Rule interface for checking for deaccessioned packages that have pending data deletion.
-
-    :param ctx: Combined type of a callback and rei struct
-    """
-    pending_deaccession_deletion(ctx)
 # }}}
