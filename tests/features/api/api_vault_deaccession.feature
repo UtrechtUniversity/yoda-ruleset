@@ -9,10 +9,11 @@ Feature: Vault Deaccession API
         And data package in <vault> deaccession status is "DEACCESSION_REQUESTED"
 
         Examples:
-            | vault                           | reason                  |
-            | /tempZone/home/vault-default-1  | Retention time expired  |
-            | /tempZone/home/vault-default-2  | Retention time expired  |
-            | /tempZone/home/vault-default-3  | Retention time expired  |
+            | vault                          | reason                 |
+            | /tempZone/home/vault-default-1 | Retention time expired |
+            | /tempZone/home/vault-default-2 | Retention time expired |
+            | /tempZone/home/vault-default-3 | Retention time expired |
+            | /tempZone/home/vault-core-2    | Retention time expired |
 
 
     Scenario Outline: Vault deaccession cancel by requester
@@ -23,8 +24,8 @@ Feature: Vault Deaccession API
         And data package in <vault> deaccession status is "ACTIVE"
 
         Examples:
-            | vault                           |
-            | /tempZone/home/vault-default-1  |
+            | vault                          |
+            | /tempZone/home/vault-default-1 |
 
 
     Scenario Outline: Vault deaccession cancel by admin
@@ -35,27 +36,29 @@ Feature: Vault Deaccession API
         And data package in <vault> deaccession status is "ACTIVE"
 
         Examples:
-            | vault                           |
-            | /tempZone/home/vault-default-2  |
+            | vault                          |
+            | /tempZone/home/vault-default-2 |
 
 
-    Scenario Outline: Vault deaccession approve
-        Given user technicaladmin is authenticated
+    Scenario Outline: Vault deaccession approve functional admin
+        Given user functionaladminpriv is authenticated
         And data package exists in <vault>
         And the Yoda vault approve deaccession API is queried on datapackage in <vault>
         Then the response status code is "200"
-        And data package in <vault> deaccession status is "DEACCESSION_APPROVED"
+        And data package in <vault> deaccession status is "DEACCESSION_COMPLETE"
 
         Examples:
-            | vault                           |
-            | /tempZone/home/vault-default-3  |
+            | vault                          |
+            | /tempZone/home/vault-default-3 |
 
 
-    Scenario Outline: Vault deaccession complete
-        Given user datamanager is authenticated
-        And data package exists in <vault>
-        Then data package in <vault> deaccession status is "DEACCESSION_COMPLETE"
+    Scenario Outline: Vault deaccession approve technical admin
+    Given user technicaladmin is authenticated
+    And data package exists in <vault>
+    And the Yoda vault approve deaccession API is queried on datapackage in <vault>
+    Then the response status code is "200"
+    And data package in <vault> deaccession status is "DEACCESSION_COMPLETE"
 
-        Examples:
-            | vault                           |
-            | /tempZone/home/vault-default-3  |
+    Examples:
+        | vault                       |
+        | /tempZone/home/vault-core-2 |
