@@ -38,7 +38,7 @@ def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     :param ctx:  Combined type of a callback and rei struct
     :param path: A collection path
 
-    :returns: Owner of colection or None
+    :returns: Owner of collection or None
     """
     path = misc.escape(path)
     owners = list(genquery.row_iterator(

@@ -149,7 +149,7 @@ def parse_csv_file(ctx):
         if error is None:
             extracted_data.append(rowdata)
         else:
-            _exit_with_error("Data error in in row {}: {}".format(
+            _exit_with_error("Data error in row {}: {}".format(
                 str(row_number), error))
 
     return extracted_data

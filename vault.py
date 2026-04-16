@@ -748,7 +748,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
     if metadata_path is None:
         return {'member_type': member_type, 'is_datamanager': is_datamanager}
     else:
-        # Read the metadata file, might fail if we do not have read acess.
+        # Read the metadata file, might fail if we do not have read access.
         try:
             meta_embargo_access = jsonutil.read(ctx, metadata_path)
             metadata = True

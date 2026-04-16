@@ -168,13 +168,13 @@ def api_notifications_dismiss_all(ctx: rule.Context) -> api.Result:
     user_name = user.name(ctx)
     key = f"{NOTIFICATION_KEY}_%"
 
-    # Retrieve list of notifcation AVUs of user.
+    # Retrieve list of notification AVUs of user.
     avus = list(genquery.Query(
         ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
         f"USER_NAME = '{user_name}' AND USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME like '{key}'")
     )
 
-    # Remove notifcation AVUs.
+    # Remove notification AVUs.
     for (attr, value, unit) in avus:
         msi.sudo_obj_meta_remove(ctx, user_name, "-u", "", attr, value, unit, "")
 

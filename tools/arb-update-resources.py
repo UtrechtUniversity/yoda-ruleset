@@ -30,7 +30,7 @@ from irods.rule import Rule
 from irods.session import iRODSSession
 
 
-SOFT_TIMEOUT = 50    # Try to stop scrip gracefully after soft timeout
+SOFT_TIMEOUT = 50    # Try to stop script gracefully after soft timeout
 HARD_TIMEOUT = 55    # Forcefully stop script after hard timeout
 BEGIN_TS = time.time()
 SOFT_TIMEOUT_TS = BEGIN_TS + SOFT_TIMEOUT
