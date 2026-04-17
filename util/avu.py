@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import json
+import re
 from collections import namedtuple
 from typing import Dict, Iterable, List, Tuple
 
@@ -209,12 +210,8 @@ def wildcard_filter(avu: Tuple[str, str, str], a_filter: str, v_filter: str, u_f
     a, v, u = avu
 
     def matches(value: str, filter_val: str) -> bool:
-        if filter_val == "%":
-            return True
-        if filter_val.endswith("%"):
-            prefix = filter_val[:-1]
-            return value.startswith(prefix)
-        return value == filter_val
+        regex = re.escape(filter_val).replace("%", ".*")
+        return re.fullmatch(regex, value) is not None
 
     return matches(a, a_filter) and matches(v, v_filter) and matches(u, u_filter)
 

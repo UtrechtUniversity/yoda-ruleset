@@ -409,6 +409,55 @@ def _test_folder_secure_func(ctx, func):
     return result
 
 
+def _test_avu_wildcard_filter(ctx):
+    """Test util.avu wildcard filter function
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns:    List of unexpected results
+    """
+    tests = [{"avu": ("a", "b", "c"),
+              "pattern": ("a", "b", "c"),
+              "result": True},
+             {"avu": ("a", "b", "c"),
+              "pattern": ("a", "b", "d"),
+              "result": False},
+             {"avu": ("a", "b", "c"),
+              "pattern": ("%", "%", "%"),
+              "result": True},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("a", "d", "g"),
+              "result": False},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("a%", "d%", "g%"),
+              "result": True},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("b", "e", "h"),
+              "result": False},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("%b%", "%e%", "%h%"),
+              "result": True},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("c", "f", "i"),
+              "result": False},
+             {"avu": ("abc", "def", "ghi"),
+              "pattern": ("%c", "%f", "%i"),
+              "result": True}
+             ]
+
+    unexpected_results = []
+    for test in tests:
+        input = test["avu"]
+        pattern = test["pattern"]
+        expected_result = test["result"]
+        observed_result = avu.wildcard_filter(input, pattern[0], pattern[1], pattern[2])
+        if observed_result != expected_result:
+            unexpected_results.append(
+                f"Unexpected result {observed_result} for test {str(input)}/{str(pattern)}")
+
+    return unexpected_results
+
+
 def _test_diff_data_describe_changes(ctx, data_name):
     """Runs util.diff_data.describe_metadata_changes against a particular
        set of data
@@ -764,6 +813,9 @@ basic_integration_tests = [
     {"name": "statistics.get_user_groups_for_stats.viewer",
      "test": lambda ctx: get_user_groups_for_stats(ctx, user_name="viewer"),
      "check": lambda x: sorted(x) == sorted(['deposit-pilot', 'deposit-pilot1'])},
+    {"name":  "util.avu.wildcard_filter",
+     "test": lambda ctx: _test_avu_wildcard_filter(ctx),
+     "check": lambda x: x == []},
     {"name":  "util.collection.exists.yes",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/yoda"),
      "check": lambda x: x},
