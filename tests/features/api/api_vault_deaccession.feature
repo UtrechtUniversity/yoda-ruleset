@@ -17,48 +17,26 @@ Feature: Vault Deaccession API
 
 
     Scenario Outline: Vault deaccession cancel by requester
-        Given user datamanager is authenticated
+        Given user <user> is authenticated
         And data package exists in <vault>
         And the Yoda vault cancel deaccession API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package in <vault> deaccession status is "ACTIVE"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-default-1 |
+            | user           | vault                          |
+            | datamanager    | /tempZone/home/vault-default-1 |
+            | technicaladmin | /tempZone/home/vault-default-2 |
 
 
-    Scenario Outline: Vault deaccession cancel by admin
-        Given user technicaladmin is authenticated
-        And data package exists in <vault>
-        And the Yoda vault cancel deaccession API is queried on datapackage in <vault>
-        Then the response status code is "200"
-        And data package in <vault> deaccession status is "ACTIVE"
-
-        Examples:
-            | vault                          |
-            | /tempZone/home/vault-default-2 |
-
-
-    Scenario Outline: Vault deaccession approve functional admin
-        Given user functionaladminpriv is authenticated
+    Scenario Outline: Vault deaccession approve
+        Given user <user> is authenticated
         And data package exists in <vault>
         And the Yoda vault approve deaccession API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package in <vault> deaccession status is "DEACCESSION_COMPLETE"
 
         Examples:
-            | vault                          |
-            | /tempZone/home/vault-default-3 |
-
-
-    Scenario Outline: Vault deaccession approve technical admin
-    Given user technicaladmin is authenticated
-    And data package exists in <vault>
-    And the Yoda vault approve deaccession API is queried on datapackage in <vault>
-    Then the response status code is "200"
-    And data package in <vault> deaccession status is "DEACCESSION_COMPLETE"
-
-    Examples:
-        | vault                       |
-        | /tempZone/home/vault-core-2 |
+            | user                | vault                          |
+            | functionaladminpriv | /tempZone/home/vault-default-3 |
+            | technicaladmin      | /tempZone/home/vault-core-2    |
