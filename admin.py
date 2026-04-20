@@ -1,6 +1,6 @@
 """Functions for admin module."""
 
-__copyright__ = 'Copyright 2024, Utrecht University'
+__copyright__ = 'Copyright 2024-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 __all__ = [
@@ -26,11 +26,7 @@ def api_admin_has_access(ctx: rule.Context) -> api.Result:
 
 def is_admin(ctx: rule.Context, user: str) -> bool:
     """Checks if user is admin"""
-    admins = get_admins(ctx)
-    if user in admins:
-        return True
-    else:
-        return False
+    return user in get_admins(ctx)
 
 
 def get_admins(ctx: rule.Context) -> list:

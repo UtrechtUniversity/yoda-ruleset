@@ -229,9 +229,7 @@ def set_temp_deaccession_reason(ctx: rule.Context, actor_group_path: str, path: 
 
     :returns:   True if successfully set, otherwise False
     """
-    try:
-        avu.set_on_coll(ctx, actor_group_path, DEACCESSION_REASON_ATTRNAME, jsonutil.dump([path, reason]))
-    except msi.Error:
+    if not avu.set_on_coll(ctx, actor_group_path, DEACCESSION_REASON_ATTRNAME, jsonutil.dump([path, reason]), catch=True):
         return False
 
     return True
@@ -266,9 +264,7 @@ def set_deaccession_reason(ctx: rule.Context, coll: str, actor: str) -> bool:
     reason = reason_json[1]
 
     # Set deaccession reason to data package that is being deaccessioned
-    try:
-        avu.set_on_coll(ctx, coll, DEACCESSION_REASON_ATTRNAME, reason)
-    except msi.Error:
+    if not avu.set_on_coll(ctx, coll, DEACCESSION_REASON_ATTRNAME, reason, catch=True):
         return False
 
     try:
@@ -310,12 +306,12 @@ def cleanup_deaccession_cancel(ctx: rule.Context, coll: str) -> None:
     try:
         # Cleanup requester AVU if any
         requester = get_deaccession_actor(ctx, coll, "request")
-        if requester != "":
+        if requester:
             avu.rm_from_coll(ctx, coll, DEACCESSION_REQUESTACTOR_ATTRNAME, requester)
 
         # Cleanup reason AVU
         reason = get_deaccession_reason(ctx, coll)
-        if reason != "":
+        if reason:
             avu.rm_from_coll(ctx, coll, DEACCESSION_REASON_ATTRNAME, reason)
     except msi.Error:
         log.write(ctx, "deaccession_cancel_cleanup: Could not clean up deaccession AVUs.")
@@ -471,7 +467,7 @@ def generate_deaccession_manifest(ctx: rule.Context, coll: str) -> str:
 
     # Get summary manifest
     original_path = f"{coll}/original"
-    pre_manifest = research.research_manifest(ctx, original_path)
+    pre_manifest = research.research_manifest(ctx, original_path, empty_colls=True)
     manifest = {
         "num_files": pre_manifest['files'],
         "num_checksums": pre_manifest['checksums'],
