@@ -16,6 +16,7 @@ import constants
 import folder
 import groups
 import policies_deaccession_status
+import provenance
 import publication
 import research
 import vault
@@ -649,6 +650,7 @@ def deaccession_delete_original(ctx: rule.Context, coll: str) -> None:
         log.write(ctx, "deaccession_delete_original: msiError - Could not delete original data.")
         return
 
+    provenance.log_action(ctx, "system", coll, "data deleted")
     log.write(ctx, f"deaccession_delete_original: Successfully deleted original data of data package {coll}")
 
 
