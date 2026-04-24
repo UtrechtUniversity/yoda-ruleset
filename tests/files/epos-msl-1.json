@@ -1,0 +1,137 @@
+{
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/epos-msl-1/metadata.json"
+        }
+    ],
+    "Title": "API test epos-msl-1",
+    "Description": "API test epos-msl-1",
+    "Discipline": [
+        "Rock and melt physical properties"
+    ],
+    "Lab": [
+        {
+            "identifier": "aa45f98e5c098237d0c57b58e5f953e1",
+            "name": "TecLab - Tectonic Modelling Laboratory",
+            "affiliation_name": "Universiteit Utrecht (UU)",
+            "affiliation_ror": "https://ror.org/04pp8hn57"
+        }
+    ],
+    "Version": "1.0",
+    "Language": "en - English",
+    "Collected": {
+        "Start_Date": "2024-09-01",
+        "End_Date": "2025-07-01"
+    },
+    "TreeKeyword": [
+        {
+            "subject": "diamond anvil cell",
+            "subjectScheme": "EPOS MSL",
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing-compression_testing-diamond_anvil_cell"
+        },
+        {
+            "subject": "compression testing",
+            "subjectScheme": "EPOS MSL",
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing-compression_testing"
+        },
+        {
+            "subject": "deformation testing",
+            "subjectScheme": "EPOS MSL",
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing"
+        },
+        {
+            "subject": "Apparatus",
+            "subjectScheme": "EPOS MSL",
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus"
+        },
+        {
+            "subject": "Rock and melt physics",
+            "subjectScheme": "EPOS MSL",
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/"
+        },
+        {
+            "subject": "custom_keyword"
+        }
+    ],
+    "Related_Resource": [
+        {
+            "Relation_Type": "References",
+            "Title": "The FAIR Guiding Principles for scientific data management and stewardship",
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://doi.org/10.1038/sdata.2016.18"
+            }
+        }
+    ],
+    "Retention_Period": 10,
+    "Data_Type": "Dataset",
+    "Data_Classification": "Public",
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "Utrecht University",
+                    "Affiliation_Identifier": "https://ror.org/04pp8hn57"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис Николаевич",
+                "Family_Name": "Ельцин"
+            },
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "University Džemal Bijedić of Mostar",
+                    "Affiliation_Identifier": "https://ror.org/00ey4b732"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "DAI",
+                    "Name_Identifier": "info:eu-repo/dai/nl/123456785"
+                }
+            ]
+        }
+    ],
+    "Contact": [
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Position": "Data Steward",
+            "Email": "björk@yoda.test",
+            "Affiliation": [
+                {
+                    "Affiliation_Name": "École Nationale Supérieure des Beaux-Arts",
+                    "Affiliation_Identifier": "https://ror.org/01cdn3r29"
+                }
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "https://orcid.org/0009-0005-4692-1299"
+                }
+            ]
+        }
+    ],
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "License": "Creative Commons Attribution 4.0 International Public License"
+}

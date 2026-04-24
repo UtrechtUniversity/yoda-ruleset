@@ -1,6 +1,6 @@
 """Utility / convenience functions for dealing with JSON."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -8,6 +8,7 @@ from collections import OrderedDict
 from typing import Dict
 
 import jsonavu
+import requests
 
 import avu
 import data_object
@@ -48,6 +49,19 @@ def dump(data: Dict, **options: int) -> str:
 def read(ctx: rule.Context, path: str, **options: int) -> OrderedDict:
     """Read an iRODS data object and parse it as JSON."""
     return parse(data_object.read(ctx, path), **options)
+
+
+def read_from_url(url: str, timeout: int = 10) -> OrderedDict:
+    """Read and parse JSON from a remote URL.
+
+    :param url:     The remote URL to read JSON from
+    :param timeout: Request timeout in seconds (default: 10)
+
+    :returns: Parsed JSON object
+    """
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    return response.json(object_pairs_hook=OrderedDict)
 
 
 def write(ctx: rule.Context, path: str, data: Dict, **options: int) -> None:

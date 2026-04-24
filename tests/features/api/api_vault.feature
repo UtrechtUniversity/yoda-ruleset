@@ -16,6 +16,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault submit
@@ -34,6 +35,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault cancel
@@ -52,6 +54,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault submit after cancel
@@ -70,6 +73,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault approve
@@ -88,6 +92,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault published
@@ -104,6 +109,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Published vault package passes troubleshooting script checks
@@ -116,6 +122,7 @@ Feature: Vault API
             | /tempZone/home/vault-default-2  |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault preservable formats lists
@@ -238,6 +245,7 @@ Feature: Vault API
             | /tempZone/home/vault-core-2     |
             | /tempZone/home/vault-default-3  |
             | /tempZone/home/vault-epos-msl-0 |
+            | /tempZone/home/vault-epos-msl-1 |
 
 
     Scenario Outline: Vault copy to research space

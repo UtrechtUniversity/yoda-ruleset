@@ -324,6 +324,16 @@ def get_dates(combi: Dict) -> List:
         except KeyError:
             pass
 
+    coverage = combi.get('Coverage')
+    if coverage is not None:
+        try:
+            x = coverage.get('Start_Date')
+            y = coverage.get('End_Date')
+            if x is not None and y is not None:
+                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Coverage'})
+        except KeyError:
+            pass
+
     withdrawn_date = combi['System'].get('Withdrawn_Date')
     if withdrawn_date is not None:
         dates.append({'date': withdrawn_date, 'dateType': 'Withdrawn'})

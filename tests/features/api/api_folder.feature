@@ -16,6 +16,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | LOCKED |
             | /tempZone/home/research-default-3  | LOCKED |
             | /tempZone/home/research-epos-msl-0 | LOCKED |
+            | /tempZone/home/research-epos-msl-1 | LOCKED |
 
 
     Scenario Outline: Folder get locks
@@ -33,6 +34,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     |
             | /tempZone/home/research-default-3  |
             | /tempZone/home/research-epos-msl-0 |
+            | /tempZone/home/research-epos-msl-1 |
 
 
     Scenario Outline: Folder unlock
@@ -50,6 +52,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | FOLDER |
             | /tempZone/home/research-default-3  | FOLDER |
             | /tempZone/home/research-epos-msl-0 | FOLDER |
+            | /tempZone/home/research-epos-msl-1 | FOLDER |
 
 
     Scenario Outline: Folder submit
@@ -68,6 +71,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | SUBMITTED |
             | /tempZone/home/research-default-3  | SUBMITTED |
             | /tempZone/home/research-epos-msl-0 | SUBMITTED |
+            | /tempZone/home/research-epos-msl-1 | SUBMITTED |
 
 
     Scenario Outline: Folder unsubmit
@@ -85,6 +89,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | FOLDER |
             | /tempZone/home/research-default-3  | FOLDER |
             | /tempZone/home/research-epos-msl-0 | FOLDER |
+            | /tempZone/home/research-epos-msl-1 | FOLDER |
 
 
     Scenario Outline: Folder resubmit after unsubmit
@@ -102,6 +107,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | SUBMITTED |
             | /tempZone/home/research-default-3  | SUBMITTED |
             | /tempZone/home/research-epos-msl-0 | SUBMITTED |
+            | /tempZone/home/research-epos-msl-1 | SUBMITTED |
 
 
     Scenario Outline: Folder reject
@@ -119,6 +125,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | REJECTED |
             | /tempZone/home/research-default-3  | REJECTED |
             | /tempZone/home/research-epos-msl-0 | REJECTED |
+            | /tempZone/home/research-epos-msl-1 | REJECTED |
 
 
     Scenario Outline: Folder resubmit after reject
@@ -136,6 +143,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | SUBMITTED |
             | /tempZone/home/research-default-3  | SUBMITTED |
             | /tempZone/home/research-epos-msl-0 | SUBMITTED |
+            | /tempZone/home/research-epos-msl-1 | SUBMITTED |
 
 
     Scenario Outline: Folder accept
@@ -153,6 +161,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | ACCEPTED |
             | /tempZone/home/research-default-3  | ACCEPTED |
             | /tempZone/home/research-epos-msl-0 | ACCEPTED |
+            | /tempZone/home/research-epos-msl-1 | ACCEPTED |
 
 
     Scenario Outline: Folder secured
@@ -168,6 +177,7 @@ Feature: Folder API
             | /tempZone/home/research-core-2     | FOLDER |
             | /tempZone/home/research-default-3  | FOLDER |
             | /tempZone/home/research-epos-msl-0 | FOLDER |
+            | /tempZone/home/research-epos-msl-1 | FOLDER |
 
 
     Scenario Outline: Folder submit (move to vault)
