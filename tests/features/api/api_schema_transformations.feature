@@ -18,3 +18,4 @@ Feature: Schema transformations API
             | hptlab-0    | hptlab-1   |
             | teclab-0    | epos-msl-0 |
             | hptlab-0    | epos-msl-0 |
+            | epos-msl-0  | epos-msl-1 |

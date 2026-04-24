@@ -1,12 +1,13 @@
 """JSON schema transformation functions."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from typing import Callable, Dict
 
+import requests
 from schema_transformations_utils import add_affiliation_identifier, correctify_personal_identifiers, merge_geo_keywords, rename_related_datapackage
 
 import meta
@@ -437,6 +438,43 @@ def _hptlab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
 
     return m
 
+
+def _eposmsl0_eposmsl1(ctx: rule.Context, m: Dict) -> Dict:
+    """
+    Added Period covered field to indicate the temporal coverage of the resource.
+    Removed Period covered field as part of Sample location(s) or modeled location(s).
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (epos-msl-0)
+
+    :returns: Transformed (epos-msl-1) JSON object
+    """
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-1/metadata.json')
+
+    new_uischema = jsonutil.read(ctx, f"/{user.zone(ctx)}/yoda/schemas/epos-msl-1/uischema.json")
+    vocab_url = new_uischema.get('Lab', {}).get('items', {}).get('ui:data')
+
+    current_labs = m.get('Lab', [])
+    m['Lab'] = []
+
+    try:
+        # Read the Lab vocabulary.
+        labs_vocab = jsonutil.read_from_url(vocab_url)
+        labs_by_id = {lab.get('identifier'): lab for lab in labs_vocab}
+
+        for lab_value in current_labs:
+            if isinstance(lab_value, str) and lab_value in labs_by_id:
+                m['Lab'].append(labs_by_id[lab_value])
+    except (requests.RequestException, ValueError):
+        pass
+
+    # Remove temporal description from geo locations.
+    for location in m.get('GeoLocation', []):
+        if 'Description_Temporal' in location:
+            location.pop('Description_Temporal', None)
+
+    return m
+
 # }}}
 
 
@@ -478,6 +516,9 @@ def get(src_id: str, dst_id: str) -> Callable | None:
         },
         'https://yoda.uu.nl/schemas/teclab-1/metadata.json': {
             'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': _teclab1_eposmsl0
+        },
+        'https://yoda.uu.nl/schemas/epos-msl-0/metadata.json': {
+            'https://yoda.uu.nl/schemas/epos-msl-1/metadata.json': _eposmsl0_eposmsl1
         }
     }
 

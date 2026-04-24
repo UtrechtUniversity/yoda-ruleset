@@ -16,6 +16,7 @@ Feature: Schema API
             | researcher  | default-2  |
             | researcher  | default-3  |
             | researcher  | epos-msl-0 |
+            | researcher  | epos-msl-1 |
             | datamanager | core-0     |
             | datamanager | core-1     |
             | datamanager | default-0  |
@@ -23,6 +24,7 @@ Feature: Schema API
             | datamanager | default-2  |
             | datamanager | default-3  |
             | datamanager | epos-msl-0 |
+            | datamanager | epos-msl-1 |
 
 
     Scenario Outline: Schema get schemas and default schema

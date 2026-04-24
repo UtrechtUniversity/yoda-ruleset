@@ -163,18 +163,23 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     ############################################################################
     # Geo specific metadata
     ############################################################################
-    contacts = json_data.get("Contact", [])                # epos-msl-0, teclab-0, teclab-1, hptlab-0, hptlab-1
-    labids = json_data.get("Lab", [])                      # epos-msl-0, teclab-0, teclab-1, hptlab-0, hptlab-1
+    contacts = json_data.get("Contact", [])                # epos-msl-0, epos-msl-1, teclab-0, teclab-1, hptlab-0, hptlab-1
+    labids = json_data.get("Lab", [])                      # epos-msl-0, epos-msl-1, teclab-0, teclab-1, hptlab-0, hptlab-1
     additional_labs = json_data.get("Additional_Lab", [])  # epos-msl-0, teclab-0, teclab-1, hptlab-0, hptlab-1
-    geolocations = json_data.get("GeoLocation", {})        # dag-0, epos-msl-0, teclab-0, teclab-1, hptlab-0, hptlab-1
+    geolocations = json_data.get("GeoLocation", {})        # dag-0, epos-msl-0, epos-msl-1, teclab-0, teclab-1, hptlab-0, hptlab-1
 
     # Convert lab identifiers to lab names.
     try:
         labs = []
-        if labids:
-            schema_labids = json_schema["definitions"]["optionsLabs"]["enum"]
-            schema_labnames = json_schema["definitions"]["optionsLabs"]["enumNames"]
-            labs = [schema_labnames[schema_labids.index(id)] for id in labids]
+        for lab in labids:
+            if isinstance(lab, str):
+                schema_labids = json_schema["definitions"]["optionsLabs"]["enum"]
+                schema_labnames = json_schema["definitions"]["optionsLabs"]["enumNames"]
+                idx = schema_labids.index(lab)
+                labs.append(schema_labnames[idx])
+            elif isinstance(lab, dict):
+                lab_name = lab.get("name")
+                labs.append(lab_name)
     except (KeyError, ValueError, IndexError):
         labs = []
 
