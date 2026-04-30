@@ -108,6 +108,18 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *user_name = *comm.user_user_name;
     *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
+    *option = *comm.option
+
+    if (*option like regex "^[A-Za-z0-9,\./ \-;]+$") {
+       # Some client names like GoCommands have trailing semicolons. Strip those.
+        if ( *option like regex "^.*;$" ) {
+            *clientDesc = "client: " ++ substr(*option, 0, strlen(*option)-1);
+        } else {
+            *clientDesc = "client: *option";
+        }
+    } else {
+        *clientDesc = "client: <filtered>";
+    }
 
     # It looks like this PEP is only used for the anonymous user. Check user name to be sure.
     if ( *user_name == "anonymous" ) {
@@ -127,7 +139,7 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     }
 
     # p1 suffix specifies which PEP has printed this message
-    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p1]");
+    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p1] (*clientDesc)");
 }
 
 pep_api_authenticate_pre(*instanceName, *comm, *request, *response) {
@@ -137,6 +149,18 @@ pep_api_authenticate_pre(*instanceName, *comm, *request, *response) {
     *user_name = *comm.user_user_name;
     *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
+    *option = *comm.option
+
+    if (*option like regex "^[A-Za-z0-9,\./ \-;]+$") {
+       # Some client names like GoCommands have trailing semicolons. Strip those.
+        if ( *option like regex "^.*;$" ) {
+            *clientDesc = "client: " ++ substr(*option, 0, strlen(*option)-1);
+        } else {
+            *clientDesc = "client: *option";
+        }
+    } else {
+        *clientDesc = "client: <filtered>";
+    }
 
     *max_connections_exceeded = '';
     rule_check_max_connections_exceeded(*max_connections_exceeded);
@@ -146,7 +170,7 @@ pep_api_authenticate_pre(*instanceName, *comm, *request, *response) {
     }
 
     # p2 suffix specifies which PEP has printed this message
-    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p2]");
+    writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr [p2] (*clientDesc)");
 }
 
 # Enforce server to use TLS encryption.
