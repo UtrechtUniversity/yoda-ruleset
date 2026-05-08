@@ -25,26 +25,29 @@ def remove_obsolete_avus(ctx, zone, dryrun):
                            "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
                            f"COLL_NAME like '/{zone}/home/datarequests%' AND DATA_NAME like '%datarequest%'")
 
-    if len(list(query)) > 0:
-        count = 0
-        for row in query:
-            coll, obj, attr, value = row[0], row[1], row[2], row[3]
-            if attr not in VALID_AVUS:
-                ctx.writeLine("stdout", f"Obsolete AVU found for object {coll}/{obj}: attribute '{attr}' with value '{value}'")
-                count += 1
+    count = 0
+    found_any = False
+    for row in query:
+        found_any = True
+        coll, obj, attr, value = row[0], row[1], row[2], row[3]
+        if attr not in VALID_AVUS:
+            ctx.writeLine("stdout", f"Obsolete AVU found for object {coll}/{obj}: attribute '{attr}' with value '{value}'")
+            count += 1
 
-                if not dryrun:
-                    ctx.writeLine("stdout", "Deleting...")
-                    msi.mod_avu_metadata(ctx, "-d", f"{coll}/{obj}", "rm", attr, value, "")
+            if not dryrun:
+                ctx.writeLine("stdout", "Deleting...")
+                msi.mod_avu_metadata(ctx, "-d", f"{coll}/{obj}", "rm", attr, value, "")
 
-        if count > 0 and not dryrun:
-            ctx.writeLine("stdout", "Done.")
-        elif count > 0 and dryrun:
-            ctx.writeLine("stdout", "Run in exec mode to delete these obsolete AVUs.")
-        else:
-            ctx.writeLine("stdout", "No obsolete data request AVU found in the current zone.")
-    else:
+    if not found_any:
         ctx.writeLine("stdout", "No data request object was found in the current zone.")
+        return
+
+    if count > 0 and not dryrun:
+        ctx.writeLine("stdout", "Done.")
+    elif count > 0 and dryrun:
+        ctx.writeLine("stdout", "Run in exec mode to delete these obsolete AVUs.")
+    else:
+        ctx.writeLine("stdout", "No obsolete data request AVU found in the current zone.")
 
 
 def main(rule_args, ctx, rei):
