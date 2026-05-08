@@ -19,33 +19,32 @@ import msi
 VALID_AVUS = ['assignedForReview', 'endOfReviewPeriod', 'owner', 'reviewedBy', 'status', 'title']  # List of valid datarequest AVUs
 
 
-# Get all datarequest data objects in the current zone
-def get_datarequest_objs(ctx, zone):
+# Remove all obsolete datarequest AVUs in the current zone
+def remove_obsolete_avus(ctx, zone, dryrun):
     query = genquery.Query(ctx,
-                           "COLL_NAME, DATA_NAME",
-                           f"COLL_NAME like '/{zone}/home/datarequest%'")
+                           "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
+                           f"COLL_NAME like '/{zone}/home/datarequests%' AND DATA_NAME like '%datarequest%'")
 
-    datarequest_objs = []
-    for row in query:
-        if row[1] == "datarequest.json":
-            datarequest_objs.append((row[0], row[1]))
+    if len(list(query)) > 0:
+        count = 0
+        for row in query:
+            coll, obj, attr, value = row[0], row[1], row[2], row[3]
+            if attr not in VALID_AVUS:
+                ctx.writeLine("stdout", f"Obsolete AVU found for object {coll}/{obj}: attribute '{attr}' with value '{value}'")
+                count += 1
 
-    return datarequest_objs
+                if not dryrun:
+                    ctx.writeLine("stdout", "Deleting...")
+                    msi.mod_avu_metadata(ctx, "-d", f"{coll}/{obj}", "rm", attr, value, "")
 
-
-# Remove obsolete datarequest AVUs
-def remove_obsolete_avus(ctx, obj, dryrun):
-    query = genquery.Query(ctx,
-                           "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-                           f"COLL_NAME = '{obj[0]}' AND DATA_NAME = '{obj[1]}'")
-
-    for row in query:
-        if row[0] not in VALID_AVUS:
-            ctx.writeLine("stdout", f"Obsolete AVU found for object {obj[0]}/{obj[1]}: attribute '{row[0]}' with value '{row[1]}'")
-
-            if not dryrun:
-                ctx.writeLine("stdout", "Deleting...")
-                msi.mod_avu_metadata(ctx, "-d", f"{obj[0]}/{obj[1]}", "rm", row[0], row[1], "")
+        if count > 0 and not dryrun:
+            ctx.writeLine("stdout", "Done.")
+        elif count > 0 and dryrun:
+            ctx.writeLine("stdout", "Run in exec mode to delete these obsolete AVUs.")
+        else:
+            ctx.writeLine("stdout", "No obsolete data request AVU found in the current zone.")
+    else:
+        ctx.writeLine("stdout", "No data request object was found in the current zone.")
 
 
 def main(rule_args, ctx, rei):
@@ -74,17 +73,11 @@ def main(rule_args, ctx, rei):
         ctx.writeLine("stdout", "ERROR: This rule can only be run by a rodsadmin user.")
         return
 
-    # Get all data request data objects
+    # Remove all obsolete AVUs in the zone
     if dryrun:
         ctx.writeLine("stdout", "Running in dry-run mode... AVUs will not be deleted.")
 
-    datarequest_objs = get_datarequest_objs(ctx, current_zone)
-    if not datarequest_objs:
-        ctx.writeLine("stdout", "No data request data object was found.")
-        return
-    else:
-        for obj in datarequest_objs:
-            remove_obsolete_avus(ctx, obj, dryrun)
+    remove_obsolete_avus(ctx, current_zone, dryrun)
 
 INPUT *mode=dry
 OUTPUT ruleExecOut
