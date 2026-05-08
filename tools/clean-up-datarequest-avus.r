@@ -21,12 +21,12 @@ VALID_AVUS = ['assignedForReview', 'endOfReviewPeriod', 'owner', 'reviewedBy', '
 
 # Get all datarequest data objects in the current zone
 def get_datarequest_objs(ctx, zone):
-    iter = genquery.Query(ctx,
-                          "COLL_NAME, DATA_NAME",
-                          f"COLL_NAME like '/{zone}/home/datarequest%'")
+    query = genquery.Query(ctx,
+                           "COLL_NAME, DATA_NAME",
+                           f"COLL_NAME like '/{zone}/home/datarequest%'")
 
     datarequest_objs = []
-    for row in iter:
+    for row in query:
         if row[1] == "datarequest.json":
             datarequest_objs.append((row[0], row[1]))
 
@@ -35,11 +35,11 @@ def get_datarequest_objs(ctx, zone):
 
 # Remove obsolete datarequest AVUs
 def remove_obsolete_avus(ctx, obj, dryrun):
-    iter = genquery.Query(ctx,
-                          "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-                          f"COLL_NAME = '{obj[0]}' AND DATA_NAME = '{obj[1]}'")
+    query = genquery.Query(ctx,
+                           "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
+                           f"COLL_NAME = '{obj[0]}' AND DATA_NAME = '{obj[1]}'")
 
-    for row in iter:
+    for row in query:
         if row[0] not in VALID_AVUS:
             ctx.writeLine("stdout", f"Obsolete AVU found for object {obj[0]}/{obj[1]}: attribute '{row[0]}' with value '{row[1]}'")
 
