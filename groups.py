@@ -82,7 +82,7 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
             continue
 
         user = f"{user_name}#{user_zone}"
-        if name.startswith("read-"):
+        if group_name.startswith("read-"):
             # Match read-* group with research-* group.
             group = groups.get(f"research-{group_name[5:]}")
             if group:
