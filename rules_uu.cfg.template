@@ -77,6 +77,7 @@ arb_min_gb_free                =
 arb_min_percent_free           =
 
 matomo_tracking_enabled        =
+matomo_counter_enabled         =
 matomo_server_fqdn             =
 matomo_site_id                 =
 

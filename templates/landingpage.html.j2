@@ -38,7 +38,7 @@
     {% endif %}
 
     {% if matomo_tracking_enabled %}
-    <!-- Matomo -->
+    <!-- Matomo tracker -->
     <script>
       var _paq = window._paq = window._paq || [];
       /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
@@ -54,6 +54,56 @@
     </script>
     <!-- End Matomo Code -->
     {% endif %}
+
+    {% if matomo_counter_enabled %}
+    <!-- Matomo visit counter -->
+    <script>
+        async function updateVisitCounter() {
+          const pageUrl = encodeURIComponent(window.location.href);
+          const matomoServer = "https://{{ matomo_server_fqdn }}";
+          const siteId = "{{ matomo_site_id }}";
+          const requestUrl = `${matomoServer}/index.php?module=API&method=PageViewCounter.getVisits&format=JSON&siteId=${siteId}&url=${pageUrl}`;
+
+          try {
+            const response = await fetch(requestUrl, { mode: 'cors' } );
+
+            if (!response.ok) {
+              throw new Error(`Cannot fetch visit counter data: ${response.status} for ${requestUrl}`);
+            }
+
+            const text = await response.text();
+
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch {
+              console.error("Visit count data is not valid JSON:", text);
+              return;
+            }
+
+            if (!Object.hasOwn(data, "nb_visits")) {
+              console.error('No "nb_visits" key found in visit counter response:', data);
+              return;
+            }
+
+            const el = document.getElementById("visitcounter");
+            if (!el) {
+              console.error('Element with id "visitcounter" not found.');
+              return;
+            }
+
+            el.textContent = data.nb_visits;
+
+          } catch (error) {
+            console.error("Failed to fetch visit counter data:", error);
+          }
+        }
+        document.addEventListener("DOMContentLoaded", updateVisitCounter);
+    </script>
+<!-- End Matomo visit counter -->
+    {% endif %}
+
+
 </head>
 
 <body vocab="http://purl.org/dc/terms/">
@@ -659,6 +709,25 @@
                 </div>
                 <br>
             </section>
+
+	    {% if matomo_counter_enabled %}
+            <section class="statistics">
+                <h2>Statistics</h2>
+                <div class="list">
+                    <div class="group">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <label>Number of page visits</label>
+                            </div>
+                            <div class="col-sm-9">
+                                <span id="visitcounter"> ... </span>
+                            </div>
+                        </div>
+		     </div>
+		</div>
+	    </section>
+	    {% endif %}
+
             <section class="questions">
                 <h2>Questions?</h2>
                 <div class="col text-center">
