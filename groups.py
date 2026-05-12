@@ -1357,7 +1357,7 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
     :param ctx: Combined type of a ctx and rei struct
     """
     if not user.is_rodsadmin(ctx):
-        log.write(ctx, "SRAM sync requires admin privileges")
+        log.write(ctx, "SRAM sync requires rodsadmin privileges")
         return
 
     if not config.enable_sram:
