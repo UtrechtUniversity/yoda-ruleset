@@ -827,9 +827,6 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
             "archivable": vault_archive.vault_archivable(ctx, path),
             "status": vault_archive.vault_archival_status(ctx, path)
         }
-    if config.enable_data_package_download:
-        import vault_download
-        result["downloadable"] = vault_download.vault_downloadable(ctx, path)
     return result
 
 

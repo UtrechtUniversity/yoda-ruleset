@@ -72,6 +72,3 @@ if config.enable_tokens:
 
 if config.enable_data_package_archive:
     from vault_archive import *
-
-if config.enable_data_package_download:
-    from vault_download import *
