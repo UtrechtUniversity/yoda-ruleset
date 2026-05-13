@@ -7,11 +7,7 @@ prepareVaultArchive {
 	}
 
 	*status = "";
-	if (*action == "download") {
-		rule_vault_download(*actor, *coll, *status);
-	} else {
-		rule_vault_archive(*actor, *coll, *action, *status);
-	}
+	rule_vault_archive(*actor, *coll, *action, *status);
 	writeLine("stdout", "*actor archive *coll *action: *status");
 }
 

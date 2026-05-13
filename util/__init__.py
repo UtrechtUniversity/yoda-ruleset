@@ -46,7 +46,7 @@ if 'unittest' not in sys.modules:
     # that imports * from util.
     from config import config
 
-    if config.enable_data_package_archive or config.enable_data_package_download:
+    if config.enable_data_package_archive:
         import bagit
 
     if config.environment == 'development':
