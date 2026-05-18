@@ -203,13 +203,13 @@ def api_deposit_overview(ctx: rule.Context,
                          offset: int = 0,
                          limit: int = 10,
                          space: str = pathutil.Space.OTHER.value) -> api.Result:
-    """Get paginated collection contents, including size/modify date information.
+    """Get paginated collection contents, including modification date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
     Specifically for deposit selection which is why it adds deposit-specific data to the result
 
     :param ctx:        Combined type of a callback and rei struct
-    :param sort_on:    Column to sort on ('name', 'modified' or size)
+    :param sort_on:    Column to sort on ('name' or 'modified')
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
@@ -220,8 +220,6 @@ def api_deposit_overview(ctx: rule.Context,
     def transform(row: Dict) -> Dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
-
-        deposit_size = collection.size(ctx, x['COLL_NAME'])
 
         deposit_title = '(no title)'
         iter = genquery.row_iterator(
@@ -249,8 +247,7 @@ def api_deposit_overview(ctx: rule.Context,
                 'type':          'coll',
                 'modify_time':   int(x['COLL_MODIFY_TIME']),
                 'deposit_title': deposit_title,
-                'deposit_access': deposit_access,
-                'deposit_size':  deposit_size}
+                'deposit_access': deposit_access}
 
     if sort_on == 'modified':
         # FIXME: Sorting on modify date is borked: There appears to be no
@@ -261,8 +258,6 @@ def api_deposit_overview(ctx: rule.Context,
         # (or not? replication may take place a long time after a modification,
         #  resulting in a 'too new' date)
         ccols = ['COLL_NAME', 'ORDER(COLL_MODIFY_TIME)']
-    elif sort_on == 'size':
-        ccols = ['COLL_NAME', 'COLL_MODIFY_TIME']
     else:
         ccols = ['ORDER(COLL_NAME)', 'COLL_MODIFY_TIME']
 
