@@ -8,7 +8,7 @@ from collections import OrderedDict
 from typing import Dict
 
 import magic
-from genquery import AS_DICT, Query
+from genquery import AS_DICT, AS_LIST, Query
 
 from util import *
 
@@ -291,7 +291,11 @@ def api_search(ctx: rule.Context,
 
     datas = list(map(transform, [d for d in list(qdata) if _filter_vault_deposit_index(d)]))
 
-    return OrderedDict([('total', qdata.total_rows()),
+    # Workaround to get actual total number of rows, as there is an issue with GenQuery's total_rows() when providing a non-zero offset
+    total_rows = len(list(Query(ctx, cols, where, offset=0,
+                                limit=None, case_sensitive=query_is_case_sensitive, output=AS_LIST)))
+
+    return OrderedDict([('total', total_rows),
                         ('items', datas)])
 
 
