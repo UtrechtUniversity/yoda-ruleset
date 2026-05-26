@@ -10,7 +10,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from misc import check_data_package_system_avus, human_readable_size, last_run_time_acceptable, remove_empty_objects
+from misc import check_data_package_system_avus, human_readable_size, last_run_time_acceptable, remove_empty_objects, split_string_list_by_total_length
 
 # AVs of a successfully published data package, that is the first version of the package
 avs_success_data_package = {
@@ -232,3 +232,23 @@ class UtilMiscTest(TestCase):
         self.assertDictEqual(remove_empty_objects(d), OrderedDict({"key1": "value1", "key2": {"key5": "value5"}}))
         d = OrderedDict({"key1": "value1", "key2": [{}]})
         self.assertDictEqual(remove_empty_objects(d), OrderedDict({"key1": "value1"}))
+
+    def test_split_string_list_by_total_length(self):
+        # Items don't exceed maximum length
+        self.assertEqual(split_string_list_by_total_length(["abc", "def", "ghi"], 10),
+                         [["abc", "def", "ghi"]])
+        # Items exceed maximum length
+        self.assertEqual(split_string_list_by_total_length(["abc", "def", "ghi", "jkl"], 10),
+                         [["abc", "def", "ghi"], ["jkl"]])
+        # Items don't exceed maximum length with additional length
+        self.assertEqual(split_string_list_by_total_length(["abc", "def", "ghi"], 15, add_item_length=2),
+                         [["abc", "def", "ghi"]])
+        # Items exceed maximum length with additional length
+        self.assertEqual(split_string_list_by_total_length(["abc", "def", "ghi"], 14, add_item_length=2),
+                         [["abc", "def"], ["ghi"]])
+        # Single item exceeds maximum length
+        self.assertEqual(split_string_list_by_total_length(["abcabcabcabcabcabcabc", "def", "ghi"], 15),
+                         [["abcabcabcabcabcabcabc"], ["def", "ghi"]])
+        # Single item exceeds maximum length and throws Exception
+        with self.assertRaises(Exception):  # noqa B107  / Ruff does not permit asserting exceptions in unit tests
+            split_string_list_by_total_length(["abcabcabcabcabcabcabc", "def", "ghi"], 15, raise_exception_exceed=True)

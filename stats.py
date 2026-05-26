@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 import groups
 from util import *
+from util.misc import split_string_list_by_total_length
 
 __all__ = ['api_resource_browse_group_data',
            'api_resource_monthly_category_stats',
@@ -406,7 +407,7 @@ def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
             if group not in group_storage:
                 # This can happen if we have a group without a matching group collection
                 log.write(ctx, f"Warning: ignoring group {group} for category statistics, because storage data not found "
-                               + "(possibly a group without a group collection?)")
+                          + "(possibly a group without a group collection?)")
                 continue
             elif len(group_storage[group]) == record_count:
                 group_storage[group].append(0)
@@ -685,7 +686,7 @@ def get_user_groups_for_stats(ctx: rule.Context, search_filter: str = "", user_n
 
     :returns: All groups of current session's user
     """
-    groups_list = []
+    groups = set()
 
     user_name = user.name(ctx) if user_name is None else user_name
     user_zone = user.zone(ctx) if zone_name is None else zone_name
@@ -696,42 +697,33 @@ def get_user_groups_for_stats(ctx: rule.Context, search_filter: str = "", user_n
 
     if user.is_rodsadmin(ctx, f"{user_name}#{user_zone}"):
         # All groups in zone
-        groups_list = list(genquery.Query(ctx,
+        groups.update(list(genquery.Query(ctx,
                                           "ORDER(USER_GROUP_NAME)",
-                                          group_filter + zone_filter + search_filter))
+                                          group_filter + zone_filter + search_filter)))
     else:
         # Groups the user is member of
         user_filter = f"AND USER_NAME = '{user_name}' "
-        group_member = list(genquery.Query(ctx,
-                                           "ORDER(USER_GROUP_NAME)",
-                                           group_filter + user_filter + search_filter))
-
-        for grp in group_member:
-            if grp not in groups_list:
-                groups_list.append(grp)
+        groups.update(list(genquery.Query(ctx,
+                                          "ORDER(USER_GROUP_NAME)",
+                                          group_filter + user_filter + search_filter)))
 
         # Groups the user is datamanager of
         dmgroup_member = list(genquery.Query(ctx,
                                              "ORDER(USER_GROUP_NAME)",
                                              "USER_GROUP_NAME LIKE 'datamanager-%' " + user_filter))
+        categories = [group.replace("datamanager-", "", 1) for group in dmgroup_member]
 
-        categories = []
-        for grp in dmgroup_member:
-            cat = grp.replace("datamanager-", "", 1)
-            categories.append(cat)
-
-        if len(categories) > 0:
-            quoted_categories = [f"'{e}'" for e in categories]
+        # Limit batch size so that it does not exceed maximum GenQuery size. We're using 14000 rather
+        # than 16000 so that we have a bit of slack for other parts of the query, like search filters.
+        category_batches = split_string_list_by_total_length(categories, 14000, add_item_length=3)
+        for category_batch in category_batches:
+            quoted_categories = [f"'{e}'" for e in category_batch]
             categories_string = f"({','.join(quoted_categories)})"
-            group_dm = list(genquery.Query(ctx,
-                                           "ORDER(USER_GROUP_NAME)",
-                                           group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {categories_string}"))
+            groups.update(list(genquery.Query(ctx,
+                                              "ORDER(USER_GROUP_NAME)",
+                                              group_filter + search_filter + f"AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE IN {categories_string}")))
 
-            for grp in group_dm:
-                if grp not in groups_list:
-                    groups_list.append(grp)
-
-    return groups_list
+    return sorted(groups)
 
 
 def rule_resource_research(rule_args, callback, rei):
