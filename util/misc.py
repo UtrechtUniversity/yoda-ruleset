@@ -7,7 +7,7 @@ import math
 import time
 import uuid
 from collections import OrderedDict
-from typing import Dict
+from typing import Dict, List
 
 import constants
 
@@ -154,3 +154,63 @@ def is_valid_uuid(uuid_string: str) -> bool:
         return False
 
     return str(uuid_obj) == uuid_string
+
+
+def split_string_list_by_total_length(string_list: List[str], max_length: int, add_item_length: int = 0, raise_exception_exceed: bool = False) -> List[List[str]]:
+    """Split a list of strings into sublists where the total length of all strings
+       in a sublist does not exceed the maximum length. This can be useful when you want
+       to process a list of strings, but need to take into account a maximum length supported
+       by iRODS (e.g. for GenQueries).
+
+       :param string_list: List of strings to process
+       :param max_length: The maximum length of each sublist in the output. By default, if a single string
+                          (along with its additional item length, if applicable) exceeds the maximum length,
+                          if it included in a sublist by itself.
+       :param add_item_length: Additional item length. Increase the length of each string by this number.
+                          This is useful if you need to add additional characters to each string when you
+                          use the sublists (e.g. separator characters or quote characters)
+       :param raise_exception_exceed: Raise an exception if the length of an individual string (along with
+                          its additional item length) exceeds the maximum length, rather than including the
+                          string in its own sublist.
+
+       :raises Exception: if a single string in the input list plus the additional item length exceeds
+                          the maximum length, so that it is not possible to strictly meet the maximum
+                          length requirement. By default, such long strings are included in a sublist
+                          by themselves, and no exception is raised.
+
+       :returns: List of sublists, where each sublist is either a single string, or a list of strings
+                          whose total size does not exceed the maximum length.
+
+    """
+    output: List[List[str]] = []
+    current_sublist: List[str] = []
+    current_length: List[int] = [0]  # In a list so that we can pass it by reference to subfunctions
+
+    def end_of_sublist(current_sublist: List[str], current_length: List[int], output: List[List[str]]) -> None:
+        if len(current_sublist) > 0:
+            output.append(current_sublist.copy())
+            current_sublist.clear()
+            current_length[0] = 0
+
+    def add_to_sublist(item: str, effective_length: int, current_sublist: List[str], current_length: List[int]) -> None:
+        current_sublist.append(item)
+        current_length[0] += effective_length
+
+    for item in string_list:
+        effective_length = len(item) + add_item_length
+        if effective_length > max_length:
+            if raise_exception_exceed:
+                raise Exception(f"Item '{item}' exceeded maximum sublist length.")
+            else:
+                end_of_sublist(current_sublist, current_length, output)
+                add_to_sublist(item, effective_length, current_sublist, current_length)
+                end_of_sublist(current_sublist, current_length, output)
+        elif current_length[0] + effective_length > max_length:
+            end_of_sublist(current_sublist, current_length, output)
+            add_to_sublist(item, effective_length, current_sublist, current_length)
+        else:
+            add_to_sublist(item, effective_length, current_sublist, current_length)
+
+    end_of_sublist(current_sublist, current_length, output)
+
+    return output
