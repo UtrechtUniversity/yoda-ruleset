@@ -53,6 +53,9 @@ token_lifetime                 =
 enable_inactivity_notification =
 inactivity_cutoff_months       =
 
+enable_async_checksum          =
+async_checksum_delay_time      =
+
 async_replication_delay_time   =
 async_replication_max_rss      =
 async_revision_delay_time      =

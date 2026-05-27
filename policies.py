@@ -617,8 +617,14 @@ def pep_resource_modified_post(ctx: rule.Context,
         # Log errors, but continue with revisions.
         log.write(ctx, 'rule_meta_modified_post failed: ' + str(e))
 
-    # ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
     revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
+
+    if config.enable_async_checksum:
+        # Calculate and verify checksum of data object.
+        ctx.delayExec(
+            f"<PLUSET>{config.async_checksum_delay_time}s</PLUSET><INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME>",
+            f"rule_verify_checksum('{path}')",
+            "")
 
 
 @rule.make()
