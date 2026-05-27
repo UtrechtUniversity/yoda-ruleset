@@ -101,6 +101,29 @@ def size(ctx: rule.Context, path: str) -> int | None:
     return None
 
 
+def checksum(ctx: rule.Context, path: str) -> str | None:
+    """Get a data object's checksum.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to iRODS data object
+
+    :returns: Data object's checksum or None if object is not found
+    """
+    coll_name, data_name = pathutil.chop(path)
+    coll_name = misc.escape(coll_name)
+    data_name = misc.escape(data_name)
+    iter = genquery.Query(
+        ctx, "DATA_CHECKSUM",
+        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        output=genquery.AS_LIST
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
+
+
 def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> bool:
     """Check if data object has replica with specified replica statuses.
 

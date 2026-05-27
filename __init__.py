@@ -32,6 +32,7 @@ sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
 from admin                    import *
 from arb                      import *
 from browse                   import *
+from checksums                import *
 from datacite                 import *
 from folder                   import *
 from groups                   import *
