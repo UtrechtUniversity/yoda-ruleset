@@ -658,3 +658,27 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
         *reason = "Invalid user attribute name.";
     }
 }
+
+
+# \brief Group Policy: Can the user add or remove certain SRAM attributes?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  attribute the group attribute to remove
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuGroupPolicyCanSramModify(*actor, *attribute, *allowed, *reason) {
+    uuGetUserType(*actor, *actorUserType);
+    *allowed = 0;
+    *reason  = "";
+
+    if (*attribute == "sram_co" || *attribute == "co_identifier") {
+        if (*actorUserType == "rodsadmin") {
+            *allowed = 1;
+        } else {
+	          *reason = "Only rodsadmin can remove SRAM attributes.";
+        }
+    } else {
+        *reason = "Invalid group attribute name.";
+    }
+}

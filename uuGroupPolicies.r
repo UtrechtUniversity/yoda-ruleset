@@ -371,6 +371,11 @@ uuGroupPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyK
 				if (*allowed == 1) {
 					succeed;
 				}
+			} else if (*attribute == "sram_co") {
+				uuGroupPolicyCanSramModify(uuClientFullName, *attribute, *allowed, *reason);
+				if (*allowed == 1) {
+					succeed;
+				}
 			}
 		}
 	}
@@ -402,6 +407,11 @@ uuGroupPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, 
 					if (*clientIsManager) {
 						succeed;
 					}
+				}
+			} else if (*attribute == "sram_co" || *attribute == "co_identifier") {
+				uuGroupPolicyCanSramModify(uuClientFullName, *attribute, *allowed, *reason);
+				if (*allowed == 1) {
+					succeed;
 				}
 			}
 		}
