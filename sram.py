@@ -5,7 +5,7 @@ __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import genquery
 import requests
@@ -136,21 +136,16 @@ def put_collaboration_invitation(ctx: rule.Context, group_name: str, username: s
         return False
 
     # Request SRAM to lookup possible existing invitation for this user.
-    url = f"{config.sram_rest_api_url}/api/invitations/v1/invitations/{co_identifier}"
+    invitations = get_open_invitations(ctx, co_identifier)
 
     if config.sram_verbose_logging:
-        log.write(ctx, f"put_collaboration_invitation get: {url}")
+        log.write(ctx, f"put_collaboration_invitation response: {invitations.status_code}")
 
-    response = requests.get(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
-
-    if config.sram_verbose_logging:
-        log.write(ctx, f"put_collaboration_invitation response: {response.status_code}")
-
-    if response.status_code != HTTP_OK:
-        log.write(ctx, f"put_collaboration_invitation error: unable to retrieve existing invitations - http {response.status_code}")
+    if invitations.status_code != HTTP_OK:
+        log.write(ctx, f"put_collaboration_invitation error: unable to retrieve existing invitations - http {invitations.status_code}")
         return False
 
-    for invite in response.json():
+    for invite in invitations.json():
         if invite['invitation']['email'] == username and invite['status'] == 'open':
             if config.sram_verbose_logging:
                 log.write(ctx, f"put_collaboration_invitation error: invitation for {username} already exists")
@@ -373,3 +368,73 @@ def is_user_marked_invited(ctx: rule.Context, username: str, group_name: str) ->
             return True
 
     return False
+
+
+def get_open_invitations(ctx: rule.Context, co_identifier: str) -> Union[bool, requests.Response]:
+    """Get open invitations for a SRAM CO.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param co_identifier: SRAM CO identifier
+
+    :returns: Response including status code
+    """
+    if not misc.is_valid_uuid(co_identifier):
+        log.write(ctx, f"put_collaboration_invitation error: CO identifier is invalid {co_identifier}")
+        return False
+
+    # Request SRAM to lookup possible existing invitation for this user.
+    url = f"{config.sram_rest_api_url}/api/invitations/v1/invitations/{co_identifier}"
+
+    if config.sram_verbose_logging:
+        log.write(ctx, f"get_open_invitations get: {url}")
+
+    response = requests.get(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, f"get_open_invitations response: {response.status_code}")
+
+    if response.status_code != HTTP_OK:
+        log.write(ctx, f"get_open_invitations error: unable to retrieve existing invitations - http {response.status_code}")
+        return False
+
+    return response
+
+
+def delete_pending_invitation(ctx: rule.Context, co_identifier: str, username: str) -> bool:
+    """Delete pending invitation for a user in SRAM Collaborative Organisation.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param co_identifier: SRAM CO identifier
+    :param username:      Name of the user whose invitation needs to be deleted
+
+    :returns: Boolean indicating of deletion of invitation succeeded
+    """
+    if not misc.is_valid_uuid(co_identifier):
+        log.write(ctx, f"delete_collaboration error: CO identifier is invalid {co_identifier}")
+        return False
+
+    invitation_uuid = ''
+
+    # Get unique id of open invitation for a user
+    invitations = get_open_invitations(ctx, co_identifier)
+
+    if invitations:
+        for invite in invitations.json():
+            if invite['invitation']['email'] == username and invite['status'] == 'open':
+                invitation_uuid = invite['invitation']['identifier']
+
+    if not misc.is_valid_uuid(invitation_uuid):
+        log.write(ctx, f"No open invitations exist for user: {username}")
+        return True
+
+    url = f"{config.sram_rest_api_url}/api/invitations/v1/{invitation_uuid}"
+
+    if config.sram_verbose_logging:
+        log.write(ctx, f"delete_pending_invitation delete {url}")
+
+    response = requests.delete(url, headers=_request_headers(), timeout=30, verify=config.sram_tls_verify)
+
+    if config.sram_verbose_logging:
+        log.write(ctx, f"delete_pending_invitation response: {response.status_code}")
+
+    return response.status_code == HTTP_NO_CONTENT

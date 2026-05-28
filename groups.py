@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import genquery
 import requests
@@ -39,7 +39,8 @@ __all__ = ['api_group_data',
            'api_group_get_user_role',
            'api_group_remove_user_from_group',
            'rule_group_sram_sync',
-           'rule_external_users_sram_sync']
+           'rule_external_users_sram_sync',
+           'rule_sram_migration']
 
 
 def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
@@ -1246,6 +1247,11 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
                 return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(user_name, group_name))
         else:
             if not yoda_names.is_internal_user(user_name) and sram.is_user_marked_invited(ctx, user_name, group_name):
+                # Delete pending invitation for this user
+                try:
+                    sram.delete_pending_invitation(ctx, config.sram_external_users_co, username)
+                except Exception:
+                    return api.Error('sram_error', f"Something went wrong while deleting the open invitation for user {username}.")
                 # Remove invitation metadata.
                 msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
@@ -1289,7 +1295,7 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
         managers = group['managers']
         invited = group['invited']
         description = group.get('description', '')
-        sram_co = (group.get('sram_co', '') == "True")
+        sram_co = (group['sram_co'] == "True")
 
         log.write(ctx, "Sync group {} with SRAM".format(group_name))
         co_identifier = sram.get_co_identifier(ctx, group_name)
@@ -1376,23 +1382,181 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
         group_name = group["name"]
         members = group['members'] + group['read'] + group['managers']
         invited = group['invited']
+        co_identifier = sram.get_co_identifier(ctx, group_name)
+        # Get SRAM CO value from group
+        sram_co = (group['sram_co'] == "True")
 
         log.write(ctx, f"Sync members of group {group_name} with SRAM external users CO")
 
-        for member in members:
-            # Check if member has valid email and is an external user.
-            username, _ = user.from_str(ctx, member)
-            if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
-                # Remove invitation metadata if user is member of the external users CO.
-                if username in co_members and member in invited:
-                    log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
-                    if sram.is_user_marked_invited(ctx, username, group_name):
-                        msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                # Put invite and add invitation metadata if user is not member of the external users CO.
-                elif username not in co_members and member not in invited:
-                    sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
-                    if not sram.is_user_marked_invited(ctx, username, group_name):
-                        msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    log.write(ctx, f"User {username} invited to group {group_name}")
+        if not co_identifier and not sram_co:
+            for member in members:
+                # Check if member has valid email and is an external user.
+                username, _ = user.from_str(ctx, member)
+                if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
+                    # Remove invitation metadata if user is member of the external users CO.
+                    if username in co_members and member in invited:
+                        log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
+                        if sram.is_user_marked_invited(ctx, username, group_name):
+                            msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    # Put invite and add invitation metadata if user is not member of the external users CO.
+                    elif username not in co_members and member not in invited:
+                        sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
+                        if not sram.is_user_marked_invited(ctx, username, group_name):
+                            msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                        log.write(ctx, f"User {username} invited to group {group_name}")
 
     log.write(ctx, "Finished syncing external users with SRAM")
+
+
+def _migrate_sram_to_non_sram(ctx: rule.Context, log_func: Callable, group: dict, co_identifier: str, dry_run: bool) -> None:
+    """Migrate SRAM group to non-SRAM."""
+    log_func(f"\nMigrating group: {group['name']} to non-SRAM")
+
+    # Get external users CO members from SRAM
+    ext_co_members = [member['email'] for member in
+                      sram.get_co_members(ctx, config.sram_external_users_co)]
+
+    # Check if external user exists in the group
+    members = group['members'] + group['read'] + group['managers']
+
+    for member in members:
+        username, _ = user.from_str(ctx, member)
+        if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
+            log_func(f"\nChecking if the external user {username} is invited to the group {group['name']}")
+
+            is_invited = sram.is_user_marked_invited(ctx, username, group['name'])
+
+            if is_invited and username not in ext_co_members:
+                # Delete invitation to SRAM CO
+                try:
+                    if not dry_run:
+                        sram.delete_pending_invitation(ctx, co_identifier, username)
+                    log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
+                except Exception:
+                    log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
+
+                # Send new invitation to external users CO
+                if not dry_run:
+                    sram.put_collaboration_invitation(ctx, group['name'], username, config.sram_external_users_co)
+                log_func(f"\nSuccessfully sent a new invitation to {username} for SRAM external user CO.")
+
+            elif is_invited and username in ext_co_members:
+                # Remove invitation metadata if user is member of the external users CO.
+                try:
+                    if not dry_run:
+                        msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
+                    log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
+                except Exception:
+                    log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+
+    # Delete collaboration in SRAM
+    if not dry_run:
+        if co_identifier and not sram.delete_collaboration(ctx, co_identifier):
+            log_func(f"\nSomething went wrong deleting group {group['name']} in SRAM.")
+            return
+
+    # Delete SRAM CO metadata
+    try:
+        if not dry_run:
+            msi.sudo_obj_meta_remove(ctx, group['name'], "-u", "", "co_identifier", co_identifier, "", "")
+            msi.sudo_obj_meta_remove(ctx, group['name'], "-u", "", "sram_co", "True", "", "")
+            msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "False", "", "")
+        log_func(f"\nSuccessfully removed SRAM related metadata for group {group['name']}.")
+    except Exception:
+        log_func(f"\nSomething went wrong with deleting SRAM related metadata for group {group['name']}.")
+
+
+def _migrate_non_sram_to_sram(ctx: rule.Context, log_func: Callable, group: dict, co_identifier: str, dry_run: bool) -> None:
+    """Migrate non-SRAM group to SRAM."""
+    log_func(f"\nMigrating group: {group['name']} to SRAM")
+
+    # Check if the SRAM CO exists
+    co_members = None
+    try:
+        co_members = sram.get_co_members(ctx, co_identifier)
+    except Exception:
+        log_func(f"\nSomething went wrong confirming if co_identifier exists in SRAM for {group['name']}")
+        return
+
+    if co_identifier and co_members is not None and len(co_members) > 0:
+        # Add sram_co metadata to SRAM group
+        try:
+            if not dry_run:
+                msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "True", "", "")
+            log_func(f"\nSuccessfully added sram_co value to metadata for group {group['name']}.")
+        except Exception:
+            log_func(f"\nSomething went wrong adding missing SRAM related metadata to the group {group['name']}")
+    else:
+        log_func(f"\nNo valid SRAM CO found for group {group['name']}")
+
+
+@rule.make(inputs=[0, 1, 2, 3])
+def rule_sram_migration(ctx: rule.Context, log_file: bool, dry_run: bool, target_group_type: str, group_name: str) -> None:
+    """Migrate existing groups to SRAM or non-SRAM group.
+
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param log_file:            If True, the log file will be generated at /var/lib/irods/log/sram-migration.log
+    :param dry_run:             If True, the migration will run all the steps without making the changes
+    :param target_group_type:   Convert group to either 'SRAM' or 'non-SRAM' group
+    :param group_name:          Name of the group to be migrated
+    """
+    if not user.is_rodsadmin(ctx):
+        log.write(ctx, "SRAM migration requires rodsadmin privileges")
+        return
+
+    if not config.enable_sram:
+        log.write(ctx, "SRAM needs to be enabled to migrate existing group")
+        return
+
+    if not config.sram_external_users_co:
+        log.write(ctx, "SRAM external user CO needs to be configured for migration")
+        return
+
+    def _log(message: str) -> None:
+        """Write to log file if writer is available."""
+        if writer:
+            writer.write(message + "\n")
+
+    # Save to log file if log_file == True.
+    writer = None
+    if log_file:
+        log_loc = f"/var/lib/irods/log/sram-migration-{datetime.now().strftime('%Y-%m-%d')}.log"
+        writer = open(log_loc, "a")  # noqa: SIM115
+
+    try:
+        if dry_run:
+            _log("\n..................DRY RUN MODE...................")
+        else:
+            _log("\n.................................................")
+        _log("\nGetting group data and SRAM related metadata ...")
+
+        # Get group data.
+        group = get_group_data(ctx, group_name)
+        group['name'] = group_name  # Ensure name is available
+
+        # Get SRAM related metadata.
+        co_identifier = sram.get_co_identifier(ctx, group_name)
+
+        # Determine SRAM state.
+        if 'sram_co' not in group:
+            sram_co = bool(co_identifier)
+        else:
+            sram_co = group['sram_co'] == "True"
+
+        # Route to appropriate migration.
+        if target_group_type.lower() == 'non-sram':
+            if sram_co:
+                _migrate_sram_to_non_sram(ctx, _log, group, co_identifier, dry_run)
+            else:
+                log.write(ctx, f"Group {group_name} is already a non-SRAM group. Skipping...")
+                _log(f"\nGroup {group_name} is already a non-SRAM group. Skipping...")
+        else:
+            if not sram_co:
+                _migrate_non_sram_to_sram(ctx, _log, group, co_identifier, dry_run)
+            else:
+                log.write(ctx, f"Group {group_name} is already a SRAM group. Skipping...")
+                _log(f"\nGroup {group_name} is already a SRAM group. Skipping...")
+
+    finally:
+        if writer:
+            writer.close()
