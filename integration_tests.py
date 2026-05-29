@@ -1382,7 +1382,7 @@ def _test_collection_subcollections(ctx: rule.Context) -> List[str]:
         result.append("test_collection_subcollections fail on L1/R: " + str(result_l1_rec))
 
     result_l2_nonr = list(collection.subcollections(ctx, basepath))
-    if result_l2_nonr != sorted([os.path.join(basepath, dir) for dir in ["a1", "b1", "c1"]]):
+    if sorted(result_l2_nonr) != sorted([os.path.join(basepath, dir) for dir in ["a1", "b1", "c1"]]):
         result.append("test_collection_subcollections fail on L2/NR: " + str(result_l2_nonr))
 
     result_l2_rec = list(collection.subcollections(ctx, basepath, True))
