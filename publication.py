@@ -793,37 +793,37 @@ def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag
 
 
 def process_publication(ctx: rule.Context, vault_package: str) -> str:
-    """Handling of publication of vault_package.
+    """Handling of publication of a vault data package.
+
+    Each version gets its own version DOI, while only the first publication gets
+    a base DOI that is then inherited by all subsequent versions.
 
     :param ctx:             Combined type of a callback and rei struct
     :param vault_package:   Path to the package in the vault
 
     :return: "OK" if all went ok
     """
-
+    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
     publication_state = {}
 
-    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
-
-    # check permissions - rodsadmin only
+    # Check permissions, rodsadmin only.
     if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin")
         return 'Insufficient permissions - should only be called by rodsadmin'
 
-    # check current status, perhaps transitioned already
+    # Check current status, perhaps data package transitioned already.
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
-
     if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.APPROVED_FOR_PUBLICATION)]:
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
-    # get publication configuration
+    # Get publication configuration.
     publication_config = get_publication_config(ctx)
 
-    # get state of all related to the publication
+    # Get state of all related to the publication.
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
-    # Check if verbose mode is enabled
+    # Check if verbose mode is enabled.
     verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_publication in verbose mode.")
@@ -837,10 +837,29 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         status = "Processing"
         publication_state['status'] = status
 
-    # Get previous publication state if exists
+    # Get previous publication state if exists.
+    previous_publication_state = {}
     if 'previous_version' in publication_state:
         previous_vault_package = publication_state["previous_version"]
         previous_publication_state = get_publication_state(ctx, previous_vault_package)
+
+    # Create base DOI if it does not exist in the previous publication state.
+    if 'previous_version' not in publication_state and "baseDOI" not in previous_publication_state:
+        log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
+        try:
+            generate_base_doi(ctx, publication_config, publication_state)
+            check_doi_availability(ctx, publication_state, 'base')
+            publication_state["baseDOIMinted"] = 'no'
+        except Exception:
+            log.write(ctx, "Error while checking version DOI availability: " + format_exc())
+            publication_state["status"] = "Retry"
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if status == "Retry":
+            if verbose:
+                log.write(ctx, "Error status for creating base DOI: " + status)
+            return status
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
@@ -855,28 +874,6 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["baseDOI"] = previous_publication_state["baseDOI"]
             publication_state["baseDOIMinted"] = previous_publication_state["baseDOIMinted"]
             publication_state["baseRandomId"] = previous_publication_state["baseRandomId"]
-
-        # Create base DOI if it does not exist in the previous publication state.
-        elif "baseDOI" not in previous_publication_state:
-            log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
-            try:
-                generate_base_doi(ctx, publication_config, publication_state)
-                check_doi_availability(ctx, publication_state, 'base')
-                publication_state["baseDOIMinted"] = 'no'
-                # Set the link to previous publication state
-                previous_publication_state["baseDOI"] = publication_state["baseDOI"]
-                previous_publication_state["baseRandomId"] = publication_state["baseRandomId"]
-            except Exception:
-                log.write(ctx, "Error while checking version DOI availability: " + format_exc())
-                publication_state["status"] = "Retry"
-
-            save_publication_state(ctx, previous_vault_package, previous_publication_state)
-            save_publication_state(ctx, vault_package, publication_state)
-
-            if status == "Retry":
-                if verbose:
-                    log.write(ctx, "Error status for creating base DOI: " + status)
-                return status
 
     # Publication date
     if "publicationDate" not in publication_state:
