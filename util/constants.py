@@ -207,9 +207,32 @@ class replica_status(Enum):
     WRITE_LOCKED         = 4  # One of this replica's sibling replicas is actively being written to but is itself at rest
 
 
-# List of valid automatic resource balancing (ARB) states
+# List of valid automatic resource balancing (ARB) states.
 class arb_status(Enum):
     EXEMPT               = "EXEMPT"     # User has configured ruleset to not perform ARB for this resource
     IGNORE               = "IGNORE"     # ARB ignores this resource by design
     AVAILABLE            = "AVAILABLE"  # ARB applies to this resource. The resource has enough space available.
     FULL                 = "FULL"       # ARB applies to this resource. The resource does not have enough space available
+
+
+class publication_status(Enum):
+    """Valid states for publication processes.
+
+    Replace with StrEnum in Python 3.11+
+    """
+    UNKNOWN       = "Unknown"        # Publication status is unknown
+    OK            = "OK"             # Publication is OK
+    PROCESSING    = "Processing"     # Publication is being processed
+    RETRY         = "Retry"          # Publication failed, can be automtically retried
+    UNRECOVERABLE = "Unrecoverable"  # Publication failed, needs manual intervention
+
+    def __str__(self) -> str:
+        return self.value
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.value == other
+        return super().__eq__(other)
+
+    def __hash__(self):
+        return hash(self.value)
