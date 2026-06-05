@@ -40,7 +40,8 @@ def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
         'lastModifiedDateTime', 'combiJsonPath',
         'landingPageUploaded', 'oaiUploaded',
         'landingPageUrl', 'dataCiteMetadataPosted',
-        'manifestPath', 'manifestUploaded'
+        'manifestPath', 'manifestUploaded',
+        'baseDOI', 'baseDOIMinted', 'baseRandomId'
     }
 
     # If the license is not Custom, it must have a licenseUri
@@ -49,14 +50,10 @@ def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
             avu_names_suffix.add('licenseUri')
 
     # Define additional set of AVUs with more than one version of publication
-    avu_names_version_suffix = {
-        'baseDOI', 'baseDOIMinted', 'baseRandomId', 'previous_version'
-    }
+    avu_names_version_suffix = {'previous_version'}
 
     # Define additional set of AVUs expected for the first version of a publication, when there are multiple versions
-    avu_names_first_version_suffix = {
-        'baseDOI', 'baseDOIMinted', 'baseRandomId', 'next_version'
-    }
+    avu_names_first_version_suffix = {'next_version'}
 
     # for the second version, all we need is next_version in addition to avu_names_version_suffix
     avu_names_previous_version_suffix = {'next_version'}
