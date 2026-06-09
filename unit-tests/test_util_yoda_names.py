@@ -4,11 +4,12 @@ __copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
+from datetime import datetime, timedelta
 from unittest import TestCase
 
 sys.path.append('../util')
 
-from yoda_names import _is_internal_user, is_email_username, is_valid_category, is_valid_groupname, is_valid_subcategory
+from yoda_names import _is_internal_user, is_email_username, is_valid_category, is_valid_expiration_date, is_valid_groupname, is_valid_schema_id, is_valid_subcategory
 
 
 class UtilYodaNamesTest(TestCase):
@@ -76,3 +77,36 @@ class UtilYodaNamesTest(TestCase):
         self.assertEqual(_is_internal_user("peter@ai.hum.uu.nl", ["*.cs.uu.nl"]), False)
         self.assertEqual(_is_internal_user("peter@uu.nl", ["*"]), True)
         self.assertEqual(_is_internal_user("peter@vu.nl", ["*"]), True)
+
+    def test_is_valid_expiration_date(self):
+        # Empty and "." represent "no expiration date" and are accepted.
+        self.assertEqual(is_valid_expiration_date(""), True)
+        self.assertEqual(is_valid_expiration_date("."), True)
+        # A correctly formatted date in the future is accepted.
+        future = (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')
+        self.assertEqual(is_valid_expiration_date(future), True)
+        # Today and past dates are rejected (expiration must be strictly in the future).
+        self.assertEqual(is_valid_expiration_date(datetime.now().strftime('%Y-%m-%d')), False)
+        past = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        self.assertEqual(is_valid_expiration_date(past), False)
+        # Wrong format or impossible dates are rejected.
+        self.assertEqual(is_valid_expiration_date("2999-13-01"), False)
+        self.assertEqual(is_valid_expiration_date("2999-02-30"), False)
+        self.assertEqual(is_valid_expiration_date("2999-1-1"), False)
+        self.assertEqual(is_valid_expiration_date("01-01-2999"), False)
+        self.assertEqual(is_valid_expiration_date("not-a-date"), False)
+
+    def test_is_valid_schema_id(self):
+        # Empty string is accepted (represents "no schema id").
+        self.assertEqual(is_valid_schema_id(""), True)
+        self.assertEqual(is_valid_schema_id("default-0"), True)
+        self.assertEqual(is_valid_schema_id("default-1"), True)
+        self.assertEqual(is_valid_schema_id("default-01"), True)
+        self.assertEqual(is_valid_schema_id("dag-0"), True)
+        self.assertEqual(is_valid_schema_id("noversion"), False)
+        self.assertEqual(is_valid_schema_id("default-1a"), False)
+        self.assertEqual(is_valid_schema_id("default-"), False)
+        self.assertEqual(is_valid_schema_id("-0"), False)
+        self.assertEqual(is_valid_schema_id("under_score-1"), False)
+        self.assertEqual(is_valid_schema_id("with space-1"), False)
+        self.assertEqual(is_valid_schema_id("dot.name-1"), False)
