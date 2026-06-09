@@ -1384,7 +1384,7 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
         invited = group['invited']
         co_identifier = sram.get_co_identifier(ctx, group_name)
         # Get SRAM CO value from group
-        sram_co = (group['sram_co'] == "True")
+        sram_co = group['sram_co'] == "True"
 
         log.write(ctx, f"Sync members of group {group_name} with SRAM external users CO")
 
@@ -1458,8 +1458,9 @@ def _migrate_sram_to_non_sram(ctx: rule.Context, log_func: Callable, group: dict
     # Delete SRAM CO metadata
     try:
         if not dry_run:
+            if 'sram_co' in group:
+                msi.sudo_obj_meta_remove(ctx, group['name'], "-u", "", "sram_co", "True", "", "")
             msi.sudo_obj_meta_remove(ctx, group['name'], "-u", "", "co_identifier", co_identifier, "", "")
-            msi.sudo_obj_meta_remove(ctx, group['name'], "-u", "", "sram_co", "True", "", "")
             msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "False", "", "")
         log_func(f"\nSuccessfully removed SRAM related metadata for group {group['name']}.")
     except Exception:
@@ -1482,23 +1483,41 @@ def _migrate_non_sram_to_sram(ctx: rule.Context, log_func: Callable, group: dict
         # Add sram_co metadata to SRAM group
         try:
             if not dry_run:
-                msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "True", "", "")
-            log_func(f"\nSuccessfully added sram_co value to metadata for group {group['name']}.")
+                if 'sram_co' not in group:
+                    msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "True", "", "")
+                    log_func(f"\nSuccessfully added missing sram_co value to metadata for group {group['name']}.")
         except Exception:
             log_func(f"\nSomething went wrong adding missing SRAM related metadata to the group {group['name']}")
     else:
-        log_func(f"\nNo valid SRAM CO found for group {group['name']}")
+        log_func(f"\nNo valid SRAM CO found or there are no members in group {group['name']}")
+
+
+def sram_state(ctx: rule.Context, group: Dict, co_identifier: str) -> bool:
+    """Check SRAM state of group.
+
+    :param ctx:           Combined type of ctx and rei struct
+    :param group:         Group data
+    :param co_identifier: Identifier for SRAM Collaborative Organisation
+
+    :returns: Boolean value for sram state
+    """
+    if 'sram_co' not in group and bool(co_identifier):
+        return True
+    elif 'sram_co' not in group and not bool(co_identifier):
+        return False
+    else:
+        return group['sram_co'] == 'True'
 
 
 @rule.make(inputs=[0, 1, 2, 3])
 def rule_sram_migration(ctx: rule.Context, log_file: bool, dry_run: bool, target_group_type: str, group_name: str) -> None:
     """Migrate existing groups to SRAM or non-SRAM group.
 
-    :param ctx:                 Combined type of a ctx and rei struct
-    :param log_file:            If True, the log file will be generated at /var/lib/irods/log/sram-migration.log
-    :param dry_run:             If True, the migration will run all the steps without making the changes
-    :param target_group_type:   Convert group to either 'SRAM' or 'non-SRAM' group
-    :param group_name:          Name of the group to be migrated
+    :param ctx:               Combined type of a ctx and rei struct
+    :param log_file:          If True, the log file will be generated at /var/lib/irods/log/sram-migration.log
+    :param dry_run:           If True, the migration will run all the steps without making the changes
+    :param target_group_type: Convert group to either 'SRAM' or 'non-SRAM' group
+    :param group_name:        Name of the group to be migrated
     """
     if not user.is_rodsadmin(ctx):
         log.write(ctx, "SRAM migration requires rodsadmin privileges")
@@ -1527,7 +1546,7 @@ def rule_sram_migration(ctx: rule.Context, log_file: bool, dry_run: bool, target
         if dry_run:
             _log("\n..................DRY RUN MODE...................")
         else:
-            _log("\n.................................................")
+            _log("\n....................LIVE MODE.....................")
         _log("\nGetting group data and SRAM related metadata ...")
 
         # Get group data.
@@ -1538,25 +1557,28 @@ def rule_sram_migration(ctx: rule.Context, log_file: bool, dry_run: bool, target
         co_identifier = sram.get_co_identifier(ctx, group_name)
 
         # Determine SRAM state.
-        if 'sram_co' not in group:
-            sram_co = bool(co_identifier)
-        else:
-            sram_co = group['sram_co'] == "True"
+        sram_co = sram_state(ctx, group, co_identifier)
 
         # Route to appropriate migration.
         if target_group_type.lower() == 'non-sram':
-            if sram_co:
+            if sram_co and bool(co_identifier):
                 _migrate_sram_to_non_sram(ctx, _log, group, co_identifier, dry_run)
-            else:
+            elif not sram_co and not bool(co_identifier):
+                if 'sram_co' not in group:
+                    msi.sudo_obj_meta_add(ctx, group['name'], "-u", "sram_co", "False", "", "")
                 log.write(ctx, f"Group {group_name} is already a non-SRAM group. Skipping...")
                 _log(f"\nGroup {group_name} is already a non-SRAM group. Skipping...")
-        else:
-            if not sram_co:
-                _migrate_non_sram_to_sram(ctx, _log, group, co_identifier, dry_run)
             else:
+                log.write(ctx, f"Something went wrong in converting group {group_name} to non-SRAM group. Skipping...")
+                _log(f"\nSomething went wrong in converting group {group_name} to non-SRAM group. Skipping...")
+        else:
+            if sram_co and bool(co_identifier):
+                _migrate_non_sram_to_sram(ctx, _log, group, co_identifier, dry_run)
                 log.write(ctx, f"Group {group_name} is already a SRAM group. Skipping...")
                 _log(f"\nGroup {group_name} is already a SRAM group. Skipping...")
-
+            else:
+                log.write(ctx, f"Something went wrong in converting group {group_name} to SRAM group. Skipping...")
+                _log(f"\nSomething went wrong in converting group {group_name} to SRAM group. Skipping...")
     finally:
         if writer:
             writer.close()

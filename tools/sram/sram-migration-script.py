@@ -5,7 +5,7 @@ This script should be run before SRAM external users sync so that the sync has a
 
 Example:
 To migrate SRAM groups to non-SRAM groups:
-python3 sram-migration-script.py -c non-sram -f sram-groups-to-non-sram.csv
+python3 sram-migration-script.py -c non-sram -f /parent/child/sram-groups-to-non-sram.csv
 
 To output the results in a log file:
 python3 sram-migration-script.py -c non-sram -f sram-groups-to-non-sram.csv -l
@@ -45,7 +45,7 @@ def parse_args():
         "-f", "--file-name",
         type=str,
         required=True,
-        help="Path to CSV file containing group names to be migrated"
+        help="Full path to CSV file containing group names to be migrated"
     )
     return parser.parse_args()
 
