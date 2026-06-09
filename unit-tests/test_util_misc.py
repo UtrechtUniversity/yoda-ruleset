@@ -10,7 +10,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from misc import check_data_package_system_avus, human_readable_size, last_run_time_acceptable, remove_empty_objects, split_string_list_by_total_length
+from misc import check_data_package_system_avus, escape, human_readable_size, is_valid_uuid, last_run_time_acceptable, remove_empty_objects, split_string_list_by_total_length
 
 # AVs of a successfully published data package, that is the first version of the package
 avs_success_data_package = {
@@ -252,3 +252,32 @@ class UtilMiscTest(TestCase):
         # Single item exceeds maximum length and throws Exception
         with self.assertRaises(Exception):  # noqa B107  / Ruff does not permit asserting exceptions in unit tests
             split_string_list_by_total_length(["abcabcabcabcabcabcabc", "def", "ghi"], 15, raise_exception_exceed=True)
+
+    def test_escape(self):
+        # Strings without single quotes are unchanged.
+        self.assertEqual(escape(""), "")
+        self.assertEqual(escape("research-foo"), "research-foo")
+        self.assertEqual(escape("/tempZone/home/research-foo"), "/tempZone/home/research-foo")
+        # Single quotes are doubled
+        self.assertEqual(escape("Muad'dib"), "Muad''dib")
+        self.assertEqual(escape("a'b'c"), "a''b''c")
+        self.assertEqual(escape("''"), "''''")
+        self.assertEqual(escape("' OR '1'='1"), "'' OR ''1''=''1")
+        # Only single quotes are escaped; other characters (incl. double quotes and
+        # backslashes) are left untouched.
+        self.assertEqual(escape('a"b'), 'a"b')
+        self.assertEqual(escape("a\\b"), "a\\b")
+        self.assertEqual(escape("100%_value"), "100%_value")
+
+    def test_is_valid_uuid(self):
+        # Canonical lowercase UUID version 4 is accepted.
+        self.assertTrue(is_valid_uuid("f47ac10b-58cc-4372-a567-0e02b2c3d479"))
+        self.assertFalse(is_valid_uuid("F47AC10B-58CC-4372-A567-0E02B2C3D479"))
+        # Non-version-4 UUIDs are rejected (version nibble is not 4).
+        self.assertFalse(is_valid_uuid("f47ac10b-58cc-1372-a567-0e02b2c3d479"))
+        self.assertFalse(is_valid_uuid("{f47ac10b-58cc-4372-a567-0e02b2c3d479}"))
+        self.assertFalse(is_valid_uuid("urn:uuid:f47ac10b-58cc-4372-a567-0e02b2c3d479"))
+        self.assertFalse(is_valid_uuid(""))
+        self.assertFalse(is_valid_uuid("not-a-uuid"))
+        self.assertFalse(is_valid_uuid("f47ac10b58cc4372a5670e02b2c3d479"))
+        self.assertFalse(is_valid_uuid(None))
