@@ -139,17 +139,15 @@ def put_collaboration_invitation(ctx: rule.Context, group_name: str, username: s
     invitations = get_open_invitations(ctx, co_identifier)
 
     if config.sram_verbose_logging:
-        log.write(ctx, f"put_collaboration_invitation response: {invitations.status_code}")
+        if invitations:
+            log.write(ctx, f"put_collaboration_invitation response: {invitations.status_code}")
 
-    if invitations.status_code != HTTP_OK:
-        log.write(ctx, f"put_collaboration_invitation error: unable to retrieve existing invitations - http {invitations.status_code}")
-        return False
-
-    for invite in invitations.json():
-        if invite['invitation']['email'] == username and invite['status'] == 'open':
-            if config.sram_verbose_logging:
-                log.write(ctx, f"put_collaboration_invitation error: invitation for {username} already exists")
-            return True
+    if invitations:
+        for invite in invitations.json():
+            if invite['invitation']['email'] == username and invite['status'] == 'open':
+                if config.sram_verbose_logging:
+                    log.write(ctx, f"put_collaboration_invitation error: invitation for {username} already exists")
+                return True
 
     # Now plus a year.
     expiration_date = datetime.datetime.fromtimestamp(int(time.time() + 3600 * 24 * 365)).strftime('%Y-%m-%d')
