@@ -1295,63 +1295,63 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
         managers = group['managers']
         invited = group['invited']
         description = group.get('description', '')
-        sram_co = (group['sram_co'] == "True")
 
-        log.write(ctx, "Sync group {} with SRAM".format(group_name))
         co_identifier = sram.get_co_identifier(ctx, group_name)
+        sram_co = sram_state(ctx, group, co_identifier)
 
-        # Post collaboration group is not yet already SRAM enabled.
-        if not co_identifier and sram_co:
-            response_sram = sram.post_collaboration(ctx, group_name, description)
+        if sram_co:
+            log.write(ctx, "Sync group {} with SRAM".format(group_name))
+            if not bool(co_identifier):
+                response_sram = sram.post_collaboration(ctx, group_name, description)
 
-            if "error" in response_sram:
-                message = response_sram['message']
-                log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
-                break
-            else:
-                co_identifier = response_sram['identifier']
-                avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
-
-            if not sram.connect_service_collaboration(ctx, co_identifier):
-                log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
-                break
-
-        log.write(ctx, "Get members of group {} from SRAM".format(group_name))
-        co_members = [member['email'] for member in sram.get_co_members(ctx, co_identifier)]
-
-        log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
-        for member in members:
-            # Validate email.
-            if not yoda_names.is_email_username(member):
-                log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
-                continue
-
-            # Check if member is invited.
-            if member in invited:
-                if member.split('#')[0] in co_members:
-                    log.write(ctx, "User {} added to group {}".format(member, group_name))
-                    # Remove invitation metadata.
-                    msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                if "error" in response_sram:
+                    message = response_sram['message']
+                    log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
+                    break
                 else:
-                    log.write(ctx, "User {} already invited to group {}".format(member, group_name))
+                    co_identifier = response_sram['identifier']
+                    avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
+
+                if not sram.connect_service_collaboration(ctx, co_identifier):
+                    log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
+                    break
+
+            log.write(ctx, "Get members of group {} from SRAM".format(group_name))
+            co_members = [member['email'] for member in sram.get_co_members(ctx, co_identifier)]
+
+            log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
+            for member in members:
+                # Validate email.
+                if not yoda_names.is_email_username(member):
+                    log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
                     continue
 
-            # Not invited and not yet in the CO.
-            if member not in invited and member.split('#')[0] not in co_members:
-                sram.put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
-                msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                log.write(ctx, "User {} invited to group {}".format(member, group_name))
-                continue
+                # Check if member is invited.
+                if member in invited:
+                    if member.split('#')[0] in co_members:
+                        log.write(ctx, "User {} added to group {}".format(member, group_name))
+                        # Remove invitation metadata.
+                        msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    else:
+                        log.write(ctx, "User {} already invited to group {}".format(member, group_name))
+                        continue
 
-            # Member is group manager and in the CO.
-            if member in managers and member.split('#')[0] in co_members:
-                uid = sram.get_co_member_uid(ctx, co_identifier, member)
-                if uid == '':
-                    log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
-                elif sram.update_collaboration_membership(ctx, co_identifier, uid, "manager"):
-                    log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
-                else:
-                    log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+                # Not invited and not yet in the CO.
+                if member not in invited and member.split('#')[0] not in co_members:
+                    sram.put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
+                    msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
+                    continue
+
+                # Member is group manager and in the CO.
+                if member in managers and member.split('#')[0] in co_members:
+                    uid = sram.get_co_member_uid(ctx, co_identifier, member)
+                    if uid == '':
+                        log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                    elif sram.update_collaboration_membership(ctx, co_identifier, uid, "manager"):
+                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
+                    else:
+                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
 
     log.write(ctx, "Finished syncing groups with SRAM")
 
@@ -1384,11 +1384,10 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
         invited = group['invited']
         co_identifier = sram.get_co_identifier(ctx, group_name)
         # Get SRAM CO value from group
-        sram_co = group['sram_co'] == "True"
+        sram_co = sram_state(ctx, group, co_identifier)
 
-        log.write(ctx, f"Sync members of group {group_name} with SRAM external users CO")
-
-        if not co_identifier and not sram_co:
+        if not bool(co_identifier) and not sram_co:
+            log.write(ctx, f"Sync members of group {group_name} with SRAM external users CO")
             for member in members:
                 # Check if member has valid email and is an external user.
                 username, _ = user.from_str(ctx, member)
