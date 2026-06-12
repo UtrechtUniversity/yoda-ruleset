@@ -59,9 +59,9 @@ from vault                    import *
 from vault_deaccession        import *
 from epic                     import *
 
-# Import certain modules only when enabled.
-from .util.config import config
+from util.config import config
 
+# Import certain modules only when enabled.
 if config.enable_datarequest:
     from datarequest import *
 
