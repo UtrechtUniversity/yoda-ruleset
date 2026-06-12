@@ -33,6 +33,7 @@ from admin                    import *
 from arb                      import *
 from browse                   import *
 from checksums                import *
+from config_rules             import *
 from datacite                 import *
 from folder                   import *
 from groups                   import *
@@ -60,8 +61,6 @@ from vault_deaccession        import *
 from epic                     import *
 
 # Import certain modules only when enabled.
-from .util.config import config
-
 if config.enable_datarequest:
     from datarequest import *
 
