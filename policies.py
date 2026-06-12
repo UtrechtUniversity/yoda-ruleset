@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from typing import Any
 
 import session_vars
 
@@ -733,5 +734,20 @@ def pep_api_sync_mounted_coll_pre(ctx: rule.Context,
     return policy.fail("Synchronizing mounted collections on the server is not allowed.")
 
 
+pep_api_authenticate_post_checked_config = False
+
+
+@policy.require()
+def pep_api_authenticate_post(ctx: rule.Context,
+                              *args: Any) -> policy.Succeed | policy.Fail:
+    global pep_api_authenticate_post_checked_config
+
+    if not pep_api_authenticate_post_checked_config:
+        configuration_errors = config.get_configuration_errors()
+        if len(configuration_errors) > 0:
+            log.write(ctx, "The ruleset configuration file has errors: " + str(configuration_errors))
+        pep_api_authenticate_post_checked_config = True
+
+    return policy.succeed()
 # }}}
 # }}}
