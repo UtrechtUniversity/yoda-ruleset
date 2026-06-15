@@ -1753,8 +1753,6 @@ def rule_add_base_doi(ctx: rule.Context, vault_package: str) -> None:
 
     :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
-
-    :returns: "OK" if all went ok
     """
     if not user.is_rodsadmin(ctx):
         log.write(ctx, "User is no rodsadmin", True)
