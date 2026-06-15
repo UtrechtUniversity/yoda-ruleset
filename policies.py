@@ -1,9 +1,10 @@
 """iRODS policy implementations."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import re
 from typing import Any
 
@@ -621,10 +622,12 @@ def pep_resource_modified_post(ctx: rule.Context,
     revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
 
     if config.enable_async_checksum:
+        # Base64 encode the path.
+        encoded_path = base64.b64encode(path.encode()).decode()
         # Calculate and verify checksum of data object.
         ctx.delayExec(
             f"<PLUSET>{config.async_checksum_delay_time}s</PLUSET><INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME>",
-            f"rule_verify_checksum('{path}')",
+            f"rule_verify_checksum('{encoded_path}')",
             "")
 
 
