@@ -3,6 +3,7 @@
 __copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import html
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -42,6 +43,8 @@ def api_token_generate(ctx: rule.Context, label: str = "") -> api.Result:
     gen_time = datetime.now()
     token_lifetime = timedelta(hours=config.token_lifetime)
     exp_time = gen_time + token_lifetime
+    # Sanitize the label
+    label = html.escape(label)
     conn = sqlite3.connect(config.token_database)
     result = None
 
