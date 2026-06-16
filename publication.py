@@ -844,6 +844,11 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         previous_vault_package = publication_state["previous_version"]
         previous_publication_state = get_publication_state(ctx, previous_vault_package)
 
+    update_base_doi = False
+    # Set flag to update base DOI when this data package is the latest version.
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+
     # Create base DOI if it does not exist in the previous publication state.
     if 'previous_version' not in publication_state and "baseDOI" not in publication_state:
         log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
@@ -851,6 +856,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             generate_base_doi(ctx, publication_config, publication_state)
             check_doi_availability(ctx, publication_state, 'base')
             publication_state["baseDOIMinted"] = 'no'
+            update_base_doi = True
         except Exception:
             log.write(ctx, "Error while checking base DOI availability: " + format_exc())
             publication_state["status"] = constants.publication_status.RETRY
@@ -862,13 +868,9 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                 log.write(ctx, "Error status for creating base DOI: " + status)
             return status
 
-    # Set flag to update base DOI when this data package is the latest version.
-    update_base_doi = False
-    if "previous_version" in publication_state and "next_version" not in publication_state:
+    if update_base_doi:
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
-
-        update_base_doi = True
 
         if "baseDOI" in previous_publication_state:
             # Set the link to previous publication state
