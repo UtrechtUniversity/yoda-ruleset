@@ -137,7 +137,7 @@ jobs:
         cd tests
         nohup bash -c 'while true ; do sleep 5 ;  ../yoda/docker/run-cronjob.sh copytovault >> ../copytovault.log 2>&1 ; ../yoda/docker/run-cronjob.sh publication >> ../publication.log 2>&1 ; done' &
         test -d mycache || mkdir -p mycache
-        python3 -m pytest --skip-ui --deposit --datarequest -o cache_dir=mycache --environment environments/docker.json
+        python3 -m pytest --skip-ui --deposit --datarequest --webdav -o cache_dir=mycache --environment environments/docker.json
         cat ../copytovault.log
         cat ../publication.log
 
@@ -162,6 +162,11 @@ jobs:
       if: failure()
       run: |
         docker exec eus.yoda sh -c 'set -x ; for log in error.log access.log ; do echo "${log}:" ; cat "/var/log/apache2/$log" ; echo; done'
+
+    - name: Output DavRODS server logs
+      if: failure()
+      run: |
+        docker exec data.yoda sh -c 'set -x ; for log in error.log webdav_access.log webdav_anon_access.log; do echo "${log}:" ; cat "/var/log/apache2/$log" ; echo; done'
 
 # Uncomment section below when needed for debugging.
 #
