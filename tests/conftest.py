@@ -29,6 +29,7 @@ datarequest = False
 deposit = False
 archive = False
 smoke = False
+webdav = False
 skip_api = False
 skip_ui = False
 run_all = False
@@ -49,6 +50,7 @@ def pytest_addoption(parser):
     parser.addoption("--archive", action="store_true", default=False, help="Run vault archive tests")
     parser.addoption("--no-env-csrf", action="store_true", default=False, help="Do not get CSRF token from environment (this is enabled by default for smoke tests)")
     parser.addoption("--smoke", action="store_true", default=False, help="Run Smoke tests")
+    parser.addoption("--webdav", action="store_true", default=False, help="Run WebDAV tests")
     parser.addoption("--skip-ui", action="store_true", default=False, help="Skip UI tests")
     parser.addoption("--skip-api", action="store_true", default=False, help="Skip API tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
@@ -64,6 +66,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "ui: UI test")
     config.addinivalue_line("markers", "api: API test")
     config.addinivalue_line("markers", "smoke: Smoke test")
+    config.addinivalue_line("markers", "webdav: WebDAV test")
 
     global environment
     environment = config.getoption("--environment")
@@ -85,11 +88,12 @@ def pytest_configure(config):
     global verbose_test
     verbose_test = config.getoption("--verbose-test")
 
-    global datarequest, deposit, archive, smoke, run_all, skip_api, skip_ui, no_env_csrf
+    global datarequest, deposit, archive, smoke, webdav, run_all, skip_api, skip_ui, no_env_csrf
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     archive = config.getoption("--archive")
     smoke = config.getoption("--smoke")
+    webdav = config.getoption("--webdav")
     skip_ui = config.getoption("--skip-ui")
     skip_api = config.getoption("--skip-api")
     run_all = config.getoption("--all")
@@ -149,6 +153,10 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == "smoke" and not smoke:
         marker = pytest.mark.skip(reason="Skip smoke tests")
+        marker(function)
+        return True
+    elif tag == "webdav" and not webdav:
+        marker = pytest.mark.skip(reason="Skip WebDAV tests")
         marker(function)
         return True
     elif tag == "fail":
