@@ -662,38 +662,78 @@ def pep_resource_resolve_hierarchy_pre(ctx: rule.Context,
         return "read=1.0;write=1.0"
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_check_anonymous_access_allowed(ctx: rule.Context, address: str) -> str:
-    """Check if access to the anonymous account is allowed from a particular network
-       address. Non-local access to the anonymous account should only be allowed from
-       DavRODS servers, for security reasons.
+# Pre-authentication PEPs {{{
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param address: Network address to check
-
-    :returns: 'true' if access from this network address is allowed; otherwise 'false'
-    """
-    permit_list = ["127.0.0.1"] + config.remote_anonymous_access
-    return "true" if address in permit_list else "false"
+# The new iRODS authentication framework invokes the authentication API more
+# than once per session, which causes the authentication pre-PEPs to fire
+# multiple times. We only want to run the body of these PEPs once per session
+# (i.e. once per agent). Each agent runs in its own process, so a module-level
+# global persists for the agent's lifetime.
+auth_pre_pep_executed = False
 
 
-@rule.make(inputs=[], outputs=[0])
-def rule_check_max_connections_exceeded(ctx: rule.Context) -> str:
-    """Check if user exceeds the maximum number of connections.
+@policy.require()
+def pep_api_auth_request_pre(ctx: rule.Context,
+                             instance_name: str,
+                             comm: dict,
+                             request: object) -> policy.Succeed | policy.Fail:
+    # This PEP is still fired for authentication of the anonymous user.
+    global auth_pre_pep_executed
 
-    :param ctx: Combined type of a callback and rei struct
+    # Only run this PEP's body once per session (i.e. once per agent).
+    if auth_pre_pep_executed:
+        return policy.succeed()
+    auth_pre_pep_executed = True
 
-    :returns: 'true' if maximum number of connections is exceeded; otherwise 'false'.
-              Also returns 'false' if the maximum number of connections check has been
-              disabled, or if the maximum number does not apply to the present user.
-    """
-    if not config.user_max_connections_enabled:
-        return "false"
-    elif user.name(ctx) in ['anonymous', 'rods']:
-        return "false"
-    else:
-        connections = user.number_of_connections(ctx)
-        return "false" if connections <= config.user_max_connections_number else "true"
+    (user_name, zone_name)  = user.user_and_zone(ctx)
+    client_address = session_vars.get_map(ctx.rei)['connection']['client_address']
+    client_desc = format_client_description(session_vars.get_map(ctx.rei)['connection']['option'])
+
+    # It looks like this PEP is only used for the anonymous user. Check user name to be sure.
+    if user_name == 'anonymous' and not check_anonymous_access_allowed(ctx, client_address):
+        log.write(ctx, f'Refused access to anonymous account from address {client_address}.')
+        return policy.fail(f'Refused access to anonymous account from address {client_address}.')
+
+    if check_max_connections_exceeded(ctx):
+        log.write(ctx, f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
+        return policy.fail(f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
+
+    # p1 suffix specifies which PEP has printed this message
+    log.write(ctx, f'{{{user_name}#{zone_name}}} Agent process started from {client_address} [p1] ({client_desc})',
+              print_module=False)
+
+    return policy.succeed()
+
+
+@policy.require()
+def pep_api_authenticate_pre(ctx: rule.Context,
+                             instance_name: str,
+                             comm: dict,
+                             request: object,
+                             response: object) -> policy.Succeed | policy.Fail:
+    # This PEP is used for authentication of all PAM users and the rods account,
+    # but not for the anonymous account.
+    global auth_pre_pep_executed
+
+    # Only run this PEP's body once per session (i.e. once per agent).
+    if auth_pre_pep_executed:
+        return policy.succeed()
+    auth_pre_pep_executed = True
+
+    (user_name, zone_name)  = user.user_and_zone(ctx)
+    client_address = session_vars.get_map(ctx.rei)['connection']['client_address']
+    client_desc = format_client_description(session_vars.get_map(ctx.rei)['connection']['option'])
+
+    if check_max_connections_exceeded(ctx):
+        log.write(ctx, f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
+        return policy.fail(f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
+
+    # p2 suffix specifies which PEP has printed this message
+    log.write(ctx, f'{{{user_name}#{zone_name}}} Agent process started from {client_address} [p2] ({client_desc})',
+              print_module=False)
+
+    return policy.succeed()
+# }}}
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])

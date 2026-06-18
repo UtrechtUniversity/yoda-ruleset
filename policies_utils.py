@@ -8,8 +8,8 @@ import re
 from typing import List, Set, Tuple
 
 
-from config import Config
-from util import pathutil
+from config import Config, config
+from util import pathutil, rule, user
 from util.genquery_col_constants import *
 
 
@@ -148,3 +148,53 @@ def should_resource_be_replication_exempt(config: Config, resource: str) -> bool
                 return True
 
     return False
+
+
+def format_client_description(option: str) -> str:
+    """Format the client option string for logging.
+
+    Only a limited set of characters is allowed; anything else is replaced by a
+    placeholder to prevent log injection.
+
+    :param option: Client option string as provided by the connecting client
+
+    :returns: A client description, or 'client: <filtered>' for unexpected input
+    """
+    if re.match(r'^[A-Za-z0-9,\./ \-;]+$', option):
+        # Some client names like GoCommands have trailing semicolons. Strip those.
+        if option.endswith(';'):
+            return 'client: ' + option[:-1]
+        return 'client: ' + option
+    else:
+        return 'client: <filtered>'
+
+
+def check_anonymous_access_allowed(ctx: rule.Context, address: str) -> bool:
+    """Check if access to the anonymous account is allowed from a particular network
+       address. Non-local access to the anonymous account should only be allowed from
+       DavRODS servers, for security reasons.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param address: Network address to check
+
+    :returns: True if access from this network address is allowed; otherwise False
+    """
+    permit_list = ["127.0.0.1"] + config.remote_anonymous_access
+    return address in permit_list
+
+
+def check_max_connections_exceeded(ctx: rule.Context) -> bool:
+    """Check if user exceeds the maximum number of connections.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: True if maximum number of connections is exceeded; otherwise False
+              Also returns False if the maximum number of connections check has been
+              disabled, or if the maximum number does not apply to the present user.
+    """
+    if not config.user_max_connections_enabled:
+        return False
+    elif user.name(ctx) in ['anonymous', 'rods']:
+        return False
+    else:
+        return user.number_of_connections(ctx) > config.user_max_connections_number
