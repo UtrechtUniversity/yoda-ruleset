@@ -5,11 +5,18 @@ __license__   = 'GPLv3, see LICENSE'
 
 import sys
 from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
 sys.path.append('..')
 
-from policies_utils import _is_safe_genquery_inp, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately
-from util import config
+# The 'user' module (imported by policies_utils) depends on iRODS-provided
+# modules that are not available when running the unit tests. Stub them out
+# before importing policies_utils so it can be imported here.
+for _irods_module in ('genquery', 'session_vars', 'irods_types'):
+    sys.modules.setdefault(_irods_module, MagicMock())
+
+from policies_utils import _is_safe_genquery_inp, check_anonymous_access_allowed, check_max_connections_exceeded, format_client_description, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately  # noqa: E402
+from util import config  # noqa: E402
 
 
 resc_config = config.Config(resource_primary=["irodsResc"],
@@ -125,3 +132,62 @@ class PoliciesTest(TestCase):
         self.assertFalse(should_resource_be_replication_exempt(resc_config, "triggerResc"))
         self.assertTrue(should_resource_be_replication_exempt(resc_config, "exemptResc"))
         self.assertFalse(should_resource_be_replication_exempt(resc_config, "randomResc"))
+
+    def test_format_client_description(self):
+        self.assertEqual(format_client_description("foo"), "client: foo")
+        # Strip trailing semicolons
+        self.assertEqual(format_client_description("foo;"), "client: foo")
+        # Filter client name if it has weird characters like newlines
+        self.assertEqual(format_client_description("foo\nbar"), "client: <filtered>")
+
+    @patch("policies_utils.config")
+    def test_check_anonymous_access_allowed(self, mock_config):
+        # ctx is not used by the function, so a dummy value suffices.
+        ctx = MagicMock()
+
+        # Localhost is always allowed, even when no remote addresses are configured.
+        mock_config.remote_anonymous_access = []
+        self.assertTrue(check_anonymous_access_allowed(ctx, "127.0.0.1"))
+
+        # A non-local address is only allowed when it is in the configured permit list.
+        mock_config.remote_anonymous_access = ["1.2.3.4", "1.2.3.5"]
+        self.assertTrue(check_anonymous_access_allowed(ctx, "1.2.3.4"))
+        self.assertTrue(check_anonymous_access_allowed(ctx, "1.2.3.5"))
+        # Localhost remains allowed alongside configured remote addresses.
+        self.assertTrue(check_anonymous_access_allowed(ctx, "127.0.0.1"))
+        # Addresses not in the permit list are rejected.
+        self.assertFalse(check_anonymous_access_allowed(ctx, "1.2.3.6"))
+        self.assertFalse(check_anonymous_access_allowed(ctx, "8.8.8.8"))
+
+    @patch("policies_utils.user")
+    @patch("policies_utils.config")
+    def test_check_max_connections_exceeded(self, mock_config, mock_user):
+        ctx = MagicMock()
+
+        # When the check is disabled, the number of connections is never exceeded,
+        # regardless of the observed number of connections.
+        mock_config.user_max_connections_enabled = False
+        mock_config.user_max_connections_number = 4
+        mock_user.name.return_value = "researcher"
+        mock_user.number_of_connections.return_value = 100
+        self.assertFalse(check_max_connections_exceeded(ctx))
+
+        # The check does not apply to the 'anonymous' and 'rods' users.
+        mock_config.user_max_connections_enabled = True
+        mock_user.number_of_connections.return_value = 100
+        for exempt_user in ("anonymous", "rods"):
+            mock_user.name.return_value = exempt_user
+            self.assertFalse(check_max_connections_exceeded(ctx))
+
+        # For a regular user, the limit is exceeded only when the observed number
+        # of connections is strictly greater than the configured maximum.
+        mock_user.name.return_value = "researcher"
+        mock_user.number_of_connections.return_value = 5
+        self.assertTrue(check_max_connections_exceeded(ctx))
+
+        # The configured maximum itself is still allowed (boundary case).
+        mock_user.number_of_connections.return_value = 4
+        self.assertFalse(check_max_connections_exceeded(ctx))
+
+        mock_user.number_of_connections.return_value = 3
+        self.assertFalse(check_max_connections_exceeded(ctx))
