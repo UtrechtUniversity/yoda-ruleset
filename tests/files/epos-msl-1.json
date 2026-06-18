@@ -28,32 +28,32 @@
         {
             "subject": "diamond anvil cell",
             "subjectScheme": "EPOS MSL",
-            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
-            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing-compression_testing-diamond_anvil_cell"
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/apparatus-deformation_testing-compression_testing-diamond_anvil_cell"
         },
         {
             "subject": "compression testing",
             "subjectScheme": "EPOS MSL",
-            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
-            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing-compression_testing"
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/apparatus-deformation_testing-compression_testing"
         },
         {
             "subject": "deformation testing",
             "subjectScheme": "EPOS MSL",
-            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
-            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus-deformation_testing"
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/apparatus-deformation_testing"
         },
         {
             "subject": "Apparatus",
             "subjectScheme": "EPOS MSL",
-            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
-            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/apparatus"
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/apparatus"
         },
         {
             "subject": "Rock and melt physics",
             "subjectScheme": "EPOS MSL",
-            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/",
-            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.3/"
+            "schemeUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/",
+            "valueUri": "https://epos-msl.uu.nl/voc/rockphysics/1.4/"
         },
         {
             "subject": "custom_keyword"
