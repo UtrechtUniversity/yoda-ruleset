@@ -22,7 +22,7 @@ import research
 import schema
 import vault
 import vault_deaccession
-from publication_utils import is_latest_version, should_abort
+from publication_utils import generate_base_doi, generate_preliminary_doi, is_latest_version, should_abort
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -329,38 +329,6 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
 
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-
-
-def generate_preliminary_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
-    """Generate a Preliminary DOI. Preliminary, because we check for collision later.
-
-    :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
-    :param publication_state:  Dict with state of the publication process
-    """
-    dataCitePrefix = publication_config["dataCitePrefix"]
-    yodaPrefix = publication_config["yodaPrefix"]
-
-    randomId = datacite.generate_random_id(publication_config["randomIdLength"])
-
-    publication_state["randomId"] = randomId
-    publication_state["versionDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
-
-
-def generate_base_doi(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
-    """Generate a base DOI.
-
-    :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
-    :param publication_state:  Dict with state of the publication process
-    """
-    dataCitePrefix = publication_config["dataCitePrefix"]
-    yodaPrefix = publication_config["yodaPrefix"]
-
-    randomId = datacite.generate_random_id(publication_config["randomIdLength"])
-
-    publication_state["baseRandomId"] = randomId
-    publication_state["baseDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
 def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
@@ -853,7 +821,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     if 'previous_version' not in publication_state and "baseDOI" not in publication_state:
         log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
         try:
-            generate_base_doi(ctx, publication_config, publication_state)
+            generate_base_doi(publication_config, publication_state)
             check_doi_availability(ctx, publication_state, 'base')
             publication_state["baseDOIMinted"] = 'no'
             update_base_doi = True
@@ -887,7 +855,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     if "versionDOI" not in publication_state:
         if verbose:
             log.write(ctx, "Generating preliminary DOI.")
-        generate_preliminary_doi(ctx, publication_config, publication_state)
+        generate_preliminary_doi(publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
 
@@ -896,7 +864,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             if verbose:
                 log.write(ctx, "Version DOI available: no")
                 log.write(ctx, "Generating preliminary DOI.")
-            generate_preliminary_doi(ctx, publication_config, publication_state)
+            generate_preliminary_doi(publication_config, publication_state)
 
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
@@ -1799,7 +1767,7 @@ def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
     if 'previous_version' not in publication_state and "baseDOI" not in publication_state:
         log.write(ctx, f"add_base_doi: Create base DOI for vault package <{vault_package}>")
         try:
-            generate_base_doi(ctx, publication_config, publication_state)
+            generate_base_doi(publication_config, publication_state)
             check_doi_availability(ctx, publication_state, 'base')
             publication_state["baseDOIMinted"] = 'no'
         except Exception:
