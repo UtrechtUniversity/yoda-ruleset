@@ -22,7 +22,7 @@ import research
 import schema
 import vault
 import vault_deaccession
-from publication_utils import is_latest_version
+from publication_utils import is_latest_version, should_abort
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -797,8 +797,8 @@ def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag
 def process_publication(ctx: rule.Context, vault_package: str) -> str:
     """Handling of publication of a vault data package.
 
-    Each version gets its own version DOI, while only the first publication gets
-    a base DOI that is then inherited by all subsequent versions.
+    Each version gets its own version DOI and a base DOI that is then inherited
+    by all subsequent versions.
 
     :param ctx:             Combined type of a callback and rei struct
     :param vault_package:   Path to the package in the vault
@@ -860,8 +860,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.RETRY
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             if verbose:
                 log.write(ctx, "Error status for creating base DOI: " + publication_state['status'])
             return publication_state['status']
@@ -919,7 +918,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             if verbose:
                 log.write(ctx, "Error status after generating combi JSON.")
             return str(publication_state["status"])
@@ -941,7 +940,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after generating Datacite JSON: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -957,8 +956,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.RETRY
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after checking version DOI availability: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -990,7 +988,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after sending metadata to Datacite: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1006,8 +1004,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.UNRECOVERABLE:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after creating landing page: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1025,8 +1022,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after uploading landing page:" + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1042,8 +1038,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.UNRECOVERABLE:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after creating manifest JSON: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1061,8 +1056,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after uploading manifest JSON:" + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1080,8 +1074,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after uploading to MOAI: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1090,9 +1083,9 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         if verbose:
             log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == constants.publication_status.RETRY:
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after setting vault access restrictions." + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1113,7 +1106,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             if verbose:
                 log.write(ctx, "Error status during minting DOI.")
             return str(publication_state["status"])
@@ -1145,8 +1138,13 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
 
 def process_depublication(ctx: rule.Context, vault_package: str) -> str:
-    status = constants.publication_status.UNKNOWN
+    """Handling of depublication of a vault data package.
 
+    :param ctx:             Combined type of a callback and rei struct
+    :param vault_package:   Path to the package in the vault
+
+    :return: "OK" if all went ok
+    """
     log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
@@ -1164,24 +1162,21 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
-    status = publication_state['status']
 
     # Check if verbose mode is enabled
     verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_depublication in verbose mode.")
 
-    if status == constants.publication_status.OK:
+    if publication_state['status'] == constants.publication_status.OK:
         # reset on first call
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
-        status = publication_state['status']
 
-    if status in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
-        return status
-    elif status in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
-        status = constants.publication_status.PROCESSING
-        publication_state['status'] = status
+    if publication_state['status'] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
+        return publication_state['status']
+    elif publication_state['status'] in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
+        publication_state['status'] = constants.publication_status.PROCESSING
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
@@ -1202,8 +1197,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Hide metadata from DataCite
@@ -1219,8 +1213,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.RETRY
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Create landing page
@@ -1235,8 +1228,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.UNRECOVERABLE:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Use secure copy to push landing page to the public host
@@ -1251,8 +1243,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Use secure copy to push combi JSON to MOAI server
@@ -1267,8 +1258,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Set access restriction for vault package.
@@ -1276,9 +1266,9 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
         if verbose:
             log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == constants.publication_status.RETRY:
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # The depublication was a success
@@ -1291,7 +1281,13 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
 
 def process_republication(ctx: rule.Context, vault_package: str) -> str:
-    """Routine to process a republication with sanity checks at every step."""
+    """Handling of republication of a vault data package.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param vault_package:   Path to the package in the vault
+
+    :return: "OK" if all went ok
+    """
     log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
@@ -1309,24 +1305,21 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
-    status = publication_state['status']
 
     # Check if verbose mode is enabled
     verbose = "verboseMode" in publication_config
     if verbose:
         log.write(ctx, "Running process_republication in verbose mode.")
 
-    if status == constants.publication_status.OK:
+    if publication_state['status'] == constants.publication_status.OK:
         # reset on first call
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
-        status = publication_state['status']
 
-    if status in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
-        return status
-    elif status in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
-        status = constants.publication_status.PROCESSING
-        publication_state['status'] = status
+    if publication_state['status'] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
+        return publication_state['status']
+    elif publication_state['status'] in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
+        publication_state['status'] = constants.publication_status.PROCESSING
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
@@ -1354,7 +1347,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Generate DataCite JSON
@@ -1369,7 +1362,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Send DataCite JSON to metadata end point
@@ -1387,7 +1380,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
         save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY]:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Create landing page
@@ -1402,8 +1395,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.UNRECOVERABLE:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Use secure copy to push landing page to the public host
@@ -1418,8 +1410,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Create manifest JSON.
@@ -1434,8 +1425,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.UNRECOVERABLE:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after creating manifest JSON: " + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1453,8 +1443,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             log.write(ctx, "Error status after uploading manifest JSON:" + str(publication_state["status"]))
             return str(publication_state["status"])
 
@@ -1470,8 +1459,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] == constants.publication_status.RETRY:
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # Set access restriction for vault package.
@@ -1479,9 +1467,9 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         if verbose:
             log.write(ctx, "Setting vault access restrictions.")
         set_access_restrictions(ctx, vault_package, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if publication_state["status"] == constants.publication_status.RETRY:
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
             return str(publication_state["status"])
 
     # The publication was a success
@@ -1550,18 +1538,6 @@ def update_publication(ctx: rule.Context,
 
     :returns: "OK" if all went ok
     """
-    publication_state = {}
-
-    def _check_return_if_publication_status(return_statuses: List[str], location: str) -> bool:
-        # Used to check whether we need to return early because of an
-        # unexpected publication status, and log a message for troubleshooting
-        # purposes.
-        if publication_state["status"] in return_statuses:
-            log.write(ctx, "update_publication: returned with error status from location '{}' (status: '{}')".format(location, publication_state["status"]))
-            return True
-        else:
-            return False
-
     log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
@@ -1579,7 +1555,6 @@ def update_publication(ctx: rule.Context,
 
     # Get state of all related to the publication.
     publication_state = get_publication_state(ctx, vault_package)
-    status = publication_state['status']
 
     # Check if verbose mode is enabled
     verbose = "verboseMode" in publication_config
@@ -1587,9 +1562,9 @@ def update_publication(ctx: rule.Context,
         log.write(ctx, "Running update_publication in verbose mode.")
 
     # Publication must be finished.
-    if status != constants.publication_status.OK:
-        log.write(ctx, "update_publication: Not processing vault package, because initial status is " + status)
-        return status
+    if publication_state['status'] != constants.publication_status.OK:
+        log.write(ctx, "update_publication: Not processing vault package, because initial status is " + str(publication_state['status']))
+        return publication_state['status']
 
     # Abort if data packages has a known unsupported metadata schema
     try:
@@ -1599,7 +1574,8 @@ def update_publication(ctx: rule.Context,
         publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
     save_publication_state(ctx, vault_package, publication_state)
-    if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY], "after retrieving metadata schema"):
+    if should_abort(publication_state["status"]):
+        log.write(ctx, "update_publication: returned with error status after retrieving metadata schema (status: '{}')".format(publication_state["status"]))
         return str(publication_state["status"])
 
     if metadata_schema is None:
@@ -1611,7 +1587,8 @@ def update_publication(ctx: rule.Context,
         publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
     save_publication_state(ctx, vault_package, publication_state)
-    if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY], "after checking metadata schema"):
+    if should_abort(publication_state["status"]):
+        log.write(ctx, "update_publication: returned with error status after checking metadata schema (status: '{}')".format(publication_state["status"]))
         return str(publication_state["status"])
 
     update_base_doi = False
@@ -1638,8 +1615,8 @@ def update_publication(ctx: rule.Context,
         publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
     save_publication_state(ctx, vault_package, publication_state)
-
-    if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY], "before update DataCite"):
+    if should_abort(publication_state["status"]):
+        log.write(ctx, "update_publication: returned with error status before update DataCite (status: '{}')".format(publication_state["status"]))
         return str(publication_state["status"])
 
     if update_datacite:
@@ -1652,8 +1629,8 @@ def update_publication(ctx: rule.Context,
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY], "before send DataCite"):
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before send DataCite (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
         # Send DataCite JSON to metadata end point
@@ -1668,8 +1645,8 @@ def update_publication(ctx: rule.Context,
             publication_state["status"] = constants.publication_status.RETRY
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE, constants.publication_status.RETRY], "before update landing page"):
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before update landing page (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
     if update_landingpage:
@@ -1682,8 +1659,8 @@ def update_publication(ctx: rule.Context,
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE], "before upload landing page"):
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before upload landing page (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
         # Use secure copy to push landing page to the public host
@@ -1694,9 +1671,10 @@ def update_publication(ctx: rule.Context,
         if update_base_doi:
             base_random_id = publication_state["baseRandomId"]
             copy_landingpage_to_public_host(ctx, base_random_id, publication_config, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if _check_return_if_publication_status([constants.publication_status.RETRY], "before update manifest"):
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before update manifest (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
         try:
@@ -1706,8 +1684,8 @@ def update_publication(ctx: rule.Context,
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
 
         save_publication_state(ctx, vault_package, publication_state)
-
-        if _check_return_if_publication_status([constants.publication_status.UNRECOVERABLE], "before upload manifest"):
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before upload manifest (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
         # Use secure copy to push manifest JSON to the public host.
@@ -1718,9 +1696,10 @@ def update_publication(ctx: rule.Context,
         if update_base_doi:
             base_random_id = publication_state["baseRandomId"]
             copy_manifest_to_public_host(ctx, base_random_id, publication_config, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if _check_return_if_publication_status([constants.publication_status.RETRY], "before update MOAI"):
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before update MOAI (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
     if update_moai:
@@ -1731,9 +1710,10 @@ def update_publication(ctx: rule.Context,
         if update_base_doi:
             base_random_id = publication_state["baseRandomId"]
             copy_metadata_to_moai(ctx, base_random_id, publication_config, publication_state)
-        save_publication_state(ctx, vault_package, publication_state)
 
-        if _check_return_if_publication_status([constants.publication_status.RETRY], "before publication OK"):
+        save_publication_state(ctx, vault_package, publication_state)
+        if should_abort(publication_state["status"]):
+            log.write(ctx, "update_publication: returned with error status before publication OK (status: '{}')".format(publication_state["status"]))
             return str(publication_state["status"])
 
     # Updating was a success
