@@ -7,8 +7,10 @@ import sys
 from unittest import TestCase
 
 sys.path.append('..')
+sys.path.append('../util')
 
-from publication_utils import is_latest_version
+from publication_utils import is_latest_version, should_abort
+from util.constants import publication_status
 
 
 class PublicationUtilsTest(TestCase):
@@ -37,3 +39,18 @@ class PublicationUtilsTest(TestCase):
             "next_version": None,
         }
         self.assertFalse(is_latest_version(publication_state))
+
+    def test_should_abort_true_for_unrecoverable(self):
+        self.assertTrue(should_abort(publication_status.UNRECOVERABLE))
+
+    def test_should_abort_true_for_retry(self):
+        self.assertTrue(should_abort(publication_status.RETRY))
+
+    def test_should_abort_false_for_processing(self):
+        self.assertFalse(should_abort(publication_status.PROCESSING))
+
+    def test_should_abort_false_for_ok(self):
+        self.assertFalse(should_abort(publication_status.OK))
+
+    def test_should_abort_false_for_unknown(self):
+        self.assertFalse(should_abort(publication_status.UNKNOWN))
