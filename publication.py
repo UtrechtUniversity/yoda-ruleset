@@ -22,7 +22,13 @@ import research
 import schema
 import vault
 import vault_deaccession
-from publication_utils import generate_base_doi, generate_preliminary_doi, is_latest_version, should_abort
+from publication_utils import (
+    generate_base_doi,
+    generate_landing_page_url,
+    generate_preliminary_doi,
+    is_latest_version,
+    should_abort,
+)
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -493,23 +499,6 @@ def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def generate_landing_page_url(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
-    """Generate a URL for the landing page.
-
-    :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
-    :param publication_state:  Dict with state of the publication process
-    """
-    publicVHost = publication_config["publicVHost"]
-    yodaInstance = publication_config["yodaInstance"]
-    yodaPrefix = publication_config["yodaPrefix"]
-    randomId = publication_state["randomId"]
-    publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
-    landingPageUrl = "https://" + publicVHost + "/" + publicPath
-
-    publication_state["landingPageUrl"] = landingPageUrl
-
-
 def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
     """Generate landingpage based upon yoda-metadata.json metadata and system metadata.
 
@@ -896,7 +885,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     # Create Landing page URL
     if verbose:
         log.write(ctx, "Creating landing page.")
-    generate_landing_page_url(ctx, publication_config, publication_state)
+    generate_landing_page_url(publication_config, publication_state)
 
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
