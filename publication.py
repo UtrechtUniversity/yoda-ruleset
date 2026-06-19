@@ -33,47 +33,49 @@ __all__ = ['rule_process_publication',
            'rule_lift_embargos_on_data_access']
 
 
-def get_publication_config(ctx: rule.Context) -> Dict:
+def get_publication_config(ctx: rule.Context) -> Dict[str, str]:
     """Get all publication config keys and their values and report any missing keys."""
     zone = user.zone(ctx)
-    system_coll = "/" + zone + constants.UUSYSTEMCOLLECTION
+    system_coll = f"/{zone}{constants.UUSYSTEMCOLLECTION}"
 
-    attr2keys = {"public_host": "publicHost",
-                 "public_vhost": "publicVHost",
-                 "moai_host": "moaiHost",
-                 "yoda_prefix": "yodaPrefix",
-                 "datacite_prefix": "dataCitePrefix",
-                 "random_id_length": "randomIdLength",
-                 "yoda_instance": "yodaInstance",
-                 "davrods_vhost": "davrodsVHost",
-                 "davrods_anonymous_vhost": "davrodsAnonymousVHost",
-                 "publication_verbose_mode": "verboseMode"}
-    optional_keys = ["publication_verbose_mode"]
+    attr_mapping = {
+        "public_host": "publicHost",
+        "public_vhost": "publicVHost",
+        "moai_host": "moaiHost",
+        "yoda_prefix": "yodaPrefix",
+        "datacite_prefix": "dataCitePrefix",
+        "random_id_length": "randomIdLength",
+        "yoda_instance": "yodaInstance",
+        "davrods_vhost": "davrodsVHost",
+        "davrods_anonymous_vhost": "davrodsAnonymousVHost",
+        "publication_verbose_mode": "verboseMode"
+    }
+    optional_keys = {"publication_verbose_mode"}
+
     config_keys = {}
-    found_attrs = []
-
+    found_attrs = set()
     prefix_length = len(constants.UUORGMETADATAPREFIX)
+
     iter = genquery.row_iterator(
         "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + system_coll + "' AND  META_COLL_ATTR_NAME like '" + constants.UUORGMETADATAPREFIX + "%'",
+        f"COLL_NAME = '{system_coll}' AND  META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}%'",
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
-        # Strip prefix From attribute names
-        attr = row[0][prefix_length:]
+        attr = row[0][prefix_length:]  # Strip prefix from attributes.
         val = row[1]
 
-        try:
-            found_attrs.append(attr)
-            config_keys[attr2keys[attr]] = val
-        except KeyError:
-            continue
+        if attr in attr_mapping:
+            found_attrs.add(attr)
+            config_keys[attr_mapping[attr]] = val
+        else:
+            log.write(ctx, f'Unknown config attribute: {attr}')
 
-    # Any differences between
-    for key in attr2keys:
-        if key not in found_attrs and key not in optional_keys:
-            log.write(ctx, 'Missing config key ' + key)
+    # Report missing required keys.
+    missing = set(attr_mapping.keys()) - found_attrs - optional_keys
+    for key in missing:
+        log.write(ctx, f'Missing config key: {key}')
 
     return config_keys
 
