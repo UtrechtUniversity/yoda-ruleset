@@ -22,6 +22,7 @@ import research
 import schema
 import vault
 import vault_deaccession
+from publication_utils import is_latest_version
 from util import *
 
 __all__ = ['rule_process_publication',
@@ -805,7 +806,6 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     :return: "OK" if all went ok
     """
     log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
-    publication_state = {}
 
     # Check permissions, rodsadmin only.
     if not user.is_rodsadmin(ctx):
@@ -844,7 +844,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     update_base_doi = False
     # Set flag to update base DOI when this data package is the latest version.
-    if "previous_version" in publication_state and "next_version" not in publication_state:
+    if is_latest_version(publication_state):
         update_base_doi = True
 
     # Create base DOI if it does not exist in the previous publication state.
@@ -1185,7 +1185,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
-    if "previous_version" in publication_state and "next_version" not in publication_state:
+    if is_latest_version(publication_state):
         update_base_doi = True
 
     # Determine last modification time. Always run, no matter if retry
@@ -1292,8 +1292,6 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
 def process_republication(ctx: rule.Context, vault_package: str) -> str:
     """Routine to process a republication with sanity checks at every step."""
-    publication_state = {}
-
     log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
@@ -1332,7 +1330,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
     # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
-    if "previous_version" in publication_state and "next_version" not in publication_state:
+    if is_latest_version(publication_state):
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
         update_base_doi = True
@@ -1620,7 +1618,7 @@ def update_publication(ctx: rule.Context,
     if "baseDOI" in publication_state:
         if verbose:
             log.write(ctx, "In branch for updating base DOI")
-        if "previous_version" in publication_state and "next_version" not in publication_state:
+        if is_latest_version(publication_state):
             update_base_doi = True
 
     # Publication date
@@ -1793,7 +1791,6 @@ def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
     :returns: "OK" if all went ok
     """
     log.write(ctx, f"add_base_doi: Check base doi for vault package <{vault_package}>")
-    publication_state = {}
 
     # Check permissions, rodsadmin only.
     if not user.is_rodsadmin(ctx):
