@@ -15,6 +15,8 @@ from publication_utils import (
     generate_preliminary_doi,
     is_latest_version,
     should_abort,
+    should_process,
+    should_return_early
 )
 from util.constants import publication_status
 
@@ -46,20 +48,26 @@ class PublicationUtilsTest(TestCase):
         }
         self.assertFalse(is_latest_version(publication_state))
 
-    def test_should_abort_true_for_unrecoverable(self):
+    def test_should_abort(self):
         self.assertTrue(should_abort(publication_status.UNRECOVERABLE))
-
-    def test_should_abort_true_for_retry(self):
         self.assertTrue(should_abort(publication_status.RETRY))
-
-    def test_should_abort_false_for_processing(self):
         self.assertFalse(should_abort(publication_status.PROCESSING))
-
-    def test_should_abort_false_for_ok(self):
         self.assertFalse(should_abort(publication_status.OK))
-
-    def test_should_abort_false_for_unknown(self):
         self.assertFalse(should_abort(publication_status.UNKNOWN))
+
+    def test_should_return_early(self):
+        self.assertTrue(should_return_early(publication_status.UNRECOVERABLE))
+        self.assertTrue(should_return_early(publication_status.PROCESSING))
+        self.assertFalse(should_return_early(publication_status.UNKNOWN))
+        self.assertFalse(should_return_early(publication_status.RETRY))
+        self.assertFalse(should_return_early(publication_status.OK))
+
+    def test_should_process(self):
+        self.assertTrue(should_process(publication_status.UNKNOWN))
+        self.assertTrue(should_process(publication_status.RETRY))
+        self.assertFalse(should_process(publication_status.UNRECOVERABLE))
+        self.assertFalse(should_process(publication_status.PROCESSING))
+        self.assertFalse(should_process(publication_status.OK))
 
     def generate_preliminary_doi(self):
         publication_config = {

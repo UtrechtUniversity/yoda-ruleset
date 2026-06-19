@@ -28,6 +28,8 @@ from publication_utils import (
     generate_preliminary_doi,
     is_latest_version,
     should_abort,
+    should_process,
+    should_return_early
 )
 from util import *
 
@@ -790,9 +792,10 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
     # Publication status check and handling
     if verbose:
         log.write(ctx, "Initial publication status is: " + publication_state['status'])
-    if publication_state['status'] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
-        return "publication status: " + publication_state['status']
-    elif publication_state['status'] in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
+
+    if should_return_early(publication_state['status']):
+        return publication_state['status']
+    elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
     # Get previous publication state if exists.
@@ -1132,9 +1135,9 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
 
-    if publication_state['status'] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
+    if should_return_early(publication_state['status']):
         return publication_state['status']
-    elif publication_state['status'] in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
+    elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
     # Set flag to update base DOI when this data package is the latest version.
@@ -1275,9 +1278,9 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
 
-    if publication_state['status'] in [constants.publication_status.UNRECOVERABLE, constants.publication_status.PROCESSING]:
+    if should_return_early(publication_state['status']):
         return publication_state['status']
-    elif publication_state['status'] in [constants.publication_status.UNKNOWN, constants.publication_status.RETRY]:
+    elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
     # Set flag to update base DOI when this data package is the latest version.

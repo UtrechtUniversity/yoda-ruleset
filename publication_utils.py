@@ -24,6 +24,22 @@ def should_abort(status: constants.publication_status) -> bool:
     )
 
 
+def should_process(status: constants.publication_status) -> bool:
+    """Return True if publication should process for this status."""
+    return status in (
+        constants.publication_status.UNKNOWN,
+        constants.publication_status.RETRY,
+    )
+
+
+def should_return_early(status: constants.publication_status) -> bool:
+    """Return True if publication should return early for this status."""
+    return status in (
+        constants.publication_status.UNRECOVERABLE,
+        constants.publication_status.PROCESSING,
+    )
+
+
 def generate_preliminary_doi(publication_config: Dict, publication_state: Dict) -> None:
     """Generate a preliminary DOI. Preliminary, because we check for collision later.
 
