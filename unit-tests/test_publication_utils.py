@@ -9,7 +9,13 @@ from unittest import TestCase
 sys.path.append('..')
 sys.path.append('../util')
 
-from publication_utils import generate_base_doi, generate_preliminary_doi, is_latest_version, should_abort
+from publication_utils import (
+    generate_base_doi,
+    generate_landing_page_url,
+    generate_preliminary_doi,
+    is_latest_version,
+    should_abort,
+)
 from util.constants import publication_status
 
 
@@ -84,3 +90,18 @@ class PublicationUtilsTest(TestCase):
 
         expected_doi = f"10.1234/yoda-{publication_state['baseRandomId']}"
         self.assertEqual(publication_state["baseDOI"], expected_doi)
+
+    def test_generate_landing_page_url(self):
+        publication_config = {
+            "publicVHost": "public.yoda.test",
+            "yodaInstance": "yoda",
+            "yodaPrefix": "vault",
+        }
+        publication_state = {
+            "randomId": "abc12345",
+        }
+
+        generate_landing_page_url(publication_config, publication_state)
+
+        expected_url = "https://public.yoda.test/yoda/vault/abc12345.html"
+        self.assertEqual(publication_state["landingPageUrl"], expected_url)

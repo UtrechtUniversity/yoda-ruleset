@@ -50,3 +50,17 @@ def generate_base_doi(publication_config: Dict, publication_state: Dict) -> None
 
     publication_state["baseRandomId"] = random_id
     publication_state["baseDOI"] = f"{datacite_prefix}/{yoda_prefix}-{random_id}"
+
+
+def generate_landing_page_url(publication_config: Dict, publication_state: Dict) -> None:
+    """Generate a URL for the landing page.
+
+    :param publication_config: Dict with publication configuration
+    :param publication_state:  Dict with state of the publication process
+    """
+    public_v_host = publication_config["publicVHost"]
+    yoda_instance = publication_config["yodaInstance"]
+    yoda_prefix = publication_config["yodaPrefix"]
+    random_id = publication_state["randomId"]
+
+    publication_state["landingPageUrl"] = f"https://{public_v_host}/{yoda_instance}/{yoda_prefix}/{random_id}.html"
