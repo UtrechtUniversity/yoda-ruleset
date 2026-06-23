@@ -713,9 +713,9 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
     deaccession_status = vault_deaccession.vault_deaccession_status(ctx, vault_package)
     if constants.vault_deaccession_state(deaccession_status) == constants.vault_deaccession_state.DEACCESSION_COMPLETE:
         try:
-            msi.set_acl(ctx, "recursive", "null", "anonymous", f"{vault_package}/original")
+            msi.set_acl(ctx, "recursive", "admin:null", "anonymous", f"{vault_package}/original")
         except Exception:
-            log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
+            log.write(ctx, "set_access_restrictions for {} failed: {}".format(f"{vault_package}/original", format_exc()))
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
             return
 
