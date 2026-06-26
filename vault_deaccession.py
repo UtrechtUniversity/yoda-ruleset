@@ -4,6 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import json
 from datetime import date, datetime
 from typing import List
@@ -144,7 +145,11 @@ def api_vault_request_deaccession(ctx: rule.Context, coll: str, reason: str) -> 
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_request_deaccession: iiAdminVaultDeaccession')
-        ctx.iiAdminVaultDeaccession(coll, new_status.value)
+
+        # Encode paths into base64
+        encoded_coll = base64.b64encode(coll.encode()).decode()
+
+        ctx.iiAdminVaultDeaccession(encoded_coll, new_status.value)
         return 'Success'
     else:
         return api.Error(ret[0], ret[1])
@@ -168,7 +173,11 @@ def api_vault_cancel_deaccession(ctx: rule.Context, coll: str) -> api.Result:
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_cancel_deaccession: iiAdminVaultDeaccession')
-        ctx.iiAdminVaultDeaccession(coll, new_status.value)
+
+        # Encode paths into base64
+        encoded_coll = base64.b64encode(coll.encode()).decode()
+
+        ctx.iiAdminVaultDeaccession(encoded_coll, new_status.value)
         return 'Success'
     else:
         return api.Error(ret[0], ret[1])
@@ -192,7 +201,11 @@ def api_vault_approve_deaccession(ctx: rule.Context, coll: str) -> api.Result:
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_approve_deaccession: iiAdminVaultDeaccession')
-        ctx.iiAdminVaultDeaccession(coll, new_status.value)
+
+        # Encode paths into base64
+        encoded_coll = base64.b64encode(coll.encode()).decode()
+
+        ctx.iiAdminVaultDeaccession(encoded_coll, new_status.value)
         return 'Success'
     else:
         return api.Error(ret[0], ret[1])
@@ -213,7 +226,11 @@ def vault_complete_deaccession(ctx: rule.Context, coll: str) -> None:
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_approve_deaccession: iiAdminVaultDeaccession')
-        ctx.iiAdminVaultDeaccession(coll, new_status.value)
+
+        # Encode paths into base64
+        encoded_coll = base64.b64encode(coll.encode()).decode()
+
+        ctx.iiAdminVaultDeaccession(encoded_coll, new_status.value)
     else:
         log.write(ctx, f"api_vault_approve_deaccession: Failed to complete deaccession on package '{coll}'")
 # }}}
@@ -445,7 +462,18 @@ def rule_process_deaccession_status_transitions(ctx: rule.Context, actor: str, c
     :param coll:             Vault package to be changed of status in deaccession cycle
     :param new_status:       New deaccession status
     """
-    process_deaccession_status_transition(ctx, actor, coll, new_status)
+    # Decode base64-encoded paths
+    try:
+        decoded_coll = base64.b64decode(coll).decode('utf-8')
+    except Exception as e:
+        log.write(ctx, f"Failed to decode base64-encoded path '{coll}' during deaccession: {str(e)}")
+        return
+
+    if not decoded_coll or not decoded_coll.startswith('/'):
+        log.write(ctx, f"Invalid path after decoding during deaccession: <{decoded_coll}>")
+        return
+
+    process_deaccession_status_transition(ctx, actor, decoded_coll, new_status)
 # }}}
 
 

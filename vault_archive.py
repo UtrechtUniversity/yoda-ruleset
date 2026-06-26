@@ -4,6 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import json
 import time
 from typing import Dict, List
@@ -14,6 +15,7 @@ import irods_types
 import folder
 import groups
 import meta
+import misc
 import notifications
 import provenance
 import vault
@@ -73,8 +75,9 @@ def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
 
 
 def package_archive_path(ctx: rule.Context, coll: str) -> str | None:
+    coll = misc.escape(coll)    # Escape single quotes
     for row in genquery.row_iterator("DATA_PATH",
-                                     "COLL_NAME = '{}' AND DATA_NAME = 'archive.tar'".format(coll),
+                                     f"COLL_NAME = '{coll}' AND DATA_NAME = 'archive.tar'",
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -314,8 +317,11 @@ def api_vault_archive(ctx: rule.Context, coll: str) -> api.Result:
     if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
         return "Invalid"
 
+    # Encode paths into base64
+    encoded_coll = base64.b64encode(coll.encode()).decode()
+
     try:
-        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.ARCHIVE.value)
+        ctx.iiAdminVaultArchive(encoded_coll, constants.vault_archive_state.ARCHIVE.value)
         return "Success"
     except Exception:
         return "Failure"
@@ -352,19 +358,35 @@ def api_vault_extract(ctx: rule.Context, coll: str) -> api.Result:
     if vault_archival_status(ctx, coll) != constants.vault_archive_state.ARCHIVED.value:
         return "Invalid"
 
+    # Encode paths into base64
+    encoded_coll = base64.b64encode(coll.encode()).decode()
+
     try:
-        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.EXTRACT.value)
+        ctx.iiAdminVaultArchive(encoded_coll, constants.vault_archive_state.EXTRACT.value)
         return "Success"
     except Exception:
         return "Failure"
 
 
-@rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_vault_archive(ctx: rule.Context, actor: str, coll: str, action: str) -> str:
+@rule.make(inputs=[0, 1, 2, 3], outputs=[3])
+def rule_vault_archive(ctx: rule.Context, actor: str, coll: str, action: str, status: str) -> str:
+    # Decode base64-encoded paths
+    try:
+        decoded_coll = base64.b64decode(coll).decode('utf-8')
+    except Exception as e:
+        log.write(ctx, f"Failed to decode base64-encoded path '{coll}' for archive: {str(e)}")
+        return "Failure"
+
+    if not decoded_coll or not decoded_coll.startswith('/'):
+        log.write(ctx, f"Invalid path after decoding for archive: <{decoded_coll}>")
+        return "Failure"
+
+    log.write(ctx, f"vault_archive: {actor} {action} '{decoded_coll}' (status: {status})")
+
     if action == "archive":
-        return vault_archive(ctx, actor, coll)
+        return vault_archive(ctx, actor, decoded_coll)
     elif action == "extract":
-        return vault_unarchive(ctx, actor, coll)
+        return vault_unarchive(ctx, actor, decoded_coll)
     else:
         return "Failure"
 
