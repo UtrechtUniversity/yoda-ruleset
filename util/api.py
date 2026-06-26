@@ -10,9 +10,10 @@ __license__   = 'GPLv3, see LICENSE'
 import base64
 import inspect
 import traceback
+import types
 import zlib
 from collections import OrderedDict
-from typing import Any, Callable, get_type_hints
+from typing import Any, Callable, get_args, get_type_hints
 
 import error
 import jsonutil
@@ -80,6 +81,13 @@ def _check_type(value: Any, expected_type: Any) -> bool:
     :returns: True if the value matches the expected type. False if the value
               does not match.
     """
+    if hasattr(types, 'UnionType') and isinstance(expected_type, types.UnionType):
+        union_args = get_args(expected_type)
+        return any(_check_type(value, arg) for arg in union_args)
+
+    if expected_type is type(None):
+        return value is None
+
     if expected_type in (int, str, float, bool, list, dict):
         return isinstance(value, expected_type)
 
