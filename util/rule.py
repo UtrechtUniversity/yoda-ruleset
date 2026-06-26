@@ -1,13 +1,13 @@
 """Python/Rule interface code."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
 import traceback
 from enum import Enum
-from typing import Callable, Dict, List
+from typing import Callable, List
 
 import log
 
@@ -80,7 +80,7 @@ def make(inputs: List | None = None, outputs: List | None = None, transform: Cal
 
     :returns: Decorator to create a rule from a Python function
     """
-    def encode_val(v: str | int | List | Dict) -> str:
+    def encode_val(v: str | int | List | dict) -> str:
         """Encode a value such that it can be safely transported in rule_args, as output."""
         if type(v) is str:
             return v

@@ -3,7 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from dateutil import parser
 
@@ -22,7 +22,7 @@ spdx_map = {
 }
 
 
-def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> Dict:
+def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> dict:
     """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -70,32 +70,32 @@ def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: s
     return metadata
 
 
-def get_DOI(combi: Dict) -> str:
+def get_DOI(combi: dict) -> str:
     return combi['System']['Persistent_Identifier_Datapackage']['Identifier']
 
 
-def get_identifiers(combi: Dict) -> List:
+def get_identifiers(combi: dict) -> List:
     return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
              'identifierType': 'DOI'}]
 
 
-def get_titles(combi: Dict) -> List:
+def get_titles(combi: dict) -> List:
     return [{'title': combi['Title'], 'language': 'en-us'}]
 
 
-def get_descriptions(combi: Dict) -> List:
+def get_descriptions(combi: dict) -> List:
     return [{'description': combi['Description'], 'descriptionType': 'Abstract'}]
 
 
-def get_publisher(combi: Dict) -> str:
+def get_publisher(combi: dict) -> str:
     return config.datacite_publisher
 
 
-def get_publication_year(combi: Dict) -> str:
+def get_publication_year(combi: dict) -> str:
     return combi['System']['Publication_Date'][0:4]
 
 
-def get_subjects(combi: Dict) -> List:
+def get_subjects(combi: dict) -> List:
     """Get list in DataCite format containing:
 
        1) standard objects like tags/discipline
@@ -153,7 +153,7 @@ def get_subjects(combi: Dict) -> List:
     return subjects
 
 
-def get_funders(combi: Dict) -> List:
+def get_funders(combi: dict) -> List:
     funders = []
     try:
         for funder in combi.get('Funding_Reference', []):
@@ -165,7 +165,7 @@ def get_funders(combi: Dict) -> List:
     return funders
 
 
-def get_creators(combi: Dict) -> List:
+def get_creators(combi: dict) -> List:
     """Return creator information in DataCite format.
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -208,7 +208,7 @@ def get_creators(combi: Dict) -> List:
     return all_creators
 
 
-def get_contributors(combi: Dict) -> List:
+def get_contributors(combi: dict) -> List:
     """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
 
@@ -282,7 +282,7 @@ def get_contributors(combi: Dict) -> List:
     return all
 
 
-def get_dates(combi: Dict) -> List:
+def get_dates(combi: dict) -> List:
     """Return list of dates in DataCite format.
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -341,12 +341,12 @@ def get_dates(combi: Dict) -> List:
     return dates
 
 
-def get_version(combi: Dict) -> str:
+def get_version(combi: dict) -> str:
     """Get string in DataCite format containing version info."""
     return combi.get('Version', '')
 
 
-def get_rights_list(combi: Dict) -> List:
+def get_rights_list(combi: dict) -> List:
     """Get list in DataCite format containing rights related information."""
     data_access_restriction = combi['Data_Access_Restriction']
     options = {'Open':       'info:eu-repo/semantics/openAccess',
@@ -375,7 +375,7 @@ def get_rights_list(combi: Dict) -> List:
     return rights_list
 
 
-def get_language(combi: Dict) -> str:
+def get_language(combi: dict) -> str:
     """Get string in DataCite format containing language."""
     language = ""
 
@@ -388,7 +388,7 @@ def get_language(combi: Dict) -> str:
     return language
 
 
-def get_resource_type(combi: Dict) -> Dict:
+def get_resource_type(combi: dict) -> dict:
     """Get dict in DataCite format containing Resource type and default handling."""
     """
     "types": {
@@ -418,7 +418,7 @@ def get_resource_type(combi: Dict) -> Dict:
     return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
-def get_related_resources(combi: Dict) -> List:
+def get_related_resources(combi: dict) -> List:
     """Get list in DataCite format containing related datapackages."""
     """
   "relatedIdentifiers": [
@@ -453,7 +453,7 @@ def get_related_resources(combi: Dict) -> List:
     return related_dps
 
 
-def get_geo_locations(combi: Dict) -> List:
+def get_geo_locations(combi: dict) -> List:
     """Get list of geoLocation elements in datacite format containing the information of geo locations.
 
        There are two versions of this:

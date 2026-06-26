@@ -8,7 +8,7 @@ import re
 import urllib.parse
 from datetime import datetime
 from traceback import format_exc
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import genquery
 from requests.exceptions import ReadTimeout
@@ -41,7 +41,7 @@ __all__ = ['rule_process_publication',
            'rule_lift_embargos_on_data_access']
 
 
-def get_publication_config(ctx: rule.Context) -> Dict[str, str]:
+def get_publication_config(ctx: rule.Context) -> dict[str, str]:
     """Get all publication config keys and their values and report any missing keys."""
     zone = user.zone(ctx)
     system_coll = f"/{zone}{constants.UUSYSTEMCOLLECTION}"
@@ -88,7 +88,7 @@ def get_publication_config(ctx: rule.Context) -> Dict[str, str]:
     return config_keys
 
 
-def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
+def generate_combi_json(ctx: rule.Context, publication_config: dict, publication_state: dict) -> None:
     """Join system metadata with the user metadata in yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -145,7 +145,7 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
     publication_state["combiJsonPath"] = combi_json_path
 
 
-def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_system_json(ctx: rule.Context, publication_state: dict) -> None:
     """Overwrite combi metadata json with system-only metadata.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -173,7 +173,7 @@ def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["combiJsonPath"] = system_json_path
 
 
-def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
+def get_publication_state(ctx: rule.Context, vault_package: str) -> dict:
     """The publication state is kept as metadata on the vault package.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -229,7 +229,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
     return publication_state
 
 
-def save_publication_state(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
+def save_publication_state(ctx: rule.Context, vault_package: str, publication_state: dict) -> None:
     """Save the publication state key-value-pairs to AVU's on the vault package.
 
     :param ctx:               Combined type of a callback and rei struct
@@ -339,7 +339,7 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
-def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_datacite_json(ctx: rule.Context, publication_state: dict) -> None:
     """Generate a DataCite compliant JSON based on yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -360,7 +360,7 @@ def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: str, send_method: str, base_doi: bool = False) -> None:
+def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: str, send_method: str, base_doi: bool = False) -> None:
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -398,7 +398,7 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: s
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> None:
+def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: dict) -> None:
     """Upload DOI to DataCite. This will register the DOI as a draft.
     This function is also a draft, and will have to be reworked!
 
@@ -436,7 +436,7 @@ def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> No
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def remove_metadata_from_datacite(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Remove metadata XML from DataCite.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -469,7 +469,7 @@ def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, ty
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def mint_doi(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -501,7 +501,7 @@ def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
+def generate_landing_page(ctx: rule.Context, publication_state: dict, publish: str) -> None:
     """Generate landingpage based upon yoda-metadata.json metadata and system metadata.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -551,7 +551,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
     publication_state["landingPagePath"] = landing_page_path
 
 
-def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -576,7 +576,7 @@ def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publicati
         log.write(ctx, "copy_landingpage_to_public_host: " + error)
 
 
-def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -602,7 +602,7 @@ def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config:
         log.write(ctx, f"copy_metadata_to_moai: {error_code}")
 
 
-def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_manifest(ctx: rule.Context, publication_state: dict) -> None:
     """Generate a manifest of data package.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -624,7 +624,7 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["manifestPath"] = manifest_path
 
 
-def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the manifest JSON to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -649,7 +649,7 @@ def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_
         log.write(ctx, "copy_manifest_to_public_host: " + error)
 
 
-def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
+def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: dict) -> None:
     """Set access restriction for vault package.
 
     This function is called when (re)publishing a vault package.
@@ -726,7 +726,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
         publication_state["anonymousAccess"] = "yes"
 
 
-def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def check_doi_availability(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Request DOI to check on availability. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -1802,7 +1802,7 @@ def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
     return str(constants.publication_status.OK)
 
 
-def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> Dict:
+def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> dict:
     """Retrieve all collection metadata.
 
     :param ctx:    Combined type of a callback and rei struct

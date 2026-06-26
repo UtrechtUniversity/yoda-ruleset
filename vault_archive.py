@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import base64
 import json
 import time
-from typing import Dict, List
+from typing import List
 
 import genquery
 import irods_types
@@ -59,7 +59,7 @@ def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
 
     :returns: List of dicts with provenance log
     """
-    def key(item: Dict) -> int:
+    def key(item: dict) -> int:
         return int(item["time"])
 
     provenance_log = []

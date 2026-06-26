@@ -5,7 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 import sys
-from typing import Dict, List, Union
+from typing import List, Union
 
 import jsonschema
 
@@ -18,8 +18,8 @@ if 'unittest' not in sys.modules:
 
 def get_json_metadata_errors(ctx: rule.Context,
                              metadata_path: str,
-                             metadata: Union[Dict, None] = None,
-                             schema: Union[Dict, None] = None,
+                             metadata: Union[dict, None] = None,
+                             schema: Union[dict, None] = None,
                              ignore_required: bool = False) -> List:
     """
     Validate JSON metadata, and return a list of errors, if any.
@@ -67,7 +67,7 @@ def get_json_metadata_errors(ctx: rule.Context,
 
 def is_json_metadata_valid(ctx: rule.Context,
                            metadata_path: str,
-                           metadata: Union[Dict, None] = None,
+                           metadata: Union[dict, None] = None,
                            ignore_required: bool = False) -> bool:
     """Check if json metadata contains no errors.
 

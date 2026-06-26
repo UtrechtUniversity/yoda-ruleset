@@ -8,7 +8,7 @@ import itertools
 import json
 import re
 from collections import namedtuple
-from typing import Dict, Iterable, List, Tuple
+from typing import Iterable, List, Tuple
 
 import genquery
 
@@ -40,7 +40,7 @@ def of_coll(ctx: rule.Context, coll: str) -> Iterable[Avu]:
                                                  f"COLL_NAME = '{coll}'"))
 
 
-def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
+def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> dict:
     """Get the value corresponding to an attr for a given collection."""
     coll = misc.escape(coll)
     iter = genquery.Query(ctx, "META_COLL_ATTR_VALUE",
@@ -51,7 +51,7 @@ def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> Dict:
     raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
 
 
-def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> Dict:
+def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> dict:
     """Get the value corresponding to an attr for a given user."""
     iter = genquery.Query(ctx, "META_USER_ATTR_VALUE",
                                f"META_USER_ATTR_NAME = '{attr}' AND USER_NAME = '{user}' AND USER_TYPE != 'rodsgroup'")
@@ -297,7 +297,7 @@ def rmw_from_group(ctx: rule.Context, group: str, a: str, v: str, u: str = '%') 
         msi.mod_avu_metadata(ctx, "-u", group, "rm", a_, v_, u_)
 
 
-def apply_atomic_operations(ctx: rule.Context, operations: Dict) -> bool:
+def apply_atomic_operations(ctx: rule.Context, operations: dict) -> bool:
     """Sequentially executes all operations as a single transaction.
 
     Operations should be a dict with structure as defined in

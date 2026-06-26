@@ -1,17 +1,17 @@
 """Functions related to importing group data."""
 
-__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import csv
-from typing import Dict, List, Set, Tuple
+from typing import List, Set, Tuple
 
 from iteration_utilities import duplicates, unique_everseen
 
 from util import *
 
 
-def process_csv_line(ctx: 'rule.Context', line: Dict) -> Tuple:
+def process_csv_line(ctx: 'rule.Context', line: dict) -> Tuple:
     """Process a line as found in the csv consisting of
        category, subcategory, groupname, managers, members and viewers,
        and optionally schema id and expiration date.

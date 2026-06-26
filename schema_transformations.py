@@ -5,7 +5,7 @@ __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-from typing import Callable, Dict
+from typing import Callable
 
 import requests
 from schema_transformations_utils import add_affiliation_identifier, correctify_personal_identifiers, merge_geo_keywords, rename_related_datapackage
@@ -28,7 +28,7 @@ __all__ = []
 # The docstring of a transformation function should describe the transformation
 # in a human-readable manner: it is provided to the user executing the transformation.
 
-def _default0_default1(ctx: rule.Context, m: Dict) -> Dict:
+def _default0_default1(ctx: rule.Context, m: dict) -> dict:
     """
     A Data type field is added to be used for publication purposes to DataCite.
 
@@ -48,7 +48,7 @@ def _default0_default1(ctx: rule.Context, m: Dict) -> Dict:
 
     :returns: Transformed (default-1) JSON object
     """
-    def fixup_name(n: str) -> Dict:
+    def fixup_name(n: str) -> dict:
         """Split a name into a first and last name, error-prone, but acceptable."""
         n.strip()  # Trim whitespace, if any.
 
@@ -79,7 +79,7 @@ def _default0_default1(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _default1_default2(ctx: rule.Context, m: Dict) -> Dict:
+def _default1_default2(ctx: rule.Context, m: dict) -> dict:
     """
     Metadata fields Discipline, Language and Tags have become required fields.
 
@@ -111,7 +111,7 @@ def _default1_default2(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _default2_default3(ctx: rule.Context, m: Dict) -> Dict:
+def _default2_default3(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators and contributors.
 
@@ -144,7 +144,7 @@ def _default2_default3(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _core1_core2(ctx: rule.Context, m: Dict) -> Dict:
+def _core1_core2(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators.
 
@@ -170,7 +170,7 @@ def _core1_core2(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _dag0_default2(ctx: rule.Context, m: Dict) -> Dict:
+def _dag0_default2(ctx: rule.Context, m: dict) -> dict:
     """
     Transform dag-0 data to the default-2 schema definition
 
@@ -234,7 +234,7 @@ def _dag0_default2(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _hptlab0_hptlab1(ctx: rule.Context, m: Dict) -> Dict:
+def _hptlab0_hptlab1(ctx: rule.Context, m: dict) -> dict:
     """
     Transform hptlab-0 data to the hptlab-1 schema definition which holds better qualified lists.
 
@@ -290,7 +290,7 @@ def _hptlab0_hptlab1(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _teclab0_teclab1(ctx: rule.Context, m: Dict) -> Dict:
+def _teclab0_teclab1(ctx: rule.Context, m: dict) -> dict:
     """
     Transform teclab-0 data to the teclab-1 schema definition which holds better qualified lists.
 
@@ -347,7 +347,7 @@ def _teclab0_teclab1(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _teclab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+def _teclab0_eposmsl0(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators, contributors and contacts.
     Rename Related Datapackage field to Related Resource field.
@@ -370,7 +370,7 @@ def _teclab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _hptlab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+def _hptlab0_eposmsl0(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators, contributors and contacts.
     Rename Related Datapackage field to Related Resource field.
@@ -393,7 +393,7 @@ def _hptlab0_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _teclab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+def _teclab1_eposmsl0(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators, contributors and contacts.
     Rename Related Datapackage field to Related Resource field.
@@ -416,7 +416,7 @@ def _teclab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _hptlab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
+def _hptlab1_eposmsl0(ctx: rule.Context, m: dict) -> dict:
     """
     Add affiliation identifiers to creators, contributors and contacts.
     Rename Related Datapackage field to Related Resource field.
@@ -439,7 +439,7 @@ def _hptlab1_eposmsl0(ctx: rule.Context, m: Dict) -> Dict:
     return m
 
 
-def _eposmsl0_eposmsl1(ctx: rule.Context, m: Dict) -> Dict:
+def _eposmsl0_eposmsl1(ctx: rule.Context, m: dict) -> dict:
     """
     Added Period covered field to indicate the temporal coverage of the resource.
     Removed Period covered field as part of Sample location(s) or modeled location(s).

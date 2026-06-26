@@ -5,7 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 from datetime import datetime
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import genquery
 import requests
@@ -237,7 +237,7 @@ def check_landingpage(ctx: rule.Context, data_package: str, offline: bool, api_c
     )
 
 
-def check_combi_json(ctx: rule.Context, data_package: str, publication_config: Dict[str, str], offline: bool, write_stdout: bool) -> bool:
+def check_combi_json(ctx: rule.Context, data_package: str, publication_config: dict[str, str], offline: bool, write_stdout: bool) -> bool:
     """
     Checks the integrity of combi JSON by checking URL and existence of file.
 
@@ -315,7 +315,7 @@ def collect_troubleshoot_data_packages(ctx: rule.Context, requested_package: str
     return data_packages
 
 
-def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, api_call: bool, check_datacite: bool, mode: str = "human") -> Dict[str, Dict[str, str]]:
+def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool, api_call: bool, check_datacite: bool, mode: str = "human") -> dict[str, dict[str, str]]:
     """
     Troubleshoots published data packages.
 
@@ -393,7 +393,7 @@ def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_pack
 
 
 @api.make()
-def api_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool) -> Dict[str, Dict[str, str]]:
+def api_batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_package: str, log_file: bool, offline: bool) -> dict[str, dict[str, str]]:
     """
     Wrapper for the batch script for troubleshooting published data packages.
     Runs a subset of the tests since "technicaladmin" is usually more restricted than "rods".
