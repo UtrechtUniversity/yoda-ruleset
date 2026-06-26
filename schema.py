@@ -1,12 +1,12 @@
 """Functions for finding the active schema."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Tuple
 
 import genquery
 
@@ -181,7 +181,7 @@ def get_active_schema_path(ctx: rule.Context, path: str) -> str:
     return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
 
 
-def get_active_schema(ctx: rule.Context, path: str) -> Dict:
+def get_active_schema(ctx: rule.Context, path: str) -> dict:
     """Get a schema object from a research or vault path.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -193,7 +193,7 @@ def get_active_schema(ctx: rule.Context, path: str) -> Dict:
     return jsonutil.read(ctx, get_active_schema_path(ctx, path))
 
 
-def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[Dict, Dict]:
+def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[dict, dict]:
     """Get a schema and uischema object from a research or vault path.
 
     :param ctx:  Combined type of a callback and rei struct
@@ -221,7 +221,7 @@ def get_active_schema_id(ctx: rule.Context, path: str) -> str:
     return get_active_schema(ctx, path)['$id']
 
 
-def get_schema_id(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> str | None:
+def get_schema_id(ctx: rule.Context, metadata_path: str, metadata: dict | None = None) -> str | None:
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
         metadata = jsonutil.read(ctx, metadata_path)
@@ -241,7 +241,7 @@ def get_schema_path_by_id(ctx: rule.Context, path: str, schema_id: str) -> str |
         return None
 
 
-def get_schema_by_id(ctx: rule.Context, path: str, schema_id: str) -> Dict | None:
+def get_schema_by_id(ctx: rule.Context, path: str, schema_id: str) -> dict | None:
     """
     Get a schema from a schema id.
 

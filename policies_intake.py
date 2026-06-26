@@ -1,16 +1,14 @@
 """Policies for intake."""
 
-__copyright__ = 'Copyright (c) 2021-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
-
-from typing import Dict
 
 import genquery
 
 from util import *
 
 
-def object_is_locked(ctx: rule.Context, path: str, is_collection: bool) -> Dict:
+def object_is_locked(ctx: rule.Context, path: str, is_collection: bool) -> dict:
     """Returns whether given object in path (collection or dataobject) is locked or frozen
 
     :param ctx:           Combined type of a callback and rei struct

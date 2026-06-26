@@ -12,7 +12,7 @@ import inspect
 import traceback
 import zlib
 from collections import OrderedDict
-from typing import Any, Callable, Dict, get_type_hints
+from typing import Any, Callable, get_type_hints
 
 import error
 import jsonutil
@@ -25,7 +25,7 @@ from measure_coverage import start_coverage, stop_coverage
 class Result:
     """API result."""
 
-    def __init__(self, data: Dict | None = None, status: str = 'ok', info: str | None = None, debug_info: str | None = None) -> None:
+    def __init__(self, data: dict | None = None, status: str = 'ok', info: str | None = None, debug_info: str | None = None) -> None:
         self.status      = status
         self.status_info = info
         self.data        = data
@@ -127,7 +127,7 @@ def _api(f: Callable) -> Callable:
     # Extract type hints for type checking
     type_hints = get_type_hints(f) if hasattr(f, '__annotations__') else {}
 
-    def wrapper(ctx: rule.Context, inp: str) -> Dict:
+    def wrapper(ctx: rule.Context, inp: str) -> dict:
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments.
 
         :param ctx: Combined type of a callback and rei struct

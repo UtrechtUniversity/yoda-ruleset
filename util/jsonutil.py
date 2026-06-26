@@ -5,7 +5,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 from collections import OrderedDict
-from typing import Dict
 
 import jsonavu
 import requests
@@ -37,7 +36,7 @@ def parse(text: str) -> OrderedDict:
         raise ParseError('JSON file format error')
 
 
-def dump(data: Dict, **options: int) -> str:
+def dump(data: dict, **options: int) -> str:
     """Dump an object to a JSON string."""
     # json.dumps seems to not like mixed str/unicode input, so make sure
     # everything is of the same type first.
@@ -64,7 +63,7 @@ def read_from_url(url: str, timeout: int = 10) -> OrderedDict:
     return response.json(object_pairs_hook=OrderedDict)
 
 
-def write(ctx: rule.Context, path: str, data: Dict, **options: int) -> None:
+def write(ctx: rule.Context, path: str, data: dict, **options: int) -> None:
     """Write a JSON object to an iRODS data object."""
     return data_object.write(ctx, path, dump(data, **options))
 

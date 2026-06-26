@@ -1,12 +1,11 @@
 """Functions for deposit module."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
-from typing import Dict
 
 import genquery
 from genquery import AS_DICT, Query
@@ -100,7 +99,7 @@ def api_deposit_create(ctx: rule.Context, deposit_group: str) -> api.Result:
     return {"deposit_path": result["deposit_path"]}
 
 
-def deposit_create(ctx: rule.Context, deposit_group: str | None) -> Dict:
+def deposit_create(ctx: rule.Context, deposit_group: str | None) -> dict:
     """Create deposit collection.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -217,7 +216,7 @@ def api_deposit_overview(ctx: rule.Context,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row: Dict) -> Dict:
+    def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
