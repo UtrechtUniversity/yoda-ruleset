@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 import genquery
 import requests
@@ -110,7 +110,7 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     return groups.values()
 
 
-def get_group_data(ctx: rule.Context, name: str) -> Dict | None:
+def get_group_data(ctx: rule.Context, name: str) -> dict | None:
     """Get data for one group."""
     group = None
 
@@ -305,7 +305,7 @@ def group_category(ctx: rule.Context, group: str) -> str:
 
 
 @api.make()
-def api_group_data(ctx: rule.Context) -> Dict:
+def api_group_data(ctx: rule.Context) -> dict:
     """Retrieve group data as hierarchy for user.
 
     The structure of the group hierarchy parameter is as follows:
@@ -333,7 +333,7 @@ def api_group_data(ctx: rule.Context) -> Dict:
     return (internal_api_group_data(ctx))
 
 
-def internal_api_group_data(ctx: rule.Context) -> Dict:
+def internal_api_group_data(ctx: rule.Context) -> dict:
     # This is the entry point for integration tests against api_group_data
     if user.is_rodsadmin(ctx):
         groups = get_groups_data(ctx)
@@ -495,7 +495,7 @@ def api_group_process_csv(ctx: rule.Context, csv_header_and_data: str, allow_upd
     return api.Result.ok(info=[status_msg['message']])
 
 
-def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
+def validate_data(ctx: rule.Context, data: dict, allow_update: bool) -> List:
     """Validation of extracted data.
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -526,7 +526,7 @@ def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
     return errors
 
 
-def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: bool) -> Dict:
+def apply_data(ctx: rule.Context, data: dict, allow_update: bool, delete_users: bool) -> dict:
     """ Update groups with the validated data
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -1521,7 +1521,7 @@ def _migrate_non_sram_to_sram(ctx: rule.Context, log_func: Callable, group: dict
         log_func(f"\nNo valid SRAM CO found or there are no members in group {group['name']}")
 
 
-def sram_state(ctx: rule.Context, group: Dict, co_identifier: str) -> bool:
+def sram_state(ctx: rule.Context, group: dict, co_identifier: str) -> bool:
     """Check SRAM state of group.
 
     :param ctx:           Combined type of ctx and rei struct

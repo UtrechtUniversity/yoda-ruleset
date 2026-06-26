@@ -9,7 +9,7 @@ import os
 import random
 import re
 import time
-from typing import Dict, Iterator, List, Tuple
+from typing import Iterator, List, Tuple
 
 import genquery
 import irods_types
@@ -780,7 +780,7 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
     }
     number_revisions = 0
 
-    def ingest_new_data_id(ctx: rule.Context, coll_id: str, data_id: str, ingest_state: Dict, target_batch_size: int) -> None:
+    def ingest_new_data_id(ctx: rule.Context, coll_id: str, data_id: str, ingest_state: dict, target_batch_size: int) -> None:
         """Read data object. Store it in ingest state as long as its collection ID is the same as
            the previous one, so that all data objects in the same collection are
            part of the same batch.
@@ -875,7 +875,7 @@ def rule_revisions_cleanup_scan(ctx: rule.Context, revision_strategy_name: str, 
     return 'Revision store cleanup scan job completed'
 
 
-def get_original_exists_dict(ctx: rule.Context, revision_data: List) -> Dict:
+def get_original_exists_dict(ctx: rule.Context, revision_data: List) -> dict:
     """Returns a dictionary that indicates which original data objects of revision data still exist
 
      :param ctx:           Combined type of a callback and rei struct

@@ -7,12 +7,12 @@ import math
 import time
 import uuid
 from collections import OrderedDict
-from typing import Dict, List
+from typing import List
 
 import constants
 
 
-def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
+def check_data_package_system_avus(extracted_avus: dict) -> dict:
     """Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
 
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
@@ -112,7 +112,7 @@ def human_readable_size(size_bytes: int) -> str:
     return '{} {}'.format(s, size_name[i])
 
 
-def remove_empty_objects(d: Dict) -> Dict:
+def remove_empty_objects(d: dict) -> dict:
     """Remove empty objects (None, '', {}, []) from OrderedDict."""
     if isinstance(d, dict):
         # Create OrderedDict to maintain order.

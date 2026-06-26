@@ -1,18 +1,17 @@
 """Functions for communicating with DataCite and some utilities."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import random
 import string
-from typing import Dict
 
 import requests
 
 from util import *
 
 
-def metadata_post(payload: Dict) -> requests.Response:
+def metadata_post(payload: dict) -> requests.Response:
     """Register DOI metadata with DataCite."""
     url = "{}/dois".format(config.datacite_rest_api_url)
     auth = (config.datacite_username, config.datacite_password)

@@ -11,7 +11,7 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Optional
 
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
@@ -362,7 +362,7 @@ def generate_request_id(ctx: rule.Context) -> int:
 
 
 @api.make()
-def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: List, statuses: List) -> api.Result:
+def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: list | None) -> api.Result:
     """Wrapper around datarequest_action_permitted.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -382,7 +382,7 @@ def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: 
     return datarequest_action_permitted(ctx, request_id, roles, statuses)
 
 
-def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: List, statuses: List | None) -> bool:
+def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: list | None) -> bool:
     """Check if current user and data request status meet specified restrictions.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -437,7 +437,7 @@ def api_datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) 
     return datarequest_roles_get(ctx, request_id)
 
 
-def datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> List:
+def datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> list:
     """Get roles of invoking user.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -517,7 +517,7 @@ def datarequest_is_reviewer(ctx: rule.Context, request_id: str, pending: bool = 
     return is_reviewer
 
 
-def datarequest_reviewers_get(ctx: rule.Context, request_id: str, pending: bool = False) -> List[str]:
+def datarequest_reviewers_get(ctx: rule.Context, request_id: str, pending: bool = False) -> list[str]:
     """Return a list of users assigned as reviewers to a data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -636,7 +636,7 @@ def datarequest_provenance_write(ctx: rule.Context, request_id: str, request_sta
         return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
-def datarequest_data_valid(ctx: rule.Context, data: Dict, schema_name: str | None = None, schema: str | None = None) -> bool:
+def datarequest_data_valid(ctx: rule.Context, data: dict, schema_name: str | None = None, schema: str | None = None) -> bool:
     """Check if form data contains no errors
 
     Default mode of operation is to provide schema data and the schema name of the schema against
@@ -677,7 +677,7 @@ def datarequest_data_valid(ctx: rule.Context, data: Dict, schema_name: str | Non
         return False
 
 
-def cc_email_addresses_get(contact_object: Dict) -> str | None:
+def cc_email_addresses_get(contact_object: dict) -> str | None:
     try:
         cc = contact_object['cc_email_addresses']
         return cc.replace(' ', '')
@@ -765,7 +765,7 @@ def api_datarequest_browse(ctx: rule.Context,
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
-    def transform(row: Dict) -> Dict:
+    def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -774,14 +774,14 @@ def api_datarequest_browse(ctx: rule.Context,
                 'create_time': int(x['COLL_CREATE_TIME']),
                 'status':      x['META_DATA_ATTR_VALUE']}
 
-    def transform_title(row: Dict) -> Dict:
+    def transform_title(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'title':       x['META_DATA_ATTR_VALUE']}
 
-    def transform_status(row: Dict) -> Dict:
+    def transform_status(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -853,7 +853,7 @@ def api_datarequest_browse(ctx: rule.Context,
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
 
 
-def datarequest_process_expired_review_periods(ctx: rule.Context, request_ids: List) -> None:
+def datarequest_process_expired_review_periods(ctx: rule.Context, request_ids: list) -> None:
     """Process expired review periods by setting their status to REVIEWED.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -863,7 +863,7 @@ def datarequest_process_expired_review_periods(ctx: rule.Context, request_ids: L
         status_set(ctx, request_id, status.REVIEWED)
 
 
-def file_write(ctx: rule.Context, coll_path: str, filename: str, data: Dict, readers: List[str]) -> None:
+def file_write(ctx: rule.Context, coll_path: str, filename: str, data: dict, readers: list[str]) -> None:
     """Grant temporary write permission and write file to disk.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -897,7 +897,7 @@ def file_write(ctx: rule.Context, coll_path: str, filename: str, data: Dict, rea
     msi.set_acl(ctx, "default", "own", "rods", file_path)
 
 
-def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[str]) -> None:
+def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: list[str]) -> None:
     """Revoke temporary write permission.
 
     :param ctx:       Combined type of a callback and rei struct
@@ -922,7 +922,7 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[st
 
 
 @api.make()
-def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
+def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -1056,7 +1056,7 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
 
 
 @api.make()
-def api_datarequest_get(ctx: rule.Context, request_id: int) -> api.Result:
+def api_datarequest_get(ctx: rule.Context, request_id: str) -> api.Result:
     """Retrieve a data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1245,7 +1245,7 @@ def api_datarequest_attachments_submit(ctx: rule.Context, request_id: str) -> ap
 
 
 @api.make()
-def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist a preliminary review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1328,7 +1328,7 @@ def datarequest_preliminary_review_get(ctx: rule.Context, request_id: str) -> st
 
 
 @api.make()
-def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist a datamanager review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1417,7 +1417,7 @@ def api_datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> api.R
     return datarequest_dac_members_get(ctx, request_id)
 
 
-def datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> List:
+def datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> list:
     """Get list of DAC members
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1436,7 +1436,7 @@ def datarequest_dac_members_get(ctx: rule.Context, request_id: str) -> List:
 
 
 @api.make()
-def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_assignment_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist an assignment to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1578,7 +1578,7 @@ def datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Result
 
 
 @api.make()
-def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_review_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist a data request review to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1676,7 +1676,7 @@ def api_datarequest_reviews_get(ctx: rule.Context, request_id: str) -> api.Resul
 
 
 @api.make()
-def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_evaluation_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist an evaluation to disk.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1868,7 +1868,7 @@ def api_datarequest_feedback_get(ctx: rule.Context, request_id: str) -> api.Resu
 
 
 @api.make()
-def api_datarequest_preregistration_submit(ctx: rule.Context, data: Dict, request_id: str) -> api.Result:
+def api_datarequest_preregistration_submit(ctx: rule.Context, data: dict, request_id: str) -> api.Result:
     """Persist a preregistration to disk.
 
     :param ctx:        Combined type of a callback and rei struct

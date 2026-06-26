@@ -11,7 +11,7 @@ import re
 import subprocess
 import time
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import genquery
 from dateutil import parser
@@ -1758,7 +1758,7 @@ def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List
 
 
 @api.make()
-def api_vault_get_published_packages(ctx: rule.Context, path: str) -> Dict:
+def api_vault_get_published_packages(ctx: rule.Context, path: str) -> dict:
     """Get the path and DOI of latest versions of published data package in a vault.
 
     :param ctx:  Combined type of a callback and rei struct

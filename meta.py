@@ -8,7 +8,7 @@ import json
 import re
 from collections import OrderedDict
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 import genquery
 import irods_types
@@ -29,7 +29,7 @@ __all__ = ['rule_meta_validate',
            'rule_get_latest_vault_metadata_path']
 
 
-def metadata_get_links(metadata: Dict) -> List:
+def metadata_get_links(metadata: dict) -> List:
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
     return list(filter(lambda x: type(x) in (dict, OrderedDict)
@@ -40,14 +40,14 @@ def metadata_get_links(metadata: Dict) -> List:
                        metadata['links']))
 
 
-def metadata_get_schema_id(metadata: Dict) -> str | None:
+def metadata_get_schema_id(metadata: dict) -> str | None:
     desc = list(filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata)))
     if len(desc) > 0:
         return desc[0]['href']
     return None
 
 
-def metadata_set_schema_id(metadata: Dict, schema_id: str) -> None:
+def metadata_set_schema_id(metadata: dict, schema_id: str) -> None:
     other_links = list(filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata)))
 
     metadata['links'] = [OrderedDict([
@@ -241,7 +241,7 @@ def ingest_metadata_staging(ctx: rule.Context, path: str) -> None:
     ctx.iiAdminVaultIngest()
 
 
-def update_index_metadata(ctx: rule.Context, path: str, metadata: Dict, creation_time: str, data_package: str) -> None:
+def update_index_metadata(ctx: rule.Context, path: str, metadata: dict, creation_time: str, data_package: str) -> None:
     """Update the index attributes for JSON metadata."""
     msi.coll_create(ctx, path, "", irods_types.BytesBuf())
     avu.rmw_from_coll(ctx, '%', '%', constants.UUFLATINDEX)
@@ -600,7 +600,7 @@ def copy_user_metadata(ctx: rule.Context, source: str, target: str) -> None:
         user_metadata = list(avu.inside_coll(ctx, source, recursive=True))
 
         # Group AVUs by entity and filter system metadata.
-        grouped_user_metadata: Dict = {}
+        grouped_user_metadata: dict = {}
         for path, type, attribute, value, unit in user_metadata:
             if not attribute.startswith(constants.UUORGMETADATAPREFIX) and unit != constants.UUFLATINDEX and not unit.startswith(constants.UUUSERMETADATAROOT + '_'):
                 grouped_user_metadata.setdefault(path, {"type": type, "avus": []})
@@ -633,7 +633,7 @@ def copy_user_metadata(ctx: rule.Context, source: str, target: str) -> None:
         log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
 
 
-def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cache: Dict, report_name: str, write_stdout: bool) -> Dict | None:
+def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cache: dict, report_name: str, write_stdout: bool) -> dict | None:
     """Process a single data package to retrieve and validate that its metadata conforms to the schema.
 
     :param ctx:          Combined type of a callback and rei struct

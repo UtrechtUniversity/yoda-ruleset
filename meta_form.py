@@ -4,7 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import irods_types
 
@@ -256,7 +256,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
             'is_locked': is_locked}
 
 
-def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
+def save(ctx: rule.Context, coll: str, metadata: dict) -> api.Result:
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -331,7 +331,7 @@ def api_meta_form_load(ctx: rule.Context, coll: str) -> api.Result:
 
 
 @api.make()
-def api_meta_form_save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
+def api_meta_form_save(ctx: rule.Context, coll: str, metadata: dict) -> api.Result:
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct

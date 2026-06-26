@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import copy
 import time
 from datetime import date, datetime
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import genquery
 from dateutil.relativedelta import relativedelta
@@ -282,7 +282,7 @@ def api_resource_monthly_category_stats(ctx: rule.Context) -> api.Result:
         return filter_pregenerated_exportdata(ctx, pregenerated_data)
 
 
-def filter_pregenerated_exportdata(ctx: rule.Context, inputdata: Dict) -> Dict:
+def filter_pregenerated_exportdata(ctx: rule.Context, inputdata: dict) -> dict:
     """Filter pregenerated statistics export data for use by the frontend
        code. The main goal of this function is to filter out data that the
        present user should not have access to. We also remove metadata, because
@@ -321,12 +321,12 @@ def rule_resource_store_pregenerated_exportdata(ctx: rule.Context) -> None:
         raise e
 
 
-def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
+def get_resource_monthly_category_stats(ctx: rule.Context) -> dict:
     """Collect monthly category statistics for the export function in the portal.
 
-       :param ctx:  Combined type of a callback and rei struct
+       :param ctx: Combined type of a callback and rei struct
 
-       :returns:       Dictionary with monthly category statistics
+       :returns: Dictionary with monthly category statistics
 
     """
     user_zone = user.zone(ctx)
