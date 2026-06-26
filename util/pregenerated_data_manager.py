@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os.path
-from typing import Dict, Union
+from typing import Union
 
 from config import config
 
@@ -17,7 +17,7 @@ def _get_file_path(name: str) -> str:
     return os.path.join(config.pregenerated_data_dir, name)
 
 
-def pregenerated_data_load(name: str) -> Union[Dict, None]:
+def pregenerated_data_load(name: str) -> Union[dict, None]:
     """ Loads pregenerated data item
 
         :param name: name of the data item
@@ -32,7 +32,7 @@ def pregenerated_data_load(name: str) -> Union[Dict, None]:
         return None
 
 
-def pregenerated_data_save(name: str, data: Dict) -> None:
+def pregenerated_data_save(name: str, data: dict) -> None:
     file_path = _get_file_path(name)
     with open(file_path, "w") as output:
         json.dump(data, output, ensure_ascii=False, indent=4)

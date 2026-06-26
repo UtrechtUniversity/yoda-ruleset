@@ -1,11 +1,10 @@
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
-from typing import Dict
 
 import magic
 from genquery import AS_DICT, Query
@@ -38,7 +37,7 @@ def api_browse_folder(ctx: rule.Context,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row: Dict) -> Dict:
+    def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
         if 'DATA_NAME' in x and 'META_DATA_ATTR_VALUE' in x:
@@ -128,7 +127,7 @@ def api_browse_collections(ctx: rule.Context,
 
     :returns: Dict with paginated collection contents
     """
-    def transform(row: Dict) -> Dict:
+    def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -206,7 +205,7 @@ def api_search(ctx: rule.Context,
 
     :returns: Dict with paginated search results
     """
-    def transform(row: Dict) -> Dict:
+    def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub(r'.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
@@ -295,7 +294,7 @@ def api_search(ctx: rule.Context,
                         ('items', datas)])
 
 
-def _filter_vault_deposit_index(row: Dict) -> bool:
+def _filter_vault_deposit_index(row: dict) -> bool:
     """This internal function filters out index collections in deposit vault collections.
        These collections are used internally by Yoda for indexing data package metadata, and
        should not be displayed.

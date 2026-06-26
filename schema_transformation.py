@@ -15,7 +15,7 @@ import json
 import os
 import re
 import time
-from typing import Callable, Dict, Tuple
+from typing import Callable, Tuple
 
 import genquery
 
@@ -115,7 +115,7 @@ def _transform_vault_metadata(ctx: rule.Context, coll: str) -> Tuple[bool, str]:
             return (True, "ok")
 
 
-def get(ctx: rule.Context, metadata_path: str, metadata: Dict | None = None) -> Callable | None:
+def get(ctx: rule.Context, metadata_path: str, metadata: dict | None = None) -> Callable | None:
     """Find a transformation that can be executed on the given metadata JSON.
 
     :param ctx:           Combined type of a ctx and rei struct
@@ -318,7 +318,7 @@ def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s:
             "")
 
 
-def transform_orcid(ctx: rule.Context, m: Dict) -> Dict:
+def transform_orcid(ctx: rule.Context, m: dict) -> dict:
     """
     Transform all present orcid's into the correct format. If possible!
 

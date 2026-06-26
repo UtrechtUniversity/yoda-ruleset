@@ -1,10 +1,10 @@
 """Functions for user settings."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2021-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict,  Sequence
+from typing import Sequence
 
 from genquery import Query
 
@@ -67,7 +67,7 @@ def api_settings_load(ctx: rule.Context) -> api.Result:
 
 
 @api.make()
-def api_settings_save(ctx: rule.Context, settings: Dict) -> api.Result:
+def api_settings_save(ctx: rule.Context, settings: dict) -> api.Result:
     """Save user settings.
 
     :param ctx:      Combined type of a callback and rei struct

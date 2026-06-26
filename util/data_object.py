@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import binascii
 import json
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import genquery
 import irods_types
@@ -36,7 +36,7 @@ def exists(ctx: rule.Context, path: str) -> bool:
                output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))) > 0
 
 
-def get_properties(ctx: rule.Context, data_id: str, resource: str) -> Dict | None:
+def get_properties(ctx: rule.Context, data_id: str, resource: str) -> dict | None:
     """Retrieves default properties of a data object from iRODS.
 
     :param ctx:      Combined type of a callback and rei struct
