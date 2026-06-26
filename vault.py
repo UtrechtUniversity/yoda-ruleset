@@ -4,6 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import json
 import os
 import re
@@ -255,9 +256,11 @@ def schedule_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: 
     :param retry_count:  Current retry attempt as int
     :param wait_seconds: Delay in seconds
     """
+    encoded_origin = base64.b64encode(coll_origin.encode()).decode()
+    encoded_target = base64.b64encode(coll_target.encode()).decode()
     ctx.delayExec(
-        f"<PLUSET>{wait_seconds}s</PLUSET>",
-        f"iiAdminVaultCopyToResearch('{coll_origin}', '{coll_target}', '{actor}', '{retry_count}')",
+        f"<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>{wait_seconds}s</PLUSET>",
+        f"iiAdminVaultCopyToResearch('{encoded_origin}', '{encoded_target}', '{actor}', '{retry_count}')",
         "")
 
 
@@ -267,38 +270,54 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
     If the copy operation fails, it will be retried up to a maximum number of times.
 
     :param ctx:         Combined type of a callback and rei struct
-    :param coll_origin: Origin data collection in vault space
-    :param coll_target: Target collection in research or deposit space
+    :param coll_origin: Base64-encoded origin data collection in vault space
+    :param coll_target: Base64-encoded target collection in research or deposit space
     :param actor:       User to notify of success/failure
     :param retry_str:   Current retry attempt as string
 
     :returns:           True if operation succeeded or entered retry logic, False if target already existed
     """
-    log.write(ctx, f"Starting vault copy: {coll_origin} -> {coll_target}, attempt #{retry_str}")
+    # Decode base64-encoded paths
+    try:
+        decoded_origin = base64.b64decode(coll_origin).decode('utf-8')
+        decoded_target = base64.b64decode(coll_target).decode('utf-8')
+    except Exception as e:
+        log.write(ctx, f"Failed to decode base64-encoded paths during copy-to-research: {str(e)}")
+        return
 
-    space, _, _, _ = pathutil.info(coll_target)
+    if not decoded_origin or not decoded_origin.startswith('/'):
+        log.write(ctx, f"Invalid origin path after decoding for copy-to-research: <{decoded_origin}>")
+        return
+
+    if not decoded_target or not decoded_target.startswith('/'):
+        log.write(ctx, f"Invalid target path after decoding for copy-to-research: <{decoded_target}>")
+        return
+
+    log.write(ctx, f"Starting vault copy: {decoded_origin} -> {decoded_target}, attempt #{retry_str}")
+
+    space, _, _, _ = pathutil.info(decoded_target)
 
     # Check target already existed during the retry process, to prevent double clicking
-    if space is pathutil.Space.RESEARCH and collection.exists(ctx, coll_target):
-        log.write(ctx, f"Target collection already exists: {coll_target}")
+    if space is pathutil.Space.RESEARCH and collection.exists(ctx, decoded_target):
+        log.write(ctx, f"Target collection already exists: {decoded_target}")
         return None
 
     # Execute copy operation through irsync cmd
-    success = copy_folder_to_research(ctx, coll_origin, coll_target)
+    success = copy_folder_to_research(ctx, decoded_origin, decoded_target)
 
     # Handle result
     if success:
         # Fix ACLs for data package copied to deposit.
         if space is pathutil.Space.DEPOSIT:
-            msi.set_acl(ctx, "recursive", "admin:own", actor, coll_target)
+            msi.set_acl(ctx, "recursive", "admin:own", actor, decoded_target)
 
-        _, _, _, datapackage_name = pathutil.info(coll_origin)
-        notifications.set(ctx, "system", actor, coll_target, f"Copying data package <{datapackage_name}>finished")
-        log.write(ctx, f"Copy successful: {coll_origin}")
+        _, _, _, datapackage_name = pathutil.info(decoded_origin)
+        notifications.set(ctx, "system", actor, decoded_target, f"Copying data package <{datapackage_name}>finished")
+        log.write(ctx, f"Copy successful: {decoded_origin}")
     else:
         # Copy failed and enter retry logic
         retry_count = int(retry_str)
-        handle_retry_operation(ctx, coll_origin, coll_target, actor, retry_count)
+        handle_retry_operation(ctx, decoded_origin, decoded_target, actor, retry_count)
 
 
 def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
