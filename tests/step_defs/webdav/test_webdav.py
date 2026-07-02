@@ -1,7 +1,7 @@
 # coding=utf-8
 """WebDAV interface feature tests."""
 
-__copyright__ = 'Copyright (c) 2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import urllib.parse
