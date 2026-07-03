@@ -391,15 +391,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
     inactivity_cutoff = datetime.now() - timedelta(weeks=4.35 * config.inactivity_cutoff_months)
     inactivity_cutoff_epoch = int((inactivity_cutoff - datetime(1970, 1, 1)).total_seconds())
 
-    # First query: obtain a list of groups with group attributes
-    iter = genquery.row_iterator(
-        "USER_GROUP_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        group_name = row[0]
+    for group_name in group.get_list_research_groups(ctx):
         coll = '/{}/home/{}'.format(zone, group_name)
 
         if not collection.exists(ctx, coll):
@@ -409,69 +401,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
             log.write(ctx, 'inactive research group - Skipping group without collection: ' + group_name)
             continue
 
-        # Trigger this flag if there are any files that have been modified after the cut off
-        # If the flag is still false after going through all the files, then that is when we send the notification
-        recent_files_modified = False
-        data_objects_count = 0
-        where_clause = {
-            'self': "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}'".format(coll, group_name),
-            'subfolders': "COLL_NAME LIKE '{}/%' AND USER_GROUP_NAME = '{}'".format(coll, group_name)
-        }
-
-        # Per group two statements are required to gather all data
-        # 1) data in folder itself
-        # 2) data in all subfolders of the folder
-        for folder_type in ['self', 'subfolders']:
-            iter_subcoll = genquery.row_iterator(
-                "COUNT(DATA_NAME)",
-                where_clause[folder_type],
-                genquery.AS_LIST, ctx
-            )
-            # This loop should only run once
-            for sub_row in iter_subcoll:
-                data_objects_count += int(sub_row[0])
-
-        if data_objects_count > 0:
-            for folder_type in ['self', 'subfolders']:
-                if recent_files_modified:
-                    break
-
-                iter_subcoll = genquery.row_iterator(
-                    "DATA_NAME, COLL_NAME",
-                    where_clause[folder_type],
-                    genquery.AS_LIST, ctx
-                )
-
-                for sub_row in iter_subcoll:
-                    if recent_files_modified:
-                        break
-
-                    sub_coll = sub_row[1]
-
-                    # Get count of any data objects that have been modified after the inactivity cut off
-                    iter_recent_data = genquery.row_iterator(
-                        "COUNT(DATA_NAME)",
-                        "COLL_NAME = '{}' AND USER_GROUP_NAME = '{}' AND DATA_MODIFY_TIME > '{}'".format(sub_coll, group_name, inactivity_cutoff_epoch),
-                        genquery.AS_LIST, ctx
-                    )
-
-                    # This loop should only run once
-                    for count_row in iter_recent_data:
-                        if int(count_row[0]) > 0:
-                            recent_files_modified = True
-        else:
-            # Empty research group, so check the modified date of the collection, then send a notification
-            iter_data = genquery.row_iterator(
-                "COLL_MODIFY_TIME",
-                "COLL_NAME = '{}'".format(coll),
-                genquery.AS_LIST, ctx
-            )
-            # This loop should only run once
-            for sub_row in iter_data:
-                if int(sub_row[0]) > inactivity_cutoff_epoch:
-                    recent_files_modified = True
-
-        if not recent_files_modified:
+        if not collection.has_dataobjects_modified_after(ctx, coll, inactivity_cutoff_epoch, fallback_to_collection_modified=True):
             try:
                 datamanagers = folder.get_datamanagers(ctx, coll)
             except ValueError as e:
@@ -481,15 +411,15 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
             if len(datamanagers) > 0:
                 notify_count += 1
                 # Send notifications to datamanager(s).
-                message = "Group '{}' has been inactive for more than {} months".format(group_name, config.inactivity_cutoff_months)
+                message = f"Group '{group_name}' has been inactive for more than {config.inactivity_cutoff_months} months"
 
                 for datamanager in datamanagers:
                     datamanager_name = '{}#{}'.format(*datamanager)
                     actor = 'system'
                     set(ctx, actor, datamanager_name, coll, message)
-                log.write(ctx, 'inactive research group - Notifications set for group {} having been inactive since at least {}. <{}>'.format(group_name, inactivity_cutoff, coll))
+                log.write(ctx, f'inactive research group - Notifications set for group {group_name} having been inactive since at least {config.inactivity_cutoff_months}. <{coll}>')
 
-    log.write(ctx, 'inactive research group - Finished checking research groups for inactivity | notified: {}'.format(notify_count))
+    log.write(ctx, f'inactive research group - Finished checking research groups for inactivity | notified: {notify_count}')
 
 
 @rule.make()
