@@ -65,3 +65,18 @@ def get_category(ctx: 'rule.Context', grp: str) -> str | None:
     ret = ctx.uuGroupGetCategory(grp, '', '')
     x = ret['arguments'][1]
     return None if x == '' else x
+
+
+def get_list_research_groups(ctx: 'rule.Context') -> List[str]:
+    """Returns a list of research groups
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Category of given group
+    """
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%'",
+        genquery.AS_LIST, ctx
+    )
+    return [row[0] for row in iter]
