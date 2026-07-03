@@ -299,3 +299,94 @@ def name_from_id(ctx: rule.Context, coll_id: str) -> str:
     :returns: Collection name
     """
     return genquery.Query(ctx, "COLL_NAME", f"COLL_ID = '{coll_id}'").first()
+
+
+def has_dataobjects(ctx: rule.Context, collection: str) -> bool:
+    """Determines whether collection or any of its subcollections has any
+       data objects
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param collection: Collection name
+
+    :returns: Boolean value than indicates whether the collection or any of its
+              subcollections has any data objects.
+    """
+    where_clause = {
+        'self': f"COLL_NAME = '{collection}'",
+        'subfolders': "COLL_NAME LIKE '{collection}/%'"
+    }
+
+    for folder_type in ['self', 'subfolders']:
+        iter_subcoll = genquery.row_iterator(
+            "COUNT(DATA_NAME)",
+            where_clause[folder_type],
+            genquery.AS_LIST, ctx
+        )
+        # This loop should only run once
+        for sub_row in iter_subcoll:
+            if int(sub_row[0]) > 0:
+                iter_subcoll.close()
+                return True
+
+    return False
+
+
+def has_collection_modify_date_after(ctx: rule.Context, collection: str, timestamp: int) -> bool:
+    """Determines whether a collection has a collection modification date after a
+       particular timestamp
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param collection: Collection name
+    :param timestamp:  Epoch time to compare modification time to
+
+    :raises Exception: if collection has not been found
+
+    :returns: boolean value that indicates whether the collection has a more recent modification time
+              than the provided timestamp.
+    """
+    iter_data = genquery.row_iterator(
+        "COLL_MODIFY_TIME",
+        "COLL_NAME = '{collection}'",
+        genquery.AS_LIST, ctx
+    )
+    # This loop should only run once
+    for sub_row in iter_data:
+        return int(sub_row[0]) > timestamp
+
+    raise Exception("Collection not found")
+
+
+def has_dataobjects_modified_after(ctx: rule.Context, collection: str, timestamp: int, fallback_to_collection_modified: bool = False) -> bool:
+    """Determines whether a collection has data objects that have been modified
+       after a particular timestamp.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param collection: Collection name
+    :param timestamp:  Epoch time to compare modification time of data objects to
+    :param fallback_to_collection_modified: If this is enabled, and the collection has no
+                       data objects, compare the provided timestamp to the collection modification time
+                       instead.
+
+    :returns: boolean value that indicates whether the collection has more recent modifications than the provided
+              timestamp
+    """
+    collections = [collection] + list(subcollections(ctx, collection, recursive=True))
+
+    for c in collections:
+        # Get count of any data objects that have been modified after the inactivity cut off
+        iter_recent_data = genquery.row_iterator(
+            "COUNT(DATA_NAME)",
+            f"COLL_NAME = '{c}' AND DATA_MODIFY_TIME > '{timestamp}'",
+            genquery.AS_LIST, ctx
+        )
+
+        # This loop should only run once
+        for count_row in iter_recent_data:
+            if int(count_row[0]) > 0:
+                iter_recent_data.close()
+                return True
+
+    if fallback_to_collection_modified and not has_dataobjects(ctx, collection):
+        return has_collection_modify_date_after(ctx, collection, timestamp)
+    else:
+        return False
