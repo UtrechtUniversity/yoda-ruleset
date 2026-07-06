@@ -303,6 +303,7 @@ def _test_statistics_exportdata(ctx: rule.Context) -> List[str]:
         errors.append("Fewer groups in storage data than expected: " + str(len(storagedata)))
 
     research_initial_data = [d for d in storagedata if d['groupname'] == "research-initial"]
+    log.write(ctx, "RID data = " + str(research_initial_data))
     if len(research_initial_data) == 0:
         errors.append("Research-initial not found in storage data")
     elif len(research_initial_data) > 1:
