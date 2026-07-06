@@ -412,9 +412,19 @@ def get_resource_monthly_category_stats(ctx: rule.Context) -> Dict:
             elif len(group_storage[group]) == record_count:
                 group_storage[group].append(0)
 
-        # Increment time period by 1 month
-        min_date = min_date + relativedelta(months=+1)
         record_count += 1
+
+        # Increment time period by 1 month, but take care not to skip
+        # the iteration for the current month.
+        date_one_month_later = min_date + relativedelta(months=+1)
+        if min_date < current_date and date_one_month_later < current_date:
+            min_date = date_one_month_later
+        elif min_date < current_date:
+            # Do one last iteration with current year and month
+            min_date = current_date
+        elif min_date == current_date:
+            # Current year and month have been processed
+            break
 
     all_storage = [
         {
