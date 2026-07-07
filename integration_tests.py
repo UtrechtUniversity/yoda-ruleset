@@ -812,6 +812,9 @@ basic_integration_tests = [
     {"name":   "util.collection.exists.no",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/chewbacca"),
      "check": lambda x: not x},
+    {"name":   "util.collection.has_modify_date_after",
+     "test": lambda ctx: _test_has_modify_date_after(ctx),
+     "check": lambda x: x == []},
     {"name":   "util.collection.has_dataobjects.yes_nonrecursive",
      "test": lambda ctx: collection.has_dataobjects(ctx, "/tempZone/home/research-initial/testdata"),
      "check": lambda x: x is True},
@@ -821,6 +824,9 @@ basic_integration_tests = [
     {"name":   "util.collection.has_dataobjects.no",
      "test": lambda ctx: collection.has_dataobjects(ctx, "/tempZone/home/research-core-0"),
      "check": lambda x: x is False},
+    {"name":   "util.collection.has_dataobjects_modified_after",
+     "test": lambda ctx: _test_has_dataobjects_modified_after(ctx),
+     "check": lambda x: x == []},
     {"name":   "util.collection.owner",
      "test": lambda ctx: collection.owner(ctx, "/tempZone/yoda"),
      "check": lambda x: x == ('rods', 'tempZone')},
@@ -906,8 +912,8 @@ basic_integration_tests = [
     {"name":   "util.group.is_member.no",
      "test": lambda ctx: group.is_member(ctx, "research-initial", "rods"),
      "check": lambda x: not x},
-    {"name":   "util.group.get_list_research_groups",
-     "test": lambda ctx: group.get_list_research_groups(ctx),
+    {"name":   "util.group.get_research_groups_list",
+     "test": lambda ctx: group.get_research_groups_list(ctx),
      "check": lambda x: len(x) > 10 and "research-initial" in x},
     {"name":   "util.group.members.normal",
      "test": lambda ctx: group.members(ctx, "research-initial"),
@@ -1344,6 +1350,108 @@ def _test_copy_folder_to_research(ctx):
                     collection.remove(ctx, path)
             except Exception as e:
                 log.write(ctx, f"Clean up test files exception: {str(e)}")
+
+
+def _test_has_modify_date_after(ctx: rule.Context) -> List[str]:
+    """Tests for the collection.has_modify_date_after function
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: List of unexpected results
+    """
+    testcollection = _create_tmp_collection(ctx)
+    test_modifytime = 1783417948
+    json_inp = {"logical_path": testcollection, "options": {"seconds_since_epoch": test_modifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    result: List[str] = []
+
+    if not collection.has_modify_date_after(ctx, testcollection, test_modifytime - 1):
+        result.append("Fail for modify time just before")
+    if collection.has_modify_date_after(ctx, testcollection, test_modifytime):
+        result.append("Fail for modify time equals")
+    if collection.has_modify_date_after(ctx, testcollection, test_modifytime + 1):
+        result.append("Fail for modify time just after")
+    if not collection.has_modify_date_after(ctx, testcollection, 999):
+        result.append("Fail for modify time numerically before / lexically after")
+
+    collection.remove(ctx, testcollection)
+    return result
+
+
+def _test_has_dataobjects_modified_after(ctx: rule.Context) -> List[str]:
+    """Tests for the collection.has_dataobjects_modified_after function
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: List of unexpected results
+    """
+    # Timestamp that is numerically lower but lexically higher than regular timestamps
+    test_lexicaltime = 999
+
+    # create testcollection
+    testcollection = _create_tmp_collection(ctx)
+    test_modifytime = 1783417948
+    json_inp = {"logical_path": testcollection, "options": {"seconds_since_epoch": test_modifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    result: List[str] = []
+
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime - 1, False):
+        result.append("Fail for collection without data objects (no fallback/before)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection without data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime + 1, False):
+        result.append("Fail for collection without data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime - 1, True):
+        result.append("Fail for collection without data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection without data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime + 1, True):
+        result.append("Fail for collection without data objects (fallback/after)")
+
+    test_objectmodifytime = test_modifytime - 3600
+    objectname = os.path.join(testcollection, "test.txt")
+    json_inp = {"logical_path": objectname, "options": {"seconds_since_epoch": test_objectmodifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, False):
+        result.append("Fail for collection with data objects (no fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection with data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, False):
+        result.append("Fail for collection with data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, True):
+        result.append("Fail for collection with data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection with data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, True):
+        result.append("Fail for collection with data objects (fallback/after)")
+
+    data_object.remove(ctx, objectname)
+    subcollection = os.path.join(testcollection, "subcollection")
+    objectname = os.path.join(subcollection, "test.txt")
+    collection.create(ctx, subcollection)
+    test_objectmodifytime = test_modifytime - 7200
+    json_inp = {"logical_path": objectname, "options": {"seconds_since_epoch": test_objectmodifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, False):
+        result.append("Fail for collection with nested data objects (no fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection with nested data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, False):
+        result.append("Fail for collection with nested data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, True):
+        result.append("Fail for collection with nested data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection with nested data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, True):
+        result.append("Fail for collection with nested data objects (fallback/after)")
+
+    collection.remove(ctx, testcollection)
+
+    return result
 
 
 def _test_collection_subcollections(ctx: rule.Context) -> List[str]:

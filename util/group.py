@@ -67,7 +67,7 @@ def get_category(ctx: 'rule.Context', grp: str) -> str | None:
     return None if x == '' else x
 
 
-def get_list_research_groups(ctx: 'rule.Context') -> List[str]:
+def get_research_groups_list(ctx: 'rule.Context') -> List[str]:
     """Returns a list of research groups
 
     :param ctx: Combined type of a callback and rei struct
