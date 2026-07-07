@@ -352,6 +352,9 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
     managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
     groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
 
+    # Prepare dictionary for quick lookup of category/environment-level schemas
+    schema_lookup_dict = schema.get_schema_category_lookup_dict(ctx)
+
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
 
@@ -396,9 +399,9 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
         group_hierarchy[group['category']].setdefault(group['subcategory'], OrderedDict())
 
         # Check whether schema_id is present on group level.
-        # If not, collect it from the corresponding category
+        # If not, use the environment or category default
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema_lookup_dict[group.get('category', "__nocategory")]
 
         coll_name = "/{}/home/{}".format(user.zone(ctx), group['name'])
 
