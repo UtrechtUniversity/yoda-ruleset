@@ -13,6 +13,7 @@ import irods_types
 
 import epic
 import meta
+import misc
 import notifications
 import policies_folder_status
 import provenance
@@ -659,7 +660,7 @@ def collection_group_name(ctx: rule.Context, coll: str) -> str:
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
-        "COLL_NAME = '{}'".format(coll),
+        f"COLL_NAME = '{misc.escape(coll)}'",
         genquery.AS_LIST, ctx
     )
 
