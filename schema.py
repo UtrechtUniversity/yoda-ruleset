@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from collections import defaultdict
 from typing import Dict, Tuple
 
 import genquery
@@ -42,6 +43,41 @@ def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
 
     return {'schemas': schemas,
             'schema_default': schema_default}
+
+
+def get_schema_category_lookup_dict(ctx: rule.Context) -> defaultdict:
+    """Returns a defaultdict that can be used to efficiently
+       look up category- and environment-level metadata schemas
+       of categories.
+
+    :param ctx:        Combined type of a callback and rei struct
+
+    :returns: defaultdict, where the default is the environment-level
+              default metadata schema, and the keys/values are categories
+              that have their own metadata schema. It will also return
+              the environment-level default metadata schema for nonexistent
+              categories.
+    """
+    # Function-level import to work around import dependency cycle
+    # without major refactoring or code duplication.
+    from groups import get_categories
+
+    result = defaultdict(lambda: config.default_yoda_schema)
+    categories = set(get_categories(ctx))
+    schema_path = '/' + user.zone(ctx) + '/yoda/schemas'
+
+    schema_collections = genquery.row_iterator(
+        "COLL_NAME",
+        f"DATA_NAME like 'metadata.json' AND COLL_NAME LIKE '{schema_path}/%'",
+        genquery.AS_LIST, ctx
+    )
+
+    for schema_collection in schema_collections:
+        name = schema_collection[0].split("/")[-1]
+        if name in categories:
+            result[name] = name
+
+    return result
 
 
 def get_schema_collection(ctx: rule.Context, rods_zone: str, group_name: str) -> str:
