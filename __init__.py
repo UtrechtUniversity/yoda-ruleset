@@ -34,6 +34,7 @@ from arb                      import *
 from browse                   import *
 from checksums                import *
 from datacite                 import *
+from exceptions               import *
 from folder                   import *
 from groups                   import *
 from integration_tests        import *
