@@ -364,6 +364,32 @@ def _test_schema_active_schema_vault_without_research(ctx):
     return result
 
 
+def _test_get_schema_category_lookup_dict(ctx: rule.Context) -> List[str]:
+    result: List[str] = []
+
+    dict1 = schema.get_schema_category_lookup_dict(ctx)
+
+    if dict1["test-automation"] != "default-3":
+        result.append("Fail env default / existing category")
+    if dict1["nonexistentcategory"] != "default-3":
+        result.append("Fail env default / nonexistent category")
+
+    schema_collection = "/tempZone/yoda/schemas/test-automation"
+    schema_object = f"{schema_collection}/metadata.json"
+    collection.create(ctx, schema_collection)
+    data_object.write(ctx, schema_object, "test")
+    dict2 = schema.get_schema_category_lookup_dict(ctx)
+
+    if dict2["test-automation"] != "test-automation":
+        result.append("Fail cat default / existing category")
+    if dict2["nonexistentcategory"] != "default-3":
+        result.append("Fail cat default / nonexistent category")
+
+    collection.remove(ctx, schema_collection)
+
+    return result
+
+
 def _test_get_latest_vault_metadata_path_empty(ctx):
     tmp_collection = _create_tmp_collection(ctx)
     latest_file = meta.get_latest_vault_metadata_path(ctx, tmp_collection)
@@ -781,6 +807,9 @@ basic_integration_tests = [
     {"name":  "schema.get_active_schema_path.vault-without-research",
      "test": lambda ctx: _test_schema_active_schema_vault_without_research(ctx),
      "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_schema_category_lookup_dict",
+     "test": lambda ctx: _test_get_schema_category_lookup_dict(ctx),
+     "check": lambda x: x == []},
     # Vault metadata schema report: only check return value type, not contents
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
