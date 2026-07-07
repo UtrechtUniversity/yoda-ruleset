@@ -391,7 +391,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
     inactivity_cutoff = datetime.now() - timedelta(weeks=4.35 * config.inactivity_cutoff_months)
     inactivity_cutoff_epoch = int((inactivity_cutoff - datetime(1970, 1, 1)).total_seconds())
 
-    for group_name in group.get_list_research_groups(ctx):
+    for group_name in group.get_research_groups_list(ctx):
         coll = '/{}/home/{}'.format(zone, group_name)
 
         if not collection.exists(ctx, coll):
