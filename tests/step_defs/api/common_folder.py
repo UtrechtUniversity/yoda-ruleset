@@ -56,11 +56,11 @@ def api_folder_submit(user, folder):
 
 
 @given(parsers.parse("the Yoda folder submit API is queried with {folder} and {delete_research_copy}"), target_fixture="api_response")
-def api_folder_submit_move(user, folder, delete_research_copy=False):
+def api_folder_submit_move(user, folder, delete_research_copy="False"):
     return api_request(
         user,
         "folder_submit",
-        {"coll": folder, "delete_research_copy": bool(delete_research_copy)}
+        {"coll": folder, "delete_research_copy": delete_research_copy.lower() == "true"}
     )
 
 
