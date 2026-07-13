@@ -9,6 +9,7 @@ from test_policies import PoliciesTest
 from test_publication_utils import PublicationUtilsTest
 from test_revisions import RevisionTest
 from test_schema_transformations import CorrectifyIsniTest, CorrectifyOrcidTest, CorrectifyResearcherIDTest, CorrectifyScopusTest, MergeGeoKeywordsTest, RenameRelatedDatapackageTest
+from test_util_api import UtilAPITest
 from test_util_config import UtilConfigTest
 from test_util_misc import UtilMiscTest
 from test_util_pathutil import UtilPathutilTest
@@ -31,6 +32,7 @@ def suite():
     test_suite.addTest(makeSuite(PublicationUtilsTest))
     test_suite.addTest(makeSuite(RevisionTest))
     test_suite.addTest(makeSuite(SchemaUtilsTest))
+    test_suite.addTest(makeSuite(UtilAPITest))
     test_suite.addTest(makeSuite(UtilConfigTest))
     test_suite.addTest(makeSuite(UtilMiscTest))
     test_suite.addTest(makeSuite(UtilPathutilTest))
