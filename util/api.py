@@ -89,7 +89,10 @@ def _check_type(value: Any, expected_type: Any) -> bool:
         return value is None
 
     if expected_type in (int, str, float, bool, list, dict):
-        return isinstance(value, expected_type)
+        # JSON does not distinguish between numeric types, so we are
+        # a bit liberal in what we accept for numeric types.
+        return (isinstance(value, expected_type)
+                or (expected_type is float and isinstance(value, int)))
 
     return False
 
