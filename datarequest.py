@@ -357,6 +357,8 @@ def api_generate_request_id(ctx: rule.Context, draft_request_id: str) -> api.Res
 
     :param ctx:              Combined type of a callback and rei struct
     :param draft_request_id: Unique identifier of the data request
+
+    :returns: Data request ID
     """
     # If we're not working with a draft, generate a new request ID.
     if draft_request_id:
@@ -1196,15 +1198,14 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
 
 
 @api.make()
-def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str, coll_exists: bool = False) -> api.Result:
+def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
     """
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("grantread" or "revoke")
-    :param coll_exists:
 
-    :returns: Nothing
+    :returns: None
     """
     # Create collection with request id if doesn't exist
     # path as a parameter
