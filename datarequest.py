@@ -28,6 +28,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_get',
            'api_datarequest_attachment_upload_permission',
            'api_datarequest_attachment_post_upload_actions',
+           'api_datarequest_data_write_permission',
            'api_datarequest_attachments_get',
            'api_datarequest_attachments_submit',
            'api_datarequest_preliminary_review_submit',
@@ -53,7 +54,8 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
-           'rule_datarequest_review_period_expiration_check']
+           'rule_datarequest_review_period_expiration_check',
+           'api_generate_request_id']
 
 
 ###################################################
@@ -347,6 +349,23 @@ def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> No
 
     # Trigger the processing of delayed rules
     ctx.adminDatarequestActions()
+
+
+@api.make()
+def api_generate_request_id(ctx: rule.Context, draft_request_id: str) -> api.Result:
+    """Wrapper around generate_request_id
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param draft_request_id: Unique identifier of the data request
+    """
+    # If we're not working with a draft, generate a new request ID.
+    if draft_request_id:
+        request_id = draft_request_id
+    else:
+        # Generate request ID and construct data request collection path.
+        request_id = str(generate_request_id(ctx))
+
+    return request_id
 
 
 def generate_request_id(ctx: rule.Context) -> int:
@@ -922,16 +941,26 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[st
 
 
 @api.make()
-def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
+def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, draft: bool, draft_request_id: str | None = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
-    :param data:             Contents of the data request
+    :param filename:         Name of the file containing contents of the data request
+    :param request_id:       Datarequest ID
     :param draft:            Boolean specifying whether the data request should be saved as draft
     :param draft_request_id: Unique identifier of the draft data request
 
     :returns: API status
     """
+    # Read data from file
+    req_id = ""
+    if draft_request_id:
+        req_id = draft_request_id
+    req_id = request_id
+
+    data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, filename)
+    data = jsonutil.read(ctx, data_path)
+
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
@@ -956,13 +985,6 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
     if (user.is_member_of(ctx, GROUP_PM) or user.is_member_of(ctx, GROUP_DM)):
         return api.Error("permission_error", "Action not permitted.")
 
-    # If we're not working with a draft, generate a new request ID.
-    if draft_request_id:
-        request_id = draft_request_id
-    else:
-        # Generate request ID and construct data request collection path.
-        request_id = str(generate_request_id(ctx))
-
     # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
@@ -975,7 +997,9 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
             sigdta_path      = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
             attachments_path = "{}/{}".format(coll_path, ATTACHMENTS_PATHNAME)
 
-            collection.create(ctx, coll_path)
+            # If it does not exist
+            if not collection.exists(ctx, coll_path):
+                collection.create(ctx, coll_path)
             collection.create(ctx, attachments_path)
             collection.create(ctx, dta_path)
             collection.create(ctx, sigdta_path)
@@ -1030,6 +1054,9 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
         # If update of existing draft, return nothing
         else:
             return
+    else:
+        # Clean up the data file
+        data_object.remove(ctx, data_path)
 
     # Grant read permissions on data request
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
@@ -1166,6 +1193,32 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
                                          ATTACHMENTS_PATHNAME, filename)
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+
+
+@api.make()
+def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str, coll_exists: bool = False) -> api.Result:
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("grantread" or "revoke")
+    :param coll_exists:
+
+    :returns: Nothing
+    """
+    # Create collection with request id if doesn't exist
+    # path as a parameter
+    datarequest_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    if not collection.exists(ctx, datarequest_path):
+        collection.create(ctx, datarequest_path)
+
+    # Check if action is valid
+    if action not in ["grant", "grantread", "own"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    ctx.adminTempWritePermission(datarequest_path, action)
+    return
 
 
 @api.make()
