@@ -11,13 +11,18 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [ '3.9', '3.12' ]
+
     steps:
       - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python_version }}
 
       - name: Install dependencies
         run: |
