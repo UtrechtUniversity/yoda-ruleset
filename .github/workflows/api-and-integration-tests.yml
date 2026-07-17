@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - development
+    - 'rc-[0-9]+.[0-9]+.[0-9]+'
     - 'release-[0-9]+.[0-9]+'
     - "**-atr"
     # We can force an integration/API test run without opening a PR by pushing to a branch name that ends with "-atr"
@@ -32,12 +33,23 @@ jobs:
       id: extract_branch
 
     # For release branches, we use the Docker setup version of that release.
+    # For rc branches (e.g. rc-2.1.0, rc-2.1.1), we use the Docker setup of the matching
+    # release branch (e.g. release-2.1), except for ".0" rc branches (e.g. rc-2.1.0), because
+    # we usually don't have Docker images for a release branch if the first patch release
+    # is not ready yet.
     # For other branches, we use the Docker setup of the development branch.
     - name: Determine Yoda repository branch
       shell: bash
       run: |
-        if [[ "${{ steps.extract_branch.outputs.branch }}" =~ ^"release-" ]]; then
-          echo "branch=${{ steps.extract_branch.outputs.branch }}" >> $GITHUB_OUTPUT
+        branch="${{ steps.extract_branch.outputs.branch }}"
+        if [[ "$branch" =~ ^rc-([0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+          if [[ "${BASH_REMATCH[2]}" == "0" ]]; then
+            echo "branch=development" >> $GITHUB_OUTPUT
+          else
+            echo "branch=release-${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          fi
+        elif [[ "$branch" =~ ^"release-" ]]; then
+          echo "branch=$branch" >> $GITHUB_OUTPUT
         else
           echo "branch=development" >> $GITHUB_OUTPUT
         fi
