@@ -74,8 +74,6 @@ def get_children_by_id(ctx: 'rule.Context', resc_id: str) -> List:
 
     :returns: list of child resource IDs
     """
-    result = genquery.Query(ctx, ["RESC_PARENT"], "RESC_ID = '{}'".format(resc_id)).first()
-
     result = list(genquery.row_iterator(
                   "RESC_ID",
                   "RESC_PARENT = '{}'".format(resc_id),
