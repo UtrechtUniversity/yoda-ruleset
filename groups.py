@@ -48,9 +48,10 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
+    included_attributes = "('category', 'subcategory', 'schema_id', 'data_classification', 'manager', 'description', 'expiration_date', 'sram_co')"
     group_attrs = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup'",
+        f"USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN {included_attributes}",
         genquery.AS_LIST, ctx
     )
 
