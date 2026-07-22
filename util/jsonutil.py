@@ -7,6 +7,7 @@ import json
 from collections import OrderedDict
 
 import jsonavu
+import orjson
 import requests
 
 import avu
@@ -19,6 +20,25 @@ import rule
 
 class ParseError(error.UUError):
     """Exception for unparsable JSON text."""
+
+
+def fast_parse(input: bytes) -> dict:
+    """Parse binary JSON data into a dictionary. For most purposes, this
+       should be equivalent to the regular parse function, since
+       dictionaries preserve order in Python 3.7+. Only the
+       specific functions of OrderedDict like move_to_end are
+       not available.
+
+    :param input: binary data to parse
+
+    :raises ParseError: JSON file format error
+
+    :returns: JSON data as dictionary
+    """
+    try:
+        return orjson.loads(input)
+    except orjson.JSONDecodeError:
+        raise ParseError('JSON file format error')
 
 
 def parse(text: str) -> OrderedDict:
@@ -34,6 +54,19 @@ def parse(text: str) -> OrderedDict:
         return json.loads(text, object_pairs_hook=OrderedDict)
     except json.JSONDecodeError:
         raise ParseError('JSON file format error')
+
+
+def fast_dump(input: dict) -> str:
+    """Dump dictionary structure into string data using JSON.
+       This is similar to the regular dump function, only it does
+       not do any formatting like indenting, and does not support
+       options.
+
+    :param input: dictionary data structure
+
+    :returns: JSON data in string format
+    """
+    return orjson.dumps(input).decode("utf-8")
 
 
 def dump(data: dict, **options: int) -> str:

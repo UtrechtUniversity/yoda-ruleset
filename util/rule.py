@@ -101,26 +101,32 @@ def make(inputs: List | None = None, outputs: List | None = None, transform: Cal
                           + traceback.format_exc())
                 raise e
 
-            if result is None:
-                return
+            try:
+                if result is None:
+                    return
 
-            result = list(map(transform, list(result) if type(result) is tuple else [result]))
+                result = list(map(transform, list(result) if type(result) is tuple else [result]))
 
-            if handler is Output.STORE:
-                if outputs is None:
-                    # outputs not specified? overwrite all arguments.
-                    rule_args[:] = list(map(encode_val, result))
-                else:
-                    # set specific output arguments.
-                    for i, x in zip(outputs, result):
-                        rule_args[i] = encode_val(x)
-            elif handler is Output.STDOUT:
-                for x in result:
-                    callback.writeString('stdout', encode_val(x) + '\n')
-                    # For debugging:
-                    # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
-            elif handler is Output.STDOUT_BIN:
-                for x in result:
-                    callback.writeString('stdout', encode_val(x))
+                if handler is Output.STORE:
+                    if outputs is None:
+                        # outputs not specified? overwrite all arguments.
+                        rule_args[:] = list(map(encode_val, result))
+                    else:
+                        # set specific output arguments.
+                        for i, x in zip(outputs, result):
+                            rule_args[i] = encode_val(x)
+                elif handler is Output.STDOUT:
+                    for x in result:
+                        callback.writeString('stdout', encode_val(x) + '\n')
+                        # For debugging:
+                        # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
+                elif handler is Output.STDOUT_BIN:
+                    for x in result:
+                        callback.writeString('stdout', encode_val(x))
+            except Exception as e:
+                log.write(ctx, "Uncaught exception while processing rule result: "
+                          + traceback.format_exc())
+                raise e
+
         return r
     return deco
