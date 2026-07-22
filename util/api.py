@@ -164,8 +164,8 @@ def _api(f: Callable) -> Callable:
         try:
             base64_decoded = base64.b64decode(inp)
             decompressed_data = zlib.decompress(base64_decoded)
-            data = jsonutil.parse(decompressed_data)
-            if type(data) is not OrderedDict:
+            data = jsonutil.fast_parse(decompressed_data)
+            if not isinstance(data, dict):
                 raise jsonutil.ParseError('Argument is not a JSON object')
         except base64.binascii.Error:
             log.write(ctx, f"Error: API rule <{f.__name__}> input base64 decode error", print_module=False)
@@ -277,6 +277,6 @@ def make() -> Callable:
 
         # The JSON-in, JSON-out rule.
         return rule.make(inputs=[0], outputs=[],
-                         transform=jsonutil.dump, handler=rule.Output.STDOUT)(base)
+                         transform=jsonutil.fast_dump, handler=rule.Output.STDOUT)(base)
 
     return deco
