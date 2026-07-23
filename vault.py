@@ -11,7 +11,7 @@ import re
 import subprocess
 import time
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import genquery
 from dateutil import parser
@@ -56,7 +56,7 @@ __all__ = ['api_vault_submit',
 
 
 @api.make()
-def api_vault_submit(ctx: rule.Context, coll: str, previous_version: str | None = None) -> api.Result:
+def api_vault_submit(ctx: rule.Context, coll: str, previous_version: Optional[str] = None) -> api.Result:
     """Submit data package for publication.
 
     :param ctx:              Combined type of a callback and rei struct
