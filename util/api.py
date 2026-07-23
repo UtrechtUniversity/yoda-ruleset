@@ -13,7 +13,7 @@ import traceback
 import types
 import zlib
 from collections import OrderedDict
-from typing import Any, Callable, get_args, get_type_hints
+from typing import Any, Callable, get_args, get_origin, get_type_hints, Union
 
 import error
 import jsonutil
@@ -82,19 +82,22 @@ def _check_type(value: Any, expected_type: Any) -> bool:
               does not match.
     """
     if hasattr(types, 'UnionType') and isinstance(expected_type, types.UnionType):
+        # New style union types, like str | int
         union_args = get_args(expected_type)
         return any(_check_type(value, arg) for arg in union_args)
-
-    if expected_type is type(None):
+    elif get_origin(expected_type) is Union:
+        # Old style union types, like Union[str, int]
+        union_args = get_args(expected_type)
+        return any(_check_type(value, arg) for arg in union_args)
+    elif expected_type is type(None):
         return value is None
-
-    if expected_type in (int, str, float, bool, list, dict):
+    elif expected_type in (int, str, float, bool, list, dict):
         # JSON does not distinguish between numeric types, so we are
         # a bit liberal in what we accept for numeric types.
         return (isinstance(value, expected_type)
                 or (expected_type is float and isinstance(value, int)))
-
-    return False
+    else:
+        return False
 
 
 def _api(f: Callable) -> Callable:
