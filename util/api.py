@@ -153,8 +153,8 @@ def _api(f: Callable) -> Callable:
         def error_internal(debug_info: str | None = None) -> Error:
             return Error('internal', 'An internal error occurred', debug_info=debug_info)
 
-        def bad_request(debug_info: str | None = None) -> Error:
-            return Error('badrequest', 'An internal error occurred', debug_info=debug_info)
+        def bad_request(info: str | None = None) -> Error:
+            return Error('badrequest', info)
 
         # Input is base64 encoded and compressed to reduce size (max rule length in iRODS is 20KB)
         # Validate input string: is it a valid JSON object?
