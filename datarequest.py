@@ -362,7 +362,7 @@ def generate_request_id(ctx: rule.Context) -> int:
 
 
 @api.make()
-def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: list | None) -> api.Result:
+def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: Optional[list]) -> api.Result:
     """Wrapper around datarequest_action_permitted.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -382,7 +382,7 @@ def api_datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: 
     return datarequest_action_permitted(ctx, request_id, roles, statuses)
 
 
-def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: list | None) -> bool:
+def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list, statuses: Optional[list]) -> bool:
     """Check if current user and data request status meet specified restrictions.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -425,7 +425,7 @@ def datarequest_action_permitted(ctx: rule.Context, request_id: str, roles: list
 
 
 @api.make()
-def api_datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> api.Result:
+def api_datarequest_roles_get(ctx: rule.Context, request_id: Optional[str] = None) -> api.Result:
     """Get roles of invoking user.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -437,7 +437,7 @@ def api_datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) 
     return datarequest_roles_get(ctx, request_id)
 
 
-def datarequest_roles_get(ctx: rule.Context, request_id: str | None = None) -> list:
+def datarequest_roles_get(ctx: rule.Context, request_id: Optional[str] = None) -> list:
     """Get roles of invoking user.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -922,7 +922,7 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: list[st
 
 
 @api.make()
-def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
+def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_request_id: Optional[str] = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
