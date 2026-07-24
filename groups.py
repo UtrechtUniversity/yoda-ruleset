@@ -1151,6 +1151,11 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
         if co_identifier and not yoda_names.is_email_username(user_name):
             return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(user_name, group_name))
 
+        role_map = {"viewer": "reader", "member": "normal"}
+        normalized_role = role_map.get(role, role)
+        if normalized_role not in ["normal", "reader", "manager"]:
+            return api.Error("unsupported_role", f"Unsupported role: {role}")
+
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
         message = response[3]
