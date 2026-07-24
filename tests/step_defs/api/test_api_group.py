@@ -187,6 +187,17 @@ def api_group_update_user(user, new_user, group_name):
     )
 
 
+@given(parsers.parse('the user adds user "{new_user}" and updates their role to "{new_role}" in group "{group_name}"'), target_fixture="api_response")
+def api_group_add_update_user(user, new_user, new_role, group_name):
+    return api_request(
+        user,
+        "group_user_add",
+        {"username": new_user,
+         "group_name": group_name,
+         "role": new_role}
+    )
+
+
 @given(parsers.parse('the user removes user "{new_user}" from the group "{group_name}"'), target_fixture="api_response")
 def api_group_delete_user(user, new_user, group_name):
     return api_request(
@@ -297,6 +308,27 @@ def then_user_update_persisted(user, new_user, group_name):
 
     role = body["data"]
     assert role == "manager"
+
+
+@then(parsers.parse('user "{new_user}" is now a member of the group "{group_name}" with role "{new_role}"'))
+def then_user_is_member_with_role(user, new_user, new_role, group_name):
+    _, member_body = api_request(
+        user,
+        "group_user_is_member",
+        {"username": new_user,
+         "group_name": group_name}
+    )
+    is_member = member_body['data']
+    assert is_member
+
+    _, role_body = api_request(
+        user,
+        "group_get_user_role",
+        {"username": new_user,
+         "group_name": group_name}
+    )
+    role = role_body["data"]
+    assert role == new_role
 
 
 @given(parsers.parse('the Yoda API for processing csv group data API is queried for data "{data_id}"'), target_fixture="api_response")

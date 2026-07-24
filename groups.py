@@ -1137,12 +1137,13 @@ def api_group_user_is_member(ctx: rule.Context, username: str, group_name: str) 
     return group_user_exists(ctx, group_name, username, True)
 
 
-def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+def group_user_add(ctx: rule.Context, username: str, group_name: str, role: str = "normal") -> api.Result:
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+    :param role:       Role of the user
 
     :returns: Dict with API status result
     """
@@ -1178,6 +1179,11 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
                 # Mark user as invited.
                 msi.sudo_obj_meta_add(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
+            if normalized_role != "normal":
+                result = group_user_update_role(ctx, username, group_name, normalized_role)
+                if not result:
+                    return result
+
             return api.Result.ok(info=("SRAM invitation" if put_invite else None))
         else:
             return api.Error('policy_error', message)
@@ -1186,16 +1192,17 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
 
 
 @api.make()
-def api_group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+def api_group_user_add(ctx: rule.Context, username: str, group_name: str, role: str = "normal") -> api.Result:
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+    :param role:       Role of the user
 
     :returns: Dict with API status result
     """
-    return group_user_add(ctx, username, group_name)
+    return group_user_add(ctx, username, group_name, role)
 
 
 def group_user_update_role(ctx: rule.Context, username: str, group_name: str, new_role: str) -> api.Result:
