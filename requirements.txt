@@ -1,7 +1,7 @@
-setuptools==80.7.1
+setuptools==83.0.0
 MarkupSafe==3.0.2
 Jinja2==3.1.6
-requests==2.32.4
+requests==2.33.0
 configparser==4.0.2
 contextlib2==0.6.0.post1
 importlib-metadata==8.6.1
