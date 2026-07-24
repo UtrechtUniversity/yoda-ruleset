@@ -103,5 +103,9 @@ acPostProcForDeleteUser {
 	writeString("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
+msiTarFileExtract(*logical_path, *target_coll, *dest_resc, *status) {
+  failmsg(-169000, 'msiTarFileExtract is not allowed'); # SYS_NOT_ALLOWED
+}
+
 # Enforce server to use TLS encryption.
 acPreConnect(*OUT) { *OUT="CS_NEG_REQUIRE"; }
