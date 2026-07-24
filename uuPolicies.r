@@ -129,5 +129,9 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     writeString("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 
+msiTarFileExtract(*logical_path, *target_coll, *dest_resc, *status) {
+  failmsg(-169000, 'msiTarFileExtract is not allowed'); # SYS_NOT_ALLOWED
+}
+
 # Enforce server to use TLS encryption.
 acPreConnect(*OUT) { *OUT="CS_NEG_REQUIRE"; }

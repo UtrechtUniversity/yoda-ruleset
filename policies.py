@@ -712,6 +712,15 @@ def pep_api_phy_path_reg_pre(ctx: rule.Context,
 
 
 @policy.require()
+def pep_api_struct_file_ext_and_reg_pre(ctx: rule.Context,
+                                        instance_name: str,
+                                        rs_comm: object,
+                                        inp: object) -> policy.Succeed | policy.Fail:
+    # This policy blocks extracting tar files using ibun -x
+    return policy.fail('Extracting structured files is not allowed')
+
+
+@policy.require()
 def pep_api_sync_mounted_coll_pre(ctx: rule.Context,
                                   instance_name: str,
                                   rs_comm: object,
