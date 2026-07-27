@@ -1168,7 +1168,7 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
                 # Mark user as invited.
                 msi.sudo_obj_meta_add(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
-            return api.Result.ok()
+            return api.Result.ok(info=("SRAM invitation" if put_invite else None))
         else:
             return api.Error('policy_error', message)
     except Exception:
