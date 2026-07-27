@@ -103,6 +103,20 @@ acPostProcForDeleteUser {
 	writeString("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
+pep_api_reg_data_obj_pre(*INSTANCE_NAME, *COMM, *DATAOBJINFO, *OUTDATAOBJINFO){
+   *proxy_user = *COMM.proxy_user_name
+   *proxy_zone = *COMM.proxy_rods_zone
+   *logical_path = *DATAOBJINFO.logical_path
+   *physical_path = *DATAOBJINFO.physical_path
+   foreach(*row in SELECT USER_TYPE where USER_NAME = '*proxy_user' and USER_ZONE = '*proxy_zone') {
+     *user_type = *row.USER_TYPE;
+   }
+   if ("rodsadmin" != *user_type) {
+     writeLine('serverLog', 'pep_api_reg_data_obj_pre: prevented [*proxy_user#*proxy_zone] from registering logical_path[*logical_path] with physical_path[*physical_path]');
+     failmsg(-169000, 'rcRegDataObj is not allowed'); # SYS_NOT_ALLOWED
+   }
+}
+
 msiTarFileExtract(*logical_path, *target_coll, *dest_resc, *status) {
   failmsg(-169000, 'msiTarFileExtract is not allowed'); # SYS_NOT_ALLOWED
 }
