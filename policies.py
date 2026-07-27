@@ -711,6 +711,41 @@ def pep_api_phy_path_reg_pre(ctx: rule.Context,
     return policy.fail('Mounting, soft linking or unmounting collections on the server is not allowed.')
 
 
+def pep_api_sub_struct_file_get_pre(rule_args, callback, rei):
+    """prevents manual get of a subfile via SUB_STRUCT_FILE_GET_AN 657"""
+    client_user = rei.rsComm.clientUser.userName
+    client_zone = rei.rsComm.clientUser.rodsZone
+    subfile = rule_args[2].subFilePath
+    debugging_string = f'pep_api_sub_struct_file_get_pre:' \
+        f' prevented [{client_user}#{client_zone}]' \
+        f' from getting a subfile[{subfile}]'
+    callback.writeLine('serverLog', debugging_string)
+    callback.msiExit('-169000', 'getting a subfile is not allowed')  # SYS_NOT_ALLOWED
+
+
+def pep_api_sub_struct_file_put_pre(rule_args, callback, rei):
+    """prevents manual put of a subfile via SUB_STRUCT_FILE_PUT_AN 658"""
+    client_user = rei.rsComm.clientUser.userName
+    client_zone = rei.rsComm.clientUser.rodsZone
+    subfile = rule_args[2].subFilePath
+    debugging_string = f'pep_api_sub_struct_file_put_pre:' \
+        f' prevented [{client_user}#{client_zone}]' \
+        f' from putting a subfile[{subfile}]'
+    callback.writeLine('serverLog', debugging_string)
+    callback.msiExit('-169000', 'putting a subfile is not allowed')  # SYS_NOT_ALLOWED
+
+
+def pep_api_bulk_data_obj_reg_pre(rule_args, callback, rei):
+    """prevents bulk registration via BULK_DATA_OBJ_REG_AN 688"""
+    client_user = rei.rsComm.clientUser.userName
+    client_zone = rei.rsComm.clientUser.rodsZone
+    debugging_string = f'pep_api_bulk_data_obj_reg_pre:' \
+        f' prevented [{client_user}#{client_zone}]' \
+        f' from bulk registering files'
+    callback.writeLine('serverLog', debugging_string)
+    callback.msiExit('-169000', 'rcBulkDataObjReg is not allowed')  # SYS_NOT_ALLOWED
+
+
 @policy.require()
 def pep_api_struct_file_ext_and_reg_pre(ctx: rule.Context,
                                         instance_name: str,
