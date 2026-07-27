@@ -11,7 +11,7 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
@@ -1068,7 +1068,9 @@ def api_datarequest_get(ctx: rule.Context, request_id: int) -> api.Result:
     request_id_str = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id_str, ["PM", "DM", "DAC", "OWN"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id_str, ["PM", "DM", "DAC", "OWN"], None)
+    if not action_permitted:
+        return action_permitted
 
     # Get request type
     try:
@@ -1134,10 +1136,12 @@ def api_datarequest_attachment_upload_permission(ctx: rule.Context, request_id: 
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("grantread" or "revoke")
 
-    :returns: Nothing
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    if not action_permitted:
+        return action_permitted
 
     # Check if action is valid
     if action not in ["grant", "grantread"]:
@@ -1147,7 +1151,7 @@ def api_datarequest_attachment_upload_permission(ctx: rule.Context, request_id: 
     attachments_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
                                              ATTACHMENTS_PATHNAME)
     ctx.adminTempWritePermission(attachments_path, action)
-    return
+    return api.Result.ok()
 
 
 @api.make()
@@ -1157,15 +1161,21 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of attachment
+
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    if not action_permitted:
+        return action_permitted
 
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
                                          ATTACHMENTS_PATHNAME, filename)
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+
+    return api.Result.ok()
 
 
 @api.make()
@@ -1177,10 +1187,15 @@ def api_datarequest_attachments_get(ctx: rule.Context, request_id: str) -> api.R
 
     :returns: List of attachment filenames
     """
-    return datarequest_attachments_get(ctx, request_id)
+    attachments = datarequest_attachments_get(ctx, request_id)
+
+    if attachments is None:
+        return api.Error("permission_error", "Action not permitted: insufficient user permissions.")
+
+    return attachments
 
 
-def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> List:
+def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> Optional[List[str]]:
     """Get all attachments of a given data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1192,7 +1207,9 @@ def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> List:
         return file_path.split('/')[-1]
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
+    if not action_permitted:
+        return None
 
     # Return list of attachment filepaths
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
@@ -1206,12 +1223,16 @@ def api_datarequest_attachments_submit(ctx: rule.Context, request_id: str) -> ap
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+
+    :returns: Dict with API status result
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
+    if not action_permitted:
+        return action_permitted
 
     # Revoke ownership and write access
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
@@ -1220,6 +1241,7 @@ def api_datarequest_attachments_submit(ctx: rule.Context, request_id: str) -> ap
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.SUBMITTED)
+    return api.Result.ok()
 
 
 @api.make()
@@ -1230,7 +1252,7 @@ def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: Dict, req
     :param data:       Contents of the preliminary review
     :param request_id: Unique identifier of the data request
 
-    :returns: API status
+    :returns: Dict with API status result
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
@@ -1238,7 +1260,9 @@ def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: Dict, req
                          "{} form data did not pass validation against its schema.".format(PR_REVIEW))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], [status.SUBMITTED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.SUBMITTED])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1273,10 +1297,12 @@ def api_datarequest_preliminary_review_get(ctx: rule.Context, request_id: str) -
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Preliminary review JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
+    if not action_permitted:
+        return action_permitted
 
     return datarequest_preliminary_review_get(ctx, request_id)
 
@@ -1309,7 +1335,7 @@ def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: Dict, req
     :param data:       Contents of the datamanager review
     :param request_id: Unique identifier of the data request
 
-    :returns: API status
+    :returns: Dict with API status result
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
@@ -1317,7 +1343,9 @@ def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: Dict, req
                          "{} form data did not pass validation against its schema.".format(DM_REVIEW))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["DM"], [status.PRELIMINARY_ACCEPT])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["DM"], [status.PRELIMINARY_ACCEPT])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1353,10 +1381,12 @@ def api_datarequest_datamanager_review_get(ctx: rule.Context, request_id: str) -
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Datamanager review JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "REV"], None)
+    if not action_permitted:
+        return action_permitted
 
     # Retrieve and return datamanager review
     return datarequest_datamanager_review_get(ctx, request_id)
@@ -1413,7 +1443,7 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id:
     :param data:       Contents of the assignment
     :param request_id: Unique identifier of the data request
 
-    :returns: API status
+    :returns: Dict with API status result
     """
     # Validate data against schema
     dac_members = datarequest_dac_members_get(ctx, request_id)
@@ -1425,9 +1455,11 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: Dict, request_id:
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], [status.DATAMANAGER_ACCEPT,
-                                                           status.DATAMANAGER_REJECT,
-                                                           status.DATAMANAGER_RESUBMIT])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.DATAMANAGER_ACCEPT,
+                                                                              status.DATAMANAGER_REJECT,
+                                                                              status.DATAMANAGER_RESUBMIT])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1512,10 +1544,12 @@ def api_datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Re
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Datarequest assignment JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], None)
+    if not action_permitted:
+        return action_permitted
 
     return datarequest_assignment_get(ctx, request_id)
 
@@ -1551,7 +1585,7 @@ def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str
     :param data:       Contents of the review
     :param request_id: Unique identifier of the data request
 
-    :returns: A JSON dict with status info for the front office
+    :returns: Dict with API status result
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
@@ -1559,7 +1593,9 @@ def api_datarequest_review_submit(ctx: rule.Context, data: Dict, request_id: str
                          "{} form data did not pass validation against its schema.".format(REVIEW))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], [status.UNDER_REVIEW])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["REV"], [status.UNDER_REVIEW])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1613,10 +1649,12 @@ def api_datarequest_reviews_get(ctx: rule.Context, request_id: str) -> api.Resul
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Datarequest review JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "REV"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "REV"], None)
+    if not action_permitted:
+        return action_permitted
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1645,7 +1683,7 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id:
     :param data:       Contents of the evaluation
     :param request_id: Unique identifier of the data request
 
-    :returns: API status
+    :returns: Dict with API status result
 
     :raises UUError: If datarequest owner could not be determined
     """
@@ -1655,7 +1693,9 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id:
                          "{} form data did not pass validation against its schema.".format(EVALUATION))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1705,10 +1745,12 @@ def api_datarequest_approval_conditions_get(ctx: rule.Context, request_id: str) 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Approval conditions JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], None)
+    if not action_permitted:
+        return action_permitted
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1734,10 +1776,12 @@ def api_datarequest_evaluation_get(ctx: rule.Context, request_id: str) -> api.Re
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Evaluation JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DAC"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DAC"], None)
+    if not action_permitted:
+        return action_permitted
 
     return datarequest_evaluation_get(ctx, request_id)
 
@@ -1801,14 +1845,16 @@ def api_datarequest_feedback_get(ctx: rule.Context, request_id: str) -> api.Resu
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          JSON-formatted string containing feedback for researcher
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"],
-                                 [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
-                                  status.REJECTED_AFTER_DATAMANAGER_REVIEW,
-                                  status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, status.REJECTED,
-                                  status.RESUBMIT])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"],
+                                                    [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
+                                                     status.REJECTED_AFTER_DATAMANAGER_REVIEW,
+                                                     status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, status.REJECTED,
+                                                     status.RESUBMIT])
+    if not action_permitted:
+        return action_permitted
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1829,7 +1875,7 @@ def api_datarequest_preregistration_submit(ctx: rule.Context, data: Dict, reques
     :param data:       Contents of the preregistration
     :param request_id: Unique identifier of the data request
 
-    :returns: API status
+    :returns: Dict with API status result
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PREREGISTRATION):
@@ -1837,7 +1883,9 @@ def api_datarequest_preregistration_submit(ctx: rule.Context, data: Dict, reques
                          "{} form data did not pass validation against its schema.".format(PREREGISTRATION))
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.APPROVED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.APPROVED])
+    if not action_permitted:
+        return action_permitted
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1860,10 +1908,12 @@ def api_datarequest_preregistration_get(ctx: rule.Context, request_id: str) -> a
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns: Preregistration JSON or API error on failure
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], None)
+    if not action_permitted:
+        return action_permitted
 
     return datarequest_preregistration_get(ctx, request_id)
 
@@ -1894,9 +1944,13 @@ def api_datarequest_preregistration_confirm(ctx: rule.Context, request_id: str) 
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM"], [status.PREREGISTRATION_SUBMITTED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.PREREGISTRATION_SUBMITTED])
+    if not action_permitted:
+        return action_permitted
 
     status_set(ctx, request_id, status.PREREGISTRATION_CONFIRMED)
 
@@ -1909,11 +1963,14 @@ def api_datarequest_dta_upload_permission(ctx: rule.Context, request_id: str, ac
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("revoke")
 
-    :returns: API result
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
-                                                           status.DAO_APPROVED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["DM"], [status.PREREGISTRATION_CONFIRMED,
+                                                                              status.DAO_APPROVED,
+                                                                              status.DTA_READY])
+    if not action_permitted:
+        return action_permitted
 
     # Check if action is valid
     if action not in ["grant", "revoke"]:
@@ -1932,11 +1989,13 @@ def api_datarequest_dta_post_upload_actions(ctx: rule.Context, request_id: str, 
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of DTA
 
-    :returns: API result
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
-                                                           status.DAO_APPROVED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["DM"], [status.PREREGISTRATION_CONFIRMED,
+                                                                              status.DAO_APPROVED])
+    if not action_permitted:
+        return action_permitted
 
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME,
@@ -1964,7 +2023,9 @@ def datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
     :returns: Path to DTA
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+    if not action_permitted:
+        return action_permitted
 
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
@@ -1978,10 +2039,13 @@ def api_datarequest_signed_dta_upload_permission(ctx: rule.Context, request_id: 
     :param action:     String specifying whether write permission must be granted ("grant") or
                        revoked ("revoke")
 
-    :returns: API result
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY,
+                                                                               status.DTA_SIGNED])
+    if not action_permitted:
+        return action_permitted
 
     # Check if action is valid
     if action not in ["grant", "grantread"]:
@@ -2000,10 +2064,12 @@ def api_datarequest_signed_dta_post_upload_actions(ctx: rule.Context, request_id
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of signed DTA
 
-    :return: API result
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+    if not action_permitted:
+        return action_permitted
 
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
@@ -2024,10 +2090,12 @@ def api_datarequest_signed_dta_path_get(ctx: rule.Context, request_id: str) -> a
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          Path to signed DTA
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+    if not action_permitted:
+        return action_permitted
 
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
@@ -2039,9 +2107,13 @@ def api_datarequest_data_ready(ctx: rule.Context, request_id: str) -> api.Result
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+
+    :returns: Dict with API status result
     """
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["DM"], [status.DTA_SIGNED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["DM"], [status.DTA_SIGNED])
+    if not action_permitted:
+        return action_permitted
 
     status_set(ctx, request_id, status.DATA_READY)
 
