@@ -55,7 +55,8 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
            'rule_datarequest_review_period_expiration_check',
-           'api_generate_request_id']
+           'api_generate_request_id',
+           'api_upload_datarequest_data']
 
 
 ###################################################
@@ -330,6 +331,24 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 #                 Helper functions                #
 ###################################################
 
+@api.make()
+def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
+    """ Write datarequest data to path
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param path:    Path to file containing datarequest data
+    :param data:    Datarequest data
+
+    :returns:       Boolean - True if uploaded successfully else False
+    """
+    if config.environment == 'development':
+        try:
+            data_object.write(ctx, path, data)
+            return True
+        except Exception:
+            return False
+
+
 def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
     """Set an arbitrary metadata field on a data request.
 
@@ -371,6 +390,12 @@ def api_generate_request_id(ctx: rule.Context, draft_request_id: str) -> api.Res
 
 
 def generate_request_id(ctx: rule.Context) -> int:
+    """ Generate request id
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Data request ID
+    """
     coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     max_request_id = 0
 
@@ -948,7 +973,7 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
 
     :param ctx:              Combined type of a callback and rei struct
     :param filename:         Name of the file containing contents of the data request
-    :param request_id:       Datarequest ID
+    :param request_id:       Unique identifier of data request
     :param draft:            Boolean specifying whether the data request should be saved as draft
     :param draft_request_id: Unique identifier of the draft data request
 
@@ -958,7 +983,8 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
     req_id = ""
     if draft_request_id:
         req_id = draft_request_id
-    req_id = request_id
+    else:
+        req_id = request_id
 
     data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, filename)
     data = jsonutil.read(ctx, data_path)
