@@ -1424,35 +1424,54 @@ def _migrate_sram_to_non_sram(ctx: rule.Context, log_func: Callable, group: dict
 
     for member in members:
         username, _ = user.from_str(ctx, member)
-        if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
-            log_func(f"\nChecking if the external user {username} is invited to the group {group['name']}")
+        if yoda_names.is_email_username(username):
+
+            log_func(f"\nChecking if the user {username} is invited to the group {group['name']}")
 
             is_invited = sram.is_user_marked_invited(ctx, username, group['name'])
 
-            if is_invited and username not in ext_co_members:
-                # Delete invitation to SRAM CO
-                try:
-                    if not dry_run:
-                        sram.delete_pending_invitation(ctx, co_identifier, username)
-                    log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
-                except Exception:
-                    log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
+            if is_invited:
+                if not yoda_names.is_internal_user(username):
+                    if username not in ext_co_members:
+                        # Delete invitation to SRAM CO
+                        try:
+                            if not dry_run:
+                                sram.delete_pending_invitation(ctx, co_identifier, username)
+                            log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
+                        except Exception:
+                            log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
 
-                # Send new invitation to external users CO
-                if not dry_run:
-                    sram.put_collaboration_invitation(ctx, group['name'], username, config.sram_external_users_co)
-                log_func(f"\nSuccessfully sent a new invitation to {username} for SRAM external user CO.")
+                        # Send new invitation to external users CO
+                        if not dry_run:
+                            sram.put_collaboration_invitation(ctx, group['name'], username, config.sram_external_users_co)
+                        log_func(f"\nSuccessfully sent a new invitation to {username} for SRAM external user CO.")
 
-            elif is_invited and username in ext_co_members:
-                # Remove invitation metadata if user is member of the external users CO.
-                try:
-                    if not dry_run:
-                        msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
-                    log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
-                except Exception:
-                    log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+                    elif username in ext_co_members:
+                        # Remove invitation metadata if user is member of the external users CO.
+                        try:
+                            if not dry_run:
+                                msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
+                            log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
+                        except Exception:
+                            log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+                else:
+                    # Delete invitation to SRAM CO for internal user.
+                    try:
+                        if not dry_run:
+                            sram.delete_pending_invitation(ctx, co_identifier, username)
+                        log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
+                    except Exception:
+                        log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
 
-    # Delete collaboration in SRAM
+                    # Remove invitation metadata as user is internal user.
+                    try:
+                        if not dry_run:
+                            msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
+                        log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
+                    except Exception:
+                        log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+
+    # Delete collaboration in SRAMea
     if not dry_run:
         if co_identifier and not sram.delete_collaboration(ctx, co_identifier):
             log_func(f"\nSomething went wrong deleting group {group['name']} in SRAM.")
