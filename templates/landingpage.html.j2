@@ -37,6 +37,83 @@
         <script src="/static/js/download.js" type="module"></script>
     {% endif %}
 
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const data = {
+          title: '{{ title }}',
+          author: [
+            {% for creator in creators %}
+              { family: '{{ creator.Name.Family_Name }}', given: '{{ creator.Name.Given_Name }}'},
+            {% endfor %}
+          ],
+          publication_date: '{{ publication_date }}',
+          publisher: 'Utrecht University',
+          version: '{{ version }}',
+          doi: '{{ persistent_identifier_datapackage.Identifier }}'
+        }
+
+        const year = data.publication_date.split('-')[0]
+        const accessDate = new Intl.DateTimeFormat('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }).format(new Date())
+        const doiUrl = `https://doi.org/${data.doi}`
+        const versionStr = data.version ? ` (Version ${data.version})` : ''
+
+        // Format authors helper function.
+        const formatAuthors = (sep, fmt) => {
+          const formats = {
+            'F,I': a => `${a.family}, ${a.given.charAt(0)}.`,
+            'I.F': a => `${a.given.charAt(0)}. ${a.family}`,
+            'FI': a => `${a.family} ${a.given.charAt(0)}`,
+            'FG': a => `${a.given} ${a.family}`
+          }
+          return data.author.map(formats[fmt]).join(sep)
+        }
+        const formatMlaAuthors = () => {
+          const formatted = data.author.map(a => `${a.given} ${a.family}`)
+          return formatted.length === 1
+            ? formatted[0]
+            : formatted.slice(0, -1).join(', ') + ', and ' + formatted.at(-1)
+        }
+
+        // Define author styles.
+        const authors = {
+          apa: formatAuthors(', & ', 'F,I'),
+          mla: formatMlaAuthors(),
+          harvard: formatAuthors(' and ', 'F,I'),
+          ieee: formatAuthors(', ', 'I.F'),
+          vancouver: formatAuthors(', ', 'FI'),
+          chicago: formatAuthors(', & ', 'F,I')
+        }
+
+        // Define citation styles.
+        const citations = {
+          apa: `${authors.apa} (${year}). ${data.title}${versionStr} [Dataset]. ${data.publisher}. ${doiUrl}`,
+          mla: `${authors.mla}. "${data.title}${versionStr}." ${data.publisher}, ${year}. doi:${data.doi}. Accessed ${accessDate}.`,
+          chicago: `${authors.chicago}. ${year}. "${data.title}${versionStr}." ${data.publisher}. ${doiUrl}.`,
+          harvard: `${authors.harvard} (${year}) '${data.title}${versionStr}', ${data.publisher}, Available at: ${doiUrl} (Accessed: ${accessDate}).`,
+          ieee: `[1] ${authors.ieee}, "${data.title}${versionStr}," ${data.publisher}, ${year}, doi:${data.doi}.`,
+          vancouver: `1. ${authors.vancouver}. ${data.title}${versionStr} [dataset]. ${data.publisher}; ${year} [cited ${accessDate}]. Available from: ${doiUrl}.`
+        }
+
+        document.getElementById('style').addEventListener('change', e => {
+          document.getElementById('output').innerHTML = citations[e.target.value]
+        })
+        document.getElementById('output').innerHTML = citations.apa
+
+        document.getElementById('copyBtn').addEventListener('click', function() {
+          const text = document.getElementById('output').textContent
+          text && navigator.clipboard.writeText(text).then(() => {
+            const btn = this, orig = btn.innerHTML
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>'
+            setTimeout(() => { btn.innerHTML = orig }, 1500)
+          })
+        })
+      })
+    </script>
+
     {% if matomo_tracking_enabled %}
     <!-- Matomo tracker -->
     <script>
@@ -160,34 +237,55 @@
                         </section>
                     </div>
 
-                    {% if base_doi %}
-                        <div class="col-lg-4 mt-4">
-                            <div class="p-3 version">
-                                <h4>Versions</h4>
-                                <div>
-                                    <table class="table table-sm">
-                                        <tbody>
-                                            {% for version in versions %}
-                                                <tr>
-                                                    <td>
-                                                        <a href="https://doi.org/{{ version[1] }}">https://doi.org/{{ version[1] }}</a>
-                                                    </td>
-                                                    <td>
-                                                        <small title="{{ version[2] }}">{{ version[0] }}</small>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                    <small>
-                                        <b>Base DOI:</b>
-                                        <a href="https://doi.org/{{ base_doi }}">https://doi.org/{{ base_doi }}</a><br>
-                                        This DOI represents all versions of this publication and will resolve to the latest publication.
-                                    </small>
-                                </div>
+                    <div class="col-lg-4 mt-4">
+                        {% if base_doi %}
+                        <div class="p-3 version">
+                            <h4>Versions</h4>
+                            <div>
+                                <table class="table table-sm">
+                                    <tbody>
+                                        {% for version in versions %}
+                                            <tr>
+                                                <td>
+                                                    <a href="https://doi.org/{{ version[1] }}">https://doi.org/{{ version[1] }}</a>
+                                                </td>
+                                                <td>
+                                                    <small title="{{ version[2] }}">{{ version[0] }}</small>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                <small>
+                                    <b>Base DOI:</b>
+                                    <a href="https://doi.org/{{ base_doi }}">https://doi.org/{{ base_doi }}</a><br>
+                                    This DOI represents all versions of this publication and will resolve to the latest publication.
+                                </small>
                             </div>
                         </div>
-                    {% endif %}
+                        {% endif %}
+                        <div class="p-3 mt-3 version">
+                            <h4>Citation</h4>
+                            <small id="output" class="font-monospace"></small>
+                            <br>
+                            <div class="d-flex justify-content-between mt-2">
+                                <select id="style" class="form-select form-select-sm">
+                                    <option value="apa">APA</option>
+                                    <option value="mla">MLA</option>
+                                    <option value="chicago">Chicago</option>
+                                    <option value="harvard">Harvard</option>
+                                    <option value="ieee">IEEE</option>
+                                    <option value="vancouver">Vancouver</option>
+                                </select>
+                                <button id="copyBtn" class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button" title="Copy citation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr>
