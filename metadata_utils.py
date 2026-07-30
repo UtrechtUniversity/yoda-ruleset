@@ -94,7 +94,8 @@ def is_json_metadata_valid(ctx: rule.Context,
 def humanize_validation_error(e: dict) -> str:
     """Transform a jsonschema validation error such that it is readable by humans.
 
-    :param e: a jsonschema.exceptions.ValidationError
+    :param e: a dictionary containing ValidationError data. The get_json_metadata_errors
+              function returns a list of dictionaries in the expected format.
 
     :returns: a supposedly human-readable description of the error
     """
