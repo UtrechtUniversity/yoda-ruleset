@@ -343,7 +343,7 @@ def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api
     """
     if config.environment == 'development':
         try:
-            data_object.write(ctx, path, data)
+            jsonutil.write(ctx, path, data)
             return True
         except Exception:
             return False
@@ -403,6 +403,7 @@ def generate_request_id(ctx: rule.Context) -> int:
     for current_collection in collection.subcollections(ctx, coll, recursive=False):
         if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
             max_request_id = int(pathutil.basename(current_collection))
+    log.write(ctx, f"Max request id: {max_request_id}")
 
     return max_request_id + 1
 
@@ -1014,7 +1015,7 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
         return api.Error("permission_error", "Action not permitted.")
 
     # Construct data request collection and file path.
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
     # If we're not working with a draft, initialize the data request collection
@@ -1075,10 +1076,10 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
 
     # If draft, set status
     if draft:
-        status_set(ctx, request_id, status.DRAFT)
+        status_set(ctx, req_id, status.DRAFT)
         # If new draft, return request ID of draft data request
         if not draft_request_id:
-            return {"requestId": request_id}
+            return {"requestId": req_id}
         # If update of existing draft, return nothing
         else:
             return
@@ -1100,13 +1101,13 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
-        status_set(ctx, request_id, status.DAO_SUBMITTED)
+        status_set(ctx, req_id, status.DAO_SUBMITTED)
     else:
         if data['datarequest']['attachments']['attachments'] == "Yes":
-            status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
-            return {"pendingAttachments": True, "requestId": request_id}
+            status_set(ctx, req_id, status.PENDING_ATTACHMENTS)
+            return {"pendingAttachments": True, "requestId": req_id}
         else:
-            status_set(ctx, request_id, status.SUBMITTED)
+            status_set(ctx, req_id, status.SUBMITTED)
             return
 
 

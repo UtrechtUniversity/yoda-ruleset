@@ -24,6 +24,7 @@ Feature: Datarequest API
 
     Scenario: Datarequest save
         Given user researcher is authenticated
+        And generate request ID for datarequest
         And the Yoda datarequest submit API is queried with a data request to save as draft
         Then the response status code is "200"
 

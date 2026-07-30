@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from io import BytesIO
 
+import pytest
 from pytest_bdd import (
     given,
     parsers,
@@ -16,6 +17,11 @@ from pytest_bdd import (
 from conftest import api_request, post_form_data, roles
 
 scenarios('../../features/api/api_datarequest.feature')
+
+
+@pytest.fixture(scope="session")
+def req_id():
+    return {}
 
 
 @given('the Yoda datarequest browse API is queried', target_fixture="api_response")
@@ -36,128 +42,40 @@ def api_datarequest_schema_get(user, schema_name):
     )
 
 
-@given('the Yoda datarequest submit API is queried with a data request to save as draft', target_fixture="api_response")
-def api_datarequest_save(user):
-    return api_request(
+@given("generate request ID for datarequest", target_fixture="req_id")
+def api_generate_datarequest_id(user):
+    status_code, body = api_request(
         user,
-        "datarequest_submit",
-        {
-            "data": {
-                "instructions": {},
-                "part": {},
-                "contact": {
-                    "principal_investigator": {
-                        "name": "Nãme",
-                        "institution": "Institutioñ",
-                        "department": "Départment",
-                        "work_address": "Wörk address",
-                        "email": "principal_investigator@yoda.dev",
-                        "phone": "+31 30 1234 5678"
-                    },
-                    "participating_researchers_array": [
-                        {
-                            "name": "Participating researcher náme",
-                            "institution": "Participating researcher instítution",
-                            "department": "Participating researcher départment",
-                            "work_address": "Participating researcher work addrẽss",
-                            "email": "participating_researcher@yoda.dev",
-                            "phone": "+31 30 3456 7890"
-                        }
-                    ],
-                    "pi_is_contact": "Yes",
-                    "participating_researchers": "Yes"
-                },
-                "datarequest": {
-                    "data": {
-                        "selectedRows": [
-                            {
-                                "expId": 1,
-                                "expCohort": 0,
-                                "expWave": 0,
-                                "expType": 11,
-                                "expSubject": 5,
-                                "expName": 32,
-                                "expInfo": "Age of mother is withdrawn from the participant registration system. Age of the mother is calculated in years: difference in experiment date and date of birth rounded down in whole years",
-                                "expAdditionalRemarks": None
-                            },
-                            {
-                                "expId": 39,
-                                "expCohort": 0,
-                                "expWave": 1,
-                                "expType": 10,
-                                "expSubject": 5,
-                                "expName": 73,
-                                "expInfo": "Major life events in the past 12 months",
-                                "expAdditionalRemarks": None
-                            },
-                            {
-                                "expId": 383,
-                                "expCohort": 1,
-                                "expWave": 9,
-                                "expType": 10,
-                                "expSubject": 4,
-                                "expName": 9,
-                                "expInfo": "The CoRonavIruS health Impact Survey (CRISIS) - baseline. Questionnaire taken in apr/may 2020 (round 1)",
-                                "expAdditionalRemarks": None
-                            }
-                        ]
-                    },
-                    "part2": {},
-                    "study_information": {
-                        "title": "API test datarequest",
-                        "research_questions": "Research qúestions",
-                        "hypotheses": "Hypótheses",
-                        "data_returned": "Réturned files"
-                    },
-                    "variables": {
-                        "variables": "Váriables",
-                        "unit_of_analysis": "Unit of ánalysis",
-                        "missing_data": "Missing dáta",
-                        "statistical_outliers": "Statistical óutliers"
-                    },
-                    "knowledge_of_data": {
-                        "prior_publication": "Prior ṕublication",
-                        "prior_knowledge": "Ṕrior knowledge"
-                    },
-                    "analyses": {
-                        "statistical_models": "Śtatistical models",
-                        "effect_size": "Éffect size",
-                        "statistical_power": "Śtatistical power",
-                        "inference_criteria": "Ïnference criteria",
-                        "assumption_violation": "Ássumption violation",
-                        "reliability_and_robustness_testing": "Reĺiability and robustness testing",
-                        "exploratory_analysis": "Éxploratory analysis"
-                    },
-                    "attachments": {
-                        "attachments": "Yes"
-                    },
-                    "purpose": "Analyses in order to publish"
-                }
-            },
-            "draft": True
-        })
-
-
-@given('datarequest exists', target_fixture="datarequest_id")
-def datarequest_exists(user):
-    http_status, body = api_request(
-        user,
-        "datarequest_browse",
-        {"limit": 1, "sort_order": "desc", "sort_on": "modified"}
+        "generate_request_id",
+        {"draft_request_id": ""}
     )
 
-    assert http_status == 200
-    assert len(body["data"]["items"]) > 0
+    assert status_code == 200
+    req_id = body['data']
+    assert req_id
 
-    return body["data"]["items"][0]["id"]
+    return req_id
 
 
-@given('the Yoda datarequest submit API is queried with a draft data request to submit', target_fixture="api_response")
-def api_datarequest_submit(user, datarequest_id):
-    return api_request(
+@given('the Yoda datarequest submit API is queried with a data request to save as draft', target_fixture="api_response")
+def api_datarequest_save(user, req_id):
+    # Create datarequest collection and add permissions
+    # to upload datarequest file
+    api_request(
         user,
-        "datarequest_submit",
+        "datarequest_data_write_permission",
         {
+            "request_id": req_id,
+            "action": "own"
+        }
+    )
+
+    # Upload datarequest file
+    api_request(
+        user,
+        "upload_datarequest_data",
+        {
+            "path": f"/tempZone/home/datarequests-research/{req_id}/datarequest-data.json",
             "data": {
                 "instructions": {},
                 "part": {},
@@ -258,7 +176,44 @@ def api_datarequest_submit(user, datarequest_id):
                     },
                     "purpose": "Analyses in order to publish"
                 }
-            },
+            }
+        }
+    )
+
+    # Save datarequest as draft
+    return api_request(
+        user,
+        "datarequest_submit",
+        {
+            "filename": "datarequest-data.json",
+            "request_id": req_id,
+            "draft": True,
+            "draft_request_id": ""
+        })
+
+
+@given('datarequest exists', target_fixture="datarequest_id")
+def datarequest_exists(user):
+    http_status, body = api_request(
+        user,
+        "datarequest_browse",
+        {"limit": 1, "sort_order": "desc", "sort_on": "modified"}
+    )
+
+    assert http_status == 200
+    assert len(body["data"]["items"]) > 0
+
+    return body["data"]["items"][0]["id"]
+
+
+@given('the Yoda datarequest submit API is queried with a draft data request to submit', target_fixture="api_response")
+def api_datarequest_submit(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_submit",
+        {
+            "filename": "datarequest-data.json",
+            "request_id": "",
             "draft": False,
             "draft_request_id": datarequest_id
         })
