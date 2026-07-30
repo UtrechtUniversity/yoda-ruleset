@@ -1652,7 +1652,7 @@ def api_datarequest_reviews_get(ctx: rule.Context, request_id: str) -> api.Resul
     :returns: Dict with API status result
     """
     # Permission check
-    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "REV"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["DM", "PM", "REV"], None)
     if not action_permitted:
         return action_permitted
 
