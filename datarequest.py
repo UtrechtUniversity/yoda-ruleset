@@ -1547,7 +1547,7 @@ def api_datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Re
     :returns: Dict with API status result
     """
     # Permission check
-    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], None)
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DAC"], None)
     if not action_permitted:
         return action_permitted
 
