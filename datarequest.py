@@ -327,6 +327,27 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 #                 Helper functions                #
 ###################################################
 
+<<<<<<< HEAD
+=======
+@api.make()
+def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
+    """ Write datarequest data to path
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param path:    Path to file containing datarequest data
+    :param data:    Datarequest data
+
+    :returns:       Boolean - True if uploaded successfully else False
+    """
+    if config.environment == 'development':
+        try:
+            jsonutil.write(ctx, path, data)
+            return True
+        except Exception:
+            return False
+
+
+>>>>>>> b7a28a28 (YDA-6004 - Fixed API tests for datarequest module)
 def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
     """Set an arbitrary metadata field on a data request.
 
@@ -356,6 +377,7 @@ def generate_request_id(ctx: rule.Context) -> int:
     for current_collection in collection.subcollections(ctx, coll, recursive=False):
         if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
             max_request_id = int(pathutil.basename(current_collection))
+    log.write(ctx, f"Max request id: {max_request_id}")
 
     return max_request_id + 1
 
@@ -962,8 +984,13 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         request_id = str(generate_request_id(ctx))
 
     # Construct data request collection and file path.
+<<<<<<< HEAD
     coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
+=======
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id)
+    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+>>>>>>> b7a28a28 (YDA-6004 - Fixed API tests for datarequest module)
 
     # If we're not working with a draft, initialize the data request collection
     if not draft_request_id:
@@ -1021,10 +1048,10 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     # If draft, set status
     if draft:
-        status_set(ctx, request_id, status.DRAFT)
+        status_set(ctx, req_id, status.DRAFT)
         # If new draft, return request ID of draft data request
         if not draft_request_id:
-            return {"requestId": request_id}
+            return {"requestId": req_id}
         # If update of existing draft, return nothing
         else:
             return
@@ -1043,13 +1070,13 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
-        status_set(ctx, request_id, status.DAO_SUBMITTED)
+        status_set(ctx, req_id, status.DAO_SUBMITTED)
     else:
         if data['datarequest']['attachments']['attachments'] == "Yes":
-            status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
-            return {"pendingAttachments": True, "requestId": request_id}
+            status_set(ctx, req_id, status.PENDING_ATTACHMENTS)
+            return {"pendingAttachments": True, "requestId": req_id}
         else:
-            status_set(ctx, request_id, status.SUBMITTED)
+            status_set(ctx, req_id, status.SUBMITTED)
             return
 
 
