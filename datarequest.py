@@ -2011,6 +2011,10 @@ def api_datarequest_dta_post_upload_actions(ctx: rule.Context, request_id: str, 
 
 @api.make()
 def api_datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+    if not action_permitted:
+        return action_permitted
+
     return datarequest_dta_path_get(ctx, request_id)
 
 
@@ -2022,11 +2026,6 @@ def datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
 
     :returns: Path to DTA
     """
-    # Permission check
-    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
-    if not action_permitted:
-        return action_permitted
-
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
 
