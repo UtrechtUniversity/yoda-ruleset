@@ -1693,7 +1693,7 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: Dict, request_id:
                          "{} form data did not pass validation against its schema.".format(EVALUATION))
 
     # Permission check
-    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED])
+    action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED, status.DAO_SUBMITTED])
     if not action_permitted:
         return action_permitted
 
