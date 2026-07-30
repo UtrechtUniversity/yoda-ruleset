@@ -1,6 +1,6 @@
 """Unit tests for the revision functions"""
 
-__copyright__ = 'Copyright (c) 2023-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import sys
@@ -48,6 +48,11 @@ class RevisionTest(TestCase):
 
         # Blocklist file
         eligible, msg = revision_eligible(100, True, 2, "/zone/home/research-test/.DS_Store", [["research-initial"]], True)
+        self.assertFalse(eligible)
+        self.assertEqual(msg, "")
+
+        # Blocklist wildcard file
+        eligible, msg = revision_eligible(100, True, 2, "/zone/home/research-test/._wildcard", [["research-initial"]], True)
         self.assertFalse(eligible)
         self.assertEqual(msg, "")
 
