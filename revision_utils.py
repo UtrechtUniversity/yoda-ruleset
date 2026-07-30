@@ -1,10 +1,11 @@
 """Utility functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
 import datetime
+import fnmatch
 import hashlib
 import os
 from typing import List, Tuple
@@ -50,7 +51,7 @@ def revision_eligible(max_size: int, data_obj_exists: bool, size: int, path: str
     if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
         return False, ""
 
-    if pathutil.basename(path) in constants.UUBLOCKLIST:
+    if any(fnmatch.fnmatch(pathutil.basename(path), pattern) for pattern in constants.UUBLOCKLIST):
         return False, ""
 
     return True, ""
