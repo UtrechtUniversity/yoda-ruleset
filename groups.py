@@ -1395,18 +1395,25 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
             for member in members:
                 # Check if member has valid email and is an external user.
                 username, _ = user.from_str(ctx, member)
-                if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
-                    # Remove invitation metadata if user is member of the external users CO.
-                    if username in co_members and member in invited:
-                        log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
-                        if sram.is_user_marked_invited(ctx, username, group_name):
-                            msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    # Put invite and add invitation metadata if user is not member of the external users CO.
-                    elif username not in co_members and member not in invited:
-                        sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
-                        if not sram.is_user_marked_invited(ctx, username, group_name):
-                            msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                        log.write(ctx, f"User {username} invited to group {group_name}")
+                if yoda_names.is_email_username(username):
+                    if not yoda_names.is_internal_user(username):
+                        # Remove invitation metadata if user is member of the external users CO.
+                        if username in co_members and member in invited:
+                            log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
+                            if sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                        # Put invite and add invitation metadata if user is not member of the external users CO.
+                        elif username not in co_members and member not in invited:
+                            sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
+                            if not sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                            log.write(ctx, f"User {username} invited to group {group_name}")
+                    else:
+                        # Clean up internal user invited metadata
+                        if member in invited:
+                            log.write(ctx, f"Removing invitation metadata for internal user {username}")
+                            if sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
     log.write(ctx, "Finished syncing external users with SRAM")
 
