@@ -746,7 +746,7 @@ def _update_revision_store_acls(ctx: rule.Context) -> None:
                 # CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME: AVU is already present. No need to set it anymore.
                 pass
             else:
-                raise Exception("Cannot update revision store ACLs, an error eccured: error: {}".format(str(e)))
+                raise Exception("Cannot update revision store ACLs. An error occurred: {}".format(str(e)))
     else:
         raise Exception("Cannot update revision store ACLs, because present user is not rodsadmin.")
 
