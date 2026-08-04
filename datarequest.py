@@ -28,6 +28,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_get',
            'api_datarequest_attachment_upload_permission',
            'api_datarequest_attachment_post_upload_actions',
+           'api_datarequest_data_write_permission',
            'api_datarequest_attachments_get',
            'api_datarequest_attachments_submit',
            'api_datarequest_preliminary_review_submit',
@@ -53,7 +54,9 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
-           'rule_datarequest_review_period_expiration_check']
+           'rule_datarequest_review_period_expiration_check',
+           'api_generate_request_id',
+           'api_upload_datarequest_data']
 
 
 ###################################################
@@ -328,6 +331,24 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 #                 Helper functions                #
 ###################################################
 
+@api.make()
+def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
+    """ Write datarequest data to path
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param path:    Path to file containing datarequest data
+    :param data:    Datarequest data
+
+    :returns:       Boolean - True if uploaded successfully else False
+    """
+    if config.environment == 'development':
+        try:
+            jsonutil.write(ctx, path, data)
+            return True
+        except Exception:
+            return False
+
+
 def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
     """Set an arbitrary metadata field on a data request.
 
@@ -349,7 +370,32 @@ def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> No
     ctx.adminDatarequestActions()
 
 
+@api.make()
+def api_generate_request_id(ctx: rule.Context, draft_request_id: str) -> api.Result:
+    """Wrapper around generate_request_id
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param draft_request_id: Unique identifier of the data request
+
+    :returns: Data request ID
+    """
+    # If we're not working with a draft, generate a new request ID.
+    if draft_request_id:
+        request_id = draft_request_id
+    else:
+        # Generate request ID and construct data request collection path.
+        request_id = str(generate_request_id(ctx))
+
+    return request_id
+
+
 def generate_request_id(ctx: rule.Context) -> int:
+    """ Generate request id
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Data request ID
+    """
     coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     max_request_id = 0
 
@@ -357,6 +403,7 @@ def generate_request_id(ctx: rule.Context) -> int:
     for current_collection in collection.subcollections(ctx, coll, recursive=False):
         if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
             max_request_id = int(pathutil.basename(current_collection))
+    log.write(ctx, f"Max request id: {max_request_id}")
 
     return max_request_id + 1
 
@@ -922,16 +969,27 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[st
 
 
 @api.make()
-def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_request_id: str | None = None) -> api.Result:
+def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, draft: bool, draft_request_id: str | None = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
-    :param data:             Contents of the data request
+    :param filename:         Name of the file containing contents of the data request
+    :param request_id:       Unique identifier of data request
     :param draft:            Boolean specifying whether the data request should be saved as draft
     :param draft_request_id: Unique identifier of the draft data request
 
     :returns: API status
     """
+    # Read data from file
+    req_id = ""
+    if draft_request_id:
+        req_id = draft_request_id
+    else:
+        req_id = request_id
+
+    data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, filename)
+    data = jsonutil.read(ctx, data_path)
+
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
@@ -956,15 +1014,8 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
     if (user.is_member_of(ctx, GROUP_PM) or user.is_member_of(ctx, GROUP_DM)):
         return api.Error("permission_error", "Action not permitted.")
 
-    # If we're not working with a draft, generate a new request ID.
-    if draft_request_id:
-        request_id = draft_request_id
-    else:
-        # Generate request ID and construct data request collection path.
-        request_id = str(generate_request_id(ctx))
-
     # Construct data request collection and file path.
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
     # If we're not working with a draft, initialize the data request collection
@@ -975,7 +1026,9 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
             sigdta_path      = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
             attachments_path = "{}/{}".format(coll_path, ATTACHMENTS_PATHNAME)
 
-            collection.create(ctx, coll_path)
+            # If it does not exist
+            if not collection.exists(ctx, coll_path):
+                collection.create(ctx, coll_path)
             collection.create(ctx, attachments_path)
             collection.create(ctx, dta_path)
             collection.create(ctx, sigdta_path)
@@ -1023,13 +1076,16 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
 
     # If draft, set status
     if draft:
-        status_set(ctx, request_id, status.DRAFT)
+        status_set(ctx, req_id, status.DRAFT)
         # If new draft, return request ID of draft data request
         if not draft_request_id:
-            return {"requestId": request_id}
+            return {"requestId": req_id}
         # If update of existing draft, return nothing
         else:
             return
+    else:
+        # Clean up the data file
+        data_object.remove(ctx, data_path)
 
     # Grant read permissions on data request
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
@@ -1045,13 +1101,13 @@ def api_datarequest_submit(ctx: rule.Context, data: Dict, draft: bool, draft_req
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
-        status_set(ctx, request_id, status.DAO_SUBMITTED)
+        status_set(ctx, req_id, status.DAO_SUBMITTED)
     else:
         if data['datarequest']['attachments']['attachments'] == "Yes":
-            status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
-            return {"pendingAttachments": True, "requestId": request_id}
+            status_set(ctx, req_id, status.PENDING_ATTACHMENTS)
+            return {"pendingAttachments": True, "requestId": req_id}
         else:
-            status_set(ctx, request_id, status.SUBMITTED)
+            status_set(ctx, req_id, status.SUBMITTED)
             return
 
 
@@ -1176,6 +1232,31 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     return api.Result.ok()
+
+
+@api.make()
+def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("grantread" or "revoke")
+
+    :returns: None
+    """
+    # Create collection with request id if doesn't exist
+    # path as a parameter
+    datarequest_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    if not collection.exists(ctx, datarequest_path):
+        collection.create(ctx, datarequest_path)
+
+    # Check if action is valid
+    if action not in ["grant", "grantread", "own"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    ctx.adminTempWritePermission(datarequest_path, action)
+    return
 
 
 @api.make()
