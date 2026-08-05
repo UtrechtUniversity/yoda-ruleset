@@ -568,8 +568,6 @@ def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resour
 
     :returns: True / False as an indication whether a revision was successfully created
     """
-    revision_created = False
-
     # Retrieve properties of the data object
     data_properties = data_object.get_properties(ctx, data_id, resource)
 
@@ -625,23 +623,32 @@ def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resour
     try:
         # Workaround the PREP deadlock issue: Restrict threads to 1.
         data_object.copy(ctx, path, rev_path, True)
-
-        revision_created = True
-
-        # Add original metadata to revision data object.
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
-        avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
     except msi.Error as e:
         log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
+        return False
 
-    return revision_created
+    # Add original metadata to revision data object.
+    prefix = constants.UUORGMETADATAPREFIX
+    operations = {
+        "entity_name": rev_path,
+        "entity_type": "data_object",
+        "operations": [
+            {"operation": "add", "attribute": f"{prefix}original_data_id", "value": data_id, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_path", "value": path, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_coll_name", "value": parent, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_data_name", "value": basename, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_data_owner_name", "value": data_owner, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_coll_id", "value": coll_id, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_modify_time", "value": modify_time, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_group_name", "value": group_name, "units": ""},
+            {"operation": "add", "attribute": f"{prefix}original_filesize", "value": data_size, "units": ""},
+        ]
+    }
+    if avu.apply_atomic_operations(ctx, operations):
+        return True
+
+    log.write(ctx, f"ERROR - The revision metadata could not be added to: {rev_path}")
+    return False
 
 
 def revision_cleanup_scan_revision_objects(ctx: rule.Context, revision_list: List) -> List:
