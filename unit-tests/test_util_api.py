@@ -97,7 +97,7 @@ class UtilAPITest(TestCase):
         result = wrapped(DummyContext(), encode_input({'name': 'Yoda', 'age': 900}))
 
         self.assertEqual(result['status'], 'ok')
-        self.assertEqual(result['data'], {'name': 'Yoda', 'age': 900})
+        self.assertDictEqual(result['data'], {'name': 'Yoda', 'age': 900})
 
     def test_api_wrapper_accepts_int_for_float_argument(self):
         # JSON has no distinct integer/float types, so a `float`-annotated
@@ -130,7 +130,7 @@ class UtilAPITest(TestCase):
         result = wrapped(DummyContext(), encode_input({'anything': {'nested': [1, 2, 3]}}))
 
         self.assertEqual(result['status'], 'ok')
-        self.assertEqual(result['data'], {'nested': [1, 2, 3]})
+        self.assertDictEqual(result['data'], {'nested': [1, 2, 3]})
 
     def test_api_wrapper_reports_missing_required_argument(self):
         def f(ctx, name: str, age: int):
