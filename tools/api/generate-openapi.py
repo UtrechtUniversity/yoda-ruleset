@@ -109,11 +109,46 @@ def get_openapi_template(ruleset_description: Union[str, None], ruleset_version:
     return spec
 
 
+def _extract_optional_inner(input: str) -> str:
+    """Convert Optional[T] / typing.Optional[T] into T."""
+    s = input.strip()
+
+    # Optional[str] / typing.Optional[str].
+    m = re.match(r'^(?:typing\.)?Optional\[(.+)\]$', s)
+    if m:
+        return m.group(1).strip()
+
+    return input
+
+
+def is_optional_annotation(input: str | None) -> bool:
+    if not input:
+        return False
+
+    s = input.strip()
+
+    # Optional[T] / typing.Optional[T]
+    if re.match(r'^(?:typing\.)?Optional\[(.+)\]$', s):
+        return True
+
+    # T | None or None | T (PEP604 union)
+    if re.search(r'^(\w+)\s*\|\s*[Nn]one$', s):
+        return True
+    if re.search(r'^[Nn]one\s*\|\s*(\w+)$', s):
+        return True
+
+    return False
+
+
 def get_json_type(input: str) -> str:
     """Translate Python type to JSON type if a translation is available, otherwise use the Python type."""
-    match_nullable_type = re.search(r'^(\w+)\s*\|\s*[Nn]one$', input)
+    # Handle Optional[T] / typing.Optional[T] first.
+    inner = _extract_optional_inner(input)
+
+    # Handle the union form: T | None.
+    match_nullable_type = re.search(r'^(\w+)\s*\|\s*[Nn]one$', inner)
     if match_nullable_type:
-        input = match_nullable_type[1]
+        inner = match_nullable_type[1]
 
     types_lookup_table = {
         'str': 'string',
@@ -122,13 +157,23 @@ def get_json_type(input: str) -> str:
         'dict': 'object',
         'Dict': 'object',
         'list': 'array',
-        'List': 'array'}
-    return types_lookup_table.get(input, input)
+        'List': 'array',
+    }
+    return types_lookup_table.get(inner, inner)
 
 
 def is_nullable_type(input: str) -> bool:
-    return bool(re.search(r'^(\w+)\s*\|\s*[Nn]one$', input)
-                or re.search(r'^[Nn]one\s*\|\s*(\w+)$', input))
+    s = input.strip()
+
+    # Optional[str] / typing.Optional[str]
+    if re.match(r'^(?:typing\.)?Optional\[(.+)\]$', s):
+        return True
+
+    # T | None
+    return bool(
+        re.search(r'^(\w+)\s*\|\s*[Nn]one$', s)
+        or re.search(r'^[Nn]one\s*\|\s*(\w+)$', s)
+    )
 
 
 def gen_fn_spec(function_name: str, function_properties: Dict):
@@ -300,12 +345,22 @@ def get_api_function_data(ruleset_dir: str, core: bool, module: str) -> OrderedD
 
                         default_value = None
                         required = True
+
+                        # Determine required from whether a default is present in the signature.
                         if i >= len(node.args.args) - len(node.args.defaults):
                             default_index = i - (len(node.args.args) - len(node.args.defaults))
                             default_value = ast.unparse(node.args.defaults[default_index]) if hasattr(ast, 'unparse') else None
                             required = False
 
-                        argdata[arg_name] = {"annotation": annotation, "default_value": default_value, "required": required}
+                        # Optional[...] / T | None implies not required.
+                        if is_optional_annotation(annotation):
+                            required = False
+
+                        argdata[arg_name] = {
+                            "annotation": annotation,
+                            "default_value": default_value,
+                            "required": required
+                        }
 
                     return argdata
 
@@ -313,8 +368,10 @@ def get_api_function_data(ruleset_dir: str, core: bool, module: str) -> OrderedD
                 function_properties["doc"] = ast.get_docstring(node)
                 function_properties["args"] = _get_argument_data(node)
                 function_properties["tag"] = os.path.basename(source_file)[:-3]
-                function_properties["decorators"] = [ast.unparse(decorator) if hasattr(ast, 'unparse') else None
-                                                     for decorator in node.decorator_list]
+                function_properties["decorators"] = [
+                    ast.unparse(decorator) if hasattr(ast, 'unparse') else None
+                    for decorator in node.decorator_list
+                ]
                 if "api.make()" in function_properties["decorators"]:
                     result[function_name] = function_properties
     return result
