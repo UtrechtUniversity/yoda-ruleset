@@ -283,7 +283,7 @@ def type_get(ctx: rule.Context, request_id: str) -> type:
     return datarequest_type
 
 
-def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type: str, datarequest_status: str) -> List:
+def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type: str, datarequest_status: str) -> list:
     # Construct list of existing documents
     available_documents = []
     if datarequest_type == type.REGULAR.value:
@@ -1195,7 +1195,7 @@ def api_datarequest_attachments_get(ctx: rule.Context, request_id: str) -> api.R
     return attachments
 
 
-def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> Optional[List[str]]:
+def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> Optional[list[str]]:
     """Get all attachments of a given data request.
 
     :param ctx:        Combined type of a callback and rei struct
