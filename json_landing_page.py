@@ -29,15 +29,15 @@ def persistent_identifier_to_uri(identifier_scheme: str, identifier: str) -> str
     # Create a URI from the identifier scheme and identifier.
     uri = ""
     if identifier_scheme == "DOI":
-        uri = "https://doi.org/{}".format(identifier)
+        uri = f"https://doi.org/{identifier}"
     elif identifier_scheme == "ORCID":
-        uri = "https://orcid.org/{}".format(identifier)
+        uri = f"https://orcid.org/{identifier}"
     elif identifier_scheme == "Handle":
-        uri = "https://hdl.handle.net/{}".format(identifier)
+        uri = f"https://hdl.handle.net/{identifier}"
     elif identifier_scheme == "URL":
         uri = identifier
     else:
-        uri = "#{}".format(identifier)
+        uri = f"#{identifier}"
 
     return uri
 

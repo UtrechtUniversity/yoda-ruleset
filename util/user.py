@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])
-User.__str__ = lambda self: '{}#{}'.format(*self)
+User.__str__ = lambda self: f'{self.name}#{self.zone}'
 
 
 def user_and_zone(ctx: 'rule.Context') -> User:
@@ -71,7 +71,7 @@ def exists(ctx: 'rule.Context', user: str | User) -> bool:
     if type(user) is str:
         user = from_str(ctx, user)
 
-    return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() in ["rodsuser", "rodsadmin"]
+    return genquery.Query(ctx, "USER_TYPE", f"USER_NAME = '{user[0]}' AND USER_ZONE = '{user[1]}'").first() in ["rodsuser", "rodsadmin"]
 
 
 def get_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
@@ -90,7 +90,7 @@ def get_type(ctx: 'rule.Context', user: str | User | None = None) -> str:
         user = from_str(ctx, user)
 
     return genquery.Query(ctx, "USER_TYPE",
-                          "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
+                          f"USER_NAME = '{user[0]}' AND USER_ZONE = '{user[1]}'").first()
 
 
 def is_rodsadmin(ctx: 'rule.Context', user: str | User | None = None) -> bool:
@@ -106,14 +106,13 @@ def is_member_of(ctx: 'rule.Context', group: str, user: str | User | None = None
         user = from_str(ctx, user)
 
     return genquery.Query(ctx, 'USER_GROUP_NAME',
-                          "USER_NAME = '{}' AND USER_ZONE = '{}' AND USER_GROUP_NAME = '{}'"
-                          .format(*list(user) + [group])).first() is not None
+                          f"USER_NAME = '{user[0]}' AND USER_ZONE = '{user[1]}' AND USER_GROUP_NAME = '{group}'").first() is not None
 
 
 def name_from_id(ctx: 'rule.Context', user_id: str) -> str:
     """Retrieve username from user ID."""
     for row in genquery.row_iterator("USER_NAME",
-                                     "USER_ID = '{}'".format(user_id),
+                                     f"USER_ID = '{user_id}'",
                                      genquery.AS_LIST, ctx):
         return row[0]
     return ''
@@ -122,7 +121,7 @@ def name_from_id(ctx: 'rule.Context', user_id: str) -> str:
 def id_from_name(ctx: 'rule.Context', user_name: str) -> str:
     """Retrieve user ID based on user name."""
     for row in genquery.row_iterator("USER_ID",
-                                     "USER_NAME = '{}'".format(user_name),
+                                     f"USER_NAME = '{user_name}'",
                                      genquery.AS_LIST, ctx):
         return row[0]
     return ''

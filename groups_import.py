@@ -42,14 +42,13 @@ def process_csv_line(ctx: 'rule.Context', line: dict) -> Tuple:
         elif column_name in get_csv_predefined_labels():
             continue
         elif not column_name_is_role_label(column_name):
-            return None, "Column label '{}' is not a valid label.".format(column_name)
+            return None, f"Column label '{column_name}' is not a valid label."
 
         for i in range(len(item_list)):
             item_list[i] = item_list[i].strip().lower()
             username = item_list[i]
             if not yoda_names.is_email_username(username):
-                return None, 'Username "{}" is not a valid email address.'.format(
-                    username)
+                return None, f'Username "{username}" is not a valid email address.'
 
         if column_name.lower() == 'manager' or column_name.lower().startswith("manager:"):
             managers.extend(item_list)
@@ -62,19 +61,19 @@ def process_csv_line(ctx: 'rule.Context', line: dict) -> Tuple:
         return None, "Group must have a group manager"
 
     if not yoda_names.is_valid_category(category):
-        return None, '"{}" is not a valid category name.'.format(category)
+        return None, f'"{category}" is not a valid category name.'
 
     if not yoda_names.is_valid_subcategory(subcategory):
-        return None, '"{}" is not a valid subcategory name.'.format(subcategory)
+        return None, f'"{subcategory}" is not a valid subcategory name.'
 
     if not yoda_names.is_valid_groupname("research-" + groupname):
-        return None, '"{}" is not a valid group name.'.format(groupname)
+        return None, f'"{groupname}" is not a valid group name.'
 
     if not yoda_names.is_valid_schema_id(schema_id):
-        return None, '"{}" is not a valid schema id.'.format(schema_id)
+        return None, f'"{schema_id}" is not a valid schema id.'
 
     if not yoda_names.is_valid_expiration_date(expiration_date):
-        return None, '"{}" is not a valid expiration date.'.format(expiration_date)
+        return None, f'"{expiration_date}" is not a valid expiration date.'
 
     row_data = (category, subcategory, groupname, managers,
                 members, viewers, schema_id, expiration_date)
@@ -127,14 +126,14 @@ def parse_csv_file(ctx):
     for label in get_csv_required_labels():
         if label not in reader.fieldnames:
             _exit_with_error(
-                'CSV header is missing compulsory field "{}"'.format(label))
+                f'CSV header is missing compulsory field "{label}"')
 
     # Check that all header names are valid
     possible_labels = get_csv_possible_labels()
     for label in header:
         if label not in possible_labels:
             _exit_with_error(
-                'CSV header contains unknown field "{}"'.format(label))
+                f'CSV header contains unknown field "{label}"')
 
     # duplicate fieldnames present?
     duplicate_columns = get_duplicate_columns(reader.fieldnames)
@@ -149,8 +148,7 @@ def parse_csv_file(ctx):
         if error is None:
             extracted_data.append(rowdata)
         else:
-            _exit_with_error("Data error in row {}: {}".format(
-                str(row_number), error))
+            _exit_with_error(f"Data error in row {str(row_number)}: {error}")
 
     return extracted_data
 
@@ -207,7 +205,7 @@ def parse_data(ctx: 'rule.Context', csv_header_and_data: str) -> Tuple:
             extracted_data.append(rowdata)
         else:
             # End processing of csv data due to erroneous input
-            return extracted_data, "Data error: {}".format(error)
+            return extracted_data, f"Data error: {error}"
 
     duplicate_groups = get_duplicate_groups(extracted_data)
     if len(duplicate_groups) > 0:

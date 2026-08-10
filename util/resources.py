@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def exists(ctx: 'rule.Context', name: str) -> bool:
     """Check if a resource with a given name exists."""
     return len(list(genquery.row_iterator(
-               "RESC_ID", "RESC_NAME = '{}'".format(name),
+               "RESC_ID", f"RESC_NAME = '{name}'",
                genquery.AS_LIST, ctx))) > 0
 
 
@@ -27,7 +27,7 @@ def id_from_name(ctx: 'rule.Context', resc_name: str) -> str:
 
     :returns: Resource ID
     """
-    return genquery.Query(ctx, ["RESC_ID"], "RESC_NAME = '{}'".format(resc_name)).first()
+    return genquery.Query(ctx, ["RESC_ID"], f"RESC_NAME = '{resc_name}'").first()
 
 
 def name_from_id(ctx: 'rule.Context', resc_id: str) -> str:
@@ -38,7 +38,7 @@ def name_from_id(ctx: 'rule.Context', resc_id: str) -> str:
 
     :returns: Resource name
     """
-    return genquery.Query(ctx, ["RESC_NAME"], "RESC_ID = '{}'".format(resc_id)).first()
+    return genquery.Query(ctx, ["RESC_NAME"], f"RESC_ID = '{resc_id}'").first()
 
 
 def get_parent_by_id(ctx: 'rule.Context', resc_id: str) -> str | None:
@@ -49,7 +49,7 @@ def get_parent_by_id(ctx: 'rule.Context', resc_id: str) -> str | None:
 
     :returns: Parent resource ID (or None if it has no parent)
     """
-    result = genquery.Query(ctx, ["RESC_PARENT"], "RESC_ID = '{}'".format(resc_id)).first()
+    result = genquery.Query(ctx, ["RESC_PARENT"], f"RESC_ID = '{resc_id}'").first()
     return None if result == "" else result
 
 
@@ -76,7 +76,7 @@ def get_children_by_id(ctx: 'rule.Context', resc_id: str) -> List:
     """
     result = list(genquery.row_iterator(
                   "RESC_ID",
-                  "RESC_PARENT = '{}'".format(resc_id),
+                  f"RESC_PARENT = '{resc_id}'",
                   genquery.AS_LIST, ctx))
     return [r[0] for r in result]
 
@@ -102,7 +102,7 @@ def get_type_by_id(ctx: 'rule.Context', resc_id: str) -> str:
 
     :returns: Resource type (e.g. "passhru")
     """
-    return genquery.Query(ctx, ["RESC_TYPE_NAME"], "RESC_ID = '{}'".format(resc_id)).first()
+    return genquery.Query(ctx, ["RESC_TYPE_NAME"], f"RESC_ID = '{resc_id}'").first()
 
 
 def get_type_by_name(ctx: 'rule.Context', resc_name: str) -> str:
@@ -113,7 +113,7 @@ def get_type_by_name(ctx: 'rule.Context', resc_name: str) -> str:
 
     :returns: Resource type (e.g. "passthru")
     """
-    return genquery.Query(ctx, ["RESC_TYPE_NAME"], "RESC_NAME = '{}'".format(resc_name)).first()
+    return genquery.Query(ctx, ["RESC_TYPE_NAME"], f"RESC_NAME = '{resc_name}'").first()
 
 
 def get_resource_names_by_type(ctx: 'rule.Context', resc_type: str) -> List:
@@ -126,7 +126,7 @@ def get_resource_names_by_type(ctx: 'rule.Context', resc_type: str) -> List:
     """
     result = list(genquery.row_iterator(
                   "RESC_NAME",
-                  "RESC_TYPE_NAME = '{}'".format(resc_type),
+                  f"RESC_TYPE_NAME = '{resc_type}'",
                   genquery.AS_LIST, ctx))
     return [r[0] for r in result]
 

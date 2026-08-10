@@ -27,18 +27,18 @@ def ui_schema_transformations_upload_metadata(user, schema_from, schema_to):
     api_request(
         user,
         "research_file_delete",
-        {"coll": "/tempZone/home/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
+        {"coll": f"/tempZone/home/research-{schema_to}", "file_name": "yoda-metadata.json"}
     )
 
     cwd = os.getcwd()
 
-    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to), "rb") as f:
+    with open(f"{cwd}/files/transformations/{schema_from}_{schema_to}.json", "rb") as f:
         metadata = f.read()
 
     return upload_data(
         user,
         "yoda-metadata.json",
-        "/research-{}".format(schema_to),
+        f"/research-{schema_to}",
         metadata
     )
 
@@ -72,13 +72,13 @@ def ui_schema_trans_accept_trans(browser):
 def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from):
     link = []
     while len(link) == 0:
-        link = browser.find_by_css('button[data-name="{}"]'.format(file))
+        link = browser.find_by_css(f'button[data-name="{file}"]')
         if len(link) > 0:
             # Open menu for the file.
-            browser.find_by_css('button[data-name="{}"]'.format(file)).click()
+            browser.find_by_css(f'button[data-name="{file}"]').click()
 
             # Click on download link.
-            browser.find_by_css('a[data-name="{}"]'.format(file))[0].click()
+            browser.find_by_css(f'a[data-name="{file}"]')[0].click()
         else:
             browser.find_by_id('file-browser_next').click()
 
@@ -97,10 +97,10 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to, schema_from)
     os.remove(download_dir)
 
     # Check actual content after transformation for each schema version
-    assert metadata['links'][0]['href'] == "https://yoda.uu.nl/schemas/{}/metadata.json".format(schema_to)
+    assert metadata['links'][0]['href'] == f"https://yoda.uu.nl/schemas/{schema_to}/metadata.json"
     assert metadata["Data_Access_Restriction"] == "Open - freely retrievable"
-    assert metadata["Title"] == "API test {}".format(schema_from)
-    assert metadata["Description"] == "API test {}".format(schema_from)
+    assert metadata["Title"] == f"API test {schema_from}"
+    assert metadata["Description"] == f"API test {schema_from}"
     assert metadata["Language"] == "en - English"
 
     if schema_from == "dag-0":

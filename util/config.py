@@ -138,7 +138,7 @@ class Config:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                error_message = 'Configuration syntax error at {} line {}'.format(self._get_config_filename(), i + 1)
+                error_message = f'Configuration syntax error at {self._get_config_filename()} line {i + 1}'
                 # We do not throw an exception here, because that would cause the rule engine to fail
                 # completely with a generic error message (since config initialization is at
                 # compile time). Instead, we store the error message here, then have the policies
@@ -154,7 +154,7 @@ class Config:
 
             if issubclass(typ, list):
                 if m.group(2) is None:
-                    error_message = 'Configuration syntax error at {} line {}'.format(self._get_config_filename(), i + 1)
+                    error_message = f'Configuration syntax error at {self._get_config_filename()} line {i + 1}'
                     self._loading_errors.append(error_message)
                     continue
                 else:
@@ -163,7 +163,7 @@ class Config:
                 try:
                     setattr(self, m.group(1), {'true': True, 'false': False}[m.group(2)])
                 except KeyError:
-                    error_message = 'Configuration syntax error at {} line {}'.format(self._get_config_filename(), i + 1)
+                    error_message = f'Configuration syntax error at {self._get_config_filename()} line {i + 1}'
                     # We do not throw an exception here, because that would cause the rule engine to fail
                     # completely with an obscure generic error message (since config initialization is at
                     # compile time). Instead, we store the error message, then print warnings once the
@@ -205,10 +205,10 @@ class Config:
             return super().__setattr__(k, v)
         if self._frozen:
             if not self._quiet_mode:
-                print('Ruleset configuration error: No config changes possible to \'{}\''.format(k))
+                print(f'Ruleset configuration error: No config changes possible to \'{k}\'')
             return
         if k not in self._items:
-            error_message = 'Ruleset configuration error: No such config option: \'{}\''.format(k)
+            error_message = f'Ruleset configuration error: No such config option: \'{k}\''
             self._loading_errors.append(error_message)
             if not self._quiet_mode:
                 print(error_message)
@@ -224,7 +224,7 @@ class Config:
             return self._items[k]
         except KeyError:
             # py3: should become 'raise ... from e'
-            raise AttributeError('Config item <{}> does not exist'.format(k))
+            raise AttributeError(f'Config item <{k}> does not exist')
 
     # Never dump config values, they may contain sensitive info.
     def __str__(self) -> str:

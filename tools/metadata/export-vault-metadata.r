@@ -21,6 +21,7 @@ from datetime import datetime
 
 import genquery
 import irods_types
+from tstrings import t
 
 
 def get_size(ctx, path):
@@ -36,10 +37,10 @@ def get_size(ctx, path):
 
     return reduce(func,
                   itertools.chain(genquery.row_iterator("DATA_ID, DATA_SIZE",
-                                                        "COLL_NAME like '{}'".format(path),
+                                                        t("COLL_NAME like '{path}'"),
                                                         genquery.AS_LIST, ctx),
                                   genquery.row_iterator("DATA_ID, DATA_SIZE",
-                                                        "COLL_NAME like '{}/%'".format(path),
+                                                        t("COLL_NAME like '{path}/%'"),
                                                         genquery.AS_LIST, ctx)), 0)
 
 
@@ -53,7 +54,7 @@ def get_doi(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (path),
+        t("COLL_NAME = '{path}' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'"),
         genquery.AS_LIST, ctx
     )
 
@@ -73,12 +74,12 @@ def get_data_package_reference(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_data_package_reference'" % (path),
+        t("COLL_NAME = '{path}' AND META_COLL_ATTR_NAME = 'org_data_package_reference'"),
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
-        return "yoda/{}".format(row[0])
+        return f"yoda/{row[0]}"
 
     return None
 
@@ -96,7 +97,7 @@ def get_latest_vault_metadata_path(ctx, path):
 
     iter = genquery.row_iterator(
         "DATA_NAME",
-        "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(path),
+        t("COLL_NAME = '{path}' AND DATA_NAME like 'yoda-metadata[%].json'"),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -104,7 +105,7 @@ def get_latest_vault_metadata_path(ctx, path):
         if name is None or (name < data_name and len(name) <= len(data_name)):
             name = data_name
 
-    return None if name is None else '{}/{}'.format(path, name)
+    return None if name is None else f'{path}/{name}'
 
 
 def get_metadata_as_dict(ctx, path):
@@ -144,7 +145,7 @@ def get_last_modified_datetime(ctx, vault_package):
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = 'org_action_log'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = 'org_action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -173,7 +174,7 @@ def main(rule_args, ctx, rei):
     metadata_export = OrderedDict([])
     for (path, status) in package_statuses:
         try:
-            ctx.writeString("serverLog", "[export] Collecting metadata for vault data package {}".format(path))
+            ctx.writeString("serverLog", f"[export] Collecting metadata for vault data package {path}")
             vault_metadata = OrderedDict()
 
             # Path
@@ -185,7 +186,7 @@ def main(rule_args, ctx, rei):
             # DOI
             doi = get_doi(ctx, path)
             if doi:
-                vault_metadata['doi'] = "https://doi.org/{}".format(doi)
+                vault_metadata['doi'] = f"https://doi.org/{doi}"
 
             # Data Package Reference
             data_package_reference = get_data_package_reference(ctx, path)
@@ -209,8 +210,9 @@ def main(rule_args, ctx, rei):
 
             metadata_export[path] = vault_metadata
         except Exception:
-            ctx.writeString("serverLog", "[export] Error collecting metadata for vault data package {}".format(path))
+            ctx.writeString("serverLog", f"[export] Error collecting metadata for vault data package {path}")
     ctx.writeLine("stdout", json.dumps(metadata_export, indent=4))
+
 
 INPUT null
 OUTPUT ruleExecOut

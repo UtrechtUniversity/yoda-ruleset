@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 NAME                = os.path.basename(sys.argv[0])
-LOCKFILE_PATH       = '/tmp/irods-{}.lock'.format(NAME)
+LOCKFILE_PATH       = f'/tmp/irods-{NAME}.lock'
 NO_MORE_WORK_STATUS = "No more revision cleanup data"
 
 
@@ -32,7 +32,7 @@ def lock_or_die():
         fd = os.open(LOCKFILE_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     except OSError:
         if os.path.exists(LOCKFILE_PATH):
-            print('Not starting job: Lock file {} exists'.format(LOCKFILE_PATH))
+            print(f'Not starting job: Lock file {LOCKFILE_PATH} exists')
             exit(1)
         else:
             raise
@@ -44,17 +44,17 @@ def lock_or_die():
 
 
 def process_revision_cleanup_data(strategy_name, endofcalendarday, verbose_flag):
-    rule = "rule_revisions_cleanup_process('{}', '{}', '{}', *out);".format(strategy_name, endofcalendarday, verbose_flag)
+    rule = f"rule_revisions_cleanup_process('{strategy_name}', '{endofcalendarday}', '{verbose_flag}', *out);"
     return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 
 def scan_revision_cleanup_data(strategy_name, verbose_flag):
-    rule = "rule_revisions_cleanup_scan('{}', '{}', *out);".format(strategy_name, verbose_flag)
+    rule = f"rule_revisions_cleanup_scan('{strategy_name}', '{verbose_flag}', *out);"
     return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 
 def collect_revision_cleanup_data(batch_size):
-    rule = "rule_revisions_cleanup_collect('{}', *out);".format(str(batch_size))
+    rule = f"rule_revisions_cleanup_collect('{str(batch_size)}', *out);"
     return subprocess.check_output(_rule_command_for_rule(rule)).decode('utf-8')
 
 

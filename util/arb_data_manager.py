@@ -59,7 +59,7 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
         """
         arb_data = list(genquery.row_iterator(
             "META_RESC_ATTR_VALUE",
-            "META_RESC_ATTR_NAME = '{}' AND RESC_NAME = '{}'".format(self.AVU_NAME, keyname),
+            f"META_RESC_ATTR_NAME = '{self.AVU_NAME}' AND RESC_NAME = '{keyname}'",
             genquery.AS_LIST, ctx))
 
         if len(arb_data) == 0:
@@ -68,7 +68,7 @@ class ARBDataManager(cached_data_manager.CachedDataManager):
         elif len(arb_data) == 1:
             return arb_data[0][0]
         else:
-            log.write(ctx, "WARNING: multiple ARB AVUs present for resource '{}'. ARB will ignore it.".format(keyname))
+            log.write(ctx, f"WARNING: multiple ARB AVUs present for resource '{keyname}'. ARB will ignore it.")
             return constants.arb_status.IGNORE.value
 
     def _put_original_data(self, ctx: 'rule.Context', keyname: str, data: str) -> None:

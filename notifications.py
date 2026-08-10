@@ -15,6 +15,7 @@ from typing import List, Tuple
 import genquery
 from dateutil import relativedelta
 from genquery import Query
+from tstrings import t
 
 import data_access_token
 import folder
@@ -54,7 +55,7 @@ def set(ctx: rule.Context, actor: str, receiver: str, target: str, message: str)
         identifier = generate_random_id(ctx)
         timestamp = int(time.time())
         notification = {"identifier": identifier, "timestamp": timestamp, "actor": actor, "target": target, "message": message}
-        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, identifier), json.dumps(notification), '', '')
+        ctx.uuUserModify(receiver, f"{NOTIFICATION_KEY}_{identifier}", json.dumps(notification), '', '')
 
         # Send mail notification if immediate notifications are on.
         receiver = user.from_str(ctx, receiver)[0]
@@ -73,7 +74,7 @@ def api_notifications_load(ctx: rule.Context, sort_order: str = "desc") -> List:
     :returns: List with all notifications
     """
     results = list(Query(ctx, "META_USER_ATTR_VALUE",
-                              "USER_NAME = '{}' AND USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME like '{}_%%'".format(user.name(ctx), NOTIFICATION_KEY)))
+                              f"USER_NAME = '{user.name(ctx)}' AND USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME like '{NOTIFICATION_KEY}_%%'"))
 
     notifications = []
     for result in results:
@@ -99,7 +100,7 @@ def api_notifications_load(ctx: rule.Context, sort_order: str = "desc") -> List:
                     data_package_reference = ""
                     iter = genquery.row_iterator(
                         "META_COLL_ATTR_VALUE",
-                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(notification["target"], constants.DATA_PACKAGE_REFERENCE),
+                        t("COLL_NAME = '{notification['target']}' AND META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}'"),
                         genquery.AS_LIST, ctx
                     )
 
@@ -109,21 +110,21 @@ def api_notifications_load(ctx: rule.Context, sort_order: str = "desc") -> List:
                     deposit_title = '(no title)'
                     iter = genquery.row_iterator(
                         "META_COLL_ATTR_VALUE",
-                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(notification["target"]),
+                        t("COLL_NAME = '{notification['target']}' AND META_COLL_ATTR_NAME = 'Title'"),
                         genquery.AS_LIST, ctx
                     )
                     for row in iter:
                         deposit_title = row[0]
 
                     notification["data_package"] = deposit_title
-                    notification["link"] = "/vault/yoda/{}".format(data_package_reference)
+                    notification["link"] = f"/vault/yoda/{data_package_reference}"
 
                     # Find real actor when
                     if notification["actor"] == 'system':
                         # Get actor from action log on action = "submitted for vault"
                         iter2 = genquery.row_iterator(
                             "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-                            "COLL_NAME = '" + notification["target"] + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+                            t("COLL_NAME = '{notification['target']}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
                             genquery.AS_LIST, ctx
                         )
                         for row2 in iter2:
@@ -183,16 +184,16 @@ def send_notification(ctx: rule.Context, to: str, actor: str, message: str) -> a
     return mail.send(ctx,
                      to=to,
                      actor=actor,
-                     subject='[Yoda] {}'.format(message),
-                     body="""
-You received a new notification: {}
+                     subject=f'[Yoda] {message}',
+                     body=f"""
+You received a new notification: {message}
 
-Login to view all your notifications: https://{}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
+Login to view all your notifications: https://{config.yoda_portal_fqdn}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{config.yoda_portal_fqdn}/user/settings
 
 Best regards,
 Yoda system
-""".format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
+""")
 
 
 @rule.make(inputs=[0, 1], outputs=[2, 3])
@@ -203,16 +204,16 @@ def rule_mail_notification_report(ctx: rule.Context, to: str, notifications: str
     return mail.wrapper(ctx,
                         to=to,
                         actor='system',
-                        subject='[Yoda] {} notification(s)'.format(notifications),
-                        body="""
-You have {} notification(s).
+                        subject=f'[Yoda] {notifications} notification(s)',
+                        body=f"""
+You have {notifications} notification(s).
 
-Login to view all your notifications: https://{}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
+Login to view all your notifications: https://{config.yoda_portal_fqdn}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{config.yoda_portal_fqdn}/user/settings
 
 Best regards,
 Yoda system
-""".format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
+""")
 
 
 @rule.make()
@@ -255,22 +256,22 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
             metadata = jsonutil.read(ctx, meta_path)
             current_schema_id = meta.metadata_get_schema_id(metadata)
             if current_schema_id is None:
-                log.write(ctx, 'retention - Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
+                log.write(ctx, f'retention - Schema id missing - Please check the structure of this file. <{dp_coll}>')
                 errors += 1
                 continue
         except jsonutil.ParseError:
-            log.write(ctx, 'retention - JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
+            log.write(ctx, f'retention - JSON invalid - Please check the structure of this file. <{dp_coll}>')
             errors += 1
             continue
         except msi.Error as e:
-            log.write(ctx, 'retention - The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
+            log.write(ctx, f'retention - The metadata file could not be read. ({e}) <{dp_coll}>')
             errors += 1
             continue
 
         # Get deposit date and end preservation date based upon retention period.
         iter2 = genquery.row_iterator(
             "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+            t("COLL_NAME = '{dp_coll}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
@@ -284,19 +285,19 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
         try:
             retention = int(metadata['Retention_Period'])
         except KeyError:
-            log.write(ctx, 'retention - No retention period set in metadata. <{}>'.format(dp_coll))
+            log.write(ctx, f'retention - No retention period set in metadata. <{dp_coll}>')
             continue
 
         try:
             date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
         except ValueError:
-            log.write(ctx, 'retention - Could not determine retention end date. Retention period: <{}>'.format(retention))
+            log.write(ctx, f'retention - Could not determine retention end date. Retention period: <{retention}>')
             continue
 
         r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
         formatted_date = date_end_retention.strftime('%Y-%m-%d')
 
-        log.write(ctx, 'retention - Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
+        log.write(ctx, f'retention - Retention period ({retention} years) ending in {r.years} years, {r.months} months and {r.days} days ({formatted_date}): <{dp_coll}>')
         if r.years == 0 and r.months <= 1:
             try:
                 datamanagers = folder.get_datamanagers(ctx, dp_coll)
@@ -307,14 +308,14 @@ def rule_process_ending_retention_packages(ctx: rule.Context) -> None:
             if len(datamanagers) > 0:
                 dp_notify_count += 1
                 # Send notifications to datamanager(s).
-                message = "Data package reaching end of preservation date: {}".format(formatted_date)
+                message = f"Data package reaching end of preservation date: {formatted_date}"
                 for datamanager in datamanagers:
-                    datamanager_name = '{}#{}'.format(*datamanager)
+                    datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
                     actor = 'system'
                     set(ctx, actor, datamanager_name, dp_coll, message)
-                log.write(ctx, 'retention - Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
+                log.write(ctx, f'retention - Notifications set for ending retention period on {formatted_date}. <{dp_coll}>')
 
-    log.write(ctx, 'retention - Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
+    log.write(ctx, f'retention - Finished checking vault packages for ending retention | notified: {dp_notify_count} | errors: {errors}')
 
 
 @rule.make()
@@ -340,13 +341,13 @@ def rule_process_groups_expiration_date(ctx: rule.Context) -> None:
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND USER_GROUP_NAME like 'research-%' AND META_USER_ATTR_NAME = 'expiration_date'"
-        " AND META_USER_ATTR_VALUE <= '{}'  AND META_USER_ATTR_VALUE != '.'".format(today),
+        f" AND META_USER_ATTR_VALUE <= '{today}'  AND META_USER_ATTR_VALUE != '.'",
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
         group_name = row[0]
-        coll = '/{}/home/{}'.format(zone, group_name)
+        coll = f'/{zone}/home/{group_name}'
         expiration_date = row[2]
 
         try:
@@ -358,15 +359,15 @@ def rule_process_groups_expiration_date(ctx: rule.Context) -> None:
         if len(datamanagers) > 0:
             notify_count += 1
             # Send notifications to datamanager(s).
-            message = "Group '{}' reached expiration date: {}".format(group_name, expiration_date)
+            message = f"Group '{group_name}' reached expiration date: {expiration_date}"
 
             for datamanager in datamanagers:
-                datamanager_name = '{}#{}'.format(*datamanager)
+                datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
                 actor = 'system'
                 set(ctx, actor, datamanager_name, coll, message)
-            log.write(ctx, 'group expiration date - Notifications set for group {} reaching expiration date on {}. <{}>'.format(group_name, expiration_date, coll))
+            log.write(ctx, f'group expiration date - Notifications set for group {group_name} reaching expiration date on {expiration_date}. <{coll}>')
 
-    log.write(ctx, 'group expiration date - Finished checking research groups for reaching group expiration date | notified: {}'.format(notify_count))
+    log.write(ctx, f'group expiration date - Finished checking research groups for reaching group expiration date | notified: {notify_count}')
 
 
 @rule.make()
@@ -392,7 +393,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
     inactivity_cutoff_epoch = int((inactivity_cutoff - datetime(1970, 1, 1)).total_seconds())
 
     for group_name in group.get_research_groups_list(ctx):
-        coll = '/{}/home/{}'.format(zone, group_name)
+        coll = f'/{zone}/home/{group_name}'
 
         if not collection.exists(ctx, coll):
             # This is apparently a leftover group, where the collection has already
@@ -414,7 +415,7 @@ def rule_process_inactive_research_groups(ctx: rule.Context) -> None:
                 message = f"Group '{group_name}' has been inactive for more than {config.inactivity_cutoff_months} months"
 
                 for datamanager in datamanagers:
-                    datamanager_name = '{}#{}'.format(*datamanager)
+                    datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
                     actor = 'system'
                     set(ctx, actor, datamanager_name, coll, message)
                 log.write(ctx, f'inactive research group - Notifications set for group {group_name} having been inactive since at least {config.inactivity_cutoff_months}. <{coll}>')
@@ -450,7 +451,7 @@ def rule_process_data_access_token_expiry(ctx: rule.Context) -> None:
         if total_hours <= config.token_expiration_notification:
             actor = 'system'
             target = str(user.from_str(ctx, token['user']))
-            message = "Data access password with label <{}> is expiring".format(token["label"])
+            message = f"Data access password with label <{token['label']}> is expiring"
             set(ctx, actor, target, "/user/data_access", message)
-            log.write(ctx, 'data access token - Notification set for expiring data access token from user <{}>'.format(token["user"]))
+            log.write(ctx, f"data access token - Notification set for expiring data access token from user <{token['user']}>")
     log.write(ctx, 'data access token - Finished checking for expiring data access tokens')

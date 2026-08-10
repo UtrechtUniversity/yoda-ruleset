@@ -217,7 +217,7 @@ def ui_data_package_no_access(browser):
 @when(parsers.parse("user chooses research folder corresponding to {vault}"))
 def ui_browse_research_to_copy_data_package_to(browser, vault):
     research = vault.replace("vault-", "research-")
-    href = "?dir=%2F{}".format(research)
+    href = f"?dir=%2F{research}"
     link = []
     while len(link) == 0:
         link = browser.links.find_by_href(href)

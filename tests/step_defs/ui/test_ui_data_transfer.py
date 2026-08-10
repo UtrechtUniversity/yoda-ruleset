@@ -22,7 +22,7 @@ gocommands_url = "https://github.com/cyverse/gocommands/blob/main/README.md"
 
 @when("user opens the Data Transfer page")
 def ui_data_transfer_page(browser):
-    url = "{}/user/data_transfer".format(portal_url)
+    url = f"{portal_url}/user/data_transfer"
     browser.visit(url)
 
 
@@ -75,7 +75,7 @@ def ui_data_transfer_icommands_configuration_file_downloaded(browser, tmpdir, fo
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
 
     for child in download_dir.iterdir():
-        if os.path.basename(str(child)) == "irods_environment.{}".format(format):
+        if os.path.basename(str(child)) == f"irods_environment.{format}":
             assert True
             return
     raise AssertionError()
@@ -130,7 +130,7 @@ def ui_data_transfer_gocommands_configuration_downloaded(browser, tmpdir, format
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
 
     for child in download_dir.iterdir():
-        if os.path.basename(str(child)) == "config.{}".format(format):
+        if os.path.basename(str(child)) == f"config.{format}":
             assert True
             return
     raise AssertionError()

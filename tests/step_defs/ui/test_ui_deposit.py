@@ -107,20 +107,20 @@ def api_deposit_file_upload(user, deposit_name, deposit_group):
     return upload_data(
         user,
         file,
-        "/{}/{}".format(deposit_group, deposit_name)
+        f"/{deposit_group}/{deposit_name}"
     )
 
 
 @given(parsers.parse("{data_access_restriction} metadata is uploaded by user {user}"), target_fixture="api_response")
 def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_restriction):
     cwd = os.getcwd()
-    with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
+    with open(f"{cwd}/files/dag-0-{data_access_restriction}.json") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     return api_request(
         user,
         "meta_form_save",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name), "metadata": metadata}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}", "metadata": metadata}
     )
 
 
