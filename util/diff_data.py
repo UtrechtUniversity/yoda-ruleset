@@ -41,10 +41,10 @@ def describe_metadata_changes(data1: Any, data2: Any) -> List[str]:
         for item in item_list:
             if len(item_list[item]) < 5:
                 list_of_changes = ', '.join(item_list[item])
-                results.append('{} metadata: {}'.format(item.replace('changed', 'modified'), list_of_changes))
+                results.append(f"{item.replace('changed', 'modified')} metadata: {list_of_changes}")
             else:
                 list_of_changes = ', '.join(item_list[item][:4])
-                results.append('{} metadata: {} and more'.format(item.replace('changed', 'modified'), list_of_changes))
+                results.append(f"{item.replace('changed', 'modified')} metadata: {list_of_changes} and more")
 
         return results
 

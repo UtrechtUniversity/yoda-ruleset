@@ -29,16 +29,16 @@ def revision_eligible(max_size: int, data_obj_exists: bool, size: int, path: str
     """
 
     if not data_obj_exists:
-        return False, "Data object <{}> was not found or path was collection".format(path)
+        return False, f"Data object <{path}> was not found or path was collection"
 
     if len(groups) == 0:
-        return False, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path)
+        return False, f"Cannot find owner of data object <{path}>. It may have been removed. Skipping."
 
     if len(groups) > 1:
-        return False, "Cannot find unique owner of data object <{}>. Skipping.".format(path)
+        return False, f"Cannot find unique owner of data object <{path}>. Skipping."
 
     if not revision_store_exists:
-        return False, "Revision store collection does not exist for data object <{}>".format(path)
+        return False, f"Revision store collection does not exist for data object <{path}>"
 
     _, zone, _, _ = pathutil.info(path)
 
@@ -48,7 +48,7 @@ def revision_eligible(max_size: int, data_obj_exists: bool, size: int, path: str
         return False, ""
 
     # Only create revisions for research space
-    if not path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
+    if not path.startswith(f"/{zone}/home/{constants.IIGROUPPREFIX}"):
         return False, ""
 
     if any(fnmatch.fnmatch(pathutil.basename(path), pattern) for pattern in constants.UUBLOCKLIST):
@@ -106,8 +106,7 @@ def get_deletion_candidates(ctx: 'rule.Context',
     if not original_exists:
         if verbose:
             for revision in revisions:
-                log.write(ctx, 'Scheduling revision <{}> for removal. Original no longer exists.'.format(
-                          revision[2]))
+                log.write(ctx, f'Scheduling revision <{revision[2]}> for removal. Original no longer exists.')
         return [revision[0] for revision in revisions]
 
     buckets = revision_strategy.get_buckets()
@@ -158,16 +157,14 @@ def get_deletion_candidates(ctx: 'rule.Context',
                     # Add revision to list of removal
                     index = bucket_start_index + count
                     if verbose:
-                        log.write(ctx, 'Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
-                                                                                                     str(bucket)))
+                        log.write(ctx, f'Scheduling revision <{str(index)}> in bucket <{str(bucket)}> for removal.')
                     deletion_candidates.append(rev_list[index])
                     count += 1
             else:
                 while count < nr_to_be_removed:
                     index = len(rev_list) + (bucket_start_index) - count
                     if verbose:
-                        log.write(ctx, 'Scheduling revision <{}> in bucket <{}> for removal.'.format(str(index),
-                                                                                                     str(bucket)))
+                        log.write(ctx, f'Scheduling revision <{str(index)}> in bucket <{str(bucket)}> for removal.')
                     deletion_candidates.append(rev_list[index])
                     count += 1
 
@@ -182,7 +179,7 @@ def get_deletion_candidates(ctx: 'rule.Context',
             while count < nr_to_be_removed:
                 index = count + (0 if revision_found_in_bucket else 1)
                 if verbose:
-                    log.write(ctx, 'Scheduling revision <{}> (older than buckets) for removal.'.format(str(index)))
+                    log.write(ctx, f'Scheduling revision <{str(index)}> (older than buckets) for removal.')
                 deletion_candidates.append(non_bucket_revisions[index])
                 count += 1
     else:

@@ -113,7 +113,7 @@ def ui_check_version_provenance_vault(browser):
 @when(parsers.parse("user downloads file {file}"))
 def ui_pub_download_file(browser, file):
     browser.links.find_by_partial_text("original").click()
-    browser.find_by_css('button[data-name="{}"]'.format(file)).click()
+    browser.find_by_css(f'button[data-name="{file}"]').click()
     browser.find_by_css('#file-browser a.dropdown-item').click()
     browser.back()
 

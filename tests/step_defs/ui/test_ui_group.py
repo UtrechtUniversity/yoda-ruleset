@@ -35,7 +35,7 @@ def ui_group_check_properties_panel(browser, group):
 
 @when(parsers.parse("correct row in list view is active for {group}"))
 def ui_group_list_view_correct_row_active(browser, group):
-    assert len(browser.find_by_css('#tbl-list-groups tr.table-active[user-search-result-group="{}"]'.format(group))) == 1
+    assert len(browser.find_by_css(f'#tbl-list-groups tr.table-active[user-search-result-group="{group}"]')) == 1
 
 
 @when(parsers.parse("user selects group {group} in list view"))
@@ -142,23 +142,23 @@ def ui_group_count_user_search_result(browser, suggestions):
 @when(parsers.parse("user selects group {group} in subcategory {subcategory} and category {category}"))
 def ui_group_subcategory_category_access(browser, category, subcategory, group):
     # First, find if group is present AND active
-    if not browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1):
+    if not browser.find_by_css(f'a.group.active[data-name={group}]', wait_time=1):
         # Perhaps the group is not present at all.
-        if browser.find_by_css('a.group[data-name={}]'.format(group), wait_time=1).visible:
+        if browser.find_by_css(f'a.group[data-name={group}]', wait_time=1).visible:
             # If group is present, click it to make it active.
             browser.find_by_id('group-list').links.find_by_partial_text(group).click()
         else:
             # if group is not found, this indicates that at least the subcategory is closed or not even present.
-            if browser.find_by_css('div.list-group-item.subcategory[data-name={}] a'.format(subcategory)).visible:
+            if browser.find_by_css(f'div.list-group-item.subcategory[data-name={subcategory}] a').visible:
                 # category is closed, so first open it.
-                browser.find_by_css('div.list-group-item.subcategory[data-name={}] a'.format(subcategory)).click()
+                browser.find_by_css(f'div.list-group-item.subcategory[data-name={subcategory}] a').click()
                 # Click on the group so group gets selected
                 browser.find_by_id('group-list').links.find_by_partial_text(group).click()
             else:
                 # subcat is not found which can only be the case if the category is closed.
-                browser.find_by_css('div.list-group-item.category[data-name={}] a'.format(category), wait_time=1).click()
+                browser.find_by_css(f'div.list-group-item.category[data-name={category}] a', wait_time=1).click()
                 # Now open the subcategory
-                browser.find_by_css('div.list-group-item.subcategory[data-name={}] a'.format(subcategory)).click()
+                browser.find_by_css(f'div.list-group-item.subcategory[data-name={subcategory}] a').click()
                 # Click on the group so group gets selected
                 browser.find_by_id('group-list').links.find_by_partial_text(group).click()
 
@@ -221,7 +221,7 @@ def ui_group_select_two_users(browser, member1, member2):
 
 @when(parsers.parse("user changes roles to {new_role}"))
 def ui_group_userrole_change(browser, new_role):
-    browser.find_by_css('a.update-button[data-target-role={}]'.format(new_role), wait_time=1).click()
+    browser.find_by_css(f'a.update-button[data-target-role={new_role}]', wait_time=1).click()
 
 
 @then("role change is successful")
@@ -293,11 +293,11 @@ def ui_group_search(browser, group):
 def ui_group_filtered(browser, group):
     assert browser.is_text_present(group, wait_time=1)
 
-    core_groups = browser.find_by_css("a[data-name*=\"{}\"]".format("core"))
+    core_groups = browser.find_by_css("a[data-name*=\"core\"]")
     for grp in core_groups:
         assert not grp.visible
 
-    default_groups = browser.find_by_css("a[data-name*=\"{}\"]".format("default"))
+    default_groups = browser.find_by_css("a[data-name*=\"default\"]")
     for grp in default_groups:
         assert not grp.visible
 
@@ -312,9 +312,9 @@ def ui_group_click_group_import_dlg_button(browser):
 def ui_group_click_upload_button(browser, csv_file):
     cwd = os.getcwd()
     if os.name == 'nt':
-        browser.find_by_css('.csv-import-file')[0].fill("{}\\files\\{}".format(cwd, csv_file))
+        browser.find_by_css('.csv-import-file')[0].fill(f"{cwd}\\files\\{csv_file}")
     else:
-        browser.find_by_css('.csv-import-file')[0].fill("{}/files/{}".format(cwd, csv_file))
+        browser.find_by_css('.csv-import-file')[0].fill(f"{cwd}/files/{csv_file}")
 
 
 @then(parsers.parse("there are {num_groups} groups presented"))

@@ -12,6 +12,7 @@ from typing import List
 
 import genquery
 import irods_types
+from tstrings import t
 
 import provenance
 import publication
@@ -64,7 +65,7 @@ def get_collection_metadata_path(ctx: rule.Context, coll: str) -> str | None:
 
     :returns: Path to metadata file
     """
-    path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    path = f'{coll}/{constants.IIJSONMETADATA}'
     if data_object.exists(ctx, path):
         return path
 
@@ -83,7 +84,7 @@ def get_latest_vault_metadata_path(ctx: rule.Context, vault_pkg_coll: str) -> st
 
     iter = genquery.row_iterator(
         "DATA_NAME",
-        "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(vault_pkg_coll),
+        t("COLL_NAME = '{vault_pkg_coll}' AND DATA_NAME like 'yoda-metadata[%].json'"),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -91,7 +92,7 @@ def get_latest_vault_metadata_path(ctx: rule.Context, vault_pkg_coll: str) -> st
         if name is None or (name < data_name and len(name) <= len(data_name)):
             name = data_name
 
-    return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
+    return None if name is None else f'{vault_pkg_coll}/{name}'
 
 
 rule_get_latest_vault_metadata_path = (
@@ -149,10 +150,10 @@ rule_meta_collection_has_cloneable_metadata = (
 @api.make()
 def api_meta_remove(ctx: rule.Context, coll: str) -> None:
     """Remove a collection's metadata JSON, if it exists."""
-    log.write(ctx, 'Remove metadata of coll {}'.format(coll))
+    log.write(ctx, f'Remove metadata of coll {coll}')
 
     try:
-        data_object.remove(ctx, '{}/{}'.format(coll, constants.IIJSONMETADATA))
+        data_object.remove(ctx, f'{coll}/{constants.IIJSONMETADATA}')
     except error.UUError:
         # ignore non-existent files.
         # (this may also fail for other reasons, but we can't distinguish them)
@@ -172,7 +173,7 @@ def api_meta_clone_file(ctx: rule.Context, target_coll: str) -> api.Result:
     source_data = get_collection_metadata_path(ctx, source_coll)
 
     if source_data and source_data.endswith('.json'):
-        target_data = '{}/{}'.format(target_coll, constants.IIJSONMETADATA)
+        target_data = f'{target_coll}/{constants.IIJSONMETADATA}'
     else:
         return api.Error('no_metadata', 'No metadata file exists to clone')
 
@@ -191,11 +192,11 @@ def ingest_metadata_research(ctx: rule.Context, path: str) -> None:
     try:
         metadata = jsonutil.read(ctx, path)
     except error.UUError:
-        log.write(ctx, 'ingest_metadata_research failed: Could not read {} as JSON'.format(path))
+        log.write(ctx, f'ingest_metadata_research failed: Could not read {path} as JSON')
         return
 
     if not is_json_metadata_valid(ctx, path, metadata, ignore_required=True):
-        log.write(ctx, 'ingest_metadata_research failed: {} is invalid'.format(path))
+        log.write(ctx, f'ingest_metadata_research failed: {path} is invalid')
         return
 
     # Note: We do not set a $id in research space: this would trigger jsonavu
@@ -215,11 +216,11 @@ def ingest_metadata_deposit(ctx: rule.Context, path: str) -> None:
     try:
         metadata = jsonutil.read(ctx, path)
     except error.UUError:
-        log.write(ctx, 'ingest_metadata_deposit failed: Could not read {} as JSON'.format(path))
+        log.write(ctx, f'ingest_metadata_deposit failed: Could not read {path} as JSON')
         return
 
     if not is_json_metadata_valid(ctx, path, metadata, ignore_required=True):
-        log.write(ctx, 'ingest_metadata_deposit failed: {} is invalid'.format(path))
+        log.write(ctx, f'ingest_metadata_deposit failed: {path} is invalid')
         return
 
     # Set Title and Data Access Restriction of deposit as AVU.
@@ -374,9 +375,9 @@ def update_index_metadata(ctx: rule.Context, path: str, metadata: dict, creation
         })
 
     if avu.apply_atomic_operations(ctx, metadata_operations):
-        log.write(ctx, 'update_index_metadata: Metadata index update successful on path {}'.format(path))
+        log.write(ctx, f'update_index_metadata: Metadata index update successful on path {path}')
     else:
-        log.write(ctx, 'update_index_metadata: Metadata index update unsuccessful on path {}'.format(path))
+        log.write(ctx, f'update_index_metadata: Metadata index update unsuccessful on path {path}')
 
 
 def ingest_metadata_vault(ctx: rule.Context, path: str) -> None:
@@ -391,14 +392,14 @@ def ingest_metadata_vault(ctx: rule.Context, path: str) -> None:
     try:
         metadata = jsonutil.read(ctx, path)
     except error.UUError:
-        log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
+        log.write(ctx, f'ingest_metadata_vault failed: Could not read {path} as JSON')
         return
 
     # Get creation time.
     creation_time = ""
     iter = genquery.row_iterator(
         "COLL_CREATE_TIME",
-        "COLL_NAME = '%s'" % (coll),
+        t("COLL_NAME = '{coll}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -409,7 +410,7 @@ def ingest_metadata_vault(ctx: rule.Context, path: str) -> None:
     if config.enable_data_package_reference:
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+            t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -429,14 +430,14 @@ def ingest_metadata_vault(ctx: rule.Context, path: str) -> None:
 
 @rule.make()
 def rule_meta_modified_post(ctx: rule.Context, path: str, user: str, zone: str) -> None:
-    if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
+    if re.match(f'^/{zone}/home/datamanager-[^/]+/vault-[^/]+/.*', path):
         ingest_metadata_staging(ctx, path)
-    elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
+    elif re.match(f'^/{zone}/home/vault-[^/]+/.*', path):
         ingest_metadata_vault(ctx, path)
         vault.update_archive(ctx, path)
-    elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
+    elif re.match(f'^/{zone}/home/research-[^/]+/.*', path):
         ingest_metadata_research(ctx, path)
-    elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
+    elif re.match(f'^/{zone}/home/deposit-[^/]+/.*', path):
         ingest_metadata_deposit(ctx, path)
 
 
@@ -460,29 +461,29 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     def set_result(msg_short, msg_long):
         rule_args[1:3] = msg_short, msg_long
         if msg_short != 'Success':
-            log.write(ctx, 'rule_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
+            log.write(ctx, f'rule_meta_datamanager_vault_ingest failed: {msg_long}')
         return
 
     # Parse path to JSON object.
-    m = re.match('^/([^/]+)/home/(datamanager-[^/]+)/(vault-[^/]+)/(.+)/{}$'.format(constants.IIJSONMETADATA), json_path)
+    m = re.match(f'^/([^/]+)/home/(datamanager-[^/]+)/(vault-[^/]+)/(.+)/{constants.IIJSONMETADATA}$', json_path)
     if not m:
-        set_result('JsonPathInvalid', 'Json staging path <{}> invalid'.format(json_path))
+        set_result('JsonPathInvalid', f'Json staging path <{json_path}> invalid')
         return
 
     zone, dm_group, vault_group, vault_subpath = m.groups()
-    dm_path = '/{}/home/{}'.format(zone, dm_group)
+    dm_path = f'/{zone}/home/{dm_group}'
 
     # Make sure the vault package coll exists.
-    vault_path = '/{}/home/{}'.format(zone, vault_group)
-    vault_pkg_path = '{}/{}'.format(vault_path, vault_subpath)
+    vault_path = f'/{zone}/home/{vault_group}'
+    vault_pkg_path = f'{vault_path}/{vault_subpath}'
 
     if not collection.exists(ctx, vault_pkg_path):
-        set_result('JsonPathInvalid', 'Vault path <{}> does not exist'.format(vault_pkg_path))
+        set_result('JsonPathInvalid', f'Vault path <{vault_pkg_path}> does not exist')
         return
 
     actor = data_object.owner(ctx, json_path)
     if actor is None:
-        set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
+        set_result('JsonPathInvalid', f'Json object <{json_path}> does not exist')
         return
     actor = actor[0]  # Discard zone name.
 
@@ -508,11 +509,11 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     timestamp = ret['arguments'][0].lstrip('0')
 
     json_name, json_ext = constants.IIJSONMETADATA.split('.', 1)
-    dest = '{}/{}[{}].{}'.format(vault_pkg_path, json_name, timestamp, json_ext)
+    dest = f'{vault_pkg_path}/{json_name}[{timestamp}].{json_ext}'
     i = 0
     while data_object.exists(ctx, dest):
         i += 1
-        dest = '{}/{}[{}][{}].{}'.format(vault_pkg_path, json_name, timestamp, i, json_ext)
+        dest = f'{vault_pkg_path}/{json_name}[{timestamp}][{i}].{json_ext}'
 
     # Validate metadata.
     # FIXME - TOCTOU: might fix by reading JSON only once, and validating and writing to vault from that.
@@ -525,10 +526,9 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Copy the file, with its ACLs.
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
-        msi.data_obj_copy(ctx, json_path, dest, 'destRescName={}++++verifyChksum='.format(config.resource_vault), irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, json_path, dest, f'destRescName={config.resource_vault}++++verifyChksum=', irods_types.BytesBuf())
     except error.UUError:
-        set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
-                   .format(json_path, dest))
+        set_result('FailedToCopyJSON', f'Couldn\'t copy json metadata file from <{json_path}> to <{dest}>')
         return
 
     # Get the metadata after the ingest
@@ -539,7 +539,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     try:
         vault.copy_acls_from_parent(ctx, dest, "default")
     except Exception:
-        set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
+        set_result('FailedToSetACLs', f'Failed to set vault permissions on <{dest}>')
         return
 
     # Log the difference between the metadata before and after the ingest
@@ -554,10 +554,10 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     try:
         data_object.remove(ctx, json_path, force=True)
     except Exception:
-        set_result('FailedToRemoveDatamanagerMetadata', 'Failed to remove <{}>'.format(json_path))
+        set_result('FailedToRemoveDatamanagerMetadata', f'Failed to remove <{json_path}>')
         return
 
-    stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
+    stage_coll = f'/{zone}/home/{dm_group}/{vault_group}'
     if collection.is_empty(ctx, stage_coll):
         try:
             # We may or may not have delete access already.
@@ -567,7 +567,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         try:
             msi.rm_coll(ctx, stage_coll, 'forceFlag=', irods_types.BytesBuf())
         except error.UUError:
-            set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
+            set_result('FailedToRemoveColl', f'Failed to remove <{stage_coll}>')
             return
 
     # Update publication if package is published.
@@ -580,7 +580,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
             publication.set_update_publication_state(ctx, vault_pkg_path)
         except Exception:
             set_result('FailedToSetPublicationUpdateStatus',
-                       'Failed to set publication update status on <{}>'.format(vault_pkg_path))
+                       f'Failed to set publication update status on <{vault_pkg_path}>')
             return
 
     set_result('Success', '')
@@ -609,7 +609,7 @@ def copy_user_metadata(ctx: rule.Context, source: str, target: str) -> None:
         # Generate metadata operations.
         for path, item in grouped_user_metadata.items():
             operations = {
-                "entity_name": path.replace(source, "{}/original".format(target), 1),
+                "entity_name": path.replace(source, f"{target}/original", 1),
                 "entity_type": item["type"],
                 "operations": []
             }
@@ -626,11 +626,11 @@ def copy_user_metadata(ctx: rule.Context, source: str, target: str) -> None:
 
             # Apply metadata operations.
             if not avu.apply_atomic_operations(ctx, operations):
-                log.write(ctx, "copy_user_metadata: failed to copy user metadata for <{}>".format(path))
+                log.write(ctx, f"copy_user_metadata: failed to copy user metadata for <{path}>")
 
-        log.write(ctx, "copy_user_metadata: copied user metadata from <{}> to <{}/original>".format(source, target))
+        log.write(ctx, f"copy_user_metadata: copied user metadata from <{source}> to <{target}/original>")
     except Exception:
-        log.write(ctx, "copy_user_metadata: failed to copy user metadata from <{}> to <{}/original>".format(source, target))
+        log.write(ctx, f"copy_user_metadata: failed to copy user metadata from <{source}> to <{target}/original>")
 
 
 def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cache: dict, report_name: str, write_stdout: bool) -> dict | None:
@@ -647,14 +647,14 @@ def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cach
     metadata_path = get_latest_vault_metadata_path(ctx, coll_name)
 
     if not metadata_path:
-        log.write(ctx, "{} skips {}, because metadata could not be found.".format(report_name, coll_name), write_stdout)
+        log.write(ctx, f"{report_name} skips {coll_name}, because metadata could not be found.", write_stdout)
         return None
 
     try:
         metadata = jsonutil.read(ctx, metadata_path)
     except Exception as exc:
-        log.write(ctx, "{} skips {}, because of exception while reading metadata file {}: {}".format(report_name, coll_name, metadata_path, str(exc)), write_stdout)
-        log.write(ctx, "vault_metadata_matches_schema: Error while reading metadata file {} of data package {}: {}".format(metadata_path, coll_name, str(exc)), write_stdout)
+        log.write(ctx, f"{report_name} skips {coll_name}, because of exception while reading metadata file {metadata_path}: {str(exc)}", write_stdout)
+        log.write(ctx, f"vault_metadata_matches_schema: Error while reading metadata file {metadata_path} of data package {coll_name}: {str(exc)}", write_stdout)
         return None
 
     # Determine schema
@@ -677,7 +677,7 @@ def vault_metadata_matches_schema(ctx: rule.Context, coll_name: str, schema_cach
     match_schema = len(error_list) == 0
     if not match_schema:
         errors_formatted = [humanize_validation_error(e).encode('utf-8') for e in error_list]
-        log.write(ctx, "{}: metadata {} did not match schema {}: {}".format(report_name, metadata_path, schema_shortname, str(errors_formatted)), write_stdout)
-        log.write(ctx, "vault_metadata_matches_schema: Metadata {} of data package {} did not match the schema {}. Error list: {}".format(metadata_path, coll_name, schema_shortname, str(errors_formatted)), write_stdout)
+        log.write(ctx, f"{report_name}: metadata {metadata_path} did not match schema {schema_shortname}: {str(errors_formatted)}", write_stdout)
+        log.write(ctx, f"vault_metadata_matches_schema: Metadata {metadata_path} of data package {coll_name} did not match the schema {schema_shortname}. Error list: {str(errors_formatted)}", write_stdout)
 
     return {"schema": schema_shortname, "match_schema": match_schema}

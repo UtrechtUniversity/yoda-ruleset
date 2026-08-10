@@ -286,7 +286,7 @@ def api_datarequest_roles_get_with_id(user, datarequest_id):
 def api_datarequest_attachment_upload(user, datarequest_id):
     return post_form_data(
         user,
-        "/datarequest/upload_attachment/{}".format(datarequest_id),
+        f"/datarequest/upload_attachment/{datarequest_id}",
         {"file": ("attachment.pdf", "test")}
     )
 
@@ -344,7 +344,7 @@ def api_datarequest_datamanager_review_submit(user, datarequest_id):
             "data": {
                 "datamanager_review": "Accepted",
                 "datamanager_remarks": "test",
-                "reviewing_dm": "{}".format(roles["datamanager"]["username"])
+                "reviewing_dm": f"{roles['datamanager']['username']}"
             },
             "request_id": datarequest_id
         }
@@ -369,7 +369,7 @@ def api_datarequest_assignment_submit(user, datarequest_id):
             "data": {
                 "review_period_length": 21,
                 "assign_to": [
-                    "{}".format(roles["dacmember"]["username"])
+                    f"{roles['dacmember']['username']}"
                 ],
                 "decision": "Accepted for review",
                 "response_to_dm_remarks": "test"
@@ -402,7 +402,7 @@ def api_datarequest_review_submit(user, datarequest_id):
                 "evaluation_rationale": "C'est terrible.",
                 "personal_involvement_requested": "Yes",
                 "other_involvement_requested": "Piet Pieterszoon\nJan Janszoon",
-                "username": "{}".format(roles["dacmember"]["username"])
+                "username": f"{roles['dacmember']['username']}"
             },
             "request_id": datarequest_id
         }
@@ -461,7 +461,7 @@ def api_datarequest_dta_upload(user, datarequest_id):
 
     return post_form_data(
         user,
-        "/datarequest/upload_dta/{}".format(datarequest_id),
+        f"/datarequest/upload_dta/{datarequest_id}",
         {"file": ("dta.pdf", dta)}
     )
 
@@ -472,7 +472,7 @@ def api_datarequest_signed_dta_upload(user, datarequest_id):
         signed_dta = BytesIO(signed_dta_fd.read())
     return post_form_data(
         user,
-        "/datarequest/upload_signed_dta/{}".format(datarequest_id),
+        f"/datarequest/upload_signed_dta/{datarequest_id}",
         {"file": ("signed_dta.pdf", signed_dta)}
     )
 

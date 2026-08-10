@@ -18,7 +18,7 @@ scenarios('../../features/ui/ui_login.feature')
 
 @given('the user is at the login gate')
 def ui_gate(browser):
-    url = "{}/user/gate".format(portal_url)
+    url = f"{portal_url}/user/gate"
     browser.visit(url)
 
 
@@ -26,13 +26,13 @@ def ui_gate(browser):
 @then('the user is redirected to the login page')
 def ui_login_assert_login_page(browser):
     assert (
-        "{}/user/login".format(portal_url) in browser.url
-        or "{}/user/gate".format(portal_url) in browser.url)
+        f"{portal_url}/user/login" in browser.url
+        or f"{portal_url}/user/gate" in browser.url)
 
 
 @then(parsers.parse("user {user} is logged in"))
 def ui_user_login(browser, user):
-    assert browser.is_text_present("{}".format(roles[user]["username"]), wait_time=10)
+    assert browser.is_text_present(f"{roles[user]['username']}", wait_time=10)
 
 
 @then("incorrect username / password message is shown")
@@ -47,6 +47,6 @@ def ui_user_not_in_instance(browser):
 
 @then(parsers.parse("the user is redirected to page {page}"))
 def ui_user_redirected(browser, page):
-    target = "{}{}".format(portal_url, page)
+    target = f"{portal_url}{page}"
 
     assert browser.url.startswith(target)

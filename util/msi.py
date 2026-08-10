@@ -32,9 +32,9 @@ class Error(error.UUError):
 
     def __str__(self) -> str:
         if self.msi_status is not None:
-            return '{}: error code {}'.format(self.message, self.msi_code)
+            return f'{self.message}: error code {self.msi_code}'
         elif self.src_exception is not None:
-            return '{}: iRODS error <{}>'.format(self.message, self.src_exception)
+            return f'{self.message}: iRODS error <{self.src_exception}>'
         else:
             return self.message
 
@@ -84,7 +84,7 @@ def _wrap(msi: str, exception: str) -> Callable:
 
 def _make_exception(name: str, message: str) -> type:
     """Create a msi Error subtype for a specific microservice."""
-    t = type('{}Error'.format(name), (Error,), {})
+    t = type(f'{name}Error', (Error,), {})
     t.__init__ = lambda self, status, code, args, e = None: \
         super(t, self).__init__(message, status, code, args, e)
     return t
@@ -155,4 +155,4 @@ obj_stat, ObjStatError = make('ObjStat', 'Could not get the stat of data object 
 
 def kvpair(ctx: 'rule.Context', k: str, v: str) -> str:
     """Create a keyvalpair object, needed by certain msis."""
-    return string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.KeyValPair())['arguments'][1]
+    return string_2_key_val_pair(ctx, f'{k}={v}', irods_types.KeyValPair())['arguments'][1]

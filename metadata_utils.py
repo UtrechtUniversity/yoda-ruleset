@@ -105,7 +105,7 @@ def humanize_validation_error(e: dict) -> str:
     path_out = []
     for _i, x in enumerate(e['path']):
         if isinstance(x, int):
-            path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
+            path_out[-1] = f'{path_out[-1]} {x + 1}'
         else:
             path_out += [x.replace('_', ' ')]
 

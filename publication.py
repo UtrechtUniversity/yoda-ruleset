@@ -12,6 +12,7 @@ from typing import List, Tuple
 
 import genquery
 from requests.exceptions import ReadTimeout
+from tstrings import t
 
 import datacite
 import json_datacite
@@ -195,7 +196,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> dict:
     # Handle access restriction.
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = '" + vault_package + "'",
+        t("META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = '{vault_package}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -205,7 +206,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> dict:
     license = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME like '%License' AND COLL_NAME = '" + vault_package + "'",
+        t("META_COLL_ATTR_NAME like '%License' AND COLL_NAME = '{vault_package}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -216,7 +217,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> dict:
         license_uri = ""
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "META_COLL_ATTR_NAME like '" + constants.UUORGMETADATAPREFIX + "license_uri" + "' AND COLL_NAME = '" + vault_package + "'",
+            t("META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}license_uri' AND COLL_NAME = '{vault_package}'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -301,7 +302,7 @@ def get_publication_date(ctx: rule.Context, vault_package: str) -> str:
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -327,7 +328,7 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -673,7 +674,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
     # Check whether lift_embargo_date is present already
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}lift_embargo_date'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -705,7 +706,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
     try:
         msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
     except Exception:
-        log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
+        log.write(ctx, f"set_access_restrictions for {vault_package} failed: {format_exc()}")
         publication_state["status"] = constants.publication_status.UNRECOVERABLE
         return
 
@@ -715,7 +716,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
         try:
             msi.set_acl(ctx, "recursive", "admin:null", "anonymous", f"{vault_package}/original")
         except Exception:
-            log.write(ctx, "set_access_restrictions for {} failed: {}".format(f"{vault_package}/original", format_exc()))
+            log.write(ctx, f"set_access_restrictions for {vault_package}/original failed: {format_exc()}")
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
             return
 
@@ -766,7 +767,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process publication of vault package <{vault_package}>")
 
     # Check permissions, rodsadmin only.
     if not user.is_rodsadmin(ctx):
@@ -811,7 +812,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     # Create base DOI if it does not exist in the previous publication state.
     if 'previous_version' not in publication_state and "baseDOI" not in publication_state:
-        log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
+        log.write(ctx, f"Creating base DOI for the vault package <{vault_package}>")
         try:
             generate_base_doi(publication_config, publication_state)
             check_doi_availability(ctx, publication_state, 'base')
@@ -1095,7 +1096,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "Finished publication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished publication of vault package <{vault_package}>")
     return str(publication_state["status"])
 
 
@@ -1107,7 +1108,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process depublication of vault package <{vault_package}>")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1237,7 +1238,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED.value)
     publication_state["status"] = constants.publication_status.OK
     save_publication_state(ctx, vault_package, publication_state)
-    log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished depublication of vault package <{vault_package}>")
 
     return str(publication_state["status"])
 
@@ -1250,7 +1251,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process republication of vault package <{vault_package}>")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1438,7 +1439,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
     publication_state["status"] = constants.publication_status.OK
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
-    log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished republication of vault package <{vault_package}>")
 
     return str(publication_state["status"])
 
@@ -1461,12 +1462,12 @@ def rule_update_publication(ctx: rule.Context,
         log.write(ctx, "User is no rodsadmin", True)
         return
 
-    log.write(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package), True)
+    log.write(ctx, f"[UPDATE PUBLICATIONS] Start for {vault_package}", True)
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
-        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
-        "AND META_COLL_ATTR_VALUE in ('{}', '{}')".format(str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)),
+        f"AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}vault_status' "
+        f"AND META_COLL_ATTR_VALUE in ('{str(constants.vault_package_state.PUBLISHED)}', '{str(constants.vault_package_state.DEPUBLISHED)}')",
         genquery.AS_LIST,
         ctx
     )
@@ -1480,9 +1481,9 @@ def rule_update_publication(ctx: rule.Context,
             log.write(ctx, coll_name + ': ' + output, True)
 
     if not packages_found:
-        log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package), True)
+        log.write(ctx, f"[UPDATE PUBLICATIONS] No packages found for {vault_package}", True)
     else:
-        log.write(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package), True)
+        log.write(ctx, f"[UPDATE PUBLICATIONS] Finished for {vault_package}", True)
 
 
 def update_publication(ctx: rule.Context,
@@ -1500,7 +1501,7 @@ def update_publication(ctx: rule.Context,
 
     :returns: "OK" if all went ok
     """
-    log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
+    log.write(ctx, f"update_publication: Process vault package <{vault_package}> DataCite={update_datacite} landingpage={update_landingpage} MOAI={update_moai}")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1537,7 +1538,7 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status after retrieving metadata schema (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status after retrieving metadata schema (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     if metadata_schema is None:
@@ -1550,7 +1551,7 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status after checking metadata schema (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status after checking metadata schema (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     update_base_doi = False
@@ -1578,12 +1579,12 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status before update DataCite (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status before update DataCite (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     if update_datacite:
         # Generate DataCite JSON
-        log.write(ctx, 'Update datacite for package {}'.format(vault_package))
+        log.write(ctx, f'Update datacite for package {vault_package}')
         try:
             generate_datacite_json(ctx, publication_state)
         except Exception:
@@ -1592,7 +1593,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before send DataCite (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before send DataCite (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Send DataCite JSON to metadata end point
@@ -1608,12 +1609,12 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update landing page (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update landing page (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     if update_landingpage:
         # Create landing page
-        log.write(ctx, 'Update landing page for package {}'.format(vault_package))
+        log.write(ctx, f'Update landing page for package {vault_package}')
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except Exception:
@@ -1622,7 +1623,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before upload landing page (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before upload landing page (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Use secure copy to push landing page to the public host
@@ -1636,7 +1637,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update manifest (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update manifest (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         try:
@@ -1647,7 +1648,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before upload manifest (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before upload manifest (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Use secure copy to push manifest JSON to the public host.
@@ -1661,12 +1662,12 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update MOAI (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update MOAI (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     if update_moai:
         # Use secure copy to push combi JSON to MOAI server
-        log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
+        log.write(ctx, f'Update MOAI for package {vault_package}')
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         if update_base_doi:
@@ -1675,7 +1676,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before publication OK (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before publication OK (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     # Updating was a success
@@ -1698,12 +1699,12 @@ def rule_add_base_doi(ctx: rule.Context, vault_package: str) -> None:
         log.write(ctx, "User is no rodsadmin", True)
         return
 
-    log.write(ctx, "[ADD BASE DOI] Start for {}".format(vault_package), True)
+    log.write(ctx, f"[ADD BASE DOI] Start for {vault_package}", True)
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
-        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
-        "AND META_COLL_ATTR_VALUE in ('{}', '{}')".format(str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)),
+        f"AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}vault_status' "
+        f"AND META_COLL_ATTR_VALUE in ('{str(constants.vault_package_state.PUBLISHED)}', '{str(constants.vault_package_state.DEPUBLISHED)}')",
         genquery.AS_LIST,
         ctx
     )
@@ -1717,9 +1718,9 @@ def rule_add_base_doi(ctx: rule.Context, vault_package: str) -> None:
             log.write(ctx, f"{coll_name}: {output}", True)
 
     if not packages_found:
-        log.write(ctx, "[ADD BASE DOI] No packages found for {}".format(vault_package), True)
+        log.write(ctx, f"[ADD BASE DOI] No packages found for {vault_package}", True)
     else:
-        log.write(ctx, "[ADD BASE DOI] Finished for {}".format(vault_package), True)
+        log.write(ctx, f"[ADD BASE DOI] Finished for {vault_package}", True)
 
 
 def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
@@ -1814,7 +1815,7 @@ def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> dict:
     coll_metadata = {}
     iter = genquery.row_iterator(
         "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME like '" + prefix + "%'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME like '{prefix}%'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1889,9 +1890,9 @@ def rule_lift_embargos_on_data_access(ctx: rule.Context) -> str:
     # Find all packages that have embargo date for data access that must be lifted
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
+        f"COLL_NAME like '/{zone}/home/vault-%'"
         " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
-        " AND META_COLL_ATTR_VALUE <= '{}'".format(datetime.now().strftime('%Y-%m-%d')),
+        f" AND META_COLL_ATTR_VALUE <= '{datetime.now().strftime('%Y-%m-%d')}'",
         genquery.AS_LIST, ctx
     )
     for row in iter:

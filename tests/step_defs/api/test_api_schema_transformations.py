@@ -23,25 +23,25 @@ def api_upload_transform_metadata_json(user, schema_from, schema_to):
     api_request(
         user,
         "research_file_delete",
-        {"coll": "/tempZone/home/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
+        {"coll": f"/tempZone/home/research-{schema_to}", "file_name": "yoda-metadata.json"}
     )
 
     cwd = os.getcwd()
 
-    with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to), "rb") as f:
+    with open(f"{cwd}/files/transformations/{schema_from}_{schema_to}.json", "rb") as f:
         metadata = f.read()
 
     return upload_data(
         user,
         "yoda-metadata.json",
-        "/research-{}".format(schema_to),
+        f"/research-{schema_to}",
         metadata
     )
 
 
 @then(parsers.parse("transformation of metadata is successful for collection {schema_to}"), target_fixture="api_response")
 def api_transform_metadata(user, schema_to):
-    collection = '/tempZone/home/research-{}'.format(schema_to)
+    collection = f'/tempZone/home/research-{schema_to}'
 
     return api_request(
         user,

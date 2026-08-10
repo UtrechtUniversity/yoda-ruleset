@@ -1,11 +1,12 @@
 #!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
 #
 # Update the schema id for each group based on collection schema
-# 
+#
 # Example command to run:
 # irule -r irods_rule_engine_plugin-python-instance -F tools/update-schema-id.r '*defaultSchema="'default-3'"'
 import genquery
 import session_vars
+
 
 def get_schema_collection(ctx, rods_zone, group_name, default_schema):
     """Determine schema collection based upon rods zone and name of the group.
@@ -24,7 +25,7 @@ def get_schema_collection(ctx, rods_zone, group_name, default_schema):
     # Find out whether a schema_id has been set on group level.
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
-        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
+        f"USER_NAME = '{group_name}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'",
         genquery.AS_LIST, ctx
     )
 
@@ -65,22 +66,21 @@ def get_schema_collection(ctx, rods_zone, group_name, default_schema):
 
 def main(rule_args, callback, rei):
     zone = session_vars.get_map(rei)['client_user']['irods_zone']
-    userList = []
 
     default_schema = global_vars["*defaultSchema"][1:-1]
 
     if default_schema == "":
         callback.writeLine("stdout", "Error: this rule needs a default schema parameter value to run.")
         return
-    
+
     callback.writeLine("stdout", "update_schema_id script started")
 
     # Get the group names
     userIter = genquery.row_iterator(
         "USER_GROUP_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_ZONE = '{}'".format(zone),
+        f"USER_TYPE = 'rodsgroup' AND USER_ZONE = '{zone}'",
         genquery.AS_LIST,
-        callback) 
+        callback)
 
     for row in userIter:
         name = row[0]
@@ -88,7 +88,7 @@ def main(rule_args, callback, rei):
         if name.startswith("research-"):
             metaIter = genquery.row_iterator(
                 "META_USER_ATTR_NAME",
-                "USER_GROUP_NAME = '{}' AND USER_ZONE = '{}'".format(name, zone),
+                f"USER_GROUP_NAME = '{name}' AND USER_ZONE = '{zone}'",
                 genquery.AS_LIST,
                 callback)
             schemaIdFound = False
@@ -96,15 +96,16 @@ def main(rule_args, callback, rei):
                 attr = row1[0]
                 if attr == 'schema_id':
                     schemaIdFound = True
-            
+
             if not schemaIdFound:
                 schema_collection = get_schema_collection(callback, zone, name, default_schema)
-                callback.uuGroupModify(name, 'schema_id', schema_collection, '', '') 
-                callback.writeLine("stdout", "Group {} set with schema id {}".format(name, schema_collection))
+                callback.uuGroupModify(name, 'schema_id', schema_collection, '', '')
+                callback.writeLine("stdout", f"Group {name} set with schema id {schema_collection}")
             else:
-                callback.writeLine("stdout", "Group {} ignored, has schema id metadata already set".format(name))
+                callback.writeLine("stdout", f"Group {name} ignored, has schema id metadata already set")
 
     callback.writeLine("stdout", "update_schema_id script finished")
+
 
 INPUT *defaultSchema=""
 OUTPUT ruleExecOut

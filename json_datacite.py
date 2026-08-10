@@ -326,7 +326,7 @@ def get_dates(combi: dict) -> List:
             x = collected.get('Start_Date')
             y = collected.get('End_Date')
             if x is not None and y is not None:
-                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
+                dates.append({'date': f'{x}/{y}', 'dateType': 'Collected'})
         except KeyError:
             pass
 
@@ -336,7 +336,7 @@ def get_dates(combi: dict) -> List:
             x = coverage.get('Start_Date')
             y = coverage.get('End_Date')
             if x is not None and y is not None:
-                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Coverage'})
+                dates.append({'date': f'{x}/{y}', 'dateType': 'Coverage'})
         except KeyError:
             pass
 

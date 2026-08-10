@@ -18,7 +18,7 @@ scenarios('../../features/ui/ui_fileviewer.feature')
 
 @when(parsers.parse('user opens link to fileviewer with "{file}"'))
 def ui_fileviewer(browser, file):
-    url = "{}/fileviewer?file={}".format(portal_url, file)
+    url = f"{portal_url}/fileviewer?file={file}"
     browser.visit(url)
 
 

@@ -46,7 +46,7 @@ def parse_multistatus(response):
     root = ElementTree.fromstring(response.content)
 
     assert root.tag == _dav("multistatus"), \
-        "Root element is {}, expected {}".format(root.tag, _dav("multistatus"))
+        f"Root element is {root.tag}, expected {_dav('multistatus')}"
 
     responses = root.findall(_dav("response"))
     assert responses, "multistatus document contains no <response> elements"
@@ -95,7 +95,7 @@ def parse_content_lengths(response):
     root = ElementTree.fromstring(response.content)
 
     assert root.tag == _dav("multistatus"), \
-        "Root element is {}, expected {}".format(root.tag, _dav("multistatus"))
+        f"Root element is {root.tag}, expected {_dav('multistatus')}"
 
     sizes = {}
     for resp in root.findall(_dav("response")):
@@ -251,7 +251,7 @@ def webdav_response_well_formed(webdav_response):
     assert webdav_response.status_code == 207
     content_type = webdav_response.headers.get("Content-Type", "")
     assert content_type.startswith(("application/xml", "text/xml")), \
-        "Unexpected Content-Type: {}".format(content_type)
+        f"Unexpected Content-Type: {content_type}"
     parse_multistatus(webdav_response)
 
 
@@ -259,7 +259,7 @@ def webdav_response_well_formed(webdav_response):
 def webdav_response_lists_collection(webdav_response, name):
     names = parse_multistatus(webdav_response)
     assert name in names, \
-        "Collection '{}' not found. Collections listed: {}".format(name, sorted(names))
+        f"Collection '{name}' not found. Collections listed: {sorted(names)}"
 
 
 @when(
@@ -299,7 +299,7 @@ def list_subcollections(webdav_session, path):
         timeout=60,
     )
     assert response.status_code == 207, \
-        "PROPFIND on '{}' returned {}".format(path, response.status_code)
+        f"PROPFIND on '{path}' returned {response.status_code}"
     return parse_multistatus(response)
 
 
@@ -334,7 +334,7 @@ def webdav_test_collection_exists(webdav_session, webdav_cleanup_paths, name, pa
 
     response = webdav_session.request("MKCOL", url, timeout=60)
     assert response.status_code == 201, \
-        "Setup MKCOL of '{}' returned {}".format(name, response.status_code)
+        f"Setup MKCOL of '{name}' returned {response.status_code}"
 
 
 @when(
@@ -377,18 +377,16 @@ def webdav_remove_collection(webdav_session, path):
 @then(parsers.parse('the WebDAV data object response status code is "{code:d}"'))
 def webdav_file_response_code(webdav_file, code):
     assert webdav_file["get_response"].status_code == code, \
-        "Unexpected status code {} for data object '{}'".format(
-            webdav_file["get_response"].status_code, webdav_file["name"])
+        f"Unexpected status code {webdav_file['get_response'].status_code} for data object '{webdav_file['name']}'"
 
 
 @then("the WebDAV data object is listed in its parent collection")
 def webdav_file_listed(webdav_file):
     assert webdav_file["listing"].status_code == 207, \
-        "PROPFIND on parent collection returned {}".format(webdav_file["listing"].status_code)
+        f"PROPFIND on parent collection returned {webdav_file['listing'].status_code}"
     sizes = parse_content_lengths(webdav_file["listing"])
     assert webdav_file["name"] in sizes, \
-        "Data object '{}' not found in directory listing. Listed: {}".format(
-            webdav_file["name"], sorted(sizes))
+        f"Data object '{webdav_file['name']}' not found in directory listing. Listed: {sorted(sizes)}"
 
 
 @then("the size of the WebDAV data object matches the size in the directory listing")
@@ -399,15 +397,13 @@ def webdav_file_size_matches(webdav_file):
 
     body_size = len(get_response.content)
     assert body_size == listed_size, \
-        "Downloaded size {} does not match listed size {} for '{}'".format(
-            body_size, listed_size, webdav_file["name"])
+        f"Downloaded size {body_size} does not match listed size {listed_size} for '{webdav_file['name']}'"
 
     # When present, the Content-Length response header should agree as well.
     header_length = get_response.headers.get("Content-Length")
     if header_length is not None:
         assert int(header_length) == listed_size, \
-            "Content-Length header {} does not match listed size {} for '{}'".format(
-                header_length, listed_size, webdav_file["name"])
+            f"Content-Length header {header_length} does not match listed size {listed_size} for '{webdav_file['name']}'"
 
 
 @then("the WebDAV response body is empty or a well-formed multistatus document")
@@ -426,14 +422,14 @@ def webdav_response_optional_multistatus(webdav_response):
 def webdav_lists_subcollection(webdav_session, parent, name):
     names = list_subcollections(webdav_session, parent)
     assert name in names, \
-        "Subcollection '{}' not found in '{}'. Listed: {}".format(name, parent, sorted(names))
+        f"Subcollection '{name}' not found in '{parent}'. Listed: {sorted(names)}"
 
 
 @then(parsers.parse('WebDAV collection "{parent}" does not list subcollection "{name}"'))
 def webdav_not_lists_subcollection(webdav_session, parent, name):
     names = list_subcollections(webdav_session, parent)
     assert name not in names, \
-        "Subcollection '{}' unexpectedly present in '{}'. Listed: {}".format(name, parent, sorted(names))
+        f"Subcollection '{name}' unexpectedly present in '{parent}'. Listed: {sorted(names)}"
 
 
 def webdav_object_url(path):
@@ -450,7 +446,7 @@ def list_data_objects(webdav_session, path):
         timeout=60,
     )
     assert response.status_code == 207, \
-        "PROPFIND on '{}' returned {}".format(path, response.status_code)
+        f"PROPFIND on '{path}' returned {response.status_code}"
     return set(parse_content_lengths(response).keys())
 
 
@@ -461,7 +457,7 @@ def webdav_test_data_object_exists(webdav_session, webdav_cleanup_paths, name, p
 
     response = webdav_session.request("PUT", url, data=b"test data", timeout=60)
     assert response.status_code == 201, \
-        "Setup PUT of '{}' returned {}".format(name, response.status_code)
+        f"Setup PUT of '{name}' returned {response.status_code}"
 
 
 @when(
@@ -504,14 +500,14 @@ def webdav_remove_data_object(webdav_session, path):
 def webdav_lists_data_object(webdav_session, parent, name):
     names = list_data_objects(webdav_session, parent)
     assert name in names, \
-        "Data object '{}' not found in '{}'. Listed: {}".format(name, parent, sorted(names))
+        f"Data object '{name}' not found in '{parent}'. Listed: {sorted(names)}"
 
 
 @then(parsers.parse('WebDAV collection "{parent}" does not list data object "{name}"'))
 def webdav_not_lists_data_object(webdav_session, parent, name):
     names = list_data_objects(webdav_session, parent)
     assert name not in names, \
-        "Data object '{}' unexpectedly present in '{}'. Listed: {}".format(name, parent, sorted(names))
+        f"Data object '{name}' unexpectedly present in '{parent}'. Listed: {sorted(names)}"
 
 
 @then(parsers.parse('data object "{name}" in WebDAV collection "{parent}" has content "{content}"'))
@@ -519,9 +515,9 @@ def webdav_data_object_has_content(webdav_session, parent, name, content):
     url = webdav_collection_url(parent) + urllib.parse.quote(name)
     response = webdav_session.get(url, timeout=60)
     assert response.status_code == 200, \
-        "GET of '{}' returned {}".format(name, response.status_code)
+        f"GET of '{name}' returned {response.status_code}"
     assert response.text == content, \
-        "Content of '{}' is {!r}, expected {!r}".format(name, response.text, content)
+        f"Content of '{name}' is {response.text!r}, expected {content!r}"
 
 
 # Body sent with a LOCK request: an exclusive write lock owned by the test suite.
@@ -549,7 +545,7 @@ def parse_lock_token(response):
     root = ElementTree.fromstring(response.content)
 
     assert root.tag == _dav("prop"), \
-        "Root element is {}, expected {}".format(root.tag, _dav("prop"))
+        f"Root element is {root.tag}, expected {_dav('prop')}"
 
     lockdiscovery = root.find(_dav("lockdiscovery"))
     assert lockdiscovery is not None, "<lockdiscovery> element missing"
@@ -591,7 +587,7 @@ def get_active_lock_tokens(webdav_session, path):
         timeout=60,
     )
     assert response.status_code == 207, \
-        "PROPFIND on '{}' returned {}".format(path, response.status_code)
+        f"PROPFIND on '{path}' returned {response.status_code}"
 
     root = ElementTree.fromstring(response.content)
     tokens = set()
@@ -648,9 +644,9 @@ def webdav_lock_data_object(webdav_session, webdav_locks, path):
 def webdav_data_object_is_locked(webdav_session, webdav_locks, path):
     response = send_lock(webdav_session, path)
     assert response.status_code == 200, \
-        "Setup LOCK of '{}' returned {}".format(path, response.status_code)
+        f"Setup LOCK of '{path}' returned {response.status_code}"
     token_header = response.headers.get("Lock-Token")
-    assert token_header, "LOCK response for '{}' has no Lock-Token header".format(path)
+    assert token_header, f"LOCK response for '{path}' has no Lock-Token header"
     webdav_locks.append((webdav_object_url(path), token_header))
     return token_header
 
@@ -672,7 +668,7 @@ def webdav_unlock_data_object(webdav_session, webdav_lock_token, path):
 def webdav_response_lockdiscovery(webdav_response):
     content_type = webdav_response.headers.get("Content-Type", "")
     assert content_type.startswith(("application/xml", "text/xml")), \
-        "Unexpected Content-Type: {}".format(content_type)
+        f"Unexpected Content-Type: {content_type}"
     parse_lock_token(webdav_response)
 
 
@@ -682,20 +678,20 @@ def webdav_response_includes_lock_token(webdav_response):
     assert header, "Lock-Token response header missing"
     body_token = parse_lock_token(webdav_response)
     assert body_token in header, \
-        "Lock-Token header {!r} does not match body token {!r}".format(header, body_token)
+        f"Lock-Token header {header!r} does not match body token {body_token!r}"
 
 
 @then(parsers.parse('WebDAV data object "{path}" reports an active lock'))
 def webdav_data_object_reports_lock(webdav_session, path):
     tokens = get_active_lock_tokens(webdav_session, path)
-    assert tokens, "Data object '{}' reports no active lock, expected one".format(path)
+    assert tokens, f"Data object '{path}' reports no active lock, expected one"
 
 
 @then(parsers.parse('WebDAV data object "{path}" reports no active lock'))
 def webdav_data_object_reports_no_lock(webdav_session, path):
     tokens = get_active_lock_tokens(webdav_session, path)
     assert not tokens, \
-        "Data object '{}' still reports active lock(s): {}".format(path, sorted(tokens))
+        f"Data object '{path}' still reports active lock(s): {sorted(tokens)}"
 
 
 @given(parsers.parse('research collection "{collection}" is locked during the test'))
@@ -704,7 +700,7 @@ def webdav_research_collection_locked(request, user, collection):
     # at the end of the scenario, so a leftover lock cannot affect other tests.
     http_status, _ = api_request(user, "folder_lock", {"coll": collection})
     assert http_status == 200, \
-        "folder_lock of '{}' returned {}".format(collection, http_status)
+        f"folder_lock of '{collection}' returned {http_status}"
 
     def unlock():
         api_request(user, "folder_unlock", {"coll": collection})
@@ -737,6 +733,6 @@ def webdav_overwrite_with_lock_token(webdav_session, webdav_lock_token, path, co
         "PUT",
         webdav_object_url(path),
         data=content.encode("utf-8"),
-        headers={"If": "({})".format(webdav_lock_token)},
+        headers={"If": f"({webdav_lock_token})"},
         timeout=60,
     )

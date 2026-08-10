@@ -39,7 +39,7 @@ from util import *
 
 def can_coll_create(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed | policy.Fail:
     """Disallow creating collections in locked folders."""
-    log.debug(ctx, 'check coll create <{}>'.format(coll))
+    log.debug(ctx, f'check coll create <{coll}>')
 
     if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_rodsadmin(ctx, actor):
@@ -54,7 +54,7 @@ def can_coll_create(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed 
 
 def can_coll_delete(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed | policy.Fail:
     """Disallow deleting collections in locked folders and collections containing locked folders."""
-    log.debug(ctx, 'check coll delete <{}>'.format(coll))
+    log.debug(ctx, f'check coll delete <{coll}>')
 
     if re.match(r'^/[^/]+/home/[^/]+$', coll) and not user.is_rodsadmin(ctx, actor):
         return policy.fail('Cannot delete or move collections directly under /home')
@@ -71,14 +71,14 @@ def can_coll_delete(ctx: rule.Context, actor: str, coll: str) -> policy.Succeed 
 
 
 def can_coll_move(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
-    log.debug(ctx, 'check coll move <{}> -> <{}>'.format(src, dst))
+    log.debug(ctx, f'check coll move <{src}> -> <{dst}>')
 
     return policy.all(can_coll_delete(ctx, actor, src),
                       can_coll_create(ctx, actor, dst))
 
 
 def can_data_create(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
-    log.debug(ctx, 'check data create <{}>'.format(path))
+    log.debug(ctx, f'check data create <{path}>')
 
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_locked(ctx, pathutil.dirname(path)):
@@ -100,7 +100,7 @@ def can_data_create(ctx: rule.Context, actor: str, path: str) -> policy.Succeed 
 
 
 def can_data_write(ctx: rule.Context, actor: str, path: str) -> policy.Succeed | policy.Fail:
-    log.debug(ctx, 'check data write <{}>'.format(path))
+    log.debug(ctx, f'check data write <{path}>')
 
     # Disallow writing to locked objects in research and deposit folders.
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
@@ -131,12 +131,12 @@ def can_data_delete(ctx: rule.Context, actor: str, path: str) -> policy.Succeed 
 
 
 def can_data_copy(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
-    log.debug(ctx, 'check data copy <{}> -> <{}>'.format(src, dst))
+    log.debug(ctx, f'check data copy <{src}> -> <{dst}>')
     return can_data_create(ctx, actor, dst)
 
 
 def can_data_move(ctx: rule.Context, actor: str, src: str, dst: str) -> policy.Succeed | policy.Fail:
-    log.debug(ctx, 'check data move <{}> -> <{}>'.format(src, dst))
+    log.debug(ctx, f'check data move <{src}> -> <{dst}>')
     return policy.all(can_data_delete(ctx, actor, src),
                       can_data_create(ctx, actor, dst))
 
@@ -599,19 +599,19 @@ def pep_resource_modified_post(ctx: rule.Context,
         # "/tempZone/home/deposit-any/deposit[123]/yoda-metadata.json"
         # "/tempZone/home/vault-any/possible/path/to/yoda-metadata[123][1].json"
         # "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.json"
+        prefix, suffix = map(re.escape, pathutil.chopext(constants.IIJSONMETADATA))
         if ((info.space in (pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.DATAMANAGER)
                 and pathutil.basename(info.subpath) == constants.IIJSONMETADATA)
             or (info.space is pathutil.Space.VAULT
                 # Vault jsons have a [timestamp] in the file name.
-                and re.match(r'{}\[[^/]+\]\.{}$'.format(*map(re.escape, pathutil.chopext(constants.IIJSONMETADATA))),
-                             pathutil.basename(info.subpath)))):
+                and re.match(rf'{prefix}\[[^/]+\]\.{suffix}$', pathutil.basename(info.subpath)))):
             # Path is a metadata file, ingest.
-            log.write(ctx, 'metadata JSON <{}> modified by {}, ingesting'.format(path, username))
+            log.write(ctx, f'metadata JSON <{path}> modified by {username}, ingesting')
             ctx.rule_meta_modified_post(path, username, zone)
         elif (info.space is pathutil.Space.DATAREQUEST
               and pathutil.basename(info.subpath) == datarequest.DATAREQUEST + datarequest.JSON_EXT):
             request_id = pathutil.dirname(info.subpath)
-            log.write(ctx, 'datarequest JSON <{}> modified by {}, ingesting'.format(path, username))
+            log.write(ctx, f'datarequest JSON <{path}> modified by {username}, ingesting')
             datarequest.datarequest_sync_avus(ctx, request_id)
 
     except Exception as e:
@@ -759,7 +759,7 @@ def pep_api_phy_path_reg_pre(ctx: rule.Context,
     # "imcoll -m". It also blocks creation of collection soft links.
     # This is disabled as part of application hardening, since these operations are
     # not used in any legitimate feature and involve potential security risks.
-    log.debug(ctx, 'check phy_path_reg_pre for <{}>'.format(data_object.objPath))
+    log.debug(ctx, f'check phy_path_reg_pre for <{data_object.objPath}>')
     return policy.fail('Mounting, soft linking or unmounting collections on the server is not allowed.')
 
 
@@ -817,7 +817,7 @@ def pep_api_sync_mounted_coll_pre(ctx: rule.Context,
     # "imcoll -s".
     # This is disabled as part of application hardening, since this these operations are
     # not used in any legitimate feature and involve potential security risks.
-    log.debug(ctx, 'check sync_mounted_coll_pre for <{}>'.format(data_object.objPath))
+    log.debug(ctx, f'check sync_mounted_coll_pre for <{data_object.objPath}>')
     return policy.fail("Synchronizing mounted collections on the server is not allowed.")
 
 

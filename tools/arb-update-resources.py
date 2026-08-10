@@ -157,7 +157,7 @@ def process_ufs_resources(session, resource_names, override_free_dict, override_
             continue
 
         if verbose_mode:
-            print("Processing resource {} ...".format(resource_name))
+            print(f"Processing resource {resource_name} ...")
 
         resource = session.resources.get(resource_name)
 
@@ -169,7 +169,7 @@ def process_ufs_resources(session, resource_names, override_free_dict, override_
         total_space = override_total_dict.get(resource_name, get_volume_total(resource.vault_path))
 
         if verbose_mode:
-            print("Setting free / total space of resource {} to {} / {}.".format(resource_name, free_space, total_space))
+            print(f"Setting free / total space of resource {resource_name} to {free_space} / {total_space}.")
         call_rule_update_resc(session, resource_name, free_space, total_space)
 
 
@@ -184,10 +184,10 @@ def call_rule(session, rulename, params, number_outputs, rule_engine='irods_rule
 
        :returns: Rule output parameters
      """
-    body = 'myRule {{\n {}('.format(rulename)
+    body = f'myRule {{\n {rulename}('
 
     for input_var in params:
-        body += "'*{}',".format(input_var)
+        body += f"'*{input_var}',"
 
     if len(params) > 0:
         # Remove trailing comma from input argument list
@@ -195,7 +195,7 @@ def call_rule(session, rulename, params, number_outputs, rule_engine='irods_rule
 
     body += '); writeLine("stdout","");}'
 
-    input_params = {"*{}".format(k): '"{}"'.format(v) for (k, v) in params.items()}
+    input_params = {f"*{k}": f'"{v}"' for (k, v) in params.items()}
     output_params = 'ruleExecOut'
 
     re_config = {'instance_name': rule_engine}

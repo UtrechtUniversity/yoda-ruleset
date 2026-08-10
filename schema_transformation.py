@@ -39,12 +39,11 @@ def execute_transformation(ctx: rule.Context, metadata_path: str, transform: Cal
     # make_metadata_backup is only relevant for research
     if group_name.startswith('research-'):
         if keep_metadata_backup:
-            backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
+            backup = f'{coll}/transformation-backup[{str(int(time.time()))}].json'
             data_object.copy(ctx, metadata_path, backup)
         jsonutil.write(ctx, metadata_path, metadata)
     elif group_name.startswith('vault-'):
-        new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
-        # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+        new_path = f'{coll}/yoda-metadata[{str(int(time.time()))}].json'
         jsonutil.write(ctx, new_path, metadata)
         vault.copy_acls_from_parent(ctx, new_path, "default")
         provenance.log_action(ctx, "system", coll, "updated metadata schema")
@@ -59,7 +58,7 @@ def api_transform_metadata(ctx: rule.Context, coll: str, keep_metadata_backup: b
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
     if metadata_path and metadata_path.endswith('.json'):
         # JSON metadata.
-        log.write(ctx, 'Transforming JSON metadata in the research space: <{}>'.format(metadata_path))
+        log.write(ctx, f'Transforming JSON metadata in the research space: <{metadata_path}>')
         transform = get(ctx, metadata_path)
 
         if transform is None:
@@ -130,7 +129,6 @@ def get(ctx: rule.Context, metadata_path: str, metadata: dict | None = None) -> 
 
         # Ideally, we would check that the metadata is valid in its current
         # schema before claiming that we can transform it...
-        # print('{} -> {}'.format(src,dst))
         if src is None:
             return None
 
@@ -138,7 +136,6 @@ def get(ctx: rule.Context, metadata_path: str, metadata: dict | None = None) -> 
     except KeyError:
         return None
     except error.UUError:
-        # print('{} -> {} ERR {}'.format(src,dst, e))
         return None
 
 
@@ -207,12 +204,10 @@ def rule_batch_transform_vault_metadata(ctx: rule.Context, coll_id_s: str, batch
         try:
             result_transform = _transform_vault_metadata(ctx, coll_name)
             if not result_transform[0]:
-                log.write(ctx, "[METADATA] No schema transformation executed for {}: {}".format(coll_name,
-                                                                                                result_transform[1]))
+                log.write(ctx, f"[METADATA] No schema transformation executed for {coll_name}: {result_transform[1]}")
 
         except Exception as e:
-            log.write(ctx, "[METADATA] Exception occurred during schema transformation of {}: {}".format(coll_name,
-                                                                                                         str(type(e)) + ":" + str(e)))
+            log.write(ctx, f"[METADATA] Exception occurred during schema transformation of {coll_name}: {str(type(e))}:{str(e)}")
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -288,8 +283,8 @@ def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s:
                 if result['data_changed'] and not dryrun_mode:
                     # orcid('s) has/have been adjusted. Save the changes in the same manner as execute_transformation for vault packages.
                     coll, data = os.path.split(metadata_path)
-                    new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
-                    log.write(ctx, 'TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+                    new_path = f'{coll}/yoda-metadata[{str(int(time.time()))}].json'
+                    log.write(ctx, f'TRANSFORMING in vault <{metadata_path}> -> <{new_path}>')
                     jsonutil.write(ctx, new_path, result['metadata'])
                     vault.copy_acls_from_parent(ctx, new_path, "default")
                     provenance.log_action(ctx, "system", coll, "updated person identifier metadata")
@@ -298,7 +293,7 @@ def rule_batch_vault_metadata_correct_orcid_format(ctx: rule.Context, coll_id_s:
                     log.write(ctx, "Would have transformed ORCIDs for: %s if dry run mode was disabled." % (metadata_path))
 
         except Exception as e:
-            log.write(ctx, "Exception occurred during ORCID transformation of {}: {}".format(coll_name, str(type(e)) + ":" + str(e)))
+            log.write(ctx, f"Exception occurred during ORCID transformation of {coll_name}: {str(type(e))}:{str(e)}")
 
         # Sleep briefly between checks.
         time.sleep(pause)
@@ -343,7 +338,7 @@ def transform_orcid(ctx: rule.Context, m: dict) -> dict:
                             if corrected_orcid is None:
                                 log.write(ctx, "Warning: unable to automatically fix ORCID '%s'" % (original_orcid))
                             elif corrected_orcid != original_orcid:
-                                log.write(ctx, "Updating ORCID '{}' to '{}'".format(original_orcid, corrected_orcid))
+                                log.write(ctx, f"Updating ORCID '{original_orcid}' to '{corrected_orcid}'")
                                 pi['Name_Identifier'] = corrected_orcid
                                 data_changed = True
 
@@ -364,7 +359,7 @@ def correctify_orcid(org_orcid: str) -> str | None:
     if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
         return None
 
-    return "https://orcid.org/{}".format(orcs[-1])
+    return f"https://orcid.org/{orcs[-1]}"
 
 
 def html(f: Callable) -> str:
@@ -377,8 +372,7 @@ def html(f: Callable) -> str:
     :returns: Human-readable HTML description of a transformation function
     """
     docstring = "" if f.__doc__ is None else f.__doc__
-    description = '\n'.join(('<p>{}</p>'.format(  # Trim whitespace.
-                            re.sub(r'\s+', ' ', paragraph).strip()) for paragraph in re.split('\n{2,}', docstring)))
+    description = '\n'.join(('<p>{}</p>'.format(re.sub(r'\s+', ' ', paragraph).strip()) for paragraph in re.split('\n{2,}', docstring)))  # Trim whitespace.
 
     # Remove docstring.
     return re.sub('((:param).*)|((:returns:).*)', ' ', description)
@@ -414,7 +408,7 @@ def rule_batch_vault_metadata_schema_report(ctx: rule.Context) -> str:
             if result:
                 results[coll_name] = result
         except Exception as e:
-            log.write(ctx, "Error processing collection {}: {}".format(coll_name, str(e)))
+            log.write(ctx, f"Error processing collection {coll_name}: {str(e)}")
             continue
 
     return json.dumps(results)

@@ -21,7 +21,7 @@ def api_cleanup_file_upload(user, file, folder):
     return upload_data(
         user,
         file,
-        "/{}".format(folder)
+        f"/{folder}"
     )
 
 
