@@ -791,10 +791,10 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     # Publication status check and handling
     if verbose:
-        log.write(ctx, "Initial publication status is: " + publication_state['status'])
+        log.write(ctx, "Initial publication status is: " + str(publication_state['status']))
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -824,8 +824,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
             if verbose:
-                log.write(ctx, "Error status for creating base DOI: " + publication_state['status'])
-            return publication_state['status']
+                log.write(ctx, "Error status for creating base DOI: " + str(publication_state['status']))
+            return str(publication_state['status'])
 
     if update_base_doi:
         if verbose:
@@ -1136,7 +1136,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
         publication_state = get_publication_state(ctx, vault_package)
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -1279,7 +1279,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         publication_state = get_publication_state(ctx, vault_package)
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -1526,7 +1526,7 @@ def update_publication(ctx: rule.Context,
     # Publication must be finished.
     if publication_state['status'] != constants.publication_status.OK:
         log.write(ctx, "update_publication: Not processing vault package, because initial status is " + str(publication_state['status']))
-        return publication_state['status']
+        return str(publication_state['status'])
 
     # Abort if data packages has a known unsupported metadata schema
     try:
