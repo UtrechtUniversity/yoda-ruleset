@@ -28,7 +28,7 @@ def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
 
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_PARENT_NAME = '/{}/yoda/schemas' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = 'True'".format(user.zone(ctx), constants.SCHEMA_USER_SELECTABLE),
+        f"COLL_PARENT_NAME = '/{user.zone(ctx)}/yoda/schemas' AND META_COLL_ATTR_NAME = '{constants.SCHEMA_USER_SELECTABLE}' AND META_COLL_ATTR_VALUE = 'True'",
         genquery.AS_LIST, ctx
     )
 
@@ -135,7 +135,7 @@ def get_schema_id_from_group(ctx: rule.Context, group_name: str) -> str | None:
     """
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
-        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
+        f"USER_NAME = '{group_name}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'",
         genquery.AS_LIST, ctx
     )
 
@@ -178,7 +178,7 @@ def get_active_schema_path(ctx: rule.Context, path: str) -> str:
     else:
         schema_coll = get_schema_collection(ctx, rods_zone, group_name)
 
-    return '/{}/yoda/schemas/{}/metadata.json'.format(rods_zone, schema_coll)
+    return f'/{rods_zone}/yoda/schemas/{schema_coll}/metadata.json'
 
 
 def get_active_schema(ctx: rule.Context, path: str) -> dict:
@@ -203,7 +203,7 @@ def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[dict, dict
     :returns: Schema and UI schema object (parsed from JSON)
     """
     schema_path   = get_active_schema_path(ctx, path)
-    uischema_path = '{}/{}'.format(pathutil.chop(schema_path)[0], 'uischema.json')
+    uischema_path = f'{pathutil.chop(schema_path)[0]}/uischema.json'
 
     return jsonutil.read(ctx, schema_path), \
         jsonutil.read(ctx, uischema_path)
@@ -236,7 +236,7 @@ def get_schema_path_by_id(ctx: rule.Context, path: str, schema_id: str) -> str |
     # can find it using this pattern.
     m = re.match(r'https://yoda.uu.nl/schemas/([^/]+)/metadata.json', schema_id)
     if m:
-        return '/{}/yoda/schemas/{}/metadata.json'.format(zone, m.group(1))
+        return f'/{zone}/yoda/schemas/{m.group(1)}/metadata.json'
     else:
         return None
 

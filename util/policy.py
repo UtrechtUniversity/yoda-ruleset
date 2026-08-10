@@ -81,22 +81,22 @@ def require() -> Callable:
             try:
                 result = f(ctx, *args)
             except api.Error as e:
-                log.write(ctx, '{} failed due to unhandled API error: {}'.format(f.__name__, str(e)), print_module=False)
+                log.write(ctx, f'{f.__name__} failed due to unhandled API error: {str(e)}', print_module=False)
                 raise
             except Exception as e:
-                log.write(ctx, '{} failed due to unhandled internal error: {}'.format(f.__name__, str(e)), print_module=False)
+                log.write(ctx, f'{f.__name__} failed due to unhandled internal error: {str(e)}', print_module=False)
                 raise
 
             if isinstance(result, Succeed):
                 return  # succeed the rule (msi "succeed" has no effect here)
             elif isinstance(result, Fail):
-                log.write(ctx, '{} denied: {}'.format(f.__name__, str(result)), print_module=False)
+                log.write(ctx, f'{f.__name__} denied: {str(result)}', print_module=False)
                 ctx.msiOprDisallowed()
                 raise AssertionError()  # Just in case.
 
             # Require an unambiguous YES from the policy function.
             # Default to fail.
-            log.write(ctx, '{} denied: ambiguous policy result (internal error): {}'.format(f.__name__, str(result)),
+            log.write(ctx, f'{f.__name__} denied: ambiguous policy result (internal error): {str(result)}',
                       print_module=False)
             ctx.msiOprDisallowed()
             raise AssertionError()

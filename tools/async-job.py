@@ -40,14 +40,14 @@ def lock_or_die(balance_id_min, balance_id_max):
     """Prevent running multiple instances of this job simultaneously.
        Incorporate the balance_id_min, balance_id_max in the name of the lockfile so it will only lock the corresponding range.
     """
-    LOCKFILE_PATH = '/tmp/irods-{}-{}-{}.lock'.format(NAME, balance_id_min, balance_id_max)
+    LOCKFILE_PATH = f'/tmp/irods-{NAME}-{balance_id_min}-{balance_id_max}.lock'
 
     # Create a lockfile for this job type, abort if it exists.
     try:
         fd = os.open(LOCKFILE_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     except OSError:
         if os.path.exists(LOCKFILE_PATH):
-            print('error: Lock file {} exists'.format(LOCKFILE_PATH), file=sys.stderr)
+            print(f'error: Lock file {LOCKFILE_PATH} exists', file=sys.stderr)
             exit(1)
         else:
             raise
@@ -63,11 +63,11 @@ if 'replicate' in NAME:
 elif 'revision' in NAME:
     rule_name = 'uuRevisionBatch(*verbose, *balance_id_min, *balance_id_max, *batch_size_limit, *dry_run)'
 else:
-    print('bad command "{}"'.format(NAME), file=sys.stderr)
+    print(f'bad command "{NAME}"', file=sys.stderr)
     exit(1)
 
 args = get_args()
 lock_or_die(args.balance_id_min, args.balance_id_max)
-rule_options = "*verbose={}%*balance_id_min={}%*balance_id_max={}%*batch_size_limit={}%*dry_run={}".format(args.verbose, args.balance_id_min, args.balance_id_max, args.batch_size_limit, args.dry_run)
+rule_options = f"*verbose={args.verbose}%*balance_id_min={args.balance_id_min}%*balance_id_max={args.balance_id_max}%*batch_size_limit={args.batch_size_limit}%*dry_run={args.dry_run}"
 subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-irods_rule_language-instance',
                 rule_name, rule_options, 'ruleExecOut'])

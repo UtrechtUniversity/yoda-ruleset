@@ -38,7 +38,7 @@ def folder_new_name_check(folder_name: str) -> Tuple[bool, str]:
 
     # name should not be '.' or '..'
     if folder_name in ('.', '..'):
-        return False, api.Error('invalid_foldername', 'It is not allowed to name a folder as \'{}\'.'.format(folder_name))
+        return False, api.Error('invalid_foldername', f'It is not allowed to name a folder as \'{folder_name}\'.')
 
     return True, ""
 
@@ -130,29 +130,29 @@ def folder_copy_check(ctx: rule.Context, folder_path: str, new_folder_path: str,
 
     # Same folder path makes no sense.
     if folder_path == new_folder_path:
-        return False, api.Error('invalid_folder_path', 'Origin and {} folder paths are equal. Please choose another destination'.format(verb))
+        return False, api.Error('invalid_folder_path', f'Origin and {verb} folder paths are equal. Please choose another destination')
 
     # Inside the same path makes no sense.
-    if "{}/".format(folder_path) in new_folder_path:
-        return False, api.Error('invalid_folder_path', 'Cannot {} folder inside itself. Please choose another destination'.format(verb))
+    if f"{folder_path}/" in new_folder_path:
+        return False, api.Error('invalid_folder_path', f'Cannot {verb} folder inside itself. Please choose another destination')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(new_folder_path.split('/')) > 2:
-        return False, api.Error('invalid_destination', 'It is not possible to {} folder at this location'.format(verb))
+        return False, api.Error('invalid_destination', f'It is not possible to {verb} folder at this location')
 
     # in vault?
     target_group_name = new_folder_path.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return False, api.Error('invalid_destination', 'It is not possible to {} folder to the vault'.format(verb))
+        return False, api.Error('invalid_destination', f'It is not possible to {verb} folder to the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if groups.user_role(ctx, user_full_name, target_group_name) in ['none', 'reader']:
-        return False, api.Error('not_allowed', 'You do not have sufficient permissions to {} the selected folder'.format(verb))
+        return False, api.Error('not_allowed', f'You do not have sufficient permissions to {verb} the selected folder')
 
     # Folder not locked?
     if folder.is_locked(ctx, new_folder_path):
-        return False, api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be {}'.format(verb_past))
+        return False, api.Error('not_allowed', f'The indicated folder is locked and therefore the folder can not be {verb_past}')
 
     # Does original folder exist?
     if not collection.exists(ctx, folder_path):
@@ -628,7 +628,7 @@ def api_research_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     size = collection.size(ctx, coll)
     size_readable = misc.human_readable_size(size)
 
-    result = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    result = f"{data_count} files, {collection_count} folders, total of {size_readable}"
 
     return {"Package size": result}
 

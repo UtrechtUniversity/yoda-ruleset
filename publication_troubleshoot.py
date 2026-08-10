@@ -10,6 +10,7 @@ from typing import List, Tuple, Union
 import genquery
 import requests
 import urllib3
+from tstrings import t
 
 import datacite
 from meta import vault_metadata_matches_schema
@@ -35,17 +36,17 @@ def find_full_package_path(ctx: rule.Context, package_name: str, write_stdout: b
     user_zone = user.zone(ctx)
 
     try:
-        query_condition = (
-            "COLL_NAME like '/{}/home/vault-%{}%'".format(user_zone, package_name)
-        )
-        query_attributes = "COLL_NAME"
-        iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
+        coll = f'/{user_zone}/home/vault-%{package_name}%'  # noqa F841
+        iter = genquery.row_iterator("COLL_NAME",
+                                     t("COLL_NAME like '{coll}'"),
+                                     genquery.AS_LIST,
+                                     ctx)
 
         # Return full package path if exists
         for row in iter:
             return row[0]
     except Exception as e:
-        log.write(ctx, "find_full_package_path: An error occurred while executing the query: {}".format(e), write_stdout)
+        log.write(ctx, f"find_full_package_path: An error occurred while executing the query: {e}", write_stdout)
 
     return None
 
@@ -63,18 +64,16 @@ def find_data_packages(ctx: rule.Context, write_stdout: bool) -> List[str]:
 
     try:
         # Get all the vault packages that have org_publication_status in metadata
-        query_condition = (
-            "COLL_NAME like '/{}/home/vault-%' AND "
-            "META_COLL_ATTR_NAME = '{}publication_status'".format(user_zone, constants.UUORGMETADATAPREFIX)
-        )
-        query_attributes = "COLL_NAME"
-        iter = genquery.row_iterator(query_attributes, query_condition, genquery.AS_LIST, ctx)
+        iter = genquery.row_iterator("COLL_NAME",
+                                     f"COLL_NAME like '/{user_zone}/home/vault-%' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}publication_status'",
+                                     genquery.AS_LIST,
+                                     ctx)
 
         # Collecting only the collection names
         return [row[0] for row in iter]
 
     except Exception as e:
-        log.write(ctx, "find_data_packages: An error occurred while executing the query: {}".format(e), write_stdout)
+        log.write(ctx, f"find_data_packages: An error occurred while executing the query: {e}", write_stdout)
         return []
 
 
@@ -95,10 +94,10 @@ def check_print_data_package_system_avus(ctx: rule.Context, data_package: str, w
     results = misc.check_data_package_system_avus(extracted_avus)
 
     if not results["no_missing_avus"]:
-        log.write(ctx, "check_data_package_system_avus: There are some missing AVUs in data package <{}> - {}".format(data_package, list(results["missing_avus"])), write_stdout)
+        log.write(ctx, f"check_data_package_system_avus: There are some missing AVUs in data package <{data_package}> - {list(results['missing_avus'])}", write_stdout)
 
     if not results["no_unexpected_avus"]:
-        log.write(ctx, "check_data_package_system_avus: There are some unexpected AVUs in data package <{}> - {}".format(data_package, list(results["unexpected_avus"])), write_stdout)
+        log.write(ctx, f"check_data_package_system_avus: There are some unexpected AVUs in data package <{data_package}> - {list(results['unexpected_avus'])}", write_stdout)
 
     return (results["no_missing_avus"], results["no_unexpected_avus"])
 
@@ -107,7 +106,7 @@ def check_one_datacite_doi_reg(ctx: rule.Context, data_package: str, doi_name: s
     try:
         doi = get_val_for_attr_with_pub_prefix(ctx, data_package, doi_name)
     except ValueError as e:
-        log.write(ctx, "check_datacite_doi_registration: Error while trying to get {} - {}".format(doi_name, e), write_stdout)
+        log.write(ctx, f"check_datacite_doi_registration: Error while trying to get {doi_name} - {e}", write_stdout)
         return False
 
     response = datacite.metadata_get(doi)
@@ -164,7 +163,7 @@ def get_landingpage_paths(ctx: rule.Context, data_package: str, write_stdout: bo
         return file_path, url
 
     except Exception:
-        log.write(ctx, "get_landingpage_paths: Could not find landing page for data package: {}".format(data_package), write_stdout)
+        log.write(ctx, f"get_landingpage_paths: Could not find landing page for data package: {data_package}", write_stdout)
         return '', ''
 
 
@@ -189,7 +188,7 @@ def compare_local_remote_landingpage(ctx: rule.Context, file_path: str, url: str
         try:
             local_data = data_object.read(ctx, file_path)
         except Exception:
-            log.write(ctx, "compare_local_remote_landingpage: Local file not found at path {}.".format(file_path), write_stdout)
+            log.write(ctx, f"compare_local_remote_landingpage: Local file not found at path {file_path}.", write_stdout)
             return False
 
     if offline:
@@ -200,19 +199,19 @@ def compare_local_remote_landingpage(ctx: rule.Context, file_path: str, url: str
     try:
         response = requests.get(url, verify=False)
     except requests.exceptions.ConnectionError as e:
-        log.write(ctx, "compare_local_remote_landingpage: Failed to connect to {}".format(url), write_stdout)
-        log.write(ctx, "compare_local_remote_landingpage: Error: {}".format(e), write_stdout)
+        log.write(ctx, f"compare_local_remote_landingpage: Failed to connect to {url}", write_stdout)
+        log.write(ctx, f"compare_local_remote_landingpage: Error: {e}", write_stdout)
         return False
 
     if response.status_code != 200:
-        log.write(ctx, "compare_local_remote_landingpage: Error {} when connecting to <{}>.".format(response.status_code, url), write_stdout)
+        log.write(ctx, f"compare_local_remote_landingpage: Error {response.status_code} when connecting to <{url}>.", write_stdout)
         return False
 
     response.encoding = 'utf-8'
     if local_data == response.text:
         return True
 
-    log.write(ctx, "compare_local_remote_landingpage: File contents at irods path <{}> and remote landing page <{}> do not match.".format(file_path, url), write_stdout)
+    log.write(ctx, f"compare_local_remote_landingpage: File contents at irods path <{file_path}> and remote landing page <{url}> do not match.", write_stdout)
     return False
 
 
@@ -257,7 +256,7 @@ def check_combi_json(ctx: rule.Context, data_package: str, publication_config: d
         pass
     exists = data_object.exists(ctx, file_path)
     if not exists:
-        log.write(ctx, "check_combi_json: combi JSON file in irods does not exist: {}".format(file_path), write_stdout)
+        log.write(ctx, f"check_combi_json: combi JSON file in irods does not exist: {file_path}", write_stdout)
         return False
 
     if offline:
@@ -271,21 +270,21 @@ def check_combi_json(ctx: rule.Context, data_package: str, publication_config: d
         version_doi = get_val_for_attr_with_pub_prefix(ctx, data_package, "versionDOI")
     except Exception:
         pass
-    url = "https://{}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{}".format(publication_config["publicVHost"], version_doi)
+    url = f"https://{publication_config['publicVHost']}/oai/oai?verb=GetRecord&metadataPrefix=oai_datacite&identifier=oai:{version_doi}"
     try:
         response = requests.get(url, verify=False)
     except requests.exceptions.ConnectionError as e:
-        log.write(ctx, "check_combi_json: Failed to connect to {}".format(url), write_stdout)
-        log.write(ctx, "check_combi_json: Error: {}".format(e), write_stdout)
+        log.write(ctx, f"check_combi_json: Failed to connect to {url}", write_stdout)
+        log.write(ctx, f"check_combi_json: Error: {e}", write_stdout)
         return False
 
     if response.status_code != 200:
-        log.write(ctx, "check_combi_json: Error {} when connecting to <{}>.".format(response.status_code, url), write_stdout)
+        log.write(ctx, f"check_combi_json: Error {response.status_code} when connecting to <{url}>.", write_stdout)
         return False
 
     # Look at the first few parts of the response for signs of error.
     if "idDoesNotExist" in response.text[:5000]:
-        log.write(ctx, "check_combi_json: combiJson not found in oai for data package <{}>".format(data_package), write_stdout)
+        log.write(ctx, f"check_combi_json: combiJson not found in oai for data package <{data_package}>", write_stdout)
         return False
 
     return True
@@ -307,7 +306,7 @@ def collect_troubleshoot_data_packages(ctx: rule.Context, requested_package: str
         full_package_path = find_full_package_path(ctx, requested_package, write_stdout)
 
         if not full_package_path:
-            log.write(ctx, "collect_troubleshoot_data_packages: Data package '{}' cannot be found.".format(requested_package), write_stdout)
+            log.write(ctx, f"collect_troubleshoot_data_packages: Data package '{requested_package}' cannot be found.", write_stdout)
             return None
 
         data_packages.append(full_package_path)
@@ -373,9 +372,9 @@ def batch_troubleshoot_published_data_packages(ctx: rule.Context, requested_pack
         if log_file:
             log_loc = "/var/lib/irods/log/troubleshoot_publications.log"
             with open(log_loc, "a") as writer:
-                writer.writelines("Batch run date and time: {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                writer.writelines(f"Batch run date and time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 writer.writelines('\n')
-                writer.writelines("Troubleshooting data package: {}".format(data_package))
+                writer.writelines(f"Troubleshooting data package: {data_package}")
                 writer.writelines('\n')
                 json.dump(result, writer)
                 writer.writelines('\n')

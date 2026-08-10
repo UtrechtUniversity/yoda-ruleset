@@ -48,7 +48,7 @@ def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> dict:
 
     for row in iter:
         return row
-    raise ValueError("Attribute {} not found in AVUs of collection {}".format(attr, coll))
+    raise ValueError(f"Attribute {attr} not found in AVUs of collection {coll}")
 
 
 def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> dict:
@@ -58,7 +58,7 @@ def get_attr_val_of_user(ctx: rule.Context, user: str, attr: str) -> dict:
 
     for row in iter:
         return row
-    raise ValueError("Attribute {} not found in AVUs of user {}".format(attr, user))
+    raise ValueError(f"Attribute {attr} not found in AVUs of user {user}")
 
 
 def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
@@ -81,7 +81,7 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
         if type == "collection":
             return (row[1], type, row[2], row[3], row[4])
         else:
-            return ('{}/{}'.format(row[0], row[1]), type, row[2], row[3], row[4])
+            return (f'{row[0]}/{row[1]}', type, row[2], row[3], row[4])
 
     path = misc.escape(path)
 
@@ -159,7 +159,7 @@ def _set_on_coll_catch(ctx: rule.Context, coll: str, a: str, v: str) -> bool | N
     try:
         _set_on_coll(ctx, coll, a, v)
     except Exception:
-        log.write(ctx, "Failed to set AVU {} on coll {}".format(a, coll))
+        log.write(ctx, f"Failed to set AVU {a} on coll {coll}")
         return False
 
     return True
@@ -251,7 +251,7 @@ def _rmw_from_coll_catch(ctx: rule.Context, obj: str, a: str, v: str, u: str) ->
     try:
         _rmw_from_coll(ctx, obj, a, v, u)
     except Exception:
-        log.write(ctx, "Failed to rmw AVU {} on coll {}".format(a, obj))
+        log.write(ctx, f"Failed to rmw AVU {a} on coll {obj}")
         return False
 
     return True
@@ -320,5 +320,5 @@ def apply_atomic_operations(ctx: rule.Context, operations: dict) -> bool:
         elif str(e).find("-130000") > -1:
             log.write(ctx, "apply_atomic_operations: invalid entity name or entity type")
         else:
-            log.write(ctx, "apply_atomic_operations: {}".format(e))
+            log.write(ctx, f"apply_atomic_operations: {e}")
         return False

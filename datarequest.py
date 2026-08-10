@@ -241,12 +241,11 @@ def status_get(ctx: rule.Context, request_id: str) -> status:
     :returns: Status of given data request
     """
     # Construct filename and filepath
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = DATAREQUEST + JSON_EXT
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Retrieve current status
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'").format(coll_path, file_name),
+                        f"COLL_NAME = '{coll_path}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'status'",
                         AS_DICT, ctx)
     if rows.total_rows() == 1:
         return status[list(rows)[0]['META_DATA_ATTR_VALUE']]
@@ -255,7 +254,7 @@ def status_get(ctx: rule.Context, request_id: str) -> status:
     elif rows.total_rows() == 0:
         return status.IN_SUBMISSION
     else:
-        raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
+        raise error.UUError(f"Could not unambiguously determine the current status for datarequest <{request_id}>")
 
 
 def type_get(ctx: rule.Context, request_id: str) -> type:
@@ -337,7 +336,7 @@ def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> No
     :param value:      Value of the metadata field
     """
     # Construct path to the collection of the data request
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Add delayed rule to update data request status
     response_status = ""
@@ -350,7 +349,7 @@ def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> No
 
 
 def generate_request_id(ctx: rule.Context) -> int:
-    coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    coll           = f"/{user.zone(ctx)}/{DRCOLLECTION}"
     max_request_id = 0
 
     # Find highest request ID currently in use
@@ -482,8 +481,7 @@ def datarequest_owner_get(ctx: rule.Context, request_id: str) -> str | None:
     :return:  Account name of data request owner
     """
     # Construct path to the data request
-    file_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DATAREQUEST
-                                      + JSON_EXT)
+    file_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{DATAREQUEST + JSON_EXT}"
 
     # Get and return data request owner
     try:
@@ -527,12 +525,12 @@ def datarequest_reviewers_get(ctx: rule.Context, request_id: str, pending: bool 
     :returns: List of reviewers
     """
     # Declare variables needed for retrieving the list of reviewers
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     reviewers = []
 
     # Retrieve list of reviewers (review pending)
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
+                        f"COLL_NAME = '{coll_path}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'assignedForReview'",
                         AS_DICT, ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
@@ -540,7 +538,7 @@ def datarequest_reviewers_get(ctx: rule.Context, request_id: str, pending: bool 
     # Retrieve list of reviewers (review given)
     if not pending:
         rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy'".format(coll_path, DATAREQUEST + JSON_EXT),
+                            f"COLL_NAME = '{coll_path}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'reviewedBy'",
                             AS_DICT, ctx)
         for row in rows:
             reviewers.append(row['META_DATA_ATTR_VALUE'])
@@ -563,9 +561,9 @@ def datarequest_schema_get(ctx: rule.Context, schema_name: str, version: str = S
     :returns: Dict with schema and UI schema
     """
     # Define paths to schema and uischema
-    coll_path = "/{}{}/{}".format(user.zone(ctx), SCHEMACOLLECTION, version)
-    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
-    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
+    coll_path = f"/{user.zone(ctx)}{SCHEMACOLLECTION}/{version}"
+    schema_path = f"{coll_path}/{schema_name}/{SCHEMA + JSON_EXT}"
+    uischema_path = f"{coll_path}/{schema_name}/{UISCHEMA + JSON_EXT}"
 
     # Retrieve and read schema and uischema
     try:
@@ -587,14 +585,17 @@ def api_datarequest_resubmission_id_get(ctx: rule.Context, request_id: str) -> a
 
     :returns: String containing the request ID of the resubmitted data request
     """
-    coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=AS_DICT))
+    coll      = f"/{user.zone(ctx)}/{DRCOLLECTION}"
+    coll_path = list(Query(ctx,
+                           ['COLL_NAME'],
+                           f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{request_id}'",
+                           output=AS_DICT))
     if len(coll_path) == 1:
         # We're extracting the request ID from the pathname of the collection as that's the most
         # straightforward way of getting it, and is also stable.
         return coll_path[0]['COLL_NAME'].split("/")[-1]
     else:
-        return api.Error("metadata_read_error", "Not exactly 1 match for when searching for data requests with previous_request_id = {}".format(request_id))
+        return api.Error("metadata_read_error", f"Not exactly 1 match for when searching for data requests with previous_request_id = {request_id}")
 
 
 def datarequest_provenance_write(ctx: rule.Context, request_id: str, request_status: status) -> api.Result:
@@ -608,22 +609,22 @@ def datarequest_provenance_write(ctx: rule.Context, request_id: str, request_sta
     """
     # Check if request ID is valid
     if re.search(r"^\d+$", request_id) is None:
-        return api.Error("input_error", "Invalid request ID supplied: {}.".format(request_id))
+        return api.Error("input_error", f"Invalid request ID supplied: {request_id}.")
 
     # Check if status parameter is valid
     if request_status not in status:
-        return api.Error("input_error", "Invalid status parameter supplied: {}.".format(request_status.value))
+        return api.Error("input_error", f"Invalid status parameter supplied: {request_status.value}.")
 
     # Construct path to provenance log
-    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
+    coll_path       = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    provenance_path = f"{coll_path}/{PROVENANCE + JSON_EXT}"
 
     # Get timestamps
     timestamps = jsonutil.read(ctx, provenance_path)
 
     # Check if there isn't already a timestamp for the given status
     if request_status.value in timestamps:
-        return api.Error("input_error", "Status ({}) has already been timestamped.".format(request_status.value))
+        return api.Error("input_error", f"Status ({request_status.value}) has already been timestamped.")
 
     # Add timestamp
     current_time = str(datetime.now().strftime('%s'))
@@ -633,7 +634,7 @@ def datarequest_provenance_write(ctx: rule.Context, request_id: str, request_sta
     try:
         jsonutil.write(ctx, provenance_path, timestamps)
     except error.UUError as e:
-        return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
+        return api.Error("write_error", f"Could not write timestamp to provenance log: {e}.")
 
 
 def datarequest_data_valid(ctx: rule.Context, data: dict, schema_name: str | None = None, schema: str | None = None) -> bool:
@@ -687,8 +688,8 @@ def cc_email_addresses_get(contact_object: dict) -> str | None:
 
 @rule.make(inputs=[], outputs=[0, 1])
 def rule_datarequest_review_period_expiration_check(ctx: rule.Context) -> None:
-    coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
+    coll       = f"/{user.zone(ctx)}/{DRCOLLECTION}"
+    criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{str(int(time.time()))}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'"
     ccols    = ['COLL_NAME']
     qcoll    = Query(ctx, ccols, criteria, output=AS_DICT)
     if len(list(qcoll)) > 0:
@@ -719,8 +720,8 @@ def datarequest_sync_avus(ctx: rule.Context, request_id: str) -> None:
         raise error.UUError('request_id is not a digit.')
 
     # Get request data
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
     data = datarequest_get(ctx, request_id)
 
     # Only set a subset of the datarequest as AVUs.
@@ -759,7 +760,7 @@ def api_datarequest_browse(ctx: rule.Context,
     :returns: Dict with paginated datarequests
     """
     dac_member = user.is_member_of(ctx, GROUP_DAC)
-    coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    coll       = f"/{user.zone(ctx)}/{DRCOLLECTION}"
 
     def transform(row: dict) -> dict:
         # Remove ORDER_BY etc. wrappers from column names.
@@ -805,24 +806,24 @@ def api_datarequest_browse(ctx: rule.Context,
     #
     # a) Normal case
     if not dac_member and not archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'RESUBMITTED' && != 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
+        criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'RESUBMITTED' && != 'DATA_READY'"
     # b) Archive case
     elif not dac_member and archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'RESUBMITTED' || = 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
+        criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'RESUBMITTED' || = 'DATA_READY'"
     # c1) DAC reviewable requests case
     elif dac_member and not dacrequests and not archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+        criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{user.name(ctx)}'"
     # c2) DAC own requests case
     elif dac_member and dacrequests and not archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'owner' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+        criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'owner' AND META_DATA_ATTR_VALUE in '{user.name(ctx)}'"
     # c3) DAC reviewed requests
     elif dac_member and not dacrequests and archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+        criteria = f"COLL_PARENT_NAME = '{coll}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{user.name(ctx)}'"
     # Execute query
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' AND COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit, output=AS_DICT)
+        qcoll_title  = Query(ctx, ccols, f"META_DATA_ATTR_NAME = 'title' AND COLL_PARENT_NAME = '{coll}'", offset=offset, limit=limit, output=AS_DICT)
+        qcoll_status = Query(ctx, ccols, f"META_DATA_ATTR_NAME = 'status' AND COLL_PARENT_NAME = '{coll}'", offset=offset, limit=limit, output=AS_DICT)
     else:
         return OrderedDict([('total', 0), ('items', [])])
 
@@ -868,7 +869,7 @@ def file_write(ctx: rule.Context, coll_path: str, filename: str, data: dict, rea
     :param data:      The data to be written to disk
     :param readers:   List of user names that should be given read access to the file
     """
-    file_path = "{}/{}".format(coll_path, filename)
+    file_path = f"{coll_path}/{filename}"
 
     # Grant temporary write permission
     ctx.adminTempWritePermission(coll_path, "grant")
@@ -901,7 +902,7 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: list[st
     :param filename:  Name of file
     :param readers:   List of user names that should be given read access to the file
     """
-    file_path = "{}/{}".format(coll_path, filename)
+    file_path = f"{coll_path}/{filename}"
     current_user = user.full_name(ctx)
 
     # Revoke temporary write permission if current_user doesn't have read access
@@ -946,7 +947,7 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
     # Validate data against schema
     if not draft and not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(DATAREQUEST))
+                         f"{DATAREQUEST} form data did not pass validation against its schema.")
 
     # Permission check
     if (user.is_member_of(ctx, GROUP_PM) or user.is_member_of(ctx, GROUP_DM)):
@@ -960,23 +961,23 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         request_id = str(generate_request_id(ctx))
 
     # Construct data request collection and file path.
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
 
     # If we're not working with a draft, initialize the data request collection
     if not draft_request_id:
         # Create collections
         try:
-            dta_path         = "{}/{}".format(coll_path, DTA_PATHNAME)
-            sigdta_path      = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
-            attachments_path = "{}/{}".format(coll_path, ATTACHMENTS_PATHNAME)
+            dta_path         = f"{coll_path}/{DTA_PATHNAME}"
+            sigdta_path      = f"{coll_path}/{SIGDTA_PATHNAME}"
+            attachments_path = f"{coll_path}/{ATTACHMENTS_PATHNAME}"
 
             collection.create(ctx, coll_path)
             collection.create(ctx, attachments_path)
             collection.create(ctx, dta_path)
             collection.create(ctx, sigdta_path)
         except error.UUError as e:
-            return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
+            return api.Error("create_collection_fail", f"Could not create collection path: {e}.")
 
         # Grant permissions on collections
         msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
@@ -998,7 +999,7 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         msi.set_acl(ctx, "default", "read", user.full_name(ctx), sigdta_path)
 
         # Create provenance log
-        provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
+        provenance_path = f"{coll_path}/{PROVENANCE + JSON_EXT}"
         jsonutil.write(ctx, provenance_path, {})
 
         # Write data request
@@ -1072,7 +1073,7 @@ def api_datarequest_get(ctx: rule.Context, request_id: str) -> api.Result:
     try:
         datarequest_type = type_get(ctx, request_id_str).value
     except Exception as e:
-        return api.Error("datarequest_type_fail", "Error: {}".format(e))
+        return api.Error("datarequest_type_fail", f"Error: {e}")
 
     # Get request status
     datarequest_status = status_get(ctx, request_id_str).value
@@ -1113,15 +1114,14 @@ def datarequest_get(ctx: rule.Context, request_id: str) -> str | api.Error:
     :returns: Datarequest JSON or API error on failure
     """
     # Construct filename and filepath
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = DATAREQUEST + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
 
     # Get the contents of the datarequest JSON file
     try:
         return data_object.read(ctx, file_path)
     except error.UUError as e:
-        return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file: {}.".format(e))
+        return api.Error("datarequest_read_fail", f"Could not get contents of datarequest JSON file: {e}.")
 
 
 @api.make()
@@ -1144,8 +1144,7 @@ def api_datarequest_attachment_upload_permission(ctx: rule.Context, request_id: 
         return api.Error("InputError", "Invalid action input parameter.")
 
     # Grant/revoke temporary write permissions
-    attachments_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
-                                             ATTACHMENTS_PATHNAME)
+    attachments_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{ATTACHMENTS_PATHNAME}"
     ctx.adminTempWritePermission(attachments_path, action)
     return api.Result.ok()
 
@@ -1166,8 +1165,7 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
         return action_permitted
 
     # Set permissions
-    file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
-                                         ATTACHMENTS_PATHNAME, filename)
+    file_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{ATTACHMENTS_PATHNAME}/{filename}"
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
@@ -1208,8 +1206,7 @@ def datarequest_attachments_get(ctx: rule.Context, request_id: str) -> Optional[
         return None
 
     # Return list of attachment filepaths
-    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
-                                      ATTACHMENTS_PATHNAME)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{ATTACHMENTS_PATHNAME}"
     return list(map(get_filename, list(collection.data_objects(ctx, coll_path))))
 
 
@@ -1231,7 +1228,7 @@ def api_datarequest_attachments_submit(ctx: rule.Context, request_id: str) -> ap
         return action_permitted
 
     # Revoke ownership and write access
-    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{ATTACHMENTS_PATHNAME}"
     for attachment_path in list(collection.data_objects(ctx, coll_path)):
         msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), attachment_path)
 
@@ -1253,7 +1250,7 @@ def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: dict, req
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(PR_REVIEW))
+                         f"{PR_REVIEW} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.SUBMITTED])
@@ -1261,14 +1258,14 @@ def api_datarequest_preliminary_review_submit(ctx: rule.Context, data: dict, req
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Write form data to disk
     try:
         file_write(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
         file_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, [GROUP_DM, GROUP_PM])
     except error.UUError as e:
-        return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
+        return api.Error('write_error', f'Could not write preliminary review data to disk: {e}')
 
     # Get decision
     decision = data['preliminary_review']
@@ -1312,15 +1309,15 @@ def datarequest_preliminary_review_get(ctx: rule.Context, request_id: str) -> st
     :returns: Preliminary review JSON or API error on failure
     """
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_name = PR_REVIEW + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    file_path = f"{coll_path}/{file_name}"
 
     # Get the contents of the review JSON file
     try:
         return data_object.read(ctx, file_path)
     except error.UUError as e:
-        return api.Error("ReadError", "Could not get preliminary review data: {}.".format(e))
+        return api.Error("ReadError", f"Could not get preliminary review data: {e}.")
 
 
 @api.make()
@@ -1336,7 +1333,7 @@ def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: dict, req
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(DM_REVIEW))
+                         f"{DM_REVIEW} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["DM"], [status.PRELIMINARY_ACCEPT])
@@ -1344,7 +1341,7 @@ def api_datarequest_datamanager_review_submit(ctx: rule.Context, data: dict, req
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Add reviewing data manager to reviewing_dm field of data
     data['reviewing_dm'] = user.name(ctx)
@@ -1397,15 +1394,15 @@ def datarequest_datamanager_review_get(ctx: rule.Context, request_id: str) -> st
     :returns: Datamanager review JSON or API error on failure
     """
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_name = DM_REVIEW + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    file_path = f"{coll_path}/{file_name}"
 
     # Get the contents of the data manager review JSON file
     try:
         return data_object.read(ctx, file_path)
     except error.UUError as e:
-        return api.Error("ReadError", "Could not get data manager review data: {}.".format(e))
+        return api.Error("ReadError", f"Could not get data manager review data: {e}.")
 
 
 @api.make()
@@ -1448,7 +1445,7 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: dict, request_id:
     schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dac_members
     if not datarequest_data_valid(ctx, data, schema=schema):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
+                         f"{ASSIGNMENT} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.DATAMANAGER_ACCEPT,
@@ -1458,7 +1455,7 @@ def api_datarequest_assignment_submit(ctx: rule.Context, data: dict, request_id:
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Set date of end of review period as metadata on the datarequest (if
     # accepted for review)
@@ -1508,15 +1505,15 @@ def assign_request(ctx: rule.Context, assignees: str, request_id: str) -> None:
     :param request_id: Unique identifier of the data request
     """
     # Construct data request collection path
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Grant read permissions on relevant files of data request
     attachments = datarequest_attachments_get(ctx, request_id)
     attachments = [ATTACHMENTS_PATHNAME + "/" + attachment for attachment in attachments]
     for assignee in json.loads(assignees):
         for doc in [filename + JSON_EXT for filename in [DATAREQUEST, PR_REVIEW, DM_REVIEW]] + attachments:
-            file_path = "{}/{}".format(coll_path, doc)
-            ctx.adminTempWritePermission(file_path, "grantread", "{}#{}".format(assignee, user.zone(ctx)))
+            file_path = f"{coll_path}/{doc}"
+            ctx.adminTempWritePermission(file_path, "grantread", f"{assignee}#{user.zone(ctx)}")
 
     # Assign the data request by adding a delayed rule that sets one or more
     # "assignedForReview" attributes on the datarequest (the number of
@@ -1562,9 +1559,9 @@ def datarequest_assignment_get(ctx: rule.Context, request_id: str) -> api.Result
     request_id = str(request_id)
 
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_name = ASSIGNMENT + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    file_path = f"{coll_path}/{file_name}"
 
     # Get the contents of the assignment JSON file
     try:
@@ -1586,7 +1583,7 @@ def api_datarequest_review_submit(ctx: rule.Context, data: dict, request_id: str
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(REVIEW))
+                         f"{REVIEW} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["REV"], [status.UNDER_REVIEW])
@@ -1594,15 +1591,15 @@ def api_datarequest_review_submit(ctx: rule.Context, data: dict, request_id: str
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Write form data to disk
     try:
         readers = [GROUP_PM] + [reviewer + "#" + user.zone(ctx) for reviewer in datarequest_reviewers_get(ctx, request_id)]
-        file_write(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
-        file_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, readers)
+        file_write(ctx, coll_path, REVIEW + f"_{user.name(ctx)}" + JSON_EXT, data, readers)
+        file_lock(ctx, coll_path, REVIEW + f"_{user.name(ctx)}" + JSON_EXT, readers)
     except error.UUError as e:
-        return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
+        return api.Error('write_error', f'Could not write review data to disk: {e}.')
 
     # Remove the assignedForReview attribute of this user by first fetching
     # the list of reviewers ...
@@ -1610,7 +1607,7 @@ def api_datarequest_review_submit(ctx: rule.Context, data: dict, request_id: str
 
     iter = row_iterator(
         "META_DATA_ATTR_VALUE",
-        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
+        f"COLL_NAME = '{coll_path}' AND DATA_NAME = '{DATAREQUEST + JSON_EXT}' AND META_DATA_ATTR_NAME = 'assignedForReview'",
         AS_LIST, ctx)
 
     for row in iter:
@@ -1653,20 +1650,20 @@ def api_datarequest_reviews_get(ctx: rule.Context, request_id: str) -> api.Resul
         return action_permitted
 
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_name = 'review_%.json'
 
     # Get the review JSON files
     reviews = []
     rows = row_iterator(["DATA_NAME"],
-                        "COLL_NAME = '{}' AND DATA_NAME like '{}'".format(coll_path, file_name),
+                        f"COLL_NAME = '{coll_path}' AND DATA_NAME like '{file_name}'",
                         AS_DICT, ctx)
     for row in rows:
-        file_path = "{}/{}".format(coll_path, row['DATA_NAME'])
+        file_path = f"{coll_path}/{row['DATA_NAME']}"
         try:
             reviews.append(json.loads(data_object.read(ctx, file_path)))
         except error.UUError as e:
-            return api.Error("ReadError", "Could not get review data: {}.".format(e))
+            return api.Error("ReadError", f"Could not get review data: {e}.")
 
     return json.dumps(reviews)
 
@@ -1686,7 +1683,7 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: dict, request_id:
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, EVALUATION):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(EVALUATION))
+                         f"{EVALUATION} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED, status.DAO_SUBMITTED])
@@ -1694,7 +1691,7 @@ def api_datarequest_evaluation_submit(ctx: rule.Context, data: dict, request_id:
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Write approval conditions to disk if applicable
     if 'approval_conditions' in data:
@@ -1749,9 +1746,9 @@ def api_datarequest_approval_conditions_get(ctx: rule.Context, request_id: str) 
         return action_permitted
 
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_name = APPROVAL_CONDITIONS + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    file_path = f"{coll_path}/{file_name}"
 
     # Check for presence of approval conditions
     if (data_object.exists(ctx, file_path)):
@@ -1791,9 +1788,8 @@ def datarequest_evaluation_get(ctx: rule.Context, request_id: str) -> api.Result
     :returns: Evaluation JSON or API error on failure
     """
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = EVALUATION + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{EVALUATION + JSON_EXT}"
 
     # Get the contents of the assignment JSON file
     try:
@@ -1812,7 +1808,7 @@ def datarequest_feedback_write(ctx: rule.Context, request_id: str, feedback: str
     :returns:          API status
     """
     # Construct path to feedback file
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Write form data to disk
     try:
@@ -1823,7 +1819,7 @@ def datarequest_feedback_write(ctx: rule.Context, request_id: str, feedback: str
     # Grant researcher read permissions
     try:
         msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id),
-                    "{}/{}".format(coll_path, FEEDBACK + JSON_EXT))
+                    f"{coll_path}/{FEEDBACK + JSON_EXT}")
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the feedback file to the data request owner.")
 
@@ -1853,14 +1849,14 @@ def api_datarequest_feedback_get(ctx: rule.Context, request_id: str) -> api.Resu
         return action_permitted
 
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, FEEDBACK + JSON_EXT)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{FEEDBACK + JSON_EXT}"
 
     # Get the contents of the feedback JSON file
     try:
         return data_object.read(ctx, file_path)
     except error.UUError as e:
-        return api.Error("ReadError", "Could not get feedback data: {}.".format(e))
+        return api.Error("ReadError", f"Could not get feedback data: {e}.")
 
 
 @api.make()
@@ -1876,7 +1872,7 @@ def api_datarequest_preregistration_submit(ctx: rule.Context, data: dict, reques
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PREREGISTRATION):
         return api.Error("validation_fail",
-                         "{} form data did not pass validation against its schema.".format(PREREGISTRATION))
+                         f"{PREREGISTRATION} form data did not pass validation against its schema.")
 
     # Permission check
     action_permitted = datarequest_action_permitted(ctx, request_id, ["OWN"], [status.APPROVED])
@@ -1884,7 +1880,7 @@ def api_datarequest_preregistration_submit(ctx: rule.Context, data: dict, reques
         return action_permitted
 
     # Construct path to collection
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
 
     # Write form data to disk
     try:
@@ -1923,15 +1919,14 @@ def datarequest_preregistration_get(ctx: rule.Context, request_id: str) -> api.R
     :returns: Preregistration JSON or API error on failure
     """
     # Construct filename
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = PREREGISTRATION + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    file_path = f"{coll_path}/{PREREGISTRATION + JSON_EXT}"
 
     # Get the contents of the review JSON file
     try:
         return data_object.read(ctx, file_path)
     except error.UUError as e:
-        return api.Error("ReadError", "Could not get preregistration data: {}.".format(e))
+        return api.Error("ReadError", f"Could not get preregistration data: {e}.")
 
 
 @api.make()
@@ -1973,7 +1968,7 @@ def api_datarequest_dta_upload_permission(ctx: rule.Context, request_id: str, ac
         return api.Error("InputError", "Invalid action input parameter.")
 
     # Grant/revoke temporary write permissions
-    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
+    dta_coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{DTA_PATHNAME}"
     ctx.adminTempWritePermission(dta_coll_path, action)
 
 
@@ -1994,8 +1989,7 @@ def api_datarequest_dta_post_upload_actions(ctx: rule.Context, request_id: str, 
         return action_permitted
 
     # Set permissions
-    file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME,
-                                         filename)
+    file_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{DTA_PATHNAME}/{filename}"
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
     msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
@@ -2022,7 +2016,7 @@ def datarequest_dta_path_get(ctx: rule.Context, request_id: str) -> api.Result:
 
     :returns: Path to DTA
     """
-    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{DTA_PATHNAME}"
     return list(collection.data_objects(ctx, coll_path))[0]
 
 
@@ -2047,7 +2041,7 @@ def api_datarequest_signed_dta_upload_permission(ctx: rule.Context, request_id: 
         return api.Error("InputError", "Invalid action input parameter.")
 
     # Grant/revoke temporary write permissions
-    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    dta_coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{SIGDTA_PATHNAME}"
     ctx.adminTempWritePermission(dta_coll_path, action)
 
 
@@ -2067,8 +2061,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx: rule.Context, request_id
         return action_permitted
 
     # Set permissions
-    file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
-                                         filename)
+    file_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{SIGDTA_PATHNAME}/{filename}"
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
     msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
@@ -2092,7 +2085,7 @@ def api_datarequest_signed_dta_path_get(ctx: rule.Context, request_id: str) -> a
     if not action_permitted:
         return action_permitted
 
-    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}/{SIGDTA_PATHNAME}"
     return list(collection.data_objects(ctx, coll_path))[0]
 
 
@@ -2376,7 +2369,7 @@ def dta_post_upload_actions_emails(ctx: rule.Context, request_id: str) -> None:
     cc               = cc_email_addresses_get(datarequest['contact'])
     # (Also) cc project manager
     pm_email, _      = list(filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM)))[0]
-    cc               = cc + ',{}'.format(pm_email) if cc else pm_email
+    cc               = cc + f',{pm_email}' if cc else pm_email
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
@@ -2414,144 +2407,148 @@ def data_ready_emails(ctx: rule.Context, request_id: str) -> None:
 
 def mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
                                 researcher_name, request_id, cc, dao):
-    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
+    status = "resubmitted" if resubmission else "submitted"
+    subject = f"YOUth data request {request_id} (\"{truncated_title}\") (data assessment only): {status}" if dao else f"YOUth data request {request_id} (\"{truncated_title}\"): {status}"
 
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
                      subject=subject,
-                     body="""Dear {},
+                     body=f"""Dear {researcher_name},
 
 Your data request has been submitted.
 
 You will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id, researcher_name,
                         researcher_email, researcher_institution, researcher_department,
                         submission_date, proposal_title):
+    status = "resubmitted" if resubmission else "submitted"
+    subject = f"YOUth data request {request_id} (\"{truncated_title}\"): {status}"
+
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
-                     body="""Dear project manager,
+                     subject=subject,
+                     body=f"""Dear project manager,
 
 A new data request has been submitted.
 
-Principal investigator: {} ({})
-Affiliation: {}, {}
-Date: {}
-Request ID: {}
-Proposal title: {}
+Principal investigator: {researcher_name} ({researcher_email})
+Affiliation: {researcher_institution}, {researcher_department}
+Date: {submission_date}
+Request ID: {request_id}
+Proposal title: {proposal_title}
 
-The following link will take you to the preliminary review form: https://{}/datarequest/preliminary_review/{}.
+The following link will take you to the preliminary review form: https://{YODA_PORTAL_FQDN}/datarequest/preliminary_review/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
-                         submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
                             researcher_name, researcher_email, researcher_institution,
                             researcher_department, submission_date, proposal_title):
+    status = "resubmitted" if resubmission else "submitted"
+    subject = f"YOUth data request {request_id} (\"{truncated_title}\") (data assessment only): {status}"
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
-                     body="""Dear project manager,
+                     subject=subject,
+                     body=f"""Dear project manager,
 
 A new data request (for the purpose of data assessment only) has been submitted.
 
-Principal investigator: {} ({})
-Affiliation: {}, {}
-Date: {}
-Request ID: {}
-Proposal title: {}
+Principal investigator: {researcher_name} ({researcher_email})
+Affiliation: {researcher_institution}, {researcher_department}
+Date: {submission_date}
+Request ID: {request_id}
+Proposal title: {proposal_title}
 
-The following link will take you to the evaluation form: https://{}/datarequest/evaluate/{}.
+The following link will take you to the evaluation form: https://{YODA_PORTAL_FQDN}/datarequest/evaluate/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
-                         submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_preliminary_review_accepted(ctx, truncated_title, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): accepted for data manager review".format(request_id, truncated_title),
-                     body="""Dear data manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): accepted for data manager review",
+                     body=f"""Dear data manager,
 
-Data request {} has been approved for review by the YOUth project manager.
+Data request {request_id} has been approved for review by the YOUth project manager.
 
 You are now asked to review the data request for any potential problems concerning the requested data and to submit your recommendation (accept, resubmit, or reject) to the YOUth project manager.
 
-The following link will take you directly to the review form: https://{}/datarequest/datamanager_review/{}.
+The following link will take you directly to the review form: https://{YODA_PORTAL_FQDN}/datarequest/datamanager_review/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datamanager_review_accepted(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): accepted by data manager".format(request_id, truncated_title),
-                     body="""Dear project manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): accepted by data manager",
+                     body=f"""Dear project manager,
 
-Data request {} has been accepted by the data manager.
+Data request {request_id} has been accepted by the data manager.
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{YODA_PORTAL_FQDN}/datarequest/assign/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datamanager_review_resubmit(ctx, truncated_title, pm_email, datamanager_remarks, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): rejected (resubmit) by data manager".format(request_id, truncated_title),
-                     body="""Dear project manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): rejected (resubmit) by data manager",
+                     body=f"""Dear project manager,
 
-Data request {} has been rejected (resubmission allowed) by the data manager for the following reason(s):
+Data request {request_id} has been rejected (resubmission allowed) by the data manager for the following reason(s):
 
-{}
+{datamanager_remarks}
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{YODA_PORTAL_FQDN}/datarequest/assign/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datamanager_review_rejected(ctx, truncated_title, pm_email, datamanager_remarks, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): rejected by data manager".format(request_id, truncated_title),
-                     body="""Dear project manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): rejected by data manager",
+                     body=f"""Dear project manager,
 
-Data request {} has been rejected by the data manager for the following reason(s):
+Data request {request_id} has been rejected by the data manager for the following reason(s):
 
-{}
+{datamanager_remarks}
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{YODA_PORTAL_FQDN}/datarequest/assign/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
@@ -2559,16 +2556,16 @@ def mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email, 
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): under review".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): under review",
+                     body=f"""Dear {researcher_name},
 
 Your data request has passed a preliminary assessment and is now under review.
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, proposal_title,
@@ -2576,16 +2573,16 @@ def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, prop
     return mail.send(ctx,
                      to=assignee_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
-                     body="""Dear DAC member,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): assigned",
+                     body=f"""Dear DAC member,
 
-Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review within {} days.
+Data request {request_id} (proposal title: \"{proposal_title}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review within {review_period_length} days.
 
-The following link will take you directly to the review form: https://{}/datarequest/review/{}.
+The following link will take you directly to the review form: https://{YODA_PORTAL_FQDN}/datarequest/review/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, proposal_title, review_period_length, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
@@ -2593,32 +2590,32 @@ def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_na
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): reviewed",
+                     body=f"""Dear {researcher_name},
 
 Your data request been reviewed by the YOUth Data Access Committee and is awaiting final evaluation by the YOUth project manager.
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_review_pm(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
-                     body="""Dear project manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): reviewed",
+                     body=f"""Dear project manager,
 
-Data request {} has been reviewed by the YOUth Data Access Committee and is awaiting your final evaluation.
+Data request {request_id} has been reviewed by the YOUth Data Access Committee and is awaiting your final evaluation.
 
-Please log into Yoda to evaluate the data request. The following link will take you directly to the evaluation form: https://{}/datarequest/evaluate/{}.
+Please log into Yoda to evaluate the data request. The following link will take you directly to the evaluation form: https://{YODA_PORTAL_FQDN}/datarequest/evaluate/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email, researcher_name,
@@ -2627,60 +2624,60 @@ def mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email, 
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): approved",
+                     body=f"""Dear {researcher_name},
 
-Congratulations! Your data request has been approved. You are now asked to preregister your study in the YOUth Open Science Framework preregistry. To do so, please navigate to the preregistration form using this link: https://{}/datarequest/preregister/{}.
+Congratulations! Your data request has been approved. You are now asked to preregister your study in the YOUth Open Science Framework preregistry. To do so, please navigate to the preregistration form using this link: https://{YODA_PORTAL_FQDN}/datarequest/preregister/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_preregistration_submit(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): preregistration submitted".format(request_id, truncated_title),
-                     body="""Dear project manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): preregistration submitted",
+                     body=f"""Dear project manager,
 
-Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the data request, where you may confirm the preregistration: https://{}/datarequest/view/{}.
+Data request {request_id} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the data request, where you may confirm the preregistration: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
-                     body="""Dear data manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): approved",
+                     body=f"""Dear data manager,
 
-Data request {} has been approved by the YOUth project manager (and has passed the data manager review of {}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
+Data request {request_id} has been approved by the YOUth project manager (and has passed the data manager review of {reviewing_dm}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
 
-The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+The following link will take you directly to the data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, reviewing_dm, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title),
-                     body="""Dear data manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\") (data assessment only): approved",
+                     body=f"""Dear data manager,
 
-Data request {} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
+Data request {request_id} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
 
-The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+The following link will take you directly to the data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc, dao=False):
@@ -2688,16 +2685,16 @@ def mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): preregistration approved".format(request_id, truncated_title)),
-                     body="""Dear {},
+                     subject=(f"YOUth data request {request_id} (\"{truncated_title}\") (data assessment only): approved" if dao else f"YOUth data request {request_id} (\"{truncated_title}\"): preregistration approved"),
+                     body=f"""Dear {researcher_name},
 
 The preregistration of your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
 
-The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+The following link will take you directly to the data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_resubmit(ctx, truncated_title, researcher_email, researcher_name, feedback_for_researcher, pm_email,
@@ -2706,23 +2703,22 @@ def mail_resubmit(ctx, truncated_title, researcher_email, researcher_name, feedb
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): rejected (resubmit)".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): rejected (resubmit)",
+                     body=f"""Dear {researcher_name},
 
 Your data request has been rejected for the following reason(s):
 
-{}
+{feedback_for_researcher}
 
-You are however allowed to resubmit your data request. You may do so using this link: https://{}/datarequest/add/{}.
+You are however allowed to resubmit your data request. You may do so using this link: https://{YODA_PORTAL_FQDN}/datarequest/add/{request_id}.
 
-If you wish to object against this rejection, please contact the YOUth project manager ({}).
+If you wish to object against this rejection, please contact the YOUth project manager ({pm_email}).
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, pm_email,
-                         YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_rejected(ctx, truncated_title, researcher_email, researcher_name, feedback_for_researcher, pm_email,
@@ -2731,20 +2727,20 @@ def mail_rejected(ctx, truncated_title, researcher_email, researcher_name, feedb
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): rejected".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): rejected",
+                     body=f"""Dear {researcher_name},
 
 Your data request has been rejected for the following reason(s):
 
-{}
+{feedback_for_researcher}
 
-If you wish to object against this rejection, please contact the YOUth project manager ({}).
+If you wish to object against this rejection, please contact the YOUth project manager ({pm_email}).
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, pm_email, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_dta(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
@@ -2752,18 +2748,18 @@ def mail_dta(ctx, truncated_title, researcher_email, researcher_name, request_id
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): DTA ready".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): DTA ready",
+                     body=f"""Dear {researcher_name},
 
 The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
 
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+The following link will take you directly to your data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 If you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.
 
 With kind regards,
 YOUth
-""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc):
@@ -2771,18 +2767,18 @@ def mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, reque
                      to=datamanager_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): DTA signed".format(request_id, truncated_title),
-                     body="""Dear data manager,
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): DTA signed",
+                     body=f"""Dear data manager,
 
-The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}. The DTA was authored by {}.
+The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {request_id}. The DTA was authored by {authoring_dm}.
 
-Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://{YODA_PORTAL_FQDN}/datarequest/view/{request_id}.
 
 After verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.
 
 With kind regards,
 YOUth
-""".format(request_id, authoring_dm, YODA_PORTAL_FQDN, request_id))
+""")
 
 
 def mail_data_ready(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
@@ -2790,11 +2786,11 @@ def mail_data_ready(ctx, truncated_title, researcher_email, researcher_name, req
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): data ready".format(request_id, truncated_title),
-                     body="""Dear {},
+                     subject=f"YOUth data request {request_id} (\"{truncated_title}\"): data ready",
+                     body=f"""Dear {researcher_name},
 
 The data you have requested has been made available to you within a new folder in Yoda. You can access the data through the webportal in the "research" area or you can connect Yoda as a network drive and access the data through your file explorer. For information on how to access the data, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda
 
 With kind regards,
 YOUth
-""".format(researcher_name))
+""")

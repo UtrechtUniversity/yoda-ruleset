@@ -10,6 +10,7 @@ from typing import List, Tuple
 
 import genquery
 import irods_types
+from tstrings import t
 
 import constants
 import error
@@ -55,7 +56,7 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> dict | Non
     query_fields = ", ".join(properties)
     iter = genquery.row_iterator(
         query_fields,
-        "DATA_ID = '{}' AND DATA_RESC_HIER like '{}%'".format(data_id, resource),
+        f"DATA_ID = '{data_id}' AND DATA_RESC_HIER like '{resource}%'",
         genquery.AS_LIST, ctx
     )
 
@@ -71,9 +72,10 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> dict | Non
 
 def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     """Find the owner of a data object. Returns (name, zone) or None."""
+    split_path = pathutil.chop(path)  # noqa FA841
     owners = list(genquery.row_iterator(
                   "DATA_OWNER_NAME, DATA_OWNER_ZONE",
-                  "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+                  t("COLL_NAME = '{split_path[0]}' AND DATA_NAME = '{split_path[1]}'"),
                   genquery.AS_LIST, ctx))
     return tuple(owners[0]) if len(owners) > 0 else None
 
@@ -173,12 +175,10 @@ def read(ctx: rule.Context, path: str, max_size: int = constants.IIDATA_MAX_SLUR
     """Read an entire iRODS data object into a string."""
     sz = size(ctx, path)
     if sz is None:
-        raise error.UUFileNotExistError('data_object.read: object does not exist ({})'
-                                        .format(path))
+        raise error.UUFileNotExistError(f'data_object.read: object does not exist ({path})')
 
     if sz > max_size:
-        raise error.UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
-                                    .format(sz, max_size))
+        raise error.UUFileSizeError(f'data_object.read: file size limit exceeded ({sz} > {max_size})')
 
     if sz == 0:
         # Don't bother reading an empty file.
@@ -216,7 +216,7 @@ def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -
     msi.data_obj_copy(ctx,
                       path_org,
                       path_copy,
-                      'numThreads=1++++verifyChksum={}'.format('++++forceFlag=' if force else ''),
+                      f"numThreads=1++++verifyChksum={'++++forceFlag=' if force else ''}",
                       irods_types.BytesBuf())
 
     json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
@@ -234,7 +234,7 @@ def remove(ctx: rule.Context, path: str, force: bool = False) -> None:
     does not have write permission.
     """
     msi.data_obj_unlink(ctx,
-                        'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
+                        f"objPath={path}{'++++forceFlag=' if force else ''}",
                         irods_types.BytesBuf())
 
 

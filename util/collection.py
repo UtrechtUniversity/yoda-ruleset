@@ -10,6 +10,7 @@ from typing import Iterable, List, Tuple
 
 import genquery
 import irods_types
+from tstrings import t
 
 import data_object
 import misc
@@ -145,7 +146,7 @@ def data_objects(ctx: rule.Context, path: str, recursive: bool = False) -> Itera
     """
     # coll+data name -> path
     def to_absolute(row: List) -> str:
-        return '{}/{}'.format(*row)
+        return f'{row[0]}/{row[1]}'
 
     path = misc.escape(path)
     return map(to_absolute, list(genquery.Query(
@@ -318,8 +319,8 @@ def has_dataobjects(ctx: rule.Context, collection_name: str) -> bool:
         raise CollectionNotFoundException("Collection not found")
 
     where_clause = {
-        'self': f"COLL_NAME = '{collection_name}'",
-        'subfolders': f"COLL_NAME LIKE '{collection_name}/%'"
+        'self': t("COLL_NAME = '{collection_name}'"),
+        'subfolders': t("COLL_NAME LIKE '{collection_name}/%'")
     }
 
     for folder_type in ['self', 'subfolders']:
@@ -352,7 +353,7 @@ def has_modify_date_after(ctx: rule.Context, collection_name: str, timestamp: in
     """
     iter_data = genquery.row_iterator(
         "COLL_MODIFY_TIME",
-        f"COLL_NAME = '{collection_name}'",
+        t("COLL_NAME = '{collection_name}'"),
         genquery.AS_LIST, ctx
     )
     # This loop should only run once
@@ -382,11 +383,12 @@ def has_dataobjects_modified_after(ctx: rule.Context, collection_name: str, time
         raise CollectionNotFoundException("Collection not found")
     collections = [collection_name] + list(subcollections(ctx, collection_name, recursive=True))
 
-    for c in collections:
+    for _c in collections:
         # Get count of any data objects that have been modified after the inactivity cut off
+        formatted_timestamp = f"{timestamp:011d}"  # noqa F841
         iter_recent_data = genquery.row_iterator(
             "COUNT(DATA_NAME)",
-            f"COLL_NAME = '{c}' AND DATA_MODIFY_TIME > '{timestamp:011d}'",
+            t("COLL_NAME = '{_c}' AND DATA_MODIFY_TIME > '{formatted_timestamp}'"),
             genquery.AS_LIST, ctx
         )
 

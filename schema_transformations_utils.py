@@ -50,7 +50,7 @@ def correctify_isni(org_isni: str) -> str | None:
     if not re.search("^[0-9]{15}[0-9X]$", new_isni_split[-1]):
         return None
 
-    return "https://isni.org/isni/{}".format(new_isni_split[-1])
+    return f"https://isni.org/isni/{new_isni_split[-1]}"
 
 
 def correctify_orcid(org_orcid: str) -> str | None:
@@ -67,7 +67,7 @@ def correctify_orcid(org_orcid: str) -> str | None:
     if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
         return None
 
-    return "https://orcid.org/{}".format(orcs[-1])
+    return f"https://orcid.org/{orcs[-1]}"
 
 
 def correctify_scopus(org_scopus: str) -> str | None:
@@ -92,7 +92,7 @@ def correctify_researcher_id(org_researcher_id: str) -> str | None:
     if not re.search("^[A-Z]-[0-9]{4}-[0-9]{4}$", rid[-1]):
         return None
 
-    return "https://www.researcherid.com/rid/{}".format(rid[-1])
+    return f"https://www.researcherid.com/rid/{rid[-1]}"
 
 
 def correctify_personal_identifiers(m: dict[str, Any]) -> dict[str, Any]:

@@ -5,6 +5,7 @@
 import uuid
 
 import genquery
+from tstrings import t
 
 
 def main(rule_args, callback, rei):
@@ -24,7 +25,7 @@ def main(rule_args, callback, rei):
         # Check if vault package has Data Package Reference.
         iter2 = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_data_package_reference'".format(data_package),
+            t("COLL_NAME = '{data_package}' AND META_COLL_ATTR_NAME = 'org_data_package_reference'"),
             genquery.AS_LIST, callback)
 
         for row2 in iter2:
@@ -32,14 +33,14 @@ def main(rule_args, callback, rei):
 
         # Generate Data Package Reference if data package has no reference.
         if not has_yoda_reference:
-            callback.writeString("serverLog", "Data Package: {}".format(data_package))
+            callback.writeString("serverLog", f"Data Package: {data_package}")
 
             try:
                 reference = str(uuid.uuid4())
-                out = callback.msiString2KeyValPair("org_data_package_reference={}".format(reference), 0)
+                out = callback.msiString2KeyValPair(f"org_data_package_reference={reference}", 0)
                 kvp = out['arguments'][1]
                 callback.msiSetKeyValuePairsToObj(kvp, data_package, '-C')
-                callback.writeString("serverLog", "Data Package Reference: {}".format(reference))
+                callback.writeString("serverLog", f"Data Package Reference: {reference}")
             except Exception:
                 callback.writeString("serverLog", "Something went wrong generating the Data Package Reference.")
 

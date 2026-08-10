@@ -120,7 +120,7 @@ def api_resource_full_year_differentiated_group_storage(ctx: rule.Context, group
     total = []
     iter = genquery.row_iterator(
         "ORDER(META_USER_ATTR_NAME), META_USER_ATTR_VALUE",
-        "USER_NAME = '{}' AND META_USER_ATTR_NAME like '{}%%' AND USER_TYPE = 'rodsgroup'".format(group_name, constants.UUMETADATAGROUPSTORAGETOTALS),
+        f"USER_NAME = '{group_name}' AND META_USER_ATTR_NAME like '{constants.UUMETADATAGROUPSTORAGETOTALS}%%' AND USER_TYPE = 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -166,7 +166,7 @@ def api_resource_category_stats(ctx: rule.Context) -> api.Result:
     # Retrieve storage statistics of groups.
     iter = genquery.Query(ctx,
                           ['USER_GROUP_NAME', 'ORDER_DESC(META_USER_ATTR_NAME)', 'META_USER_ATTR_VALUE'],
-                          "META_USER_ATTR_NAME like '{}%%'".format(attr_name),
+                          f"META_USER_ATTR_NAME like '{attr_name}%%'",
                           output=genquery.AS_LIST)
 
     # Go through storage statistics of groups.
@@ -347,7 +347,7 @@ def get_resource_monthly_category_stats(ctx: rule.Context) -> dict:
     group_catdata = {}
 
     # Get category info and initialize group data
-    zone_filter = "USER_ZONE = '{}' ".format(user_zone)
+    zone_filter = f"USER_ZONE = '{user_zone}' "
     group_filter = "AND USER_GROUP_NAME like 'research-%%' || like 'deposit-%%' || like 'intake-%%' || like 'grp-%%' "
     meta_filter = "AND META_USER_ATTR_NAME IN ('category', 'subcategory') "
     category_list = list(genquery.Query(ctx,
@@ -533,7 +533,7 @@ def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
 
                 # REVISION SPACE
                 total['revision'] = 0
-                revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
+                revision_path = f'/{zone}{constants.UUREVISIONCOLLECTION}/{group}'
                 whereClause = "COLL_NAME like '" + revision_path + "/%'"
                 iter = genquery.row_iterator(
                     "SUM(DATA_SIZE)",
@@ -568,8 +568,8 @@ def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
 
                 # [category, research, vault, revision, total]
                 storage_total = total['research'] + total['vault'] + total['revision']
-                storage_val = "[\"{}\", {}, {}, {}, {}]".format(category, total['research'], total['vault'], total['revision'], storage_total)
-                storage_val_other = "[\"{}\", {}, {}, {}, {}]".format(category, 0, 0, 0, total['other'])
+                storage_val = f"[\"{category}\", {total['research']}, {total['vault']}, {total['revision']}, {storage_total}]"
+                storage_val_other = f"[\"{category}\", {0}, {0}, {0}, {total['other']}]"
 
                 # write as metadata (kv-pair) to current group
                 if group.startswith(('research', 'deposit')):
@@ -577,9 +577,9 @@ def rule_resource_store_storage_statistics(ctx: rule.Context) -> str:
                 if group.startswith(('intake', 'grp')):
                     avu.associate_to_group(ctx, group, md_storage_date, storage_val_other)
 
-                log.write(ctx, 'Storage data collected and stored for current month <{}>'.format(group))
+                log.write(ctx, f'Storage data collected and stored for current month <{group}>')
             else:  # except Exception:
-                log.write(ctx, 'Skipping group as not prefixed with either research-, deposit-, intake- or grp- <{}>'.format(group))
+                log.write(ctx, f'Skipping group as not prefixed with either research-, deposit-, intake- or grp- <{group}>')
 
     return 'ok'
 
@@ -597,7 +597,7 @@ def get_groups_on_categories(ctx: rule.Context, categories: List, search_groups:
 
     search_sql = ""
     if search_groups:
-        search_sql = "AND USER_GROUP_NAME like '%%{}%%' ".format(search_groups)
+        search_sql = f"AND USER_GROUP_NAME like '%%{search_groups}%%' "
 
     group_filter = "USER_GROUP_NAME like 'research-%%' || like 'deposit-%%'  || like 'intake-%%' || like 'grp-%%' "
 

@@ -35,10 +35,10 @@ def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: st
         return
 
     if '@' not in to:
-        log.write(ctx, 'Ignoring invalid destination <{}>'.format(to))
+        log.write(ctx, f'Ignoring invalid destination <{to}>')
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
-    log.write(ctx, 'Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
+    log.write(ctx, f'Sending mail for <{actor}> to <{to}>, subject <{subject}>')
 
     cfg = {k: getattr(config, v)
            for k, v in [('from',      'notifications_sender_email'),
@@ -75,7 +75,7 @@ def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: st
             smtp.starttls()
 
     except Exception as e:
-        log.write(ctx, 'Could not connect to mail server at {}://{}:{}: {}'.format(proto, host, port, e))
+        log.write(ctx, f'Could not connect to mail server at {proto}://{host}:{port}: {e}')
         return api.Error('internal', 'Mail configuration error')
 
     try:
@@ -104,7 +104,7 @@ def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: st
         else:
             smtp.sendmail(cfg['from'], [to], msg.as_string())
     except Exception as e:
-        log.write(ctx, 'Could not send mail: {}'.format(e))
+        log.write(ctx, f'Could not send mail: {e}')
         return api.Error('internal', 'Mail configuration error')
 
     try:

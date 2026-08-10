@@ -79,7 +79,7 @@ def pytest_configure(config):
     # Get portal and API url from configuration.
     global portal_url, api_url
     portal_url = configuration.get("url", "https://portal.yoda.test")
-    api_url = "{}/api".format(portal_url)
+    api_url = f"{portal_url}/api"
 
     # Get roles from configuration.
     global roles
@@ -173,7 +173,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
     if feature.rel_filename.startswith("ui/"):
         try:
             browser = request.getfixturevalue('browser')
-            url = "{}/user/logout".format(portal_url)
+            url = f"{portal_url}/user/logout"
             browser.visit(url)
         except pytest.FixtureLookupError:
             # No UI logout for API tests.
@@ -202,9 +202,9 @@ def login(user, password):
     # Disable insecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    url = "{}/user/login".format(portal_url)
+    url = f"{portal_url}/user/login"
     if verbose_test:
-        print("Login for user {} (retrieve CSRF token) ...".format(user))
+        print(f"Login for user {user} (retrieve CSRF token) ...")
 
     client = requests.session()
 
@@ -220,7 +220,7 @@ def login(user, password):
 
     # Login as user.
     if verbose_test:
-        print("Login for user {} (main login) ...".format(user))
+        print(f"Login for user {user} (main login) ...")
     login_data = {'csrf_token': csrf, 'username': user, 'password': password, 'next': '/'}
     response = client.post(url, data=login_data, headers={'Referer': url}, verify=False)
     session = client.cookies['__Host-session']
@@ -238,7 +238,7 @@ def login(user, password):
 
     # Return CSRF and session cookies.
     if verbose_test:
-        print("Login for user {} completed.".format(user))
+        print(f"Login for user {user} completed.")
     return csrf, session
 
 
@@ -258,7 +258,7 @@ def api_request(user, request, data, timeout=60):
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     if verbose_test:
-        print("Processing API request for user {} with data {}".format(user, json.dumps(data)))
+        print(f"Processing API request for user {user} with data {json.dumps(data)}")
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
     # Remove debug info from response body.
@@ -278,7 +278,7 @@ def upload_data(user, file, folder, file_content="test"):
 
     # Make POST request.
     if verbose_test:
-        print("Processing upload for user {} with folder {} and file {}.".format(user, folder, file))
+        print(f"Processing upload for user {user} with folder {folder} and file {file}.")
     url = portal_url + "/research/upload"
 
     files = {"csrf_token": (None, csrf),
@@ -287,7 +287,7 @@ def upload_data(user, file, folder, file_content="test"):
              "flowChunkSize": (None, "10485760"),
              "flowCurrentChunkSize": (None, "4"),
              "flowTotalSize": (None, "4"),
-             "flowIdentifier": (None, "4-{}".format(file)),
+             "flowIdentifier": (None, f"4-{file}"),
              "flowFilename": (None, file),
              "flowRelativePath": (None, file),
              "flowTotalChunks": (None, "1"),
@@ -309,7 +309,7 @@ def post_form_data(user, request, files):
 
     # Make POST request.
     if verbose_test:
-        print("Processing form post for user {} with request {}.".format(user, request))
+        print(f"Processing form post for user {user} with request {request}.")
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
     cookies = {'__Host-session': session}
@@ -328,7 +328,7 @@ def api_user_authenticated(user):
 @given(parsers.parse('user {user} is logged in'), target_fixture="user")
 @when(parsers.parse('user {user} logs in'))
 def ui_login(browser, user):
-    url = "{}/user/gate".format(portal_url)
+    url = f"{portal_url}/user/gate"
     browser.driver.maximize_window()
     browser.visit(url)
 
@@ -352,7 +352,7 @@ def ui_login(browser, user):
 @given('user is not logged in')
 @when('user logs out')
 def ui_logout(browser):
-    url = "{}/user/logout".format(portal_url)
+    url = f"{portal_url}/user/logout"
     browser.visit(url)
 
 
@@ -375,16 +375,16 @@ def ui_gate_username(browser, user):
 @when(parsers.parse('page "{module}" is shown'))
 def ui_module_shown(browser, module):
     if "/" in module:
-        url = "{}/{}".format(portal_url, module)
+        url = f"{portal_url}/{module}"
     else:
-        url = "{}/{}/".format(portal_url, module)
+        url = f"{portal_url}/{module}/"
     browser.visit(url)
 
 
 @given(parsers.parse("the user navigates to {page}"))
 @when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
-    browser.visit("{}{}".format(portal_url, page))
+    browser.visit(f"{portal_url}{page}")
 
 
 @then('the 404 error page is shown')

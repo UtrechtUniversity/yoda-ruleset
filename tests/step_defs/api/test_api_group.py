@@ -216,7 +216,7 @@ def then_users_found_match(api_response, users):
 
     for user in users:
         user_name, zone_name = user.split("#")
-        full_name = "{}#{}".format(roles[user_name]["username"], zone_name)
+        full_name = f"{roles[user_name]['username']}#{zone_name}"
         assert full_name in set(body["data"])
 
 

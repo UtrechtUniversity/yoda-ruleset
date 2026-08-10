@@ -214,7 +214,7 @@ def api_search(ctx: rule.Context,
             if subpath != '':
                 path = path + "/" + subpath
 
-            return {'name':        "/{}/{}".format(path, x['DATA_NAME']),
+            return {'name':        f"/{path}/{x['DATA_NAME']}",
                     'type':        'data',
                     'size':        int(x['DATA_SIZE']),
                     'modify_time': int(x['DATA_MODIFY_TIME'])}
@@ -223,7 +223,7 @@ def api_search(ctx: rule.Context,
             if subpath != '':
                 path = path + "/" + subpath
 
-            return {'name':        "/{}".format(path),
+            return {'name':        f"/{path}",
                     'type':        'coll',
                     'modify_time': int(x['COLL_MODIFY_TIME'])}
         else:
@@ -236,27 +236,26 @@ def api_search(ctx: rule.Context,
         search_string = search_string.replace("\\", "\\\\")
         search_string = search_string.replace("%", r"\%")
         search_string = search_string.replace("_", r"\_")
+        search_string = search_string.replace("'", r"''")
 
     zone = user.zone(ctx)
 
     query_is_case_sensitive = False
     if search_type == 'filename':
         cols = ['ORDER(DATA_NAME)', 'COLL_NAME', 'MIN(DATA_CREATE_TIME)', 'MAX(DATA_MODIFY_TIME)', 'DATA_SIZE']
-        where = "COLL_NAME like '{}%%' AND DATA_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
+        where = f"COLL_NAME like '/{zone}/home%%' AND DATA_NAME like '%%{search_string}%%'"
     elif search_type == 'folder':
         if sort_on == 'modified':
             cols = ['COLL_NAME', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
         else:
             cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
-        where = "COLL_PARENT_NAME like '{}%%' AND COLL_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
+        where = f"COLL_PARENT_NAME like '/{zone}/home%%' AND COLL_NAME like '%%{search_string}%%'"
     elif search_type == 'metadata':
         if sort_on == 'modified':
             cols = ['COLL_NAME', 'MIN(COLL_CREATE_TIME)', 'ORDER(COLL_MODIFY_TIME)']
         else:
             cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
-        where = "META_COLL_ATTR_UNITS like '{}%%' AND META_COLL_ATTR_VALUE like '%%{}%%' AND COLL_NAME like '{}%%'".format(
-                constants.UUUSERMETADATAROOT + "_", search_string, "/" + zone + "/home"
-        )
+            where = f"META_COLL_ATTR_UNITS like '{constants.UUUSERMETADATAROOT + '_'}%%' AND META_COLL_ATTR_VALUE like '%%{search_string}%%' AND COLL_NAME like '/{zone}/home%%'"
     elif search_type == 'status':
         query_is_case_sensitive = True
         status = search_string.split(":")
@@ -274,13 +273,9 @@ def api_search(ctx: rule.Context,
             cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
 
         if status_value != "FOLDER":
-            where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
-                    status_name, status_value, "/" + zone + "/home"
-            )
+            where = f"META_COLL_ATTR_NAME = '{status_name}' AND META_COLL_ATTR_VALUE = '{status_value}' AND COLL_NAME like '/{zone}/home%%'"
         else:
-            where = "META_COLL_ATTR_NAME != '{}' AND COLL_NAME like '{}%%'".format(
-                    status_name, "/" + zone + "/home/research-"
-            )
+            where = f"META_COLL_ATTR_NAME != '{status_name}' AND COLL_NAME like '/{zone}/home/research-%%'"
 
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]

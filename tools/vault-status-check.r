@@ -1,9 +1,10 @@
 #!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
 #
 # Generate a report on the status, metadata version and metadata filetype of all
-# vault packages 
+# vault packages
 #
 import genquery
+
 
 def main(rule_args, callback, rei):
     package_statuses = genquery.row_iterator(
@@ -11,7 +12,7 @@ def main(rule_args, callback, rei):
         "META_COLL_ATTR_NAME = 'org_vault_status' "
         "AND COLL_NAME not like '%/original'",
         genquery.AS_TUPLE,
-        callback) 
+        callback)
 
     package_meta_versions = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
@@ -44,13 +45,13 @@ def main(rule_args, callback, rei):
                     meta_ext = 'XML'
 
         callback.writeLine("stdout", "---------------------------")
-        callback.writeLine("stdout", "Vault package: {}".format(coll))
-        callback.writeLine("stdout", "Vault status: {}".format(status))
-        callback.writeLine("stdout", "Metadata type: {}".format(meta_ext))
-        callback.writeLine("stdout", "Metadata version: {}".format(meta_version))
+        callback.writeLine("stdout", f"Vault package: {coll}")
+        callback.writeLine("stdout", f"Vault status: {status}")
+        callback.writeLine("stdout", f"Metadata type: {meta_ext}")
+        callback.writeLine("stdout", f"Metadata version: {meta_version}")
 
     callback.writeLine("stdout", "---------------------------")
-    
+
 
 INPUT null
 OUTPUT ruleExecOut

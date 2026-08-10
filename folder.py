@@ -10,6 +10,7 @@ from typing import List, Tuple
 
 import genquery
 import irods_types
+from tstrings import t
 
 import epic
 import meta
@@ -235,7 +236,7 @@ def folder_secure(ctx: rule.Context, coll: str) -> bool:
     :returns: True when successful
     """
 
-    log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
+    log.write(ctx, f'folder_secure: Start securing folder <{coll}>')
 
     # Checks before start securing
     if not check_folder_secure(ctx, coll):
@@ -299,7 +300,7 @@ def folder_secure(ctx: rule.Context, coll: str) -> bool:
     # Check if the collection still exists, before changing the ACLs.
     # Research/deposit collections may be deleted after moving to vault.
     if collection.exists(ctx, coll):
-        set_acl_check(ctx, "recursive", "admin:null", coll, "Could not set ACL (admin:null) for collection: {}".format(coll))
+        set_acl_check(ctx, "recursive", "admin:null", coll, f"Could not set ACL (admin:null) for collection: {coll}")
         set_acl_parents(ctx, "default", "admin:null", coll)
 
     # All (mostly) went well
@@ -350,7 +351,7 @@ def get_last_run_time(ctx: rule.Context, coll: str) -> Tuple[bool, int]:
     last_run = 1
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYLASTRUN + "'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IICOPYLASTRUN}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -372,14 +373,14 @@ def set_can_modify(ctx: rule.Context, coll: str) -> bool:
     read_access = check_access_result['arguments'][2]
     if read_access != b'\x01':
         # This allows us permission to copy the files
-        if not set_acl_check(ctx, "recursive", "admin:read", coll, "Could not set ACL (admin:read) for collection: {}".format(coll)):
+        if not set_acl_check(ctx, "recursive", "admin:read", coll, f"Could not set ACL (admin:read) for collection: {coll}"):
             return False
 
     check_access_result = msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())
     modify_access = check_access_result['arguments'][2]
     if modify_access != b'\x01':
         # This allows us permission to set AVUs
-        if not set_acl_check(ctx, "default", "admin:write", coll, "Could not set ACL (admin:write) for collection: {}".format(coll)):
+        if not set_acl_check(ctx, "default", "admin:write", coll, f"Could not set ACL (admin:write) for collection: {coll}"):
             return False
 
     return True
@@ -390,7 +391,7 @@ def get_retry_count(ctx: rule.Context, coll: str) -> int:
     retry_count = 0
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYRETRYCOUNT + "'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IICOPYRETRYCOUNT}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -479,7 +480,7 @@ def send_folder_secure_notification(ctx: rule.Context, coll: str, message: str) 
             datamanagers = []
 
         for datamanager in datamanagers:
-            datamanager_name = '{}#{}'.format(*datamanager)
+            datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
             notifications.set(ctx, "system", datamanager_name, coll, message)
 
 
@@ -493,7 +494,7 @@ def set_epic_pid(ctx: rule.Context, target: str) -> bool:
 
         if http_code not in ('0', '200', '201'):
             # Something went wrong while registering EPIC PID, return false so retry status will be set
-            log.write(ctx, "folder_secure: epic pid returned http <{}>".format(http_code))
+            log.write(ctx, f"folder_secure: epic pid returned http <{http_code}>")
             return False
 
         if http_code != "0":
@@ -507,7 +508,7 @@ def get_cronjob_status(ctx: rule.Context, coll: str) -> str | None:
     """Get the cronjob status of given collection"""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX + 'cronjob_copy_to_vault'}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -543,7 +544,7 @@ def set_acl_parents(ctx: rule.Context, acl_recurse: str, acl_type: str, coll: st
     """Set ACL for parent collections"""
     parent, _ = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":
-        set_acl_check(ctx, acl_recurse, acl_type, parent, "Could not set the ACL ({}) on {}".format(acl_type, parent))
+        set_acl_check(ctx, acl_recurse, acl_type, parent, f"Could not set the ACL ({acl_type}) on {parent}")
         parent, _ = pathutil.chop(parent)
 
 
@@ -566,7 +567,7 @@ def get_existing_vault_target(ctx: rule.Context, coll: str) -> Tuple[bool, str]:
     target = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYPARAMSNAME + "'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IICOPYPARAMSNAME}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -622,7 +623,7 @@ def determine_new_vault_target(ctx: rule.Context, folder: str) -> str:
 
     group = collection_group_name(ctx, folder)
     if group == '':
-        log.write(ctx, "Cannot determine which deposit or research group <{}> belongs to".format(folder))
+        log.write(ctx, f"Cannot determine which deposit or research group <{folder}> belongs to")
         return ""
 
     parts = group.split('-')
@@ -659,7 +660,7 @@ def collection_group_name(ctx: rule.Context, coll: str) -> str:
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
-        "COLL_NAME = '{}'".format(coll),
+        t("COLL_NAME = '{coll}'"),
         genquery.AS_LIST, ctx
     )
 
@@ -669,7 +670,7 @@ def collection_group_name(ctx: rule.Context, coll: str) -> str:
         # Retrieve all group names with this ID.
         iter2 = genquery.row_iterator(
             "USER_GROUP_NAME",
-            "USER_GROUP_ID = '{}'".format(id),
+            f"USER_GROUP_ID = '{id}'",
             genquery.AS_LIST, ctx
         )
 
@@ -690,7 +691,7 @@ def collection_group_name(ctx: rule.Context, coll: str) -> str:
                 return group_name
 
     # No results found. Not a group folder
-    log.write(ctx, "{} does not belong to a research or intake group or is not available to current user.".format(coll))
+    log.write(ctx, f"{coll} does not belong to a research or intake group or is not available to current user.")
     return ""
 
 
@@ -731,7 +732,7 @@ def api_folder_get_locks(ctx: rule.Context, coll: str) -> api.Result:
         _, _, path, subpath = pathutil.info(lock)
         if subpath != '':
             path = path + "/" + subpath
-        locks.append("/{}".format(path))
+        locks.append(f"/{path}")
 
     return locks
 
@@ -778,7 +779,7 @@ def get_status(ctx: rule.Context, path: str, org_metadata: List[Tuple[str, str]]
             x = "" if x == "FOLDER" else x
             return constants.research_package_state(x)
         except Exception:
-            log.write(ctx, 'Invalid folder status <{}>'.format(x))
+            log.write(ctx, f'Invalid folder status <{x}>')
 
     return constants.research_package_state.FOLDER
 

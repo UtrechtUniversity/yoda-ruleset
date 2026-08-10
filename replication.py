@@ -25,7 +25,7 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
     :param target_resource: Resource to be used as destination
     """
     replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"
-    replication_avu_value = "{},{},{}".format(source_resource, target_resource, random.randint(1, 64))
+    replication_avu_value = f"{source_resource},{target_resource},{random.randint(1, 64)}"
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
@@ -64,7 +64,7 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
             pass
         else:
             error_status = re.search(r"status \[(.*?)\]", str(e))
-            log.write(ctx, "Schedule replication of data object {} failed with error {}".format(path, error_status.group(1)))
+            log.write(ctx, F"Schedule replication of data object {path} failed with error {error_status.group(1)}")
 
 
 @rule.make()
@@ -97,21 +97,21 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
     if is_replication_blocked_by_admin(ctx):
         log.write(ctx, "Batch replication job is stopped")
     else:
-        log.write(ctx, "Batch replication job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
+        log.write(ctx, f"Batch replication job started - balance id: {balance_id_min}-{balance_id_max}")
 
         minimum_timestamp = int(time.time() - config.async_replication_delay_time)
 
-        log.write(ctx, "verbose = {}".format(verbose))
+        log.write(ctx, f"verbose = {verbose}")
         if print_verbose:
-            log.write(ctx, "async_replication_delay_time = {} seconds".format(config.async_replication_delay_time))
-            log.write(ctx, "max_rss = {} bytes".format(config.async_replication_max_rss))
-            log.write(ctx, "dry_run = {}".format(dry_run))
+            log.write(ctx, f"async_replication_delay_time = {config.async_replication_delay_time} seconds")
+            log.write(ctx, f"max_rss = {config.async_replication_max_rss} bytes")
+            log.write(ctx, f"dry_run = {dry_run}")
             show_memory_usage(ctx)
 
         # Get list of up to batch size limit of data objects scheduled for replication, taking into account their modification time.
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE', 'DATA_RESC_NAME'],
-                    "META_DATA_ATTR_NAME = '{}' AND DATA_MODIFY_TIME <= '{}'".format(attr, minimum_timestamp),
+                    f"META_DATA_ATTR_NAME = '{attr}' AND DATA_MODIFY_TIME <= '{minimum_timestamp}'",
                     offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked replication process.
@@ -122,14 +122,14 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
             # Check current memory usage and stop if it is above the limit.
             if memory_limit_exceeded(config.async_replication_max_rss):
                 show_memory_usage(ctx)
-                log.write(ctx, "Memory used is now above specified limit of {} bytes, stopping further processing".format(config.async_replication_max_rss))
+                log.write(ctx, f"Memory used is now above specified limit of {config.async_replication_max_rss} bytes, stopping further processing")
                 break
 
             count += 1
             path = row[1] + "/" + row[2]
 
             # Give rods 'own' access so that they can remove the AVU.
-            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), path)
+            msi.set_acl(ctx, "default", "admin:own", f"rods#{user.zone(ctx)}", path)
 
             # Metadata value contains from_path, to_path and balance id for load balancing purposes.
             info = row[3].split(',')
@@ -140,7 +140,7 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
                 balance_id = int(info[2])
             else:
                 # Not replicable.
-                log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
+                log.write(ctx, f"ERROR - Invalid replication data for {path}")
                 try:
                     add_operation = {
                         "entity_name": path,
@@ -173,11 +173,11 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
             # "No action" is meant for easier memory usage debugging.
             if no_action:
                 show_memory_usage(ctx)
-                log.write(ctx, "Skipping batch replication (dry_run): would have replicated \"{}\" from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, f"Skipping batch replication (dry_run): would have replicated \"{path}\" from {from_path} to {to_path}")
                 continue
 
             if print_verbose:
-                log.write(ctx, "Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, f"Batch replication: copying {path} from {from_path} to {to_path}")
 
             # Actual replication
             try:
@@ -185,26 +185,26 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
                 msi.data_obj_chksum(ctx, path, "irodsAdmin=", irods_types.BytesBuf())
 
                 # Workaround the PREP deadlock issue: Restrict threads to 1.
-                ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
+                ofFlags = f"numThreads=1++++rescName={from_path}++++destRescName={to_path}++++irodsAdmin=++++verifyChksum="
                 msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
                 # Mark as correctly replicated
                 count_ok += 1
             except msi.Error as e:
-                log.write(ctx, 'ERROR - The file {} could not be replicated from {} to {}: {}'.format(path, from_path, to_path, str(e)))
+                log.write(ctx, f'ERROR - The file {path} could not be replicated from {from_path} to {to_path}: {str(e)}')
 
                 if print_verbose:
-                    log.write(ctx, "Batch replication retry: copying {} from {} to {}".format(path, data_resc_name, to_path))
+                    log.write(ctx, f"Batch replication retry: copying {path} from {data_resc_name} to {to_path}")
 
                 # Retry replication with data resource name (covers case where resource is removed from the resource hierarchy).
                 try:
-                    log.write(ctx, 'Fallback replication triggered: {}'.format(path))
+                    log.write(ctx, f'Fallback replication triggered: {path}')
                     # Workaround the PREP deadlock issue: Restrict threads to 1.
-                    ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(data_resc_name, to_path)
+                    ofFlags = f"numThreads=1++++rescName={data_resc_name}++++destRescName={to_path}++++irodsAdmin=++++verifyChksum="
                     msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
                     # Mark as correctly replicated
                     count_ok += 1
                 except msi.Error as e:
-                    log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
+                    log.write(ctx, f'ERROR - The file could not be replicated: {str(e)}')
                     try:
                         add_operation = {
                             "entity_name": path,
@@ -213,7 +213,7 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
                                 {
                                     "operation": "add",
                                     "attribute": errorattr,
-                                    "value": "{},{}".format(from_path, to_path),
+                                    "value": f"{from_path},{to_path}",
                                     "units": ""
                                 }
                             ]
@@ -226,7 +226,7 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
             # rods should have been given own access via policy to allow AVU changes
             avu_deleted = False
             try:
-                avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                avu.rmw_from_data(ctx, path, attr, f"{from_path},{to_path},{balance_id}")
                 avu_deleted = True
             except Exception:
                 avu_deleted = False
@@ -237,16 +237,16 @@ def rule_replicate_batch(ctx: rule.Context, verbose: str, balance_id_min: int, b
                     # The object's ACLs may have changed.
                     # Force the ACL and try one more time.
                     msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                    avu.rmw_from_data(ctx, path, attr, "{},{},{}".format(from_path, to_path, balance_id))
+                    avu.rmw_from_data(ctx, path, attr, f"{from_path},{to_path},{balance_id}")
                 except Exception:
                     # error => report it but still continue
-                    log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
+                    log.write(ctx, f"ERROR - Scheduled replication of <{path}>: could not remove schedule flag")
 
         if print_verbose:
             show_memory_usage(ctx)
 
         # Total replication process completed
-        log.write(ctx, "Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
+        log.write(ctx, f"Batch replication job finished. {count_ok}/{count} objects replicated successfully.")
 
 
 def is_replication_blocked_by_admin(ctx: rule.Context) -> bool:
@@ -257,7 +257,7 @@ def is_replication_blocked_by_admin(ctx: rule.Context) -> bool:
     :returns: Boolean indicating if admin put replication on hold.
     """
     zone = user.zone(ctx)
-    path = "/{}/yoda/flags/stop_replication".format(zone)
+    path = f"/{zone}/yoda/flags/stop_replication"
     return collection.exists(ctx, path)
 
 
@@ -269,7 +269,7 @@ def memory_rss_usage() -> int:
 
 def show_memory_usage(ctx: rule.Context) -> None:
     """For debug purposes show the current RSS usage."""
-    log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
+    log.write(ctx, f"current RSS usage: {memory_rss_usage()} bytes")
 
 
 def memory_limit_exceeded(rss_limit: int) -> bool:

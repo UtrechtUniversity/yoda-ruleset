@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2021-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
+from tstrings import t
 
 from util import *
 
@@ -23,7 +24,7 @@ def object_is_locked(ctx: rule.Context, path: str, is_collection: bool) -> dict:
     if is_collection:
         iter = genquery.row_iterator(
             "META_COLL_ATTR_NAME",
-            "COLL_NAME = '" + path + "'",
+            t("COLL_NAME = '{path}'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -32,10 +33,10 @@ def object_is_locked(ctx: rule.Context, path: str, is_collection: bool) -> dict:
                 if row[0] == 'to_vault_freeze':
                     locked_state['frozen'] = True
     else:
-        parent_coll = pathutil.dirname(path)
+        parent_coll = pathutil.dirname(path)  # noqa F841
         iter = genquery.row_iterator(
             "META_DATA_ATTR_NAME",
-            "COLL_NAME = '" + parent_coll + "' AND DATA_NAME = '" + pathutil.basename(path) + "'",
+            t("COLL_NAME = '{parent_coll}' AND DATA_NAME = '{pathutil.basename(path)}'"),
             genquery.AS_LIST, ctx
         )
         # return locked_state
@@ -52,13 +53,13 @@ def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
     """ Check whether given data object is within a locked dataset """
     dataset_id = ''
     coll = pathutil.chop(path)[0]
-    data_name = pathutil.chop(path)[1]
+    data_name = pathutil.chop(path)[1]  # noqa F841
     intake_group_prefix = _get_intake_group_prefix(coll)
 
     # look for DATA based info first.
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        "DATA_NAME = '" + data_name + "' AND META_DATA_ATTR_NAME = 'dataset_id' AND COLL_NAME = '" + coll + "' ",
+        t("DATA_NAME = '{data_name}' AND META_DATA_ATTR_NAME = 'dataset_id' AND COLL_NAME = '{coll}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -69,7 +70,7 @@ def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
         # look for COLL based info
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "META_COLL_ATTR_NAME = 'dataset_id' AND COLL_NAME = '" + coll + "' ",
+            t("META_COLL_ATTR_NAME = 'dataset_id' AND COLL_NAME = '{coll}' "),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -81,7 +82,7 @@ def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+            f"META_COLL_ATTR_VALUE = '{dataset_id}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -94,7 +95,7 @@ def is_data_in_locked_dataset(ctx: rule.Context, actor: str, path: str) -> bool:
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME, DATA_NAME",
-                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+                f"META_DATA_ATTR_VALUE = '{dataset_id}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -121,7 +122,7 @@ def is_coll_in_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_id' ",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'dataset_id'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -134,7 +135,7 @@ def is_coll_in_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+            f"META_COLL_ATTR_VALUE = '{dataset_id}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -147,7 +148,7 @@ def is_coll_in_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> bool:
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME",
-                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+                f"META_DATA_ATTR_VALUE = '{dataset_id}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -174,7 +175,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_id' ",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'dataset_id'"),
         genquery.AS_LIST, ctx
     )
 
@@ -186,7 +187,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         # Now find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+            f"META_COLL_ATTR_VALUE = '{dataset_id}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -199,7 +200,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME",
-                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group_prefix),
+                f"META_DATA_ATTR_VALUE = '{dataset_id}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{user.zone(ctx)}/home/{intake_group_prefix}-%'",
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -219,7 +220,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         # Can be dataset based upon collection or data object
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
+            t("COLL_NAME like '{coll}%' AND META_COLL_ATTR_NAME in ('to_vault_lock','to_vault_freeze')"),
             genquery.AS_LIST, ctx
         )
         for _row in iter:
@@ -230,7 +231,7 @@ def coll_in_path_of_locked_dataset(ctx: rule.Context, actor: str, coll: str) -> 
         # Could be a dataset based on a data object
         iter = genquery.row_iterator(
             "META_DATA_ATTR_VALUE",
-            "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
+            t("COLL_NAME like '{coll}%' AND META_DATA_ATTR_NAME in ('to_vault_lock','to_vault_freeze')"),
             genquery.AS_LIST, ctx
         )
         for _row in iter:
