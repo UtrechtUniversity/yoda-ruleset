@@ -392,8 +392,11 @@ def internal_api_group_data(ctx: rule.Context) -> dict:
             if member in members:
                 members[member]['sram'] = 'invited'
 
-        # This is a malformed group, ignore it
-        if 'category' not in group or 'subcategory' not in group:
+        # Log the group which has either no category or subcategory.
+        missing = [attribute for attribute in ('category', 'subcategory') if attribute not in group]
+        if missing:
+            log.write(ctx, 'Group "{}" is not shown in the group hierarchy, it has no {}'.format(
+                group['name'], ' and no '.join(missing)))
             continue
 
         group_hierarchy.setdefault(group['category'], OrderedDict())
