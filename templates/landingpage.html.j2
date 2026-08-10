@@ -566,7 +566,9 @@
                             </div>
                         </div>
 
-                        {% if pack.Persistent_Identifier is defined %}
+                        {% if pack.Persistent_Identifier is defined and
+			      pack.Persistent_Identifier.Identifier_Scheme is defined and
+			      pack.Persistent_Identifier.Identifier is defined %}
                         <div class="row">
                             <div class="col-sm-3">
                                 <label class="indented">Persistent Identifier</label>
