@@ -327,27 +327,6 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 #                 Helper functions                #
 ###################################################
 
-<<<<<<< HEAD
-=======
-@api.make()
-def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
-    """ Write datarequest data to path
-
-    :param ctx:     Combined type of a callback and rei struct
-    :param path:    Path to file containing datarequest data
-    :param data:    Datarequest data
-
-    :returns:       Boolean - True if uploaded successfully else False
-    """
-    if config.environment == 'development':
-        try:
-            jsonutil.write(ctx, path, data)
-            return True
-        except Exception:
-            return False
-
-
->>>>>>> b7a28a28 (YDA-6004 - Fixed API tests for datarequest module)
 def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
     """Set an arbitrary metadata field on a data request.
 
@@ -377,7 +356,6 @@ def generate_request_id(ctx: rule.Context) -> int:
     for current_collection in collection.subcollections(ctx, coll, recursive=False):
         if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
             max_request_id = int(pathutil.basename(current_collection))
-    log.write(ctx, f"Max request id: {max_request_id}")
 
     return max_request_id + 1
 
@@ -952,6 +930,19 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     :returns: API status
     """
+    # Read data from file
+    req_id = ""
+    if draft_request_id:
+        req_id = draft_request_id
+    else:
+        req_id = request_id
+
+    data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, 'datarequest-data.json')
+    try:
+        data = jsonutil.read(ctx, data_path)
+    except error.UUFileSizeError as e:
+        return api.Error('read_datarequest_file', f'Could not read datarequest from file: {e}')
+
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
@@ -984,13 +975,8 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         request_id = str(generate_request_id(ctx))
 
     # Construct data request collection and file path.
-<<<<<<< HEAD
     coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
-=======
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id)
-    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
->>>>>>> b7a28a28 (YDA-6004 - Fixed API tests for datarequest module)
 
     # If we're not working with a draft, initialize the data request collection
     if not draft_request_id:
@@ -1078,6 +1064,12 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         else:
             status_set(ctx, req_id, status.SUBMITTED)
             return
+
+    # Clean up the data file
+    try:
+        data_object.remove(ctx, data_path)
+    except Exception as e:
+        log.write(ctx, f'api_datarequest_submit: Failed to remove file: {e}')
 
 
 @api.make()
@@ -1198,6 +1190,35 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     return api.Result.ok()
+
+@api.make()
+def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("grantread" or "revoke")
+
+    :returns: None
+    """
+    # Validate request_id
+    if not request_id.isnumeric():
+        return api.Error("validation_error", "Invalid datarequest ID.")
+
+    # Create collection with request id if doesn't exist
+    # path as a parameter
+    datarequest_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    if not collection.exists(ctx, datarequest_path):
+        collection.create(ctx, datarequest_path)
+
+    # Check if action is valid
+    if action not in ["grant", "grantread", "own"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    ctx.adminTempWritePermission(datarequest_path, action)
+    return
+>>>>>>> e7bfdd62 (YDA-6004 - Made changes according to feedback.)
 
 
 @api.make()
