@@ -925,6 +925,7 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     :param ctx:              Combined type of a callback and rei struct
     :param data:             Contents of the data request
+    :param request_id:       Unique identifier of data request
     :param draft:            Boolean specifying whether the data request should be saved as draft
     :param draft_request_id: Unique identifier of the draft data request
 
