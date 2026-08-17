@@ -46,7 +46,7 @@ def api_datarequest_schema_get(user, schema_name):
 def api_generate_datarequest_id(user):
     status_code, body = api_request(
         user,
-        "generate_request_id",
+        "datarequest_generate_id",
         {"draft_request_id": ""}
     )
 
@@ -61,7 +61,7 @@ def api_generate_datarequest_id(user):
 def api_datarequest_save(user, req_id):
     # Create datarequest collection and add permissions
     # to upload datarequest file
-    api_request(
+    status_code, body = api_request(
         user,
         "datarequest_data_write_permission",
         {
@@ -70,10 +70,12 @@ def api_datarequest_save(user, req_id):
         }
     )
 
+    assert status_code == 200
+
     # Upload datarequest file
-    api_request(
+    http_code, http_body = api_request(
         user,
-        "upload_datarequest_data",
+        "datarequest_upload_data",
         {
             "path": f"/tempZone/home/datarequests-research/{req_id}/datarequest-data.json",
             "data": {
@@ -180,12 +182,13 @@ def api_datarequest_save(user, req_id):
         }
     )
 
+    assert http_code == 200
+
     # Save datarequest as draft
     return api_request(
         user,
         "datarequest_submit",
         {
-            "filename": "datarequest-data.json",
             "request_id": req_id,
             "draft": True,
             "draft_request_id": ""
@@ -212,7 +215,6 @@ def api_datarequest_submit(user, datarequest_id):
         user,
         "datarequest_submit",
         {
-            "filename": "datarequest-data.json",
             "request_id": "",
             "draft": False,
             "draft_request_id": datarequest_id

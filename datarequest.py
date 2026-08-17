@@ -55,8 +55,8 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready',
            'rule_datarequest_review_period_expiration_check',
-           'api_generate_request_id',
-           'api_upload_datarequest_data']
+           'api_datarequest_generate_id',
+           'api_datarequest_upload_data']
 
 
 ###################################################
@@ -332,8 +332,9 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 ###################################################
 
 @api.make()
-def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
-    """ Write datarequest data to path
+def api_datarequest_upload_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
+    """ Write datarequest data to path. This API endpoint ony works in development mode.
+    This API endpoint is only meant for testing.
 
     :param ctx:     Combined type of a callback and rei struct
     :param path:    Path to file containing datarequest data
@@ -345,8 +346,11 @@ def api_upload_datarequest_data(ctx: rule.Context, path: str, data: Dict) -> api
         try:
             jsonutil.write(ctx, path, data)
             return True
-        except Exception:
+        except Exception as e:
+            log.write(ctx, f'api_datarequest_upload_data: Failed to write data - {e}')
             return False
+    else:
+        return api.Error('not_valid', 'This API endpoint works in development mode only.')
 
 
 def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> None:
@@ -371,7 +375,7 @@ def metadata_set(ctx: rule.Context, request_id: str, key: str, value: str) -> No
 
 
 @api.make()
-def api_generate_request_id(ctx: rule.Context, draft_request_id: str) -> api.Result:
+def api_datarequest_generate_id(ctx: rule.Context, draft_request_id: str) -> api.Result:
     """Wrapper around generate_request_id
 
     :param ctx:              Combined type of a callback and rei struct
@@ -403,7 +407,6 @@ def generate_request_id(ctx: rule.Context) -> int:
     for current_collection in collection.subcollections(ctx, coll, recursive=False):
         if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
             max_request_id = int(pathutil.basename(current_collection))
-    log.write(ctx, f"Max request id: {max_request_id}")
 
     return max_request_id + 1
 
@@ -969,7 +972,7 @@ def file_lock(ctx: rule.Context, coll_path: str, filename: str, readers: List[st
 
 
 @api.make()
-def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, draft: bool, draft_request_id: str | None = None) -> api.Result:
+def api_datarequest_submit(ctx: rule.Context, request_id: str, draft: bool, draft_request_id: str | None = None) -> api.Result:
     """Persist a data request to disk.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -987,8 +990,11 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
     else:
         req_id = request_id
 
-    data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, filename)
-    data = jsonutil.read(ctx, data_path)
+    data_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, req_id, 'datarequest-data.json')
+    try:
+        data = jsonutil.read(ctx, data_path)
+    except error.UUFileSizeError as e:
+        return api.Error('read_datarequest_file', f'Could not read datarequest from file: {e}')
 
     # Set request owner in form data
     data['owner'] = user.name(ctx)
@@ -1083,9 +1089,6 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
         # If update of existing draft, return nothing
         else:
             return
-    else:
-        # Clean up the data file
-        data_object.remove(ctx, data_path)
 
     # Grant read permissions on data request
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
@@ -1109,6 +1112,12 @@ def api_datarequest_submit(ctx: rule.Context, filename: str, request_id: str, dr
         else:
             status_set(ctx, req_id, status.SUBMITTED)
             return
+
+    # Clean up the data file
+    try:
+        data_object.remove(ctx, data_path)
+    except Exception as e:
+        log.write(ctx, f'api_datarequest_submit: Failed to remove file: {e}')
 
 
 @api.make()
@@ -1234,6 +1243,10 @@ def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, ac
 
     :returns: None
     """
+    # Validate request_id
+    if not request_id.isnumeric():
+        return api.Error("validation_error", "Invalid datarequest ID.")
+
     # Create collection with request id if doesn't exist
     # path as a parameter
     datarequest_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
