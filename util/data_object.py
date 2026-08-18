@@ -14,7 +14,6 @@ from tstrings import t
 
 import constants
 import error
-import misc
 import msi
 import pathutil
 import rule
@@ -29,11 +28,9 @@ def exists(ctx: rule.Context, path: str) -> bool:
     :returns: Boolean indicating if data object exists
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     return len(list(genquery.Query(
                ctx, "DATA_ID",
-               f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+               t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
                output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))) > 0
 
 
@@ -89,11 +86,9 @@ def size(ctx: rule.Context, path: str) -> int | None:
     :returns: Data object's size or None if object is not found
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.Query(
         ctx, "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         output=genquery.AS_LIST
     )
 
@@ -112,11 +107,9 @@ def checksum(ctx: rule.Context, path: str) -> str | None:
     :returns: Data object's checksum or None if object is not found
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.Query(
         ctx, "DATA_CHECKSUM",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         output=genquery.AS_LIST
     )
 
@@ -136,11 +129,9 @@ def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> boo
     :returns: Boolean indicating if data object has replicas with specified replica statuses
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.row_iterator(
         "DATA_REPL_STATUS",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         genquery.AS_LIST, ctx
     )
 
@@ -287,11 +278,8 @@ def id_from_path(ctx: rule.Context, path: str) -> str:
     :returns: Data object id
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
-
     return genquery.Query(ctx, "DATA_ID",
-                          f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'").first()
+                          t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'")).first()
 
 
 def decode_checksum(checksum: str) -> str:
@@ -310,12 +298,9 @@ def decode_checksum(checksum: str) -> str:
 def get_group_owners(ctx: rule.Context, path: str) -> List:
     """Return list of groups of data object, each entry being name of the group and the zone."""
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
-
     groups = list(genquery.Query(
         ctx, "USER_NAME, USER_ZONE",
-        f"COLL_NAME = '{coll_name}' and DATA_NAME = '{data_name}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
+        t("COLL_NAME = '{coll_name}' and DATA_NAME = '{data_name}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'"),
         output=genquery.AS_LIST))
 
     return groups

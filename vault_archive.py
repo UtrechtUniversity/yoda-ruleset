@@ -16,7 +16,6 @@ from tstrings import t
 import folder
 import groups
 import meta
-import misc
 import notifications
 import provenance
 import vault
@@ -76,9 +75,8 @@ def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
 
 
 def package_archive_path(ctx: rule.Context, coll: str) -> str | None:
-    coll = misc.escape(coll)    # Escape single quotes
     for row in genquery.row_iterator("DATA_PATH",
-                                     f"COLL_NAME = '{coll}' AND DATA_NAME = 'archive.tar'",
+                                     t("COLL_NAME = '{coll}' AND DATA_NAME = 'archive.tar'"),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]

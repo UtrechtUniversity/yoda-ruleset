@@ -10,6 +10,7 @@ import time
 import genquery
 import irods_types
 import psutil
+from tstrings import t
 
 from util import *
 
@@ -33,11 +34,9 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
         # exists, we will catch the exception below, however the SQL error would still result in log
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
         # if an AVU is added after this check.
-        coll_name = misc.escape(pathutil.dirname(path))
-        data_name = misc.escape(pathutil.basename(path))
         already_has_avu = len(list(genquery.Query(ctx,
                                                   ['DATA_ID'],
-                                                  f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}' AND META_DATA_ATTR_NAME = '{replication_avu_name}'",
+                                                  t("COLL_NAME = '{pathutil.dirname(path)}' AND DATA_NAME = '{pathutil.basename(path)}' AND META_DATA_ATTR_NAME = '{replication_avu_name}'"),
                                                   offset=0, limit=1, output=genquery.AS_LIST))) > 0
 
         if not already_has_avu:

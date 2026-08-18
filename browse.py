@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 import magic
 from genquery import AS_DICT, Query
+from tstrings import t
 
 from util import *
 
@@ -73,25 +74,24 @@ def api_browse_folder(ctx: rule.Context,
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
         dcols = [x.replace('ORDER(', 'ORDER_DESC(') for x in dcols]
 
-    zone = user.zone(ctx)
+    zone = user.zone(ctx)  # noqa FA841
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    coll_escaped = misc.escape(coll)
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
-                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'",
+                      t("COLL_PARENT_NAME = '{coll}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'"),
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME like '/{zone}/home/%vault-%'",
+                      t("COLL_PARENT_NAME = '{coll}' AND COLL_NAME like '/{zone}/home/%vault-%'"),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
-        qcoll = Query(ctx, ccols, f"COLL_PARENT_NAME = '{coll_escaped}'",
+        qcoll = Query(ctx, ccols, t("COLL_PARENT_NAME = '{coll}'"),
                       offset=offset, limit=limit, output=AS_DICT)
 
     colls = list(map(transform, [c for c in list(qcoll) if _filter_vault_deposit_index(c)]))
 
-    qdata = Query(ctx, dcols, f"COLL_NAME = '{coll_escaped}' AND DATA_REPL_STATUS > '0'",
+    qdata = Query(ctx, dcols, t("COLL_NAME = '{coll}' AND DATA_REPL_STATUS > '0'"),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
     datas = list(map(transform, list(qdata)))
 
@@ -158,20 +158,19 @@ def api_browse_collections(ctx: rule.Context,
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    zone = user.zone(ctx)
+    zone = user.zone(ctx)  # noqa FA841
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    coll_escaped = misc.escape(coll)
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
-                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'",
+                      t("COLL_PARENT_NAME = '{coll}' AND COLL_NAME not like '/{zone}/home/vault-%' AND COLL_NAME not like '/{zone}/home/grp-vault-%'"),
                       offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
-                      f"COLL_PARENT_NAME = '{coll_escaped}' AND COLL_NAME like '/{zone}/home/%vault-%'",
+                      t("COLL_PARENT_NAME = '{coll}' AND COLL_NAME like '/{zone}/home/%vault-%'"),
                       offset=offset, limit=limit, output=AS_DICT)
     else:
-        qcoll = Query(ctx, ccols, f"COLL_PARENT_NAME = '{coll_escaped}'",
+        qcoll = Query(ctx, ccols, t("COLL_PARENT_NAME = '{coll}'"),
                       offset=offset, limit=limit, output=AS_DICT)
 
     colls = list(map(transform, [d for d in list(qcoll) if _filter_vault_deposit_index(d)]))

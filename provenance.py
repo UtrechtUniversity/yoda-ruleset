@@ -8,6 +8,7 @@ import time
 from typing import List
 
 import genquery
+from tstrings import t
 
 import vault
 from util import *
@@ -68,10 +69,9 @@ def provenance_copy_log(ctx: rule.Context, source: str, target: str) -> None:
     """
     try:
         # Retrieve all provenance logs on source collection.
-        coll = misc.escape(source)
         logs = list(genquery.Query(
             ctx, "order_desc(META_COLL_ATTR_VALUE)",
-            f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+            t("COLL_NAME = '{source}' AND META_COLL_ATTR_NAME = 'org_action_log'"),
             output=genquery.AS_LIST
         ))
 
@@ -93,12 +93,11 @@ def get_provenance_log(ctx: rule.Context, coll: str) -> List:
     :returns: Provenance log as a list
     """
     provenance_log = []
-    coll = misc.escape(coll)
 
     # Retrieve all provenance logs on a folder.
     logs = list(genquery.Query(
         ctx, "order_desc(META_COLL_ATTR_VALUE)",
-        f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'"),
         output=genquery.AS_LIST
     ))
 

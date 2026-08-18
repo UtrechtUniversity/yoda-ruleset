@@ -132,12 +132,6 @@ def remove_empty_objects(d: dict) -> dict:
         return d
 
 
-def escape(unsafe: str) -> str:
-    """Escaping Special Characters for GenQuery2."""
-    safe = unsafe.replace("'", "''")
-    return safe
-
-
 def is_valid_uuid(uuid_string: str) -> bool:
     """Check if string is a valid UUID version 4.
 

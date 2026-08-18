@@ -7,6 +7,7 @@ from typing import List, Tuple, Union
 
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
+from tstrings import t
 
 import folder
 import groups
@@ -346,19 +347,18 @@ def api_research_list_temporary_files(ctx: rule.Context, coll: str) -> api.Resul
         return []
 
     list_cleanup_files = []
-    coll = misc.escape(coll)
     for uw_file in config.temporary_files:
         if "?" in uw_file or "*" in uw_file:
-            wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
+            wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')  # noqa FA841
             iter = genquery.row_iterator(
                 "DATA_NAME, COLL_NAME",
-                "COLL_NAME like '" + coll + "%' AND DATA_NAME LIKE '" + wildcard_file + "'",
+                t("COLL_NAME like '{coll}%' AND DATA_NAME LIKE '{wildcard_file}'"),
                 genquery.AS_LIST, ctx
             )
         else:
             iter = genquery.row_iterator(
                 "DATA_NAME, COLL_NAME",
-                "COLL_NAME like '" + coll + "%' AND DATA_NAME = '" + uw_file + "'",
+                t("COLL_NAME like '{coll}%' AND DATA_NAME = '{uw_file}'"),
                 genquery.AS_LIST, ctx
             )
 
@@ -680,10 +680,9 @@ def api_research_collection_details(ctx: rule.Context, path: str) -> api.Result:
 
 def _get_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in the given collection."""
-    coll = misc.escape(coll)
     iter_data = genquery.row_iterator(
         "ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        f"COLL_NAME = '{coll}' AND DATA_REPL_STATUS = '1'",
+        t("COLL_NAME = '{coll}' AND DATA_REPL_STATUS = '1'"),
         genquery.AS_LIST, ctx
     )
 
@@ -700,10 +699,9 @@ def _get_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[st
 
 def _get_sub_data_checksums(ctx: rule.Context, coll: str) -> List[dict[str, Union[str, int, bytes]]]:
     """Retrieve checksums for data objects in sub-collections."""
-    coll = misc.escape(coll)
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_SIZE, DATA_CHECKSUM",
-        f"COLL_NAME like '{coll}/%' AND DATA_REPL_STATUS = '1'",
+        t("COLL_NAME like '{coll}/%' AND DATA_REPL_STATUS = '1'"),
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1

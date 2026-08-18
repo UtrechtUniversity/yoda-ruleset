@@ -11,9 +11,9 @@ from collections import namedtuple
 from typing import Iterable, List, Tuple
 
 import genquery
+from tstrings import t
 
 import log
-import misc
 import msi
 import pathutil
 import rule
@@ -27,24 +27,20 @@ Avu.unit  = Avu.u
 def of_data(ctx: rule.Context, path: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given data object."""
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     return (Avu(*x) for x in genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                                 f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"))
+                                                 t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'")))
 
 
 def of_coll(ctx: rule.Context, coll: str) -> Iterable[Avu]:
     """Get (a,v,u) triplets for a given collection."""
-    coll = misc.escape(coll)
     return (Avu(*x) for x in genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-                                                 f"COLL_NAME = '{coll}'"))
+                                                 t("COLL_NAME = '{coll}'")))
 
 
 def get_attr_val_of_coll(ctx: rule.Context, coll: str, attr: str) -> dict:
     """Get the value corresponding to an attr for a given collection."""
-    coll = misc.escape(coll)
     iter = genquery.Query(ctx, "META_COLL_ATTR_VALUE",
-                               f"META_COLL_ATTR_NAME = '{attr}' AND COLL_NAME = '{coll}'")
+                               t("META_COLL_ATTR_NAME = '{attr}' AND COLL_NAME = '{coll}'"))
 
     for row in iter:
         return row
@@ -83,17 +79,15 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
         else:
             return (f'{row[0]}/{row[1]}', type, row[2], row[3], row[4])
 
-    path = misc.escape(path)
-
     collection_root = genquery.row_iterator(
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-        f"COLL_PARENT_NAME = '{path}'",
+        t("COLL_PARENT_NAME = '{path}'"),
         genquery.AS_LIST, ctx)
     collection_root = (to_absolute(x, "collection") for x in collection_root)
 
     data_objects_root = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-        f"COLL_NAME = '{path}'",
+        t("COLL_NAME = '{path}'"),
         genquery.AS_LIST, ctx)
     data_objects_root = (to_absolute(x, "data_object") for x in data_objects_root)
 
@@ -102,13 +96,13 @@ def inside_coll(ctx: rule.Context, path: str, recursive: bool = False) -> Iterab
 
     collection_sub = genquery.row_iterator(
         "COLL_PARENT_NAME, COLL_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-        f"COLL_PARENT_NAME like '{path}/%'",
+        t("COLL_PARENT_NAME like '{path}/%'"),
         genquery.AS_LIST, ctx)
     collection_sub = (to_absolute(x, "collection") for x in collection_sub)
 
     data_objects_sub = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-        f"COLL_NAME like '{path}/%'",
+        t("COLL_NAME like '{path}/%'"),
         genquery.AS_LIST, ctx)
     data_objects_sub = (to_absolute(x, "data_object") for x in data_objects_sub)
 
