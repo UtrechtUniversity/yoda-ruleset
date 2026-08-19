@@ -743,7 +743,7 @@ def api_datarequest_browse(ctx: rule.Context,
                            offset: int = 0,
                            limit: int = 10,
                            archived: bool = False,
-                           dacrequests: bool = True) -> api.Result:
+                           dacrequests: bool = False) -> api.Result:
     """Get paginated datarequests, including size/modify date information.
 
     :param ctx:         Combined type of a callback and rei struct
@@ -758,10 +758,6 @@ def api_datarequest_browse(ctx: rule.Context,
 
     :returns: Dict with paginated datarequests
     """
-    # Convert parameters that couldn't be passed as actual boolean values to booleans
-    archived    = archived == "True"
-    dacrequests = dacrequests == "True"
-
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
