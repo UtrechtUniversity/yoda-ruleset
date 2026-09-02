@@ -768,14 +768,14 @@ def pep_api_exec_rule_expression_pre(rule_args, callback, rei):
     """prevents direct Python rule execution via EXEC_RULE_EXPRESSION_AN 1206"""
     proxy_user = rei.rsComm.proxyUser.userName
     proxy_zone = rei.rsComm.proxyUser.rodsZone
-    for ut in genquery.Query(callback, 'USER_TYPE', conditions = f"USER_NAME = '{proxy_user}' and USER_ZONE = '{proxy_zone}'"):
+    for ut in genquery.Query(callback, 'USER_TYPE', conditions=f"USER_NAME = '{proxy_user}' and USER_ZONE = '{proxy_zone}'"):
         user_type = ut
     if user_type != "rodsadmin":
         debugging_string = 'pep_api_exec_rule_expression_pre:' \
                            f' prevented [{proxy_user}#{proxy_zone}({user_type})]' \
                            f' from calling rcExecRuleExpression (AN 1206)'
         callback.writeLine('serverLog', debugging_string)
-        callback.msiExit('-169000', 'rcExecRuleExpression is not allowed') # SYS_NOT_ALLOWED
+        callback.msiExit('-169000', 'rcExecRuleExpression is not allowed')  # SYS_NOT_ALLOWED
 
 
 def pep_api_sub_struct_file_get_pre(rule_args, callback, rei):
