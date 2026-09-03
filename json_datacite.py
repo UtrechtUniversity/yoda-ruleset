@@ -425,15 +425,15 @@ def get_resource_type(combi: dict) -> dict:
 
 
 def get_related_resources(combi: dict) -> List:
-    """Get list in DataCite format containing related datapackages."""
+    """Get list in DataCite format containing related resources and version relationships."""
     """
-  "relatedIdentifiers": [
-    {
-      "relationType": "IsSupplementTo",
-      "relatedIdentifier": "Identifier: 02-09-2019 02:30:59",
-      "relatedIdentifierType": "ARK"
-    }
-  ],
+    "relatedIdentifiers": [
+      {
+        "relationType": "IsSupplementTo",
+        "relatedIdentifier": "Identifier: 02-09-2019 02:30:59",
+        "relatedIdentifierType": "ARK"
+      }
+    ],
     """
     related_dps = []
 
@@ -455,6 +455,19 @@ def get_related_resources(combi: dict) -> List:
                                     'relationType': rel['Relation_Type'].split(':')[0]})
             except KeyError:
                 pass
+
+    # Link this version DOI to its base DOI, if it has one.
+    system_config = combi.get('System', {})
+    base_doi = system_config.get('Base_DOI')
+    pid_config = system_config.get('Persistent_Identifier_Datapackage', {})
+    version_doi = pid_config.get('Identifier')
+
+    if base_doi and version_doi and base_doi != version_doi:
+        related_dps.append({
+            'relatedIdentifier': base_doi,
+            'relatedIdentifierType': 'DOI',
+            'relationType': 'IsVersionOf'
+        })
 
     return related_dps
 

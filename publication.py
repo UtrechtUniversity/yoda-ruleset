@@ -133,7 +133,8 @@ def generate_combi_json(ctx: rule.Context, publication_config: dict, publication
         },
         'Publication_Date': publication_date,
         'Open_access_Link': open_access_link,
-        'License_URI': license_uri
+        'License_URI': license_uri,
+        'Base_DOI': publication_state.get('baseDOI', '')
     }
 
     deaccession_date = vault_deaccession.get_deaccession_date(ctx, vault_package)
@@ -373,7 +374,35 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: s
     datacite_json = data_object.read(ctx, datacite_json_path)
 
     if base_doi:
-        datacite_json = datacite_json.replace(publication_state['versionDOI'], doi)
+        # The generated JSON describes the version DOI. Adjust the id/doi fields
+        # and the relation entry so it correctly describes the base DOI instead.
+        data = json.loads(datacite_json)
+        attributes = data['data']['attributes']
+
+        data['data']['id'] = doi
+        attributes['doi'] = doi
+        prefix, suffix = doi.rsplit('/', 1)
+        attributes['prefix'] = prefix
+        attributes['suffix'] = suffix
+
+        # Remove the version's "IsVersionOf" entry, replace with "HasVersion"
+        # for every known version of this base DOI (not just the current one).
+        related = [r for r in attributes['relatedIdentifiers']
+                   if r['relationType'] != 'IsVersionOf']
+        version_dois = {publication_state['versionDOI']}
+        version_dois.update(
+            version_doi
+            for _, version_doi, _ in get_all_versions(ctx, publication_state['vaultPackage'], doi)[0]
+        )
+
+        related.extend({
+            'relatedIdentifier': v_doi,
+            'relatedIdentifierType': 'DOI',
+            'relationType': 'HasVersion'
+        } for v_doi in version_dois)
+
+        attributes['relatedIdentifiers'] = related
+        datacite_json = json.dumps(data)
 
     try:
         if send_method == 'post':
