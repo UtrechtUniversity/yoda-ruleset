@@ -425,7 +425,7 @@ def get_resource_type(combi: dict) -> dict:
 
 
 def get_related_resources(combi: dict) -> List:
-    """Get list in DataCite format containing related datapackages."""
+    """Get list in DataCite format containing related datapackages and version relationships."""
     """
   "relatedIdentifiers": [
     {
@@ -455,6 +455,14 @@ def get_related_resources(combi: dict) -> List:
                                     'relationType': rel['Relation_Type'].split(':')[0]})
             except KeyError:
                 pass
+
+    # Link this version DOI to its base DOI, if it has one.
+    base_doi = combi.get('System', {}).get('Base_DOI')
+    version_doi = combi.get('System', {}).get('Persistent_Identifier_Datapackage', {}).get('Identifier')
+    if base_doi and base_doi != version_doi:
+        related_dps.append({'relatedIdentifier': base_doi,
+                            'relatedIdentifierType': 'DOI',
+                            'relationType': 'IsVersionOf'})
 
     return related_dps
 
