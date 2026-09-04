@@ -73,7 +73,7 @@ def can_transition_folder_status(ctx: rule.Context,
             return policy.fail('This data package has already been submitted')
         return policy.fail('Illegal status transition')
 
-    meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    meta_path = f'{coll}/{constants.IIJSONMETADATA}'
 
     if status_to is constants.research_package_state.SUBMITTED:
         if not data_object.exists(ctx, meta_path):
@@ -91,7 +91,7 @@ def can_transition_folder_status(ctx: rule.Context,
             dmgrp = 'datamanager-' + cat
 
             if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
-                return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
+                return policy.fail(f'Only a member of {dmgrp} is allowed to accept or reject a submitted folder')
 
     elif status_from is constants.research_package_state.ACCEPTED and status_to is constants.research_package_state.FOLDER:
         actor = user.user_and_zone(ctx)
@@ -145,7 +145,7 @@ def post_status_transition(ctx: rule.Context,
             # Send notifications to datamanagers
             message = "Data package submitted for the vault"
             for datamanager in datamanagers:
-                datamanager_name = '{}#{}'.format(*datamanager)
+                datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
                 notifications.set(ctx, actor, datamanager_name, path, message)
         else:
             datamanagers = []

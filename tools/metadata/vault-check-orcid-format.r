@@ -36,13 +36,13 @@ def main(rule_args, callback, rei):
     for schema in schemas_to_be_checked:
 
         callback.writeLine("stdout", "")
-        callback.writeLine("stdout", "SCHEMA: {}".format(schema))
+        callback.writeLine("stdout", f"SCHEMA: {schema}")
 
         data_packages = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_NAME = 'href' AND META_COLL_ATTR_VALUE like '%/{}/metadata.json' "
+            f"META_COLL_ATTR_NAME = 'href' AND META_COLL_ATTR_VALUE like '%/{schema}/metadata.json' "
             "AND COLL_NAME not like '%/original' AND COLL_NAME like '/%/home/vault-%' "
-            "AND DATA_NAME like 'yoda-metadata%.json'".format(schema),
+            "AND DATA_NAME like 'yoda-metadata%.json'",
             genquery.AS_TUPLE,
             callback)
 
@@ -53,7 +53,7 @@ def main(rule_args, callback, rei):
             genquery.AS_TUPLE,
             callback)
 
-        metadata_files_list = [ row for row in metadata_files]
+        metadata_files_list = [row for row in metadata_files]
 
         for coll in data_packages:
             json_file = None
@@ -64,7 +64,7 @@ def main(rule_args, callback, rei):
                     break
 
             if json_file is None:
-                callback.writeLine("stdout", "Error: could not find metadata file for {} (schema {})".format(coll, schema))
+                callback.writeLine("stdout", f"Error: could not find metadata file for {coll} (schema {schema})")
                 continue
 
             wrote_package_line = False
@@ -80,10 +80,10 @@ def main(rule_args, callback, rei):
                                     if not wrote_package_line:
                                         # Only write this line once
                                         callback.writeLine("stdout", '----------------------------------')
-                                        callback.writeLine("stdout", "Package: {}".format(coll))
+                                        callback.writeLine("stdout", f"Package: {coll}")
                                         wrote_package_line = True
 
-                                    callback.writeLine("stdout", "Invalid ORCID: \"{}\"".format(pi['Name_Identifier']))
+                                    callback.writeLine("stdout", f"Invalid ORCID: \"{pi['Name_Identifier']}\"")
             if wrote_package_line:
                 callback.writeLine("stdout", '----------------------------------')
 

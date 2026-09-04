@@ -8,6 +8,7 @@ import time
 from typing import List
 
 import genquery
+from tstrings import t
 
 import vault
 from util import *
@@ -43,9 +44,9 @@ def log_action(ctx: rule.Context, actor: str, coll: str, action: str, update: bo
         avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
         if update:
             vault.update_archive(ctx, coll)
-        log.write(ctx, "log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+        log.write(ctx, f"log_action: <{actor}> has <{action}> (<{coll}>)")
     except Exception:
-        log.write(ctx, "log_action: failed to log action <{}> to provenance".format(action))
+        log.write(ctx, f"log_action: failed to log action <{action}> to provenance")
 
 
 @rule.make()
@@ -68,10 +69,9 @@ def provenance_copy_log(ctx: rule.Context, source: str, target: str) -> None:
     """
     try:
         # Retrieve all provenance logs on source collection.
-        coll = misc.escape(source)
         logs = list(genquery.Query(
             ctx, "order_desc(META_COLL_ATTR_VALUE)",
-            f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+            t("COLL_NAME = '{source}' AND META_COLL_ATTR_NAME = 'org_action_log'"),
             output=genquery.AS_LIST
         ))
 
@@ -79,9 +79,9 @@ def provenance_copy_log(ctx: rule.Context, source: str, target: str) -> None:
         for row in logs:
             avu.associate_to_coll(ctx, target, constants.UUPROVENANCELOG, row[0])
 
-        log.write(ctx, "rule_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
+        log.write(ctx, f"rule_copy_provenance_log: copied provenance log from <{source}> to <{target}>")
     except Exception:
-        log.write(ctx, "rule_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
+        log.write(ctx, f"rule_copy_provenance_log: failed to copy provenance log from <{source}> to <{target}>")
 
 
 def get_provenance_log(ctx: rule.Context, coll: str) -> List:
@@ -93,12 +93,11 @@ def get_provenance_log(ctx: rule.Context, coll: str) -> List:
     :returns: Provenance log as a list
     """
     provenance_log = []
-    coll = misc.escape(coll)
 
     # Retrieve all provenance logs on a folder.
     logs = list(genquery.Query(
         ctx, "order_desc(META_COLL_ATTR_VALUE)",
-        f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_action_log'"),
         output=genquery.AS_LIST
     ))
 

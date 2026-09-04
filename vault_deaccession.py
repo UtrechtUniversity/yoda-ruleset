@@ -11,6 +11,7 @@ from typing import List
 
 import genquery
 from dateutil.relativedelta import relativedelta
+from tstrings import t
 
 import admin
 import constants
@@ -47,7 +48,7 @@ def get_deaccession_reason(ctx: rule.Context, coll: str) -> str:
     :returns:   Reason for deaccession as string
     """
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{DEACCESSION_REASON_ATTRNAME}'",
+                                     t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{DEACCESSION_REASON_ATTRNAME}'"),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -83,7 +84,7 @@ def get_deaccession_date(ctx: rule.Context, vault_package: str) -> datetime | No
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -118,7 +119,7 @@ def vault_deaccession_status(ctx: rule.Context, coll: str) -> str:
     :returns: Vault data package deaccession status as string
     """
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IIDEACCESSIONSTATUSATTRNAME}'",
+                                     t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IIDEACCESSIONSTATUSATTRNAME}'"),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -276,7 +277,7 @@ def set_deaccession_reason(ctx: rule.Context, coll: str, actor: str) -> bool:
     # Retrieve deaccession reason from datamanager group collection
     reason_data = list(genquery.Query(ctx,
                                       'META_COLL_ATTR_VALUE',
-                                      f"COLL_NAME = '{dm_group_coll}' AND META_COLL_ATTR_NAME = '{DEACCESSION_REASON_ATTRNAME}' AND META_COLL_ATTR_VALUE like '%{coll}%'",
+                                      t("COLL_NAME = '{dm_group_coll}' AND META_COLL_ATTR_NAME = '{DEACCESSION_REASON_ATTRNAME}' AND META_COLL_ATTR_VALUE like '%{coll}%'"),
                                       offset=0, limit=1, output=genquery.AS_LIST))[0][0]
     reason_json = jsonutil.parse(reason_data)
     reason = reason_json[1]
@@ -529,7 +530,7 @@ def revoke_original_access(ctx: rule.Context, coll: str) -> str:
     original_path = f"{coll}/original"
 
     iter = genquery.row_iterator("ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-                                 f"COLL_NAME = '{original_path}'",
+                                 t("COLL_NAME = '{original_path}'"),
                                  genquery.AS_LIST,
                                  ctx)
     for row in iter:
@@ -589,7 +590,7 @@ def get_deaccessioned_packages_to_delete(ctx: rule.Context) -> list:
     for coll in deaccessioned:
         original = list(genquery.Query(ctx,
                                        "COLL_NAME",
-                                       f"COLL_NAME like '%original' AND COLL_PARENT_NAME = '{coll[0]}'",
+                                       t("COLL_NAME like '%original' AND COLL_PARENT_NAME = '{coll[0]}'"),
                                        output=genquery.AS_LIST))
         if len(original) > 0:
             pending_deletion.append(coll[0])
@@ -623,7 +624,7 @@ def deaccession_provenance_present(ctx: rule.Context, coll: str) -> bool:
     # Retrieve provenance log.
     provenance_logs = list(genquery.Query(ctx,
                                           "ORDER_DESC(META_COLL_ATTR_VALUE)",
-                                          f"COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUPROVENANCELOG}'",
+                                          t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUPROVENANCELOG}'"),
                                           output=genquery.AS_LIST))
 
     if not provenance_logs:
@@ -652,7 +653,7 @@ def deaccession_manifest_present(ctx: rule.Context, coll: str) -> bool:
     """
     return len(list(genquery.Query(ctx,
                                    "DATA_NAME",
-                                   f"DATA_NAME = '{DEACCESSION_MANIFEST_FILE}' AND COLL_NAME = '{coll}'",
+                                   t("DATA_NAME = '{DEACCESSION_MANIFEST_FILE}' AND COLL_NAME = '{coll}'"),
                                    output=genquery.AS_LIST))) > 0
 
 

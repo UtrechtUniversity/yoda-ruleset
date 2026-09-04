@@ -206,7 +206,7 @@ def _dag0_default2(ctx: rule.Context, m: dict) -> dict:
 
     # dag0-Retention => def2-Retention
     # Get the entire metadata schema to be able to get some proper values based on the previous saved values
-    old_schema = jsonutil.read(ctx, '/{}/yoda/schemas/dag-0/metadata.json'.format(user.zone(ctx)))
+    old_schema = jsonutil.read(ctx, f'/{user.zone(ctx)}/yoda/schemas/dag-0/metadata.json')
     retention_years_list = old_schema['definitions']['optionsRetentionPeriod']['enum']
     retention_names_list = old_schema['definitions']['optionsRetentionPeriod']['enumNames']
     m["Retention_Information"] = ""
@@ -249,7 +249,7 @@ def _hptlab0_hptlab1(ctx: rule.Context, m: dict) -> dict:
         pass
 
     # Get the entire metadata schema to be able to get some proper values based on the previous saved values
-    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/hptlab-1/metadata.json'.format(user.zone(ctx)))
+    new_schema = jsonutil.read(ctx, f'/{user.zone(ctx)}/yoda/schemas/hptlab-1/metadata.json')
 
     attributes = {'Material': 'optionsMaterial',
                   'Apparatus': 'optionsApparatus',
@@ -299,7 +299,7 @@ def _teclab0_teclab1(ctx: rule.Context, m: dict) -> dict:
 
     :returns: Transformed (teclab-1) JSON object
     """
-    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/teclab-1/metadata.json'.format(user.zone(ctx)))
+    new_schema = jsonutil.read(ctx, f'/{user.zone(ctx)}/yoda/schemas/teclab-1/metadata.json')
 
     if 'Geomorphical_Feature' in m:
         # Name is no longer in use.

@@ -14,6 +14,7 @@ from typing import Iterator, List, Tuple
 import genquery
 import irods_types
 import psutil
+from tstrings import t
 
 import folder
 import groups
@@ -53,15 +54,14 @@ def api_revisions_search_on_filename(ctx: rule.Context, searchString: str, offse
         return {'total': 0,
                 'items': revisions}
 
-    originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
-    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
-
-    startpath = '/' + zone + constants.UUREVISIONCOLLECTION
+    originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'  # noqa F841
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'  # noqa F841
+    startpath = '/' + zone + constants.UUREVISIONCOLLECTION  # noqa F841
 
     qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                           "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
-                           "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
-                           "AND COLL_NAME like '" + startpath + "%' ",
+                           t("META_DATA_ATTR_NAME = '{originalPathKey}' \
+                           AND META_DATA_ATTR_VALUE like '/{zone}/home/%{searchString}%' \
+                           AND COLL_NAME like '{startpath}%' "),
                            offset=offset, limit=limit, output=genquery.AS_DICT)
 
     # step through results and enrich with wanted data
@@ -75,12 +75,11 @@ def api_revisions_search_on_filename(ctx: rule.Context, searchString: str, offse
         # strip off /zone/home/
         rev_data['original_coll_name'] = '/'.join(rev_data['original_path'].split(os.path.sep)[3:])
 
-        iter = genquery.row_iterator(
-            "DATA_ID",
-            "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
-            "AND META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-            "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
-            genquery.AS_DICT, ctx)
+        iter = genquery.row_iterator("DATA_ID",
+                                     t("COLL_NAME = '{rev_data['main_revision_coll']}' \
+                                     AND META_DATA_ATTR_NAME = '{originalDataNameKey}' \
+                                     AND META_DATA_ATTR_VALUE = '{rev_data['main_original_dataname']}' "),  # *originalDataName
+                                     genquery.AS_DICT, ctx)
 
         for _row in iter:
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
@@ -105,9 +104,9 @@ def api_revisions_search_on_filename(ctx: rule.Context, searchString: str, offse
 
     # Alas an extra genquery.Query is required to get the total number of rows
     qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                                "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
-                                "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
-                                "AND COLL_NAME like '" + startpath + "%' ",
+                                t("META_DATA_ATTR_NAME = '{originalPathKey}' \
+                                AND META_DATA_ATTR_VALUE like '/{zone}/home/%{searchString}%' \
+                                AND COLL_NAME like '{startpath}%' "),
                                 offset=0, limit=None, output=genquery.AS_DICT)
 
     # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
@@ -218,7 +217,7 @@ def api_revisions_restore(ctx: rule.Context, revision_id: str, overwrite: str, c
     origin_group_name = original_path.split('/')[3]
 
     if groups.user_role(ctx, user_full_name, origin_group_name) in ['none']:
-        return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
+        return api.Error('not_allowed', f'You are not allowed to view the information from this group {origin_group_name}')
 
     source_path = coll_origin + "/"  + filename_origin
 
@@ -233,7 +232,7 @@ def api_revisions_restore(ctx: rule.Context, revision_id: str, overwrite: str, c
         pass
 
     else:
-        return api.Error('invalid_action', 'Unknown requested action: {}'.format(overwrite))
+        return api.Error('invalid_action', f'Unknown requested action: {overwrite}')
 
     # Allowed to restore revision
     # Start actual restoration of the revision
@@ -279,11 +278,9 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
         # exists, we will catch the exception below, however the SQL error would still result in log
         # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
         # if an AVU is added after this check.
-        coll_name = misc.escape(pathutil.dirname(path))
-        data_name = misc.escape(pathutil.basename(path))
         already_has_avu = len(list(genquery.Query(ctx,
                                                   ['DATA_ID'],
-                                                  f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}' AND META_DATA_ATTR_NAME = '{revision_avu_name}'",
+                                                  t("COLL_NAME = '{pathutil.dirname(path)}' AND DATA_NAME = '{pathutil.basename(path)}' AND META_DATA_ATTR_NAME = '{revision_avu_name}'"),
                                                   offset=0, limit=1, output=genquery.AS_LIST))) > 0
 
         if not already_has_avu:
@@ -313,7 +310,7 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
             error_status = re.search(r"status \[(.*?)\]", str(e))
             if error_status is not None:
                 error_msg = error_status.group(1)
-            log.write(ctx, "Schedule revision of data object {} failed with error {}".format(path, error_msg))
+            log.write(ctx, f"Schedule revision of data object {path} failed with error {error_msg}")
 
 
 @rule.make()
@@ -364,7 +361,7 @@ def rule_revision_batch(ctx: rule.Context,
     if is_revision_blocked_by_admin(ctx):
         log.write(ctx, "Batch revision job is stopped")
     else:
-        log.write(ctx, "Batch revision job started - balance id: {}-{}".format(balance_id_min, balance_id_max))
+        log.write(ctx, f"Batch revision job started - balance id: {balance_id_min}-{balance_id_max}")
 
         minimum_timestamp = int(time.time() - config.async_revision_delay_time)
 
@@ -374,20 +371,16 @@ def rule_revision_batch(ctx: rule.Context,
 
         # Get list of up to batch size limit of data objects (in research space) scheduled for revision, taking into account
         # modification time.
-        log.write(ctx, "verbose = {}".format(verbose))
+        log.write(ctx, f"verbose = {verbose}")
         if print_verbose:
-            log.write(ctx, "async_revision_delay_time = {} seconds".format(config.async_revision_delay_time))
-            log.write(ctx, "max_rss = {} bytes".format(config.async_revision_max_rss))
-            log.write(ctx, "dry_run = {}".format(dry_run))
+            log.write(ctx, f"async_revision_delay_time = {config.async_revision_delay_time} seconds")
+            log.write(ctx, f"max_rss = {config.async_revision_max_rss} bytes")
+            log.write(ctx, f"dry_run = {dry_run}")
             show_memory_usage(ctx)
 
         iter = list(genquery.Query(ctx,
                     ['ORDER(DATA_ID)', 'COLL_NAME', 'DATA_NAME', 'META_DATA_ATTR_VALUE'],
-                    "META_DATA_ATTR_NAME = '{}' AND COLL_NAME like '/{}/home/{}%' AND DATA_MODIFY_TIME <= '{}'".format(
-                        attr,
-                        user.zone(ctx),
-                        constants.IIGROUPPREFIX,
-                        minimum_timestamp),
+                    f"META_DATA_ATTR_NAME = '{attr}' AND COLL_NAME like '/{user.zone(ctx)}/home/{constants.IIGROUPPREFIX}%' AND DATA_MODIFY_TIME <= '{minimum_timestamp}'",
                     offset=0, limit=int(batch_size_limit), output=genquery.AS_LIST))
         for row in iter:
             # Stop further execution if admin has blocked revision process.
@@ -398,7 +391,7 @@ def rule_revision_batch(ctx: rule.Context,
             # Check current memory usage and stop if it is above the limit.
             if memory_limit_exceeded(config.async_revision_max_rss):
                 show_memory_usage(ctx)
-                log.write(ctx, "Memory used is now above specified limit of {} bytes, stopping further processing".format(config.async_revision_max_rss))
+                log.write(ctx, f"Memory used is now above specified limit of {config.async_revision_max_rss} bytes, stopping further processing")
                 break
 
             # Perform scheduled revision creation for one data object.
@@ -406,7 +399,7 @@ def rule_revision_batch(ctx: rule.Context,
             path    = row[1] + "/" + row[2]
 
             # Give rods 'own' access so that they can remove the AVU.
-            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), path)
+            msi.set_acl(ctx, "default", "admin:own", f"rods#{user.zone(ctx)}", path)
 
             # Metadata value contains resc and balance id for load balancing purposes.
             resc = get_resc(row)
@@ -423,11 +416,11 @@ def rule_revision_batch(ctx: rule.Context,
             # "No action" is meant for easier memory usage debugging.
             if no_action:
                 show_memory_usage(ctx)
-                log.write(ctx, "Skipping creating revision (dry_run): would have created revision for {} on resc {}".format(path, resc))
+                log.write(ctx, f"Skipping creating revision (dry_run): would have created revision for {path} on resc {resc}")
                 continue
 
             if print_verbose:
-                log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
+                log.write(ctx, f"Batch revision: creating revision for {path} on resc {resc}")
 
             revision_created = check_eligible_and_create_revision(ctx, print_verbose, attr, errorattr, data_id, resc, path)
             if revision_created:
@@ -439,8 +432,8 @@ def rule_revision_batch(ctx: rule.Context,
             show_memory_usage(ctx)
 
         # Total revision process completed
-        log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. ".format(count_ok, count))
-        log.write(ctx, "Batch revision job ignored {} data objects in research area, excluding data objects postponed because of delay time.".format(count_ignored))
+        log.write(ctx, f"Batch revision job finished. {count_ok}/{count} objects processed successfully. ")
+        log.write(ctx, f"Batch revision job ignored {count_ignored} data objects in research area, excluding data objects postponed because of delay time.")
 
 
 def check_eligible_and_create_revision(ctx: rule.Context, print_verbose: bool, attr: str, errorattr: str, data_id: str, resc: str, path: str) -> bool:
@@ -476,11 +469,11 @@ def check_eligible_and_create_revision(ctx: rule.Context, print_verbose: bool, a
 
     # now back to the created revision
     if revision_created:
-        log.write(ctx, "Revision created for {}".format(path))
+        log.write(ctx, f"Revision created for {path}")
         remove_revision_error_flag(ctx, data_id, path, errorattr)
     elif should_create_rev:
         # Revision should have been created but it was not
-        log.write(ctx, "ERROR - Scheduled revision creation of <{}> failed".format(path))
+        log.write(ctx, f"ERROR - Scheduled revision creation of <{path}> failed")
         avu.set_on_data(ctx, path, errorattr, "true")
 
     return revision_created
@@ -491,7 +484,7 @@ def remove_revision_error_flag(ctx: rule.Context, data_id: str, path: str, error
     # Revision creation OK. Remove any existing error indication attribute.
     iter = genquery.row_iterator(
         "DATA_NAME",
-        "DATA_ID = '{}' AND META_DATA_ATTR_NAME  = '{}' AND META_DATA_ATTR_VALUE = 'true'".format(data_id, errorattr),
+        f"DATA_ID = '{data_id}' AND META_DATA_ATTR_NAME  = '{errorattr}' AND META_DATA_ATTR_VALUE = 'true'",
         genquery.AS_LIST, ctx
     )
     for _row in iter:
@@ -507,7 +500,7 @@ def remove_revision_scheduled_flag(ctx: rule.Context, print_verbose: bool, path:
     # rods should have been given own access via policy to allow AVU
     # changes.
     if print_verbose:
-        log.write(ctx, "Batch revision: removing AVU for {}".format(path))
+        log.write(ctx, f"Batch revision: removing AVU for {path}")
 
     # try removing attr/resc meta data
     avu_deleted = False
@@ -525,7 +518,7 @@ def remove_revision_scheduled_flag(ctx: rule.Context, print_verbose: bool, path:
             msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
             avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
         except Exception:
-            log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
+            log.write(ctx, f"ERROR - Scheduled revision creation of <{path}>: could not remove schedule flag")
 
 
 def is_revision_blocked_by_admin(ctx: rule.Context) -> bool:
@@ -536,7 +529,7 @@ def is_revision_blocked_by_admin(ctx: rule.Context) -> bool:
     :returns: Boolean indicating if admin put revisions on hold.
     """
     zone = user.zone(ctx)
-    path = "/{}/yoda/flags/stop_revisions".format(zone)
+    path = f"/{zone}/yoda/flags/stop_revisions"
     return collection.exists(ctx, path)
 
 
@@ -573,7 +566,7 @@ def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resour
 
     # Skip current revision task if data object is not found
     if data_properties is None:
-        log.write(ctx, "ERROR - No data object found for data_id {} on resource {}, move to the next revision creation".format(data_id, resource))
+        log.write(ctx, f"ERROR - No data object found for data_id {data_id} on resource {resource}, move to the next revision creation")
         return False
 
     modify_time = data_properties["DATA_MODIFY_TIME"]
@@ -583,10 +576,10 @@ def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resour
     basename = data_properties["DATA_NAME"]
     parent = data_properties["COLL_NAME"]
 
-    path = '{}/{}'.format(parent, basename)
+    path = f'{parent}/{basename}'
 
     # Allow rodsadmin to create subcollections.
-    msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
+    msi.set_acl(ctx, "default", "admin:own", f"rods#{user.zone(ctx)}", revision_store)
 
     # generate a timestamp in iso8601 format to append to the filename of the revised file.
     # 2019-09-07T15:50-04:00
@@ -598,33 +591,33 @@ def revision_create(ctx: rule.Context, print_verbose: bool, data_id: str, resour
     read_access = msi.check_access(ctx, path, 'read_object', irods_types.BytesBuf())['arguments'][2]
     if read_access != b'\x01':
         try:
-            msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
+            msi.set_acl(ctx, "default", "read", f"rods#{user.zone(ctx)}", path)
         except msi.Error:
             return False
 
     if collection.exists(ctx, rev_coll):
         # Rods may not have own access yet.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), rev_coll)
+        msi.set_acl(ctx, "default", "own", f"rods#{user.zone(ctx)}", rev_coll)
     else:
         # Inheritance is enabled - ACLs are already good.
         # (rods and the research group both have own)
         try:
             msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
         except error.UUError:
-            log.write(ctx, "ERROR - Failed to create staging area at <{}>".format(rev_coll))
+            log.write(ctx, f"ERROR - Failed to create staging area at <{rev_coll}>")
             return False
 
     rev_path = rev_coll + "/" + rev_filename
 
     if print_verbose:
-        log.write(ctx, "Creating revision {} -> {}".format(path, rev_path))
+        log.write(ctx, f"Creating revision {path} -> {rev_path}")
 
     # Actual copying to revision store
     try:
         # Workaround the PREP deadlock issue: Restrict threads to 1.
         data_object.copy(ctx, path, rev_path, True)
     except msi.Error as e:
-        log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
+        log.write(ctx, f'ERROR - The file could not be copied: {str(e)}')
         return False
 
     # Add original metadata to revision data object.
@@ -674,7 +667,7 @@ def revision_cleanup_scan_revision_objects(ctx: rule.Context, revision_list: Lis
 
     while len(ids) > 0:
         batch_ids = ids[:QUERY_BATCH_SIZE]
-        batch_id_string = "({})".format(",".join(("'{}'".format(e) for e in batch_ids)))
+        batch_id_string = "({})".format(",".join((f"'{e}'" for e in batch_ids)))
         ids = ids[QUERY_BATCH_SIZE:]
 
         # first, get original_path and ids for every revision
@@ -753,7 +746,7 @@ def _update_revision_store_acls(ctx: rule.Context) -> None:
                 # CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME: AVU is already present. No need to set it anymore.
                 pass
             else:
-                raise Exception("Cannot update revision store ACLs. An error occurred: {}".format(str(e)))
+                raise Exception(f"Cannot update revision store ACLs. An error occurred: {str(e)}")
     else:
         raise Exception("Cannot update revision store ACLs, because present user is not rodsadmin.")
 
@@ -832,7 +825,7 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
     if len(ingest_state["batch"]) > 0:
         put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
 
-    log.write(ctx, "Collected {} revisions for revision cleanup scanning.".format(number_revisions))
+    log.write(ctx, f"Collected {number_revisions} revisions for revision cleanup scanning.")
     return "Revision data has been spooled for scanning"
 
 
@@ -872,7 +865,7 @@ def rule_revisions_cleanup_scan(ctx: rule.Context, revision_strategy_name: str, 
     output_data_size = len(prefiltered_revision_data)
     if output_data_size > 0:
         if verbose:
-            log.write(ctx, "Revision cleanup job scan spooling {} objects for processing.".format(str(output_data_size)))
+            log.write(ctx, f"Revision cleanup job scan spooling {str(output_data_size)} objects for processing.")
         put_spool_data(constants.PROC_REVISION_CLEANUP, [prefiltered_revision_data])
     else:
         if verbose:
@@ -975,7 +968,7 @@ def rule_revisions_cleanup_process(ctx: rule.Context, revision_strategy_name: st
 
     for revisions in revisions_list:
         if verbose:
-            log.write(ctx, 'Processing revisions {} ...'.format(str(revisions)))
+            log.write(ctx, f'Processing revisions {str(revisions)} ...')
         # Process the original path conform the bucket settings
         original_exists = versioned_data_object_exists(ctx, revisions[0][2]) if len(revisions) > 0 else False
         candidates = get_deletion_candidates(ctx, revision_strategy, revisions, end_of_calendar_day, original_exists, verbose)
@@ -986,21 +979,18 @@ def rule_revisions_cleanup_process(ctx: rule.Context, revision_strategy_name: st
             rev_paths = {r[0]: r[2] for r in revisions}
 
         if verbose:
-            log.write(ctx, 'Candidates to be removed: {} ...'.format(str(candidates)))
+            log.write(ctx, f'Candidates to be removed: {str(candidates)}...')
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
             rev_path = rev_paths[revision_id]
             if verbose:
-                log.write(ctx, 'Removing candidate: {} ...'.format(str(revision_id)))
+                log.write(ctx, f'Removing candidate: {str(revision_id)} ...')
             if not revision_remove(ctx, revision_id, rev_path):
                 num_errors += 1
 
-    log.write(ctx, 'Revision cleanup processing job completed - {} candidates for {} versioned data objects ({} successful / {} errors).'.format(
-        str(num_candidates),
-        str(len(revisions_list)),
-        str(num_candidates - num_errors),
-        str(num_errors)))
+    log.write(ctx, f'Revision cleanup processing job completed - {str(num_candidates)} candidates for \
+              {str(len(revisions_list))} versioned data objects ({str(num_candidates - num_errors)} successful / {str(num_errors)} errors).')
     return 'Revision store cleanup processing job completed'
 
 
@@ -1017,22 +1007,17 @@ def revision_remove(ctx: rule.Context, revision_id: str, revision_path: str) -> 
     """
     revision_prefix = get_revision_store_path(user.zone(ctx), trailing_slash=True)
     if not revision_path.startswith(revision_prefix):
-        log.write(ctx, "ERROR - sanity check fail when removing revision <{}>: <{}>".format(
-            revision_id,
-            revision_path))
+        log.write(ctx, f"ERROR - sanity check fail when removing revision <{revision_id}>: <{revision_path}>")
         return False
 
     try:
         msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
         return True
     except msi.Error as e:
-        log.write(ctx, "ERROR - could not remove revision <{}>: <{}> ({}).".format(
-            revision_id,
-            revision_path,
-            str(e)))
+        log.write(ctx, f"ERROR - could not remove revision <{revision_id}>: <{revision_path}> ({str(e)}).")
         return False
 
-    log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
+    log.write(ctx, f"ERROR - Revision ID <{revision_id}> not found or permission denied.")
     return False
 
 
@@ -1044,7 +1029,7 @@ def memory_rss_usage() -> int:
 
 def show_memory_usage(ctx: rule.Context) -> None:
     """For debug purposes show the current RSS usage."""
-    log.write(ctx, "current RSS usage: {} bytes".format(memory_rss_usage()))
+    log.write(ctx, f"current RSS usage: {memory_rss_usage()} bytes")
 
 
 def memory_limit_exceeded(rss_limit: int) -> bool:
@@ -1069,7 +1054,7 @@ def remove_revision_creation_avu_from_deleted_data_objects(ctx: rule.Context, pr
 
     iter = genquery.row_iterator(
         "COLL_NAME, DATA_NAME",
-        "COLL_NAME like '%{}/trash/home/%' AND META_DATA_ATTR_NAME = '{}'".format(user.zone(ctx), revision_avu_name),
+        f"COLL_NAME like '%{user.zone(ctx)}/trash/home/%' AND META_DATA_ATTR_NAME = '{revision_avu_name}'",
         genquery.AS_LIST, ctx
     )
 

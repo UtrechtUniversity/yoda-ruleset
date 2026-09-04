@@ -5,7 +5,7 @@
 # This can happen due to a bug in irods, where the collection path is mangled
 # after a collection with a multi-byte character is renamed.
 # For more information: https://github.com/irods/irods/issues/6239
-# 
+#
 # Example command to run:
 # irule -r irods_rule_engine_plugin-python-instance -F tools/list-mangled-paths.r
 import genquery
@@ -14,7 +14,7 @@ import session_vars
 
 def main(rule_args, callback, rei):
     zone = session_vars.get_map(rei)['client_user']['irods_zone']
-    
+
     callback.writeLine("stdout", "list-mangled-paths script started")
 
     # The easy condition to check is if the coll is missing a
@@ -24,19 +24,20 @@ def main(rule_args, callback, rei):
     # coll_bad[len(parent_coll)]
     # 'g'
     userIter = genquery.Query(callback,
-                            ['COLL_NAME', 'COLL_PARENT_NAME'],
-                            "COLL_NAME like '/{}/%'".format(zone),
-                            output=genquery.AS_LIST)
+                              ['COLL_NAME', 'COLL_PARENT_NAME'],
+                              f"COLL_NAME like '/{zone}/%'",
+                              output=genquery.AS_LIST)
 
     for row in userIter:
         name = row[0]
         coll_parent = row[1]
 
         if name[len(coll_parent)] != '/':
-            callback.writeLine("stdout", "coll parent: {}".format(coll_parent))
-            callback.writeLine("stdout", "coll       : {}".format(name))
+            callback.writeLine("stdout", f"coll parent: {coll_parent}")
+            callback.writeLine("stdout", f"coll       : {name}")
 
     callback.writeLine("stdout", "list-mangled-paths script finished")
+
 
 INPUT null
 OUTPUT ruleExecOut

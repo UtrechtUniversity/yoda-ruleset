@@ -10,10 +10,10 @@ from typing import List, Tuple
 
 import genquery
 import irods_types
+from tstrings import t
 
 import constants
 import error
-import misc
 import msi
 import pathutil
 import rule
@@ -28,11 +28,9 @@ def exists(ctx: rule.Context, path: str) -> bool:
     :returns: Boolean indicating if data object exists
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     return len(list(genquery.Query(
                ctx, "DATA_ID",
-               f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+               t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
                output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))) > 0
 
 
@@ -55,7 +53,7 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> dict | Non
     query_fields = ", ".join(properties)
     iter = genquery.row_iterator(
         query_fields,
-        "DATA_ID = '{}' AND DATA_RESC_HIER like '{}%'".format(data_id, resource),
+        f"DATA_ID = '{data_id}' AND DATA_RESC_HIER like '{resource}%'",
         genquery.AS_LIST, ctx
     )
 
@@ -71,9 +69,10 @@ def get_properties(ctx: rule.Context, data_id: str, resource: str) -> dict | Non
 
 def owner(ctx: rule.Context, path: str) -> Tuple[str, str] | None:
     """Find the owner of a data object. Returns (name, zone) or None."""
+    split_path = pathutil.chop(path)  # noqa FA841
     owners = list(genquery.row_iterator(
                   "DATA_OWNER_NAME, DATA_OWNER_ZONE",
-                  "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
+                  t("COLL_NAME = '{split_path[0]}' AND DATA_NAME = '{split_path[1]}'"),
                   genquery.AS_LIST, ctx))
     return tuple(owners[0]) if len(owners) > 0 else None
 
@@ -87,11 +86,9 @@ def size(ctx: rule.Context, path: str) -> int | None:
     :returns: Data object's size or None if object is not found
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.Query(
         ctx, "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         output=genquery.AS_LIST
     )
 
@@ -110,11 +107,9 @@ def checksum(ctx: rule.Context, path: str) -> str | None:
     :returns: Data object's checksum or None if object is not found
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.Query(
         ctx, "DATA_CHECKSUM",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         output=genquery.AS_LIST
     )
 
@@ -134,11 +129,9 @@ def has_replica_with_status(ctx: rule.Context, path: str, statuses: List) -> boo
     :returns: Boolean indicating if data object has replicas with specified replica statuses
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
     iter = genquery.row_iterator(
         "DATA_REPL_STATUS",
-        f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'",
+        t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'"),
         genquery.AS_LIST, ctx
     )
 
@@ -173,12 +166,10 @@ def read(ctx: rule.Context, path: str, max_size: int = constants.IIDATA_MAX_SLUR
     """Read an entire iRODS data object into a string."""
     sz = size(ctx, path)
     if sz is None:
-        raise error.UUFileNotExistError('data_object.read: object does not exist ({})'
-                                        .format(path))
+        raise error.UUFileNotExistError(f'data_object.read: object does not exist ({path})')
 
     if sz > max_size:
-        raise error.UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
-                                    .format(sz, max_size))
+        raise error.UUFileSizeError(f'data_object.read: file size limit exceeded ({sz} > {max_size})')
 
     if sz == 0:
         # Don't bother reading an empty file.
@@ -216,7 +207,7 @@ def copy(ctx: rule.Context, path_org: str, path_copy: str, force: bool = True) -
     msi.data_obj_copy(ctx,
                       path_org,
                       path_copy,
-                      'numThreads=1++++verifyChksum={}'.format('++++forceFlag=' if force else ''),
+                      f"numThreads=1++++verifyChksum={'++++forceFlag=' if force else ''}",
                       irods_types.BytesBuf())
 
     json_inp = {"logical_path": path_copy, "options": {"reference": path_org}}
@@ -234,7 +225,7 @@ def remove(ctx: rule.Context, path: str, force: bool = False) -> None:
     does not have write permission.
     """
     msi.data_obj_unlink(ctx,
-                        'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
+                        f"objPath={path}{'++++forceFlag=' if force else ''}",
                         irods_types.BytesBuf())
 
 
@@ -287,11 +278,8 @@ def id_from_path(ctx: rule.Context, path: str) -> str:
     :returns: Data object id
     """
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
-
     return genquery.Query(ctx, "DATA_ID",
-                          f"COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'").first()
+                          t("COLL_NAME = '{coll_name}' AND DATA_NAME = '{data_name}'")).first()
 
 
 def decode_checksum(checksum: str) -> str:
@@ -310,12 +298,9 @@ def decode_checksum(checksum: str) -> str:
 def get_group_owners(ctx: rule.Context, path: str) -> List:
     """Return list of groups of data object, each entry being name of the group and the zone."""
     coll_name, data_name = pathutil.chop(path)
-    coll_name = misc.escape(coll_name)
-    data_name = misc.escape(data_name)
-
     groups = list(genquery.Query(
         ctx, "USER_NAME, USER_ZONE",
-        f"COLL_NAME = '{coll_name}' and DATA_NAME = '{data_name}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
+        t("COLL_NAME = '{coll_name}' and DATA_NAME = '{data_name}' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'"),
         output=genquery.AS_LIST))
 
     return groups

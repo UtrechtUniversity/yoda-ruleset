@@ -57,7 +57,7 @@ def get_openapi_template(ruleset_description: Union[str, None], ruleset_version:
     if core:
         title = 'Yoda core API'
     if module:
-        title = 'Yoda {} API'.format(module)
+        title = f'Yoda {module} API'
 
     ruleset_description_str = ruleset_description if ruleset_description is not None else "N/A"
     ruleset_version_str = ruleset_version if ruleset_version is not None else '9999'

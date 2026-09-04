@@ -82,14 +82,14 @@ def _get_spool_directory(process: str) -> str:
     if process in constants.SPOOL_PROCESSES:
         return os.path.join(constants.SPOOL_MAIN_DIRECTORY, process, "spool")
     else:
-        raise Exception("Spool process {} not found.".format(process))
+        raise Exception(f"Spool process {process} not found.")
 
 
 def _get_temp_directory(process: str) -> str:
     if process in constants.SPOOL_PROCESSES:
         return os.path.join(constants.SPOOL_MAIN_DIRECTORY, process, "tmp")
     else:
-        raise Exception("Spool process {} not found.".format(process))
+        raise Exception(f"Spool process {process} not found.")
 
 
 def _get_spool_queue(process: str) -> persistqueue.Queue:
@@ -103,7 +103,7 @@ def _get_spool_queue(process: str) -> persistqueue.Queue:
 
 def _ensure_spool_process_initialized(process: str) -> None:
     if process not in constants.SPOOL_PROCESSES:
-        raise Exception("Spool process {} not found.".format(process))
+        raise Exception(f"Spool process {process} not found.")
 
     for directory in [constants.SPOOL_MAIN_DIRECTORY,
                       os.path.join(constants.SPOOL_MAIN_DIRECTORY, process),

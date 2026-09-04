@@ -60,14 +60,14 @@ def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
 
 def _create_tmp_object(ctx):
     """Creates a randomly named test data object and returns its name"""
-    path = "/{}/home/rods/{}.test".format(user.zone(ctx), str(uuid.uuid4()))
+    path = f"/{user.zone(ctx)}/home/rods/{str(uuid.uuid4())}.test"
     data_object.write(ctx, path, "test")
     return path
 
 
 def _create_tmp_collection(ctx):
     """Creates a randomly named test collection and returns its name"""
-    path = "/{}/home/rods/{}-test".format(user.zone(ctx), str(uuid.uuid4()))
+    path = f"/{user.zone(ctx)}/home/rods/{str(uuid.uuid4())}-test"
     collection.create(ctx, path)
     return path
 
@@ -1081,7 +1081,7 @@ def rule_run_integration_tests(ctx, tests):
         try:
             result = test(ctx)
         except BaseException:
-            log.write(ctx, "Basic integration test {} failed with Exception: {}".format(name, traceback.format_exc()))
+            log.write(ctx, f"Basic integration test {name} failed with Exception: {traceback.format_exc()}")
             exception = True
 
         if exception:
@@ -1091,7 +1091,7 @@ def rule_run_integration_tests(ctx, tests):
         elif check.__code__.co_argcount == 2 and check(ctx, result):
             verdict = "VERDICT_OK"
         else:
-            verdict = "VERDICT_FAILED   (output '{}')".format(str(result))
+            verdict = f"VERDICT_FAILED   (output '{str(result)}')"
 
         return_value += name + " " + verdict + "\n"
 
@@ -1196,7 +1196,7 @@ def _test_hashes_collection_script(ctx):
     :returns: the calculated SHA256 hash of the collection.
     """
     # Create collection
-    coll_path = "/{}/home/rods/{}-test".format(user.zone(ctx), "hash")
+    coll_path = f"/{user.zone(ctx)}/home/rods/hash-test"
     collection.create(ctx, coll_path)
 
     # Add data objects to collection
@@ -1204,7 +1204,7 @@ def _test_hashes_collection_script(ctx):
     data_object.write(ctx, f"{coll_path}/file2.txt", b"contentB")
 
     # Create subcollection
-    subcoll_path = coll_path + '/{}-test'.format("subhash")
+    subcoll_path = coll_path + '/subhash-test'
     collection.create(ctx, subcoll_path)
 
     # Add data objects in subcollection
@@ -1227,7 +1227,7 @@ def _test_hashes_collection_trailing_slash(ctx):
 
     :returns: true if the same hash is returned else false
     """
-    base_path = "/{}/home/rods".format(user.zone(ctx))
+    base_path = f"/{user.zone(ctx)}/home/rods"
     path = f"{base_path}/collection-trailing-slash"
 
     collection.create(ctx, path)

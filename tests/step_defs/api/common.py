@@ -60,7 +60,7 @@ def api_meta_form_save(user, collection):
     schema = path.split("/")[2]
 
     cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, schema)) as f:
+    with open(f"{cwd}/files/{schema}.json") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     http_status, _ = api_request(

@@ -15,6 +15,7 @@ from typing import List, Optional, Tuple
 
 import genquery
 from dateutil import parser
+from tstrings import t
 
 import admin
 import folder
@@ -349,11 +350,11 @@ def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
         returncode = subprocess.call(irsync_command)
     except Exception as e:
         log.write(ctx, "irsync failure: " + str(e))
-        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        log.write(ctx, f"irsync failure for coll <{coll}> and target <{target}>")
         return False
 
     if returncode != 0:
-        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        log.write(ctx, f"irsync failure for coll <{coll}> and target <{target}>")
         return False
 
     return True
@@ -402,7 +403,7 @@ def api_vault_preservable_formats_lists(ctx: rule.Context) -> api.Result:
 
     # Retrieve all preservable file formats lists on the system.
 
-    files = [x for x in collection.data_objects(ctx, '/{}/yoda/file_formats'.format(zone))
+    files = [x for x in collection.data_objects(ctx, f'/{zone}/yoda/file_formats')
              if x.endswith('.json')]
 
     # Return dict of list filename (without extension) -> JSON contents
@@ -425,7 +426,7 @@ def api_vault_unpreservable_files(ctx: rule.Context, coll: str, list_name: str) 
         return api.Error('invalid_path', 'Invalid vault path.')
 
     # Retrieve JSON list of preservable file formats.
-    list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
+    list_data = jsonutil.read(ctx, f'/{zone}/yoda/file_formats/{list_name}.json')
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
@@ -467,7 +468,7 @@ def vault_copy_original_metadata_to_vault(ctx: rule.Context, vault_package_path:
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'destRescName={}++++numThreads={}++++verifyChksum='.format(config.resource_vault, get_vault_copy_numthreads(ctx)), 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, f'destRescName={config.resource_vault}++++numThreads={get_vault_copy_numthreads(ctx)}++++verifyChksum=', 0)
 
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
@@ -492,12 +493,10 @@ def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
 
     # Retrieve license.
     license = ""
-    license_key = "License"
-    license_unit = "{}_%".format(constants.UUUSERMETADATAROOT)
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_UNITS LIKE '{}'".format(vault_pkg_coll, license_key, license_unit),
+        t("COLL_NAME = '{vault_pkg_coll}' AND META_COLL_ATTR_NAME = 'License' AND META_COLL_ATTR_UNITS LIKE '{constants.UUUSERMETADATAROOT}_%'"),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -505,7 +504,7 @@ def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
 
     if license == "":
         # No license set in user metadata.
-        log.write(ctx, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(ctx, f"rule_vault_write_license: No license found in user metadata <{vault_pkg_coll}>")
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
@@ -514,22 +513,22 @@ def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.
-        license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
+        license_txt = f"/{zone}{constants.IILICENSECOLLECTION}/{license}.txt"
         if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            ctx.msiDataObjCopy(license_txt, license_file, 'destRescName={}++++forceFlag=++++numThreads={}++++verifyChksum='.format(config.resource_vault, get_vault_copy_numthreads(ctx)), 0)
+            ctx.msiDataObjCopy(license_txt, license_file, f'destRescName={config.resource_vault}++++forceFlag=++++numThreads={get_vault_copy_numthreads(ctx)}++++verifyChksum=', 0)
 
             # Fix ACLs.
             try:
                 copy_acls_from_parent(ctx, license_file, "default")
             except Exception:
-                log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(ctx, f"rule_vault_write_license: Failed to set vault permissions on <{license_file}>")
         else:
-            log.write(ctx, "rule_vault_write_license: License text not available for <{}>".format(license))
+            log.write(ctx, f"rule_vault_write_license: License text not available for <{license}>")
 
         # Check if license URI exists.
-        license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
+        license_uri_file = f"/{zone}{constants.IILICENSECOLLECTION}/{license}.uri"
         if data_object.exists(ctx, license_uri_file):
             # Retrieve license URI.
             license_uri = data_object.read(ctx, license_uri_file)
@@ -537,9 +536,9 @@ def vault_write_license(ctx: rule.Context, vault_pkg_coll: str) -> None:
             license_uri = license_uri.strip('\"')
 
             # Set license URI.
-            avu.set_on_coll(ctx, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
+            avu.set_on_coll(ctx, vault_pkg_coll, f"{constants.UUORGMETADATAPREFIX}license_uri", license_uri)
         else:
-            log.write(ctx, "rule_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(ctx, f"rule_vault_write_license: License URI not available for <{license}>")
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -599,49 +598,49 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     collection_count = collection.collection_count(ctx, coll)
     size = collection.size(ctx, coll)
     size_readable = misc.human_readable_size(size)
-    system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    system_metadata["Data Package Size"] = f"{data_count} files, {collection_count} folders, total of {size_readable}"
 
     # Modified date.
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'" % (coll),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'"),
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
         modified_date = parser.parse(row[0])
         modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
-        system_metadata["Modified date"] = "{}".format(modified_date_time)
+        system_metadata["Modified date"] = str(modified_date_time)
 
     # Landingpage URL.
     landinpage_url = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'"),
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
         landinpage_url = row[0]
-        system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
+        system_metadata["Landingpage"] = f"<a href=\"{landinpage_url}\">{landinpage_url}</a>"
 
     # Data Package Reference.
     data_package_reference = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}'"),
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
         data_package_reference = row[0]
-        system_metadata["Data Package Reference"] = "<a href=\"yoda/{}\">yoda/{}</a>".format(data_package_reference, data_package_reference)
+        system_metadata["Data Package Reference"] = f"<a href=\"yoda/{data_package_reference}\">yoda/{data_package_reference}</a>"
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_pid'" % (coll),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_epic_pid'"),
         genquery.AS_LIST, ctx
     )
 
@@ -651,7 +650,7 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     package_epic_url = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_url'" % (coll),
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_epic_url'"),
         genquery.AS_LIST, ctx
     )
 
@@ -660,9 +659,9 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
 
     if package_epic_pid:
         if package_epic_url:
-            persistent_identifier_epic = "<a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
+            persistent_identifier_epic = f"<a href=\"{package_epic_url}\">{package_epic_pid}</a>"
         else:
-            persistent_identifier_epic = "{}".format(package_epic_pid)
+            persistent_identifier_epic = str(package_epic_pid)
         system_metadata["EPIC Persistent Identifier"] = persistent_identifier_epic
 
     return system_metadata
@@ -680,7 +679,7 @@ def get_coll_vault_status(ctx: rule.Context, path: str, org_metadata: List | Non
         try:
             return constants.vault_package_state(x)
         except Exception:
-            log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
+            log.write(ctx, f'Invalid vault folder status <{x}>')
 
     return constants.vault_package_state.EMPTY
 
@@ -799,7 +798,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
-        "COLL_NAME = '{}'".format(path),
+        t("COLL_NAME = '{path}'"),
         genquery.AS_LIST, ctx
     )
 
@@ -809,7 +808,7 @@ def api_vault_collection_details(ctx: rule.Context, path: str) -> api.Result:
         # Retrieve all group names with this ID.
         iter2 = genquery.row_iterator(
             "USER_NAME",
-            "USER_ID = '{}'".format(user_id),
+            f"USER_ID = '{user_id}'",
             genquery.AS_LIST, ctx
         )
 
@@ -861,7 +860,7 @@ def api_vault_get_package_by_reference(ctx: rule.Context, reference: str) -> api
     data_package = ""
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.DATA_PACKAGE_REFERENCE, reference),
+        f"META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}' and META_COLL_ATTR_VALUE = '{reference}'",
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -871,7 +870,7 @@ def api_vault_get_package_by_reference(ctx: rule.Context, reference: str) -> api
         return api.Error('not_found', 'Could not find data package with provided reference.')
 
     _, _, path, subpath = pathutil.info(data_package)
-    return "/{}/{}".format(path, subpath)
+    return f"/{path}/{subpath}"
 
 
 @api.make()
@@ -911,7 +910,7 @@ def api_vault_get_landingpage_data(ctx: rule.Context, coll: str) -> api.Result:
     # deposit_date = '2016-02-29'  # To be gotten from the action log
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX + 'action_log'}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -929,12 +928,12 @@ def api_vault_get_landingpage_data(ctx: rule.Context, coll: str) -> api.Result:
 def api_vault_get_publication_terms(ctx: rule.Context) -> api.Result:
     """Retrieve the publication terms."""
     zone = user.zone(ctx)
-    terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)
+    terms_collection = f"/{zone}{constants.IITERMSCOLLECTION}"
     terms = ""
 
     iter = genquery.row_iterator(
         "DATA_NAME, order_asc(DATA_MODIFY_TIME)",
-        "COLL_NAME = '{}'".format(terms_collection),
+        f"COLL_NAME = '{terms_collection}'",
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -944,7 +943,7 @@ def api_vault_get_publication_terms(ctx: rule.Context) -> api.Result:
         return api.Error('TermsNotFound', 'No Terms and Agreements found.')
 
     try:
-        terms_file = "/{}{}/{}".format(zone, constants.IITERMSCOLLECTION, terms)
+        terms_file = f"/{zone}{constants.IITERMSCOLLECTION}/{terms}"
         return data_object.read(ctx, terms_file)
     except Exception:
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
@@ -970,7 +969,7 @@ def change_read_access_group(ctx: rule.Context, coll: str, actor: str, group: st
     except Exception:
         policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, group, "1", "read")
         if bool(policy_error):
-            return False, api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            return False, api.Error('ErrorACLs', f'Could not acquire datamanager access to {coll}.')
         else:
             return False, api.Error('ErrorACLs', str(policy_error))
 
@@ -993,11 +992,11 @@ def check_change_read_access_research_group(ctx: rule.Context, coll: str, grant:
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+        return False, api.Error('invalid_collection', f'The datamanager can only {verb} permissions to vault packages')
 
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.VAULT:
-        return False, api.Error('invalid_collection', 'The datamanager can only {} permissions to vault packages'.format(verb))
+        return False, api.Error('invalid_collection', f'The datamanager can only {verb} permissions to vault packages')
 
     return True, ''
 
@@ -1037,7 +1036,7 @@ def change_read_access_research_group(ctx: rule.Context, coll: str, grant: bool 
             if not response:
                 return api_error
     else:
-        return api.Error('NoDatamanager', 'Actor must be a datamanager for {} access'.format(verb))
+        return api.Error('NoDatamanager', f'Actor must be a datamanager for {verb} access')
 
     return {'status': 'Success', 'statusInfo': ''}
 
@@ -1082,22 +1081,20 @@ def copy_to_vault(ctx: rule.Context, state: str) -> None:
     iter = get_copy_to_vault_colls(ctx, state)
     for row in iter:
         coll = row[0]
-        log.write(ctx, "copy_to_vault {}: {}".format(state, coll))
+        log.write(ctx, f"copy_to_vault {state}: {coll}")
         if not folder.precheck_folder_secure(ctx, coll):
             continue
 
         # failed copy
         if not folder.folder_secure(ctx, coll):
-            log.write(ctx, "copy_to_vault {} failed for collection <{}>".format(state, coll))
+            log.write(ctx, f"copy_to_vault {state} failed for collection <{coll}>")
             folder.folder_secure_set_retry(ctx, coll)
 
 
 def get_copy_to_vault_colls(ctx: rule.Context, cronjob_state: str) -> List:
     iter = list(genquery.Query(ctx,
                 ['COLL_NAME'],
-                "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}'".format(
-                    constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault",
-                    cronjob_state),
+                f"META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX + 'cronjob_copy_to_vault'}' AND META_COLL_ATTR_VALUE = '{cronjob_state}'",
                 output=genquery.AS_LIST))
     return iter
 
@@ -1129,11 +1126,11 @@ def copy_folder_to_vault(ctx: rule.Context, coll: str, target: str) -> bool:
         returncode = subprocess.call(irsync_command)
     except Exception as e:
         log.write(ctx, "irsync failure: " + str(e))
-        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        log.write(ctx, f"irsync failure for coll <{coll}> and target <{target}>")
         return False
 
     if returncode != 0:
-        log.write(ctx, "irsync failure for coll <{}> and target <{}>".format(coll, target))
+        log.write(ctx, f"irsync failure for coll <{coll}> and target <{target}>")
         return False
 
     return True
@@ -1143,7 +1140,7 @@ def set_vault_permissions(ctx: rule.Context, coll: str, target: str) -> bool:
     """Set permissions in the vault as such that data can be copied to the vault."""
     group_name = folder.collection_group_name(ctx, coll)
     if group_name == '':
-        log.write(ctx, "set_vault_permissions: Cannot determine which deposit or research group <{}> belongs to".format(coll))
+        log.write(ctx, f"set_vault_permissions: Cannot determine which deposit or research group <{coll}> belongs to")
         return False
 
     parts = group_name.split('-')
@@ -1243,11 +1240,9 @@ def copy_acls_from_parent(ctx: rule.Context, path: str, recursive_flag: str) -> 
     :param path:           Path of object that needs the permissions of parent
     :param recursive_flag: Either "default" for no recursion or "recursive"
     """
-    parent = os.path.dirname(path)
-
     iter = genquery.row_iterator(
         "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
-        "COLL_NAME = '" + parent + "'",
+        t("COLL_NAME = '{os.path.dirname(path)}'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1276,7 +1271,7 @@ def reader_needs_access(ctx: rule.Context, group_name: str, coll: str) -> bool:
     """Return if research group has access to this group but readers do not"""
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
-        "COLL_NAME = '" + coll + "'",
+        t("COLL_NAME = '{coll}'"),
         genquery.AS_LIST, ctx
     )
     reader_found = False
@@ -1331,7 +1326,7 @@ def set_reader_vault_permissions(ctx: rule.Context, group_name: str, zone: str, 
 
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_PARENT_NAME = '{}'".format(vault_path),
+        f"COLL_PARENT_NAME = '{vault_path}'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -1345,7 +1340,7 @@ def set_reader_vault_permissions(ctx: rule.Context, group_name: str, zone: str, 
                     log.write(ctx, "Granted " + read_group_name + " read access to " + target)
             except Exception:
                 no_errors = False
-                log.write(ctx, "Failed to set read permissions for <{}> on coll <{}>".format(read_group_name, target))
+                log.write(ctx, f"Failed to set read permissions for <{read_group_name}> on coll <{target}>")
 
     return no_errors
 
@@ -1377,21 +1372,21 @@ def rule_vault_grant_readers_vault_access(ctx: rule.Context, dry_run: str, verbo
             modes.append("dry run")
         if verbose_mode:
             modes.append("verbose")
-        log.write(ctx, "Running grant_readers_vault_access in {} mode.".format((" and ").join(modes)))
+        log.write(ctx, f"Running grant_readers_vault_access in {(' and ').join(modes)} mode.")
 
     zone = user.zone(ctx)
 
     # Get the group names
     userIter = genquery.row_iterator(
         "USER_GROUP_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_ZONE = '{}' AND USER_GROUP_NAME like 'research-%'".format(zone),
+        f"USER_TYPE = 'rodsgroup' AND USER_ZONE = '{zone}' AND USER_GROUP_NAME like 'research-%'",
         genquery.AS_LIST,
         ctx)
 
     for row in userIter:
         name = row[0]
         if verbose:
-            log.write(ctx, "{}: checking permissions".format(name))
+            log.write(ctx, f"{name}: checking permissions")
         if not set_reader_vault_permissions(ctx, name, zone, dry_run_mode):
             no_errors = False
 
@@ -1463,7 +1458,7 @@ def vault_process_status_transitions(ctx: rule.Context, coll: str, new_coll_stat
                 # Landingpage URL.
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
+                    t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'"),
                     genquery.AS_LIST, ctx
                 )
 
@@ -1474,7 +1469,7 @@ def vault_process_status_transitions(ctx: rule.Context, coll: str, new_coll_stat
                 # Persistent Identifier DOI.
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
-                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'" % (coll),
+                    t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_versionDOI'"),
                     genquery.AS_LIST, ctx
                 )
 
@@ -1618,7 +1613,7 @@ def get_doi(ctx: rule.Context, path: str, doi: str = 'version') -> str | None:
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_{}DOI'".format(path, doi),
+        t("COLL_NAME = '{path}' AND META_COLL_ATTR_NAME = 'org_publication_{doi}DOI'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1638,7 +1633,7 @@ def get_previous_version(ctx: rule.Context, path: str) -> str | None:
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (path),
+        t("COLL_NAME = '{path}' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1658,7 +1653,7 @@ def get_title(ctx: rule.Context, path: str) -> str:
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = '{}_0_s'".format(path, constants.UUUSERMETADATAROOT),
+        t("COLL_NAME = '{path}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = '{constants.UUUSERMETADATAROOT}_0_s'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1684,10 +1679,10 @@ def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: 
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
             },
             "Relation_Type": "IsNewVersionOf",
-            "Title": "{}".format(get_title(ctx, previous_version))
+            "Title": f"{get_title(ctx, previous_version)}"
         }
 
         if "Related_Datapackage" in metadata:
@@ -1702,10 +1697,10 @@ def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: 
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": "https://doi.org/{}".format(get_doi(ctx, previous_version))
+                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
             },
             "Relation_Type": "IsNewVersionOf",
-            "Title": "{}".format(get_title(ctx, previous_version))
+            "Title": f"{get_title(ctx, previous_version)}"
         }
 
         if "Related_Resource" in metadata:
@@ -1727,7 +1722,7 @@ def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')".format(path),
+        t("COLL_PARENT_NAME = '{path}' AND META_COLL_ATTR_NAME IN ('org_publication_versionDOI', 'org_publication_baseDOI', 'org_publication_publicationDate')"),
         genquery.AS_LIST, ctx
     )
 

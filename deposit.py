@@ -9,6 +9,7 @@ from collections import OrderedDict
 
 import genquery
 from genquery import AS_DICT, Query
+from tstrings import t
 
 import folder
 import groups
@@ -46,7 +47,7 @@ def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_gro
     coll_data_package = ""
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.DATA_PACKAGE_REFERENCE, reference),
+        f"META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}' and META_COLL_ATTR_VALUE = '{reference}'",
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -134,7 +135,7 @@ def deposit_create(ctx: rule.Context, deposit_group: str | None) -> dict:
         return {"deposit_path": "not_allowed"}
 
     space, zone, group, subpath = pathutil.info(deposit_path)
-    deposit_path = "{}/{}".format(group, subpath)
+    deposit_path = f"{group}/{subpath}"
 
     return {"deposit_path": deposit_path}
 
@@ -148,7 +149,7 @@ def api_deposit_status(ctx: rule.Context, path: str) -> api.Result:
 
     :returns: Deposit status
     """
-    coll = "/{}/home{}".format(user.zone(ctx), path)
+    coll = f"/{user.zone(ctx)}/home{path}"
 
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.DEPOSIT:
@@ -157,7 +158,7 @@ def api_deposit_status(ctx: rule.Context, path: str) -> api.Result:
     if not collection.exists(ctx, coll):
         return api.Error('nonexistent', 'Deposit collection does not exist.')
 
-    meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    meta_path = f'{coll}/{constants.IIJSONMETADATA}'
 
     data = False
     if not collection.is_empty(ctx, coll):
@@ -183,7 +184,7 @@ def api_deposit_submit(ctx: rule.Context, path: str) -> api.Result:
 
     :returns: API status
     """
-    coll = "/{}/home{}".format(user.zone(ctx), path)
+    coll = f"/{user.zone(ctx)}/home{path}"
 
     space, _, _, _ = pathutil.info(coll)
     if space is not pathutil.Space.DEPOSIT:
@@ -223,7 +224,7 @@ def api_deposit_overview(ctx: rule.Context,
         deposit_title = '(no title)'
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(x['COLL_NAME']),
+            t("COLL_NAME = '{x['COLL_NAME']}' AND META_COLL_ATTR_NAME = 'Title'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -232,7 +233,7 @@ def api_deposit_overview(ctx: rule.Context,
         deposit_access = ''
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'".format(x['COLL_NAME']),
+            t("COLL_NAME = '{x['COLL_NAME']}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -264,10 +265,12 @@ def api_deposit_overview(ctx: rule.Context,
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
     zone = user.zone(ctx)
+    vault_path = f"/{zone}/home/vault-%"
+    grpvault_path = f"/{zone}/home/grp-vault-%"
 
     # First collect the names of the deposit groups directly under home
     qcoll_above = Query(ctx, ["COLL_NAME"],
-                        "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(zone, zone, zone),
+                        f"COLL_PARENT_NAME = '/{zone}/home' AND COLL_NAME not like '{vault_path}' AND COLL_NAME not like '{grpvault_path}'",
                         offset=offset, limit=limit, output=AS_DICT)
 
     all_colls = []
@@ -276,7 +279,7 @@ def api_deposit_overview(ctx: rule.Context,
         coll_name = item['COLL_NAME']
         if pathutil.info(coll_name).space is pathutil.Space.DEPOSIT:
             qcoll = Query(ctx, ccols,
-                          "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll_name, zone, zone),
+                          t("COLL_PARENT_NAME = '{coll_name}' AND COLL_NAME not like '{vault_path}' AND COLL_NAME not like '{grpvault_path}'"),
                           offset=offset, limit=limit, output=AS_DICT)
             colls = list(map(transform, list(qcoll)))
             all_colls += colls

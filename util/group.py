@@ -22,8 +22,7 @@ def exists(ctx: 'rule.Context', grp: str) -> bool:
 
     :returns: Boolean indicating if group with given name exists
     """
-    return genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'"
-                               .format(grp)).first() is not None
+    return genquery.Query(ctx, "USER_GROUP_NAME", f"USER_GROUP_NAME = '{grp}' AND USER_TYPE = 'rodsgroup'").first() is not None
 
 
 def members(ctx: 'rule.Context', grp: str) -> List[Tuple[str, str]]:
@@ -37,8 +36,7 @@ def members(ctx: 'rule.Context', grp: str) -> List[Tuple[str, str]]:
               list if the group does not exist.
     """
     query_results = list(genquery.Query(ctx, "USER_NAME, USER_ZONE",
-                                        "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'"
-                                        .format(grp)))
+                                        f"USER_GROUP_NAME = '{grp}' AND USER_TYPE != 'rodsgroup'"))
     return list(query_results)
 
 

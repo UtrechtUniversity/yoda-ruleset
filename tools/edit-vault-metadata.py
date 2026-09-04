@@ -83,7 +83,7 @@ def apply_acls(path: str, acls: List[Tuple[str, str]]):
     for acl in acls:
         retcode = subprocess.call(["ichmod", "-M", acl[1], acl[0], path])
         if retcode != 0:
-            sys.exit("Could not set ACL {}:{} for {}".format(acl[1], acl[0], path))
+            sys.exit(f"Could not set ACL {acl[1]}:{acl[0]} for {path}")
 
 
 def create_collection(path: str):
@@ -119,12 +119,10 @@ def get_dataobject_acls(path: str) -> List[Tuple[str, str]]:
 
 
 def upload_new_metadata_file(local_filename: str, remote_filename: str):
-    print("Uploading {} to {}".format(local_filename, remote_filename))
+    print(f"Uploading {local_filename} to {remote_filename}")
     retcode = subprocess.call(["iput", local_filename, remote_filename])
     if retcode != 0:
-        sys.exit("Error: could not upload metadata file {} to {}.".format(
-                 local_filename,
-                 remote_filename))
+        sys.exit(f"Error: could not upload metadata file {local_filename} to {remote_filename}.")
 
 
 def download_metadata_file(destination_dir: str, remote_path: str) -> str:
@@ -132,17 +130,13 @@ def download_metadata_file(destination_dir: str, remote_path: str) -> str:
                                    os.path.basename(remote_path))
     retcode = subprocess.call(["iget", remote_path, local_path_edit])
     if retcode != 0:
-        sys.exit("Error: could not download metadata file {} to {}.".format(
-                 remote_path,
-                 local_path_edit))
+        sys.exit(f"Error: could not download metadata file {remote_path} to {local_path_edit}.")
 
     local_path_orig = os.path.join(destination_dir,
                                    os.path.basename(remote_path)) + ".orig"
     retcode = subprocess.call(["iget", remote_path, local_path_orig])
     if retcode != 0:
-        sys.exit("Error: could not download metadata file {} to {}.".format(
-                 remote_path,
-                 local_path_orig))
+        sys.exit(f"Error: could not download metadata file {remote_path} to {local_path_orig}.")
 
     return local_path_edit
 
@@ -154,7 +148,7 @@ def get_datamanager_vault_subcollection(datamanager_collection: str, vault_path:
 
 def get_new_metadata_name(collection: str, zone_name: str, direct_mode: bool) -> str:
     if direct_mode:
-        return os.path.join(collection, "yoda-metadata[{}].json".format(str(int(time.time()))))
+        return os.path.join(collection, f"yoda-metadata[{str(int(time.time()))}].json")
 
     research_collection = get_research_collection_for_vault_path(collection)
     if research_collection is None:
@@ -171,11 +165,11 @@ def get_new_metadata_name(collection: str, zone_name: str, direct_mode: bool) ->
 def update_provenance_log(vault_collection: str, log_message: str):
     retcode = subprocess.call(["/etc/irods/yoda-ruleset/tools/log-provenance-action.sh", vault_collection, "rods", log_message])
     if retcode != 0:
-        sys.exit("Error: could not update provenance log for {}.".format(vault_collection))
+        sys.exit(f"Error: could not update provenance log for {vault_collection}.")
 
 
 def collection_exists(path: str) -> bool:
-    result = subprocess.run(["iquest", "%s", "--no-page", "SELECT COLL_NAME WHERE COLL_NAME ='{}'".format(path)], capture_output=True, text=True)
+    result = subprocess.run(["iquest", "%s", "--no-page", f"SELECT COLL_NAME WHERE COLL_NAME ='{path.replace("'", "''")}'"], capture_output=True, text=True)
     if result.returncode == 0 and path in result.stdout:
         return True
     elif result.returncode == 1 and "CAT_NO_ROWS_FOUND" in result.stdout:
@@ -213,12 +207,12 @@ def get_research_group_for_vault_path(path: str) -> Union[str, None]:
 
 
 def get_datamanager_collection_for_category(category: str, zone_name: str) -> Union[str, None]:
-    datamanager_collection = "/{}/home/datamanager-{}".format(zone_name, category)
+    datamanager_collection = f"/{zone_name}/home/datamanager-{category}"
     return datamanager_collection if collection_exists(datamanager_collection) else None
 
 
 def get_category_research_group(research_group: str) -> str:
-    result = subprocess.run(["iquest", "%s", "--no-page", "SELECT META_USER_ATTR_VALUE WHERE USER_NAME = '{}' and META_USER_ATTR_NAME = 'category'".format(research_group)], capture_output=True, text=True)
+    result = subprocess.run(["iquest", "%s", "--no-page", f"SELECT META_USER_ATTR_VALUE WHERE USER_NAME = '{research_group}' and META_USER_ATTR_NAME = 'category'"], capture_output=True, text=True)
     if result.returncode == 0:
         return result.stdout.split("\n")[0]
     else:
@@ -228,7 +222,7 @@ def get_category_research_group(research_group: str) -> str:
 def main():
     args = get_args()
     if not collection_exists(args.collection):
-        sys.exit("Error: collection {} does not exist.".format(args.collection))
+        sys.exit(f"Error: collection {args.collection} does not exist.")
     zone_name = get_zone_name_from_path(args.collection)
     with tempfile.TemporaryDirectory() as tempdir:
         metadata_file = get_latest_metadata_file(args.collection)
