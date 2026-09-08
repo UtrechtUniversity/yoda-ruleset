@@ -316,7 +316,7 @@ def research_manifest_checksum_empty(api_response):
 
 @then(parsers.parse("file {file} is deleted from {collection} when overwrite is {overwrite}"))
 def research_file_delete_cleanup(user, file, collection, overwrite):
-    # Only clean up when the overwrite=true. 
+    # Only clean up when the overwrite=true.
     if overwrite == "true":
         http_status, _ = api_request(
             user,
