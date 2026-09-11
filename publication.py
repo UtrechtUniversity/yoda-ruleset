@@ -167,7 +167,8 @@ def generate_system_json(ctx: rule.Context, publication_state: dict) -> None:
                 "Identifier_Scheme": "DOI",
                 "Identifier": doi,
             },
-            "Publication_Date": publication_state["publicationDate"]
+            "Publication_Date": publication_state["publicationDate"],
+            "Base_DOI": publication_state.get('baseDOI', '')
         }
     }
 
