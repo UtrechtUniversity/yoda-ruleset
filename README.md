@@ -1,6 +1,6 @@
 # Yoda rules and policies [![License](https://img.shields.io/github/license/UtrechtUniversity/yoda-ruleset.svg?maxAge=2592000)](/LICENSE)
 
-All iRODS rules and policies to be configured with all [Yoda](https://github.com/UtrechtUniversity/yoda) environments.
+All iRODS rules and policies to be configured on [Yoda](https://github.com/UtrechtUniversity/yoda) environments.
 
 ## What is this?
 Yoda is a research data management solution developed by Utrecht
@@ -9,10 +9,14 @@ It provides researchers and their partners with a workspace and an
 archive that enables them to collaborate, deposit, publish and preserve
 research data.
 
-This repository contains all iRODS rules and policies useful for all Yoda environments.
+This repository contains iRODS rules and policies for Yoda environments.
 
 ## Requirements
-- [iRODS >= 4.2.10](https://irods.org/download/)
+
+The ruleset is usually deployed and configured using [Ansible](https://utrechtuniversity.github.io/yoda/administration/deploying-yoda.html) or the [containerized development environment](https://utrechtuniversity.github.io/yoda/development/setting-up-development-environment.html).
+
+The ruleset mainly depends on:
+- [iRODS](https://irods.org/download/)
 - [iRODS Sudo microservices](https://github.com/UtrechtUniversity/irods-sudo-microservices)
 - [iRODS UU microservices](https://github.com/UtrechtUniversity/irods-uu-microservices)
 
