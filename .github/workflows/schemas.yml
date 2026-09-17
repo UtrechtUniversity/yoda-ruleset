@@ -5,10 +5,12 @@ on:
     paths:
     - 'schemas/**'
     - 'datarequest/schemas/**'
+    - 'metadata_schemas/**'
   pull_request:
     paths:
     - 'schemas/**'
     - 'datarequest/schemas/**'
+    - 'metadata_schemas/**'
 
 jobs:
   build:
@@ -35,3 +37,5 @@ jobs:
           ajv compile -s "schemas/{core-2,default-3,epos-msl-0,epos-msl-1}/uischema.json" --spec=draft2019 --strict=false --validate-formats=false
 
           ajv compile -s "datarequest/schemas/*/*/*.json"  --spec=draft7 --strict=false --validate-formats=false
+
+          ajv compile -s "metadata_schemas/*/*.json" --spec=draft2020 --strict=false --validate-formats=false

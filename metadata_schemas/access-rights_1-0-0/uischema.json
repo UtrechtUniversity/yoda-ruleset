@@ -1,0 +1,11 @@
+{
+  "License": {
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+  },
+  "Data_Access_Restriction": {
+    "ui:help": "Once archived, how is your data package accessible to third parties?"
+  },
+  "Embargo_End_Date": {
+    "ui:help": "If there is an embargo on the data package; when will it end?"
+  }  
+}
