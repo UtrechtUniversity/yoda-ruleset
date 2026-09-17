@@ -1,0 +1,5 @@
+{
+  "Covered_Geolocation_Place": {
+    "ui:description": "Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)"
+  }
+}

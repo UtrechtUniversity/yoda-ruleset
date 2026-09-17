@@ -1,0 +1,289 @@
+{
+  "$id": "citation_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Citation",
+  "description": "Define creators and contributors with detailed person and affiliation information",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "optionsNameIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ORCID",
+        "DAI",
+        "Author identifier (Scopus)",
+        "ResearcherID (Web of Science)",
+        "ISNI"
+      ]
+    },
+    "optionsContributorType": {
+      "type": "string",
+      "enum": [
+        "ContactPerson",
+        "DataCollector",
+        "DataCurator",
+        "DataManager",
+        "Distributor",
+        "Editor",
+        "HostingInstitution",
+        "Producer",
+        "ProjectLeader",
+        "ProjectManager",
+        "ProjectMember",
+        "RegistrationAgency",
+        "RegistrationAuthority",
+        "RelatedPerson",
+        "Researcher",
+        "ResearchGroup",
+        "RightsHolder",
+        "Sponsor",
+        "Supervisor",
+        "WorkPackageLeader"
+      ]
+    },
+    "personName": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "yoda:structure": "compound",
+      "properties": {
+        "Given_Name": {
+          "$ref": "#/$defs/stringNormal",
+          "title": "Given Name"
+        },
+        "Family_Name": {
+          "$ref": "#/$defs/stringNormal",
+          "title": "Family Name"
+        }
+      },
+      "dependentRequired": {
+        "Given_Name": [
+          "Family_Name"
+        ],
+        "Family_Name": [
+          "Given_Name"
+        ]
+      }
+    },
+    "affiliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "yoda:structure": "compound",
+      "properties": {
+        "Affiliation_Name": {
+          "$ref": "#/$defs/stringNormal",
+          "title": "Affiliation name"
+        },
+        "Affiliation_Identifier": {
+          "$ref": "#/$defs/stringNormal",
+          "title": "Affiliation identifier"
+        }
+      }
+    },
+    "personIdentifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "yoda:structure": "compound",
+      "required": [
+        "Name_Identifier_Scheme",
+        "Name_Identifier"
+      ],
+      "properties": {
+        "Name_Identifier_Scheme": {
+          "$ref": "#/$defs/optionsNameIdentifierScheme"
+        },
+        "Name_Identifier": {
+          "type": "string",
+          "maxLength": 255
+        }
+      },
+      "dependentRequired": {
+        "Name_Identifier_Scheme": [
+          "Name_Identifier"
+        ],
+        "Name_Identifier": [
+          "Name_Identifier_Scheme"
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "Name_Identifier_Scheme"
+            ],
+            "properties": {
+              "Name_Identifier_Scheme": {
+                "const": "ORCID"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "Name_Identifier": {
+                "pattern": "^https://orcid\\.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "Name_Identifier_Scheme"
+            ],
+            "properties": {
+              "Name_Identifier_Scheme": {
+                "const": "DAI"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "Name_Identifier": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "Name_Identifier_Scheme"
+            ],
+            "properties": {
+              "Name_Identifier_Scheme": {
+                "const": "Author identifier (Scopus)"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "Name_Identifier": {
+                "pattern": "^[0-9]+$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "Name_Identifier_Scheme"
+            ],
+            "properties": {
+              "Name_Identifier_Scheme": {
+                "const": "ResearcherID (Web of Science)"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "Name_Identifier": {
+                "pattern": "^https://www\\.researcherid\\.com/rid/[A-Z]-[0-9]{4}-[0-9]{4}$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "Name_Identifier_Scheme"
+            ],
+            "properties": {
+              "Name_Identifier_Scheme": {
+                "const": "ISNI"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "Name_Identifier": {
+                "pattern": "^https://isni\\.org/isni/[0-9]{15}[0-9X]$"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "Creator"
+  ],
+  "properties": {
+    "Creator": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "yoda:structure": "subproperties",
+        "required": [
+          "Name",
+          "Affiliation"
+        ],
+        "properties": {
+          "Name": {
+            "$ref": "#/$defs/personName"
+          },
+          "Affiliation": {
+            "title": "Affiliation",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/affiliation"
+            }
+          },
+          "Person_Identifier": {
+            "title": "Person identifier",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/personIdentifier"
+            }
+          }
+        }
+      }
+    },
+    "Contributor": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Name": {
+            "$ref": "#/$defs/personName"
+          },
+          "Contributor_Type": {
+            "$ref": "#/$defs/optionsContributorType",
+            "title": "Contributor type"
+          },
+          "Affiliation": {
+            "title": "Affiliation",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/affiliation"
+            }
+          },
+          "Person_Identifier": {
+            "title": "Person identifier",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/personIdentifier"
+            }
+          }
+        }
+      }
+    }
+  }
+}
