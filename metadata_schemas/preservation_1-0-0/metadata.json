@@ -1,0 +1,31 @@
+{
+  "$id": "preservation_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Preservation",
+  "description": "Defines retention and preservation requirements",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    }
+  },
+  "required": [
+    "Retention_Period"
+  ],
+  "properties": {
+    "Retention_Period": {
+      "type": "integer",
+      "title": "Retention period (years)",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "Retention_Information": {
+      "$ref": "#/$defs/stringNormal",
+      "title": "Retention information"
+    }
+  }
+}

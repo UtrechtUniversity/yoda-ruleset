@@ -1,0 +1,121 @@
+{
+  "$id": "access-rights_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Access and rights",
+  "description": "Define how the data can be used, by whom, and under what conditions, including licensing and embargo terms",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "optionsDataAccessRestriction": {
+      "type": "string",
+      "enum": [
+        "Open - freely retrievable",
+        "Restricted - available upon request",
+        "Closed"
+      ]
+    }
+  },
+  "required": [
+    "License",
+    "Data_Access_Restriction"
+  ],
+  "properties": {
+    "Embargo_End_Date": {
+      "type": "string",
+      "format": "date",
+      "title": "Embargo end date"
+    },
+    "Data_Access_Restriction": {
+      "$ref": "#/$defs/optionsDataAccessRestriction",
+      "title": "Data package access",
+      "default": "Restricted - available upon request"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Open - freely retrievable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Creative Commons Attribution 4.0 International Public License",
+              "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+              "Creative Commons Attribution-NonCommercial 4.0 International Public License",
+              "Creative Commons Attribution-NoDerivs 4.0 International Public License",
+              "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
+              "Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International Public License",
+              "Creative Commons Zero v1.0 Universal",
+              "Open Data Commons Attribution License (ODC-By) v1.0",
+              "Custom"
+            ],
+            "title": "License"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Restricted - available upon request"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Custom"
+            ],
+            "title": "License",
+            "default": "Custom"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Data_Access_Restriction": {
+            "const": "Closed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "License": {
+            "type": "string",
+            "enum": [
+              "Custom"
+            ],
+            "title": "License",
+            "default": "Custom"
+          }
+        },
+        "required": [
+          "License"
+        ]
+      }
+    },
+    {
+      "required": [
+        "Data_Access_Restriction"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "$id": "funding_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Funding",
+  "description": "Record funding sources and award information for the data package",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    }
+  },
+  "required": [],
+  "properties": {
+    "Funding_Reference": {
+      "title": "Funding reference",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "unevaluatedProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Funder_Name": {
+            "$ref": "#/$defs/stringNormal",
+            "title": "Funder"
+          },
+          "Award_Number": {
+            "$ref": "#/$defs/stringNormal",
+            "title": "Award number"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "Funding_Reference": {
+    "items": {
+      "Funder_Name": {
+        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"
+      },
+      "Award_Number": {
+        "ui:help": "The award or grant number issued by the funding organisation"
+      }
+    }
+  }
+}
