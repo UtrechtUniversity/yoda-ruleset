@@ -1,0 +1,57 @@
+{
+  "$id": "temporal-coverage_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Temporal coverage",
+  "description": "Specify the dates when data was collected and the time period that the data represents or covers",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {},
+  "required": [],
+  "properties": {
+    "Collected": {
+      "type": "object",
+      "additionalProperties": false,
+      "title": "Collection process",
+      "yoda:structure": "compound",
+      "properties": {
+        "Start_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "Start date"
+        },
+        "End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "End date"
+        }
+      },
+      "dependentRequired": {
+        "Start_Date": ["End_Date"],
+        "End_Date": ["Start_Date"]
+      }
+    },
+    "Covered_Period": {
+      "type": "object",
+      "additionalProperties": false,
+      "title": "Period covered",
+      "yoda:structure": "compound",
+      "properties": {
+        "Start_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "Start date"
+        },
+        "End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "End date"
+        }
+      },
+      "dependentRequired": {
+        "Start_Date": ["End_Date"],
+        "End_Date": ["Start_Date"]
+      }
+    }
+  }
+}

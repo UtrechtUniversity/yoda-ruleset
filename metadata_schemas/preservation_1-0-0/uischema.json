@@ -1,0 +1,9 @@
+{
+  "Retention_Period": {
+    "ui:help": "The minimal number of years the data will be kept in the archive",
+    "ui:widget": "updown"
+  },
+  "Retention_Information": {
+    "ui:help": "Provide the reason when you deviate from the minimum of 10 years retention of the data package"
+  }
+}
