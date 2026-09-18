@@ -13,7 +13,31 @@ import genquery
 import meta
 from util import *
 
-__all__ = ['api_schema_get_schemas']
+__all__ = ['api_schema_list_schemas',
+           'api_schema_get_schemas']
+
+
+@api.make()
+def api_schema_list_schemas(ctx: rule.Context) -> api.Result:
+    """Retrieve list of modular metadata schemas.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of schemas
+    """
+    schemas = []
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        f"COLL_PARENT_NAME = '/{user.zone(ctx)}/yoda/metadata_schemas' AND META_COLL_ATTR_NAME = '{constants.SCHEMA_USER_SELECTABLE}' AND META_COLL_ATTR_VALUE = 'True'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        schema = row[0].split('/')[-1]
+        schemas.append(schema)
+
+    return schemas
 
 
 @api.make()

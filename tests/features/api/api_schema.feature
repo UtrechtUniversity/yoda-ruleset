@@ -32,3 +32,29 @@ Feature: Schema API
         And the Yoda schema get schemas API is queried
         Then the response status code is "200"
         And default schema is present
+
+
+    Scenario Outline: Schema list schemas
+        Given user <user> is authenticated
+        And the Yoda schema list schemas API is queried
+        Then the response status code is "200"
+        And list contains schema <schema>
+
+            Examples:
+                | user        | schema                  |
+                | researcher  | access-rights_1-0-0     |
+                | researcher  | citation_1-0-0          |
+                | researcher  | descriptive_1-0-0       |
+                | researcher  | funding_1-0-0           |
+                | researcher  | preservation_1-0-0      |
+                | researcher  | related-resources_1-0-0 |
+                | researcher  | spatial-coverage_1-0-0  |
+                | researcher  | temporal-coverage_1-0-0 |
+                | datamanager | access-rights_1-0-0     |
+                | datamanager | citation_1-0-0          |
+                | datamanager | descriptive_1-0-0       |
+                | datamanager | funding_1-0-0           |
+                | datamanager | preservation_1-0-0      |
+                | datamanager | related-resources_1-0-0 |
+                | datamanager | spatial-coverage_1-0-0  |
+                | datamanager | temporal-coverage_1-0-0 |
