@@ -1,19 +1,205 @@
-"""Functions for finding the active schema."""
+"""Functions for handling metadata schemas."""
 from __future__ import annotations
 
 __copyright__ = 'Copyright (c) 2018-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 import re
 from collections import defaultdict
 from typing import Tuple
 
 import genquery
 
+import admin
 import meta
 from util import *
 
-__all__ = ['api_schema_get_schemas']
+__all__ = ['api_schema_get_building_blocks',
+           'api_schema_get_composed_schemas',
+           'api_schema_get_composed_schema',
+           'api_schema_post_composed_schema',
+           'api_schema_put_composed_schema',
+           'api_schema_delete_composed_schema',
+           'api_schema_get_schemas']
+
+
+def get_building_blocks(ctx: rule.Context) -> list[str]:
+    """Get schema building blocks from iRODS.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of schema building blocks
+    """
+    blocks = []
+    zone = user.zone(ctx)
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        f"COLL_PARENT_NAME = '/{zone}/yoda/metadata_schemas' AND META_COLL_ATTR_NAME = '{constants.SCHEMA_USER_SELECTABLE}' AND META_COLL_ATTR_VALUE = 'True'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        block_name = row[0].split('/')[-1]
+        blocks.append(block_name)
+
+    return blocks
+
+
+def get_composed_schemas(ctx: rule.Context) -> list[dict]:
+    """Get list of composed schemas from iRODS metadata.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of all composed schemas
+    """
+    zone = user.zone(ctx)
+    avus = avu.of_coll(ctx, f"/{zone}/yoda/composed_schemas")
+    composed_schemas = []
+
+    for schema in avus:
+        if schema.attr.startswith(f"{constants.SCHEMA}_"):
+            try:
+                composed_schemas.append(json.loads(schema.value))
+            except json.JSONDecodeError as e:
+                log.write(ctx, f"Failed to parse schema JSON of <{schema.attr}>: {e}")
+
+    return composed_schemas
+
+
+@api.make()
+def api_schema_get_building_blocks(ctx: rule.Context) -> api.Result:
+    """Get list of schema building blocks.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of schema building blocks
+    """
+    log.write(ctx, "GET building blocks")
+    try:
+        return get_building_blocks(ctx)
+    except Exception:
+        return api.Error('internal', 'Could not retrieve list of schema building blocks')
+
+
+@api.make()
+def api_schema_get_composed_schemas(ctx: rule.Context) -> api.Result:
+    """Get list of all composed schemas.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of all composed schemas
+    """
+    log.write(ctx, "GET composed schemas")
+    return get_composed_schemas(ctx)
+
+
+@api.make()
+def api_schema_get_composed_schema(ctx: rule.Context, identifier: str) -> api.Result:
+    """A GET using ID for Edit page to have the preselected checkboxes of a composed schema
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Composed metadata schema identifier
+
+    :returns: List of blocks for composed schema
+    """
+    if not schema_utils.is_valid_schema_identifier(identifier):
+        return api.Error('bad_request', 'Invalid composed schema identifier')
+
+    log.write(ctx, f"GET composed schema: {identifier}")
+    for schema in get_composed_schemas(ctx):
+        if schema["name"] == identifier:
+            return schema
+
+    return api.Error('not_found', 'Could not find composed schema with provided identifier')
+
+
+@api.make()
+def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, blocks: list) -> api.Result:
+    """A POST for Compose page to save a composed schema.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Composed metadata schema identifier
+    :param blocks:     List of schema building blocks
+
+    :returns: Boolean indicating if post succeeded
+    """
+    if not admin.is_admin(ctx, user.name(ctx)):
+        return api.Error('not_allowed', 'Only admins can post composed schemas')
+    if not schema_utils.is_valid_schema_identifier(identifier):
+        return api.Error('bad_request', 'Invalid composed schema identifier')
+    if not schema_utils.is_valid_blocks_list(get_building_blocks(ctx), blocks):
+        return api.Error('bad_request', 'Invalid schema building block list')
+
+    log.write(ctx, f"POST composed schema: {identifier} {blocks}")
+
+    try:
+        composed_schema = {
+            "name": identifier,
+            "blocks": blocks
+        }
+        zone = user.zone(ctx)
+        avu.set_on_coll(ctx, f"/{zone}/yoda/composed_schemas", f"{constants.SCHEMA}_{identifier}", json.dumps(composed_schema))
+    except Exception:
+        return api.Error('internal', f"Failed to post composed schemas <{identifier}>")
+
+    return api.Result.ok()
+
+
+@api.make()
+def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, blocks: list) -> api.Result:
+    """A PUT for Edit page to update a composed schema.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Composed metadata schema identifier
+    :param blocks:     List of schema building blocks
+
+    :returns: Boolean indicating if put succeeded
+    """
+    if not admin.is_admin(ctx, user.name(ctx)):
+        return api.Error('not_allowed', 'Only admins can put composed schemas')
+    if not schema_utils.is_valid_schema_identifier(identifier):
+        return api.Error('bad_request', 'Invalid composed schema identifier')
+    if not schema_utils.is_valid_blocks_list(get_building_blocks(ctx), blocks):
+        return api.Error('bad_request', 'Invalid schema building block list')
+
+    log.write(ctx, f"PUT composed schema: {identifier} {blocks}")
+
+    try:
+        composed_schema = {
+            "name": identifier,
+            "blocks": blocks
+        }
+        zone = user.zone(ctx)
+        avu.set_on_coll(ctx, f"/{zone}/yoda/composed_schemas", f"{constants.SCHEMA}_{identifier}", json.dumps(composed_schema))
+    except Exception:
+        return api.Error('internal', f"Failed to put composed schemas <{identifier}>")
+
+    return api.Result.ok()
+
+
+@api.make()
+def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api.Result:
+    """A DELETE using ID for overview page to delete a composed schema.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Composed metadata schema identifier
+
+    :returns: Boolean indicating if composed schema is deleted
+    """
+    if not admin.is_admin(ctx, user.name(ctx)):
+        return api.Error('not_allowed', 'Only admins can delete composed schemas')
+    if not schema_utils.is_valid_schema_identifier(identifier):
+        return api.Error('bad_request', 'Invalid composed schema identifier')
+
+    log.write(ctx, f"DELETE composed schema: {identifier}")
+
+    try:
+        zone = user.zone(ctx)
+        avu.rmw_from_coll(ctx, f"/{zone}/yoda/composed_schemas", f"{constants.SCHEMA}_{identifier}", '%')
+    except Exception:
+        return api.Error('internal', f"Failed to delete composed schemas <{identifier}>")
+
+    return api.Result.ok()
 
 
 @api.make()
