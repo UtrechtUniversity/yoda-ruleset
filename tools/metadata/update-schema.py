@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-""" Update schema in iRODS from local filesystem.
-"""
+"""Update schema in iRODS from local filesystem."""
 
 import argparse
 import base64
