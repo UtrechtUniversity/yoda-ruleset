@@ -3,7 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from dateutil import parser
 
@@ -22,7 +22,7 @@ spdx_map = {
 }
 
 
-def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> Dict:
+def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: str) -> dict:
     """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:              Combined type of a callback and rei struct
@@ -70,32 +70,32 @@ def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: s
     return metadata
 
 
-def get_DOI(combi: Dict) -> str:
+def get_DOI(combi: dict) -> str:
     return combi['System']['Persistent_Identifier_Datapackage']['Identifier']
 
 
-def get_identifiers(combi: Dict) -> List:
+def get_identifiers(combi: dict) -> List:
     return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
              'identifierType': 'DOI'}]
 
 
-def get_titles(combi: Dict) -> List:
+def get_titles(combi: dict) -> List:
     return [{'title': combi['Title'], 'language': 'en-us'}]
 
 
-def get_descriptions(combi: Dict) -> List:
+def get_descriptions(combi: dict) -> List:
     return [{'description': combi['Description'], 'descriptionType': 'Abstract'}]
 
 
-def get_publisher(combi: Dict) -> str:
+def get_publisher(combi: dict) -> str:
     return config.datacite_publisher
 
 
-def get_publication_year(combi: Dict) -> str:
+def get_publication_year(combi: dict) -> str:
     return combi['System']['Publication_Date'][0:4]
 
 
-def get_subjects(combi: Dict) -> List:
+def get_subjects(combi: dict) -> List:
     """Get list in DataCite format containing:
 
        1) standard objects like tags/discipline
@@ -153,7 +153,7 @@ def get_subjects(combi: Dict) -> List:
     return subjects
 
 
-def get_funders(combi: Dict) -> List:
+def get_funders(combi: dict) -> List:
     funders = []
     try:
         for funder in combi.get('Funding_Reference', []):
@@ -165,7 +165,32 @@ def get_funders(combi: Dict) -> List:
     return funders
 
 
-def get_creators(combi: Dict) -> List:
+def _process_affiliations_list(inputdata: List) -> List[dict]:
+    """Internal function for processing a list of affiliations
+
+    :param inputdata: List of affiliations in Yoda metadata format
+
+    :returns: List of dictionaries with affiliation data in DataCite format
+    """
+    affiliations: List[dict] = []
+    for aff in inputdata:
+        affiliation_data = {}
+        if isinstance(aff, dict):
+            if "Affiliation_Name" in aff and len(aff["Affiliation_Name"]):
+                affiliation_data["name"] = str(aff['Affiliation_Name'])
+            if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
+                affiliation_data["affiliationIdentifier"] = aff['Affiliation_Identifier']
+                affiliation_data["affiliationIdentifierScheme"] = "ROR"
+        elif isinstance(aff, str) and len(aff):
+            affiliation_data["name"] = aff
+
+        if len(affiliation_data) > 0:
+            affiliations.append(affiliation_data)
+
+    return affiliations
+
+
+def get_creators(combi: dict) -> List:
     """Return creator information in DataCite format.
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -182,16 +207,7 @@ def get_creators(combi: Dict) -> List:
         if isinstance(aff_list, str):
             aff_list = [aff_list]
 
-        for aff in aff_list:
-            if isinstance(aff, dict) and len(aff) > 0:
-                if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
-                    affiliations.append({"name": aff['Affiliation_Name'],
-                                         "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
-                                         "affiliationIdentifierScheme": "ROR"})
-                else:
-                    affiliations.append({'name': aff['Affiliation_Name']})
-            else:
-                affiliations.append({'name': aff})
+        affiliations = _process_affiliations_list(aff_list)
 
         name_ids = []
         for pid in creator.get('Person_Identifier', []):
@@ -208,7 +224,7 @@ def get_creators(combi: Dict) -> List:
     return all_creators
 
 
-def get_contributors(combi: Dict) -> List:
+def get_contributors(combi: dict) -> List:
     """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
 
@@ -219,17 +235,12 @@ def get_contributors(combi: Dict) -> List:
     all = []
     # 1) Contributor
     for person in combi.get('Contributor', []):
-        affiliations = []
-        for aff in person.get('Affiliation', []):
-            if isinstance(aff, dict) and len(aff) > 0:
-                if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
-                    affiliations.append({"name": aff['Affiliation_Name'],
-                                         "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
-                                         "affiliationIdentifierScheme": "ROR"})
-                else:
-                    affiliations.append({'name': aff['Affiliation_Name']})
-            elif len(aff):
-                affiliations.append({'name': aff})
+        aff_list = person.get('Affiliation', [])
+        # if affiliation is string, transform it to list to process
+        if isinstance(aff_list, str):
+            aff_list = [aff_list]
+
+        affiliations = _process_affiliations_list(aff_list)
 
         name_ids = []
         for pid in person.get('Person_Identifier', []):
@@ -250,17 +261,12 @@ def get_contributors(combi: Dict) -> List:
 
     # 2) Contactperson
     for person in combi.get('ContactPerson', []):
-        affiliations = []
-        for aff in person.get('Affiliation', []):
-            if isinstance(aff, dict) and len(aff):
-                if "Affiliation_Identifier" in aff and len(aff["Affiliation_Identifier"]):
-                    affiliations.append({"name": aff['Affiliation_Name'],
-                                         "affiliationIdentifier": '{}'.format(aff['Affiliation_Identifier']),
-                                         "affiliationIdentifierScheme": "ROR"})
-                else:
-                    affiliations.append({'name': aff['Affiliation_Name']})
-            elif len(aff):
-                affiliations.append({'name': aff})
+        aff_list = person.get('Affiliation', [])
+        # if affiliation is string, transform it to list to process
+        if isinstance(aff_list, str):
+            aff_list = [aff_list]
+
+        affiliations = _process_affiliations_list(aff_list)
 
         name_ids = []
         for pid in person.get('Person_Identifier', []):
@@ -282,7 +288,7 @@ def get_contributors(combi: Dict) -> List:
     return all
 
 
-def get_dates(combi: Dict) -> List:
+def get_dates(combi: dict) -> List:
     """Return list of dates in DataCite format.
 
     :param combi: Combined JSON file that holds both user and system metadata
@@ -320,7 +326,7 @@ def get_dates(combi: Dict) -> List:
             x = collected.get('Start_Date')
             y = collected.get('End_Date')
             if x is not None and y is not None:
-                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
+                dates.append({'date': f'{x}/{y}', 'dateType': 'Collected'})
         except KeyError:
             pass
 
@@ -330,7 +336,7 @@ def get_dates(combi: Dict) -> List:
             x = coverage.get('Start_Date')
             y = coverage.get('End_Date')
             if x is not None and y is not None:
-                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Coverage'})
+                dates.append({'date': f'{x}/{y}', 'dateType': 'Coverage'})
         except KeyError:
             pass
 
@@ -341,12 +347,12 @@ def get_dates(combi: Dict) -> List:
     return dates
 
 
-def get_version(combi: Dict) -> str:
+def get_version(combi: dict) -> str:
     """Get string in DataCite format containing version info."""
     return combi.get('Version', '')
 
 
-def get_rights_list(combi: Dict) -> List:
+def get_rights_list(combi: dict) -> List:
     """Get list in DataCite format containing rights related information."""
     data_access_restriction = combi['Data_Access_Restriction']
     options = {'Open':       'info:eu-repo/semantics/openAccess',
@@ -375,7 +381,7 @@ def get_rights_list(combi: Dict) -> List:
     return rights_list
 
 
-def get_language(combi: Dict) -> str:
+def get_language(combi: dict) -> str:
     """Get string in DataCite format containing language."""
     language = ""
 
@@ -388,7 +394,7 @@ def get_language(combi: Dict) -> str:
     return language
 
 
-def get_resource_type(combi: Dict) -> Dict:
+def get_resource_type(combi: dict) -> dict:
     """Get dict in DataCite format containing Resource type and default handling."""
     """
     "types": {
@@ -418,16 +424,16 @@ def get_resource_type(combi: Dict) -> Dict:
     return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
-def get_related_resources(combi: Dict) -> List:
-    """Get list in DataCite format containing related datapackages."""
+def get_related_resources(combi: dict) -> List:
+    """Get list in DataCite format containing related resources and version relationships."""
     """
-  "relatedIdentifiers": [
-    {
-      "relationType": "IsSupplementTo",
-      "relatedIdentifier": "Identifier: 02-09-2019 02:30:59",
-      "relatedIdentifierType": "ARK"
-    }
-  ],
+    "relatedIdentifiers": [
+      {
+        "relationType": "IsSupplementTo",
+        "relatedIdentifier": "Identifier: 02-09-2019 02:30:59",
+        "relatedIdentifierType": "ARK"
+      }
+    ],
     """
     related_dps = []
 
@@ -450,10 +456,23 @@ def get_related_resources(combi: Dict) -> List:
             except KeyError:
                 pass
 
+    # Link this version DOI to its base DOI, if it has one.
+    system_config = combi.get('System', {})
+    base_doi = system_config.get('Base_DOI')
+    pid_config = system_config.get('Persistent_Identifier_Datapackage', {})
+    version_doi = pid_config.get('Identifier')
+
+    if base_doi and version_doi and base_doi != version_doi:
+        related_dps.append({
+            'relatedIdentifier': base_doi,
+            'relatedIdentifierType': 'DOI',
+            'relationType': 'IsVersionOf'
+        })
+
     return related_dps
 
 
-def get_geo_locations(combi: Dict) -> List:
+def get_geo_locations(combi: dict) -> List:
     """Get list of geoLocation elements in datacite format containing the information of geo locations.
 
        There are two versions of this:

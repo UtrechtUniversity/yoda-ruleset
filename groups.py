@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 import genquery
 import requests
@@ -48,9 +48,10 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
+    included_attributes = "('category', 'subcategory', 'schema_id', 'data_classification', 'manager', 'description', 'expiration_date', 'sram_co')"
     group_attrs = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup'",
+        f"USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME IN {included_attributes}",
         genquery.AS_LIST, ctx
     )
 
@@ -97,7 +98,7 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     if config.enable_sram:
         sram_invites = genquery.row_iterator(
             "META_USER_ATTR_VALUE, USER_NAME, USER_ZONE",
-            "USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME = '{}'".format(constants.UUORGMETADATAPREFIX + "sram_invited"),
+            f"USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME = '{constants.UUORGMETADATAPREFIX + 'sram_invited'}'",
             genquery.AS_LIST, ctx
         )
         for group_name, user_name, user_zone in sram_invites:
@@ -109,7 +110,7 @@ def get_groups_data(ctx: rule.Context) -> Iterable[Any]:
     return groups.values()
 
 
-def get_group_data(ctx: rule.Context, name: str) -> Dict | None:
+def get_group_data(ctx: rule.Context, name: str) -> dict | None:
     """Get data for one group."""
     group = None
 
@@ -286,7 +287,7 @@ def user_is_datamanager(ctx: rule.Context, category: str, user: str) -> bool:
 
     :returns: Boolean indicating if user is datamanager
     """
-    return user_role(ctx, user, 'datamanager-{}'.format(category)) \
+    return user_role(ctx, user, f'datamanager-{category}') \
         in ('normal', 'manager')
 
 
@@ -304,7 +305,7 @@ def group_category(ctx: rule.Context, group: str) -> str:
 
 
 @api.make()
-def api_group_data(ctx: rule.Context) -> Dict:
+def api_group_data(ctx: rule.Context) -> dict:
     """Retrieve group data as hierarchy for user.
 
     The structure of the group hierarchy parameter is as follows:
@@ -332,7 +333,7 @@ def api_group_data(ctx: rule.Context) -> Dict:
     return (internal_api_group_data(ctx))
 
 
-def internal_api_group_data(ctx: rule.Context) -> Dict:
+def internal_api_group_data(ctx: rule.Context) -> dict:
     # This is the entry point for integration tests against api_group_data
     if user.is_rodsadmin(ctx):
         groups = get_groups_data(ctx)
@@ -352,6 +353,9 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
     managed_prefixes = ("priv-", "deposit-", "research-", "grp-", "datamanager-", "datarequests-", "intake-")
     groups = list(filter(lambda group: group['name'].startswith(managed_prefixes), groups))
 
+    # Prepare dictionary for quick lookup of category/environment-level schemas
+    schema_lookup_dict = schema.get_schema_category_lookup_dict(ctx)
+
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
 
@@ -360,7 +364,7 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
     zone = user.zone(ctx)
     iter = genquery.row_iterator(
         "COLL_NAME, COLL_CREATE_TIME",
-        "COLL_PARENT_NAME = '/{}/home' and COLL_NAME not like '/{}/home/vault-%' and COLL_NAME not like '/{}/home/grp-%'".format(zone, zone, zone),
+        f"COLL_PARENT_NAME = '/{zone}/home' and COLL_NAME not like '/{zone}/home/vault-%' and COLL_NAME not like '/{zone}/home/grp-%'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -388,19 +392,22 @@ def internal_api_group_data(ctx: rule.Context) -> Dict:
             if member in members:
                 members[member]['sram'] = 'invited'
 
-        # This is a malformed group, ignore it
-        if 'category' not in group or 'subcategory' not in group:
+        # Log the group which has either no category or subcategory.
+        missing = [attribute for attribute in ('category', 'subcategory') if attribute not in group]
+        if missing:
+            log.write(ctx, 'Group "{}" is not shown in the group hierarchy, it has no {}'.format(
+                group['name'], ' and no '.join(missing)))
             continue
 
         group_hierarchy.setdefault(group['category'], OrderedDict())
         group_hierarchy[group['category']].setdefault(group['subcategory'], OrderedDict())
 
         # Check whether schema_id is present on group level.
-        # If not, collect it from the corresponding category
+        # If not, use the environment or category default
         if "schema_id" not in group:
-            group["schema_id"] = schema.get_schema_collection(ctx, user.zone(ctx), group['name'])
+            group["schema_id"] = schema_lookup_dict[group.get('category', "__nocategory")]
 
-        coll_name = "/{}/home/{}".format(user.zone(ctx), group['name'])
+        coll_name = f"/{user.zone(ctx)}/home/{group['name']}"
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group.get('description', ''),
@@ -491,7 +498,7 @@ def api_group_process_csv(ctx: rule.Context, csv_header_and_data: str, allow_upd
     return api.Result.ok(info=[status_msg['message']])
 
 
-def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
+def validate_data(ctx: rule.Context, data: dict, allow_update: bool) -> List:
     """Validation of extracted data.
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -508,21 +515,21 @@ def validate_data(ctx: rule.Context, data: Dict, allow_update: bool) -> List:
     for (category, subcategory, groupname, _managers, _members, _viewers, _schema_id, _expiration_date) in data:
 
         if group.exists(ctx, groupname) and not allow_update:
-            errors.append('Group "{}" already exists. It has not been updated.'.format(groupname))
+            errors.append(f'Group "{groupname}" already exists. It has not been updated.')
 
         # Is user admin or has category add privileges?
         if not (is_admin or can_add_category):
             if category not in get_categories(ctx):
                 # Insufficient permissions to add new category.
-                errors.append('Category {} does not exist and cannot be created due to insufficient permissions.'.format(category))
+                errors.append(f'Category {category} does not exist and cannot be created due to insufficient permissions.')
             elif subcategory not in get_subcategories(ctx, category):
                 # Insufficient permissions to add new subcategory.
-                errors.append('Subcategory {} does not exist and cannot be created due to insufficient permissions.'.format(subcategory))
+                errors.append(f'Subcategory {subcategory} does not exist and cannot be created due to insufficient permissions.')
 
     return errors
 
 
-def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: bool) -> Dict:
+def apply_data(ctx: rule.Context, data: dict, allow_update: bool, delete_users: bool) -> dict:
     """ Update groups with the validated data
 
     :param ctx:          Combined type of a ctx and rei struct
@@ -538,7 +545,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         users_added, users_removed, roles_changed = 0, 0, 0
         message = ''
 
-        log.write(ctx, 'CSV import - Adding and updating group: {}'.format(group_name))
+        log.write(ctx, f'CSV import - Adding and updating group: {group_name}')
 
         # First create the group. Note that the actor will become a groupmanager
         if not len(schema_id):
@@ -546,12 +553,12 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
         response = group_create(ctx, group_name, category, subcategory, schema_id, expiration_date, '', 'unspecified', False)
         if response:
             new_group = True
-            message += "Group '{}' created.".format(group_name)
+            message += f"Group '{group_name}' created."
         elif (response.status == "error_group_exists" or (response.status == "error_sram_error" and "already exists" in response.status_info)) and allow_update:
-            log.write(ctx, 'CSV import - WARNING: group "{}" not created, it already exists'.format(group_name))
-            message += "Group '{}' already exists.".format(group_name)
+            log.write(ctx, f'CSV import - WARNING: group "{group_name}" not created, it already exists')
+            message += f"Group '{group_name}' already exists."
         else:
-            return {"status": "error", "message": "Error while attempting to create group {}. Status/message: {} / {}".format(group_name, response.status, response.status_info)}
+            return {"status": "error", "message": f"Error while attempting to create group {group_name}. Status/message: {response.status} / {response.status_info}"}
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
@@ -561,13 +568,13 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
                 response = group_user_add(ctx, username, group_name)
                 if response:
                     currentrole = "normal"
-                    log.write(ctx, "CSV import - Notice: added user {} to group {}".format(username, group_name))
+                    log.write(ctx, f"CSV import - Notice: added user {username} to group {group_name}")
                     users_added += 1
                 else:
-                    log.write(ctx, "CSV import - Warning: error occurred while attempting to add user {} to group {}".format(username, group_name))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
+                    log.write(ctx, f"CSV import - Warning: error occurred while attempting to add user {username} to group {group_name}")
+                    log.write(ctx, f"CSV import - Status: {response.status} , Message: {response.status_info}")
             else:
-                log.write(ctx, "CSV import - Notice: user {} is already present in group {}.".format(username, group_name))
+                log.write(ctx, f"CSV import - Notice: user {username} is already present in group {group_name}.")
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -579,16 +586,16 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
                 role = 'manager'
 
             if _are_roles_equivalent(role, currentrole):
-                log.write(ctx, "CSV import - Notice: user {} already has role {} in group {}.".format(username, role, group_name))
+                log.write(ctx, f"CSV import - Notice: user {username} already has role {role} in group {group_name}.")
             else:
                 response = group_user_update_role(ctx, username, group_name, role)
                 roles_changed += 1
 
                 if response:
-                    log.write(ctx, "CSV import - Notice: changed role of user {} in group {} to {}".format(username, group_name, role))
+                    log.write(ctx, f"CSV import - Notice: changed role of user {username} in group {group_name} to {role}")
                 else:
-                    log.write(ctx, "CSV import - Warning: error while attempting to change role of user {} in group {} to {}".format(username, group_name, role))
-                    log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
+                    log.write(ctx, f"CSV import - Warning: error while attempting to change role of user {username} in group {group_name} to {role}")
+                    log.write(ctx, f"CSV import - Status: {response.status} , Message: {response.status_info}")
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
@@ -597,8 +604,8 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
             if response:
                 log.write(ctx, "CSV import - Notice: removed rods user from group " + group_name)
             else:
-                log.write(ctx, "CSV import - Warning: error while attempting to remove user rods from group {}".format(group_name))
-                log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
+                log.write(ctx, f"CSV import - Warning: error while attempting to remove user rods from group {group_name}")
+                log.write(ctx, f"CSV import - Status: {response.status} , Message: {response.status_info}")
 
         # Remove users not in sheet
         if delete_users:
@@ -607,7 +614,7 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
             for prefix in ['read-', 'research-']:
                 iter = genquery.row_iterator(
                     "USER_GROUP_NAME, USER_NAME, USER_ZONE",
-                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(group_name.split('-')[1:])),
+                    f"USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{prefix + '-'.join(group_name.split('-')[1:])}'",
                     genquery.AS_LIST, ctx
                 )
 
@@ -621,25 +628,25 @@ def apply_data(ctx: rule.Context, data: Dict, allow_update: bool, delete_users: 
                 if username not in allusers:
                     if username in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "CSV import - Error: cannot remove user {} from group {}, because he/she is the only group manager".format(username, usergroupname))
+                            log.write(ctx, f"CSV import - Error: cannot remove user {username} from group {usergroupname}, because he/she is the only group manager")
                             continue
                         else:
                             managers.remove(username)
 
                     response = group_remove_user_from_group(ctx, username, usergroupname)
                     if response:
-                        log.write(ctx, "CSV import - Removing user {} from group {}".format(username, usergroupname))
+                        log.write(ctx, f"CSV import - Removing user {username} from group {usergroupname}")
                         users_removed += 1
                     else:
-                        log.write(ctx, "CSV import - Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
-                        log.write(ctx, "CSV import - Status: {} , Message: {}".format(response.status, response.status_info))
+                        log.write(ctx, f"CSV import - Warning: error while attempting to remove user {username} from group {usergroupname}")
+                        log.write(ctx, f"CSV import - Status: {response.status} , Message: {response.status_info}")
 
         if users_added > 0:
-            message += ' Users added ({}).'.format(users_added)
+            message += f' Users added ({users_added}).'
         if users_removed > 0:
-            message += ' Users removed ({}).'.format(users_removed)
+            message += f' Users removed ({users_removed}).'
         if roles_changed > 0:
-            message += ' Roles changed ({}).'.format(roles_changed)
+            message += f' Roles changed ({roles_changed}).'
 
         # If no users added, no users removed and not new group created.
         if not any((users_added, users_removed, roles_changed, new_group)):
@@ -899,17 +906,17 @@ def api_group_search_users(ctx: rule.Context, pattern: str) -> api.Result:
     userList = []
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(username, zone_name),
+                                     f"USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{username}%' AND USER_ZONE LIKE '%{zone_name}%'",
                                      genquery.AS_LIST, ctx)
 
     adminIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(username, zone_name),
+                                      f"USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{username}%' AND USER_ZONE LIKE '%{zone_name}%'",
                                       genquery.AS_LIST, ctx)
 
     for row in userIter:
-        userList.append("{}#{}".format(row[0], row[1]))
+        userList.append(f"{row[0]}#{row[1]}")
     for row in adminIter:
-        userList.append("{}#{}".format(row[0], row[1]))
+        userList.append(f"{row[0]}#{row[1]}")
 
     userList.sort()
     return userList
@@ -987,7 +994,7 @@ def group_create(ctx: rule.Context,
                 co_identifier = response_sram['identifier']
 
             if not sram.connect_service_collaboration(ctx, co_identifier):
-                return api.Error('sram_error', 'Something went wrong connecting service to group "{}" in SRAM'.format(group_name))
+                return api.Error('sram_error', f'Something went wrong connecting service to group "{group_name}" in SRAM')
 
         name_conflicts_exist, msg = group_name_conflicts(ctx, group_name)
         if name_conflicts_exist:
@@ -1008,11 +1015,11 @@ def group_create(ctx: rule.Context,
                     msi.sudo_obj_meta_add(ctx, user.name(ctx), "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
             return api.Result.ok()
         elif status in {'-1089000', '-809000', '-806000'}:
-            return api.Error('group_exists', "Group {} not created, it already exists".format(group_name))
+            return api.Error('group_exists', f"Group {group_name} not created, it already exists")
         else:
             return api.Error('policy_error', message)
     except Exception:
-        return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', f'Something went wrong creating group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
@@ -1062,7 +1069,7 @@ def api_group_update(ctx: rule.Context, group_name: str, property_name: str, pro
         else:
             return api.Error('policy_error', message)
     except Exception:
-        return api.Error('error_internal', 'Something went wrong updating group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', f'Something went wrong updating group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
@@ -1085,11 +1092,11 @@ def api_group_delete(ctx: rule.Context, group_name: str) -> api.Result:
 
         # Delete SRAM collaboration if group is a SRAM group.
         if co_identifier and not sram.delete_collaboration(ctx, co_identifier):
-            return api.Error('sram_error', 'Something went wrong deleting group "{}" in SRAM'.format(group_name))
+            return api.Error('sram_error', f'Something went wrong deleting group "{group_name}" in SRAM')
 
         return api.Result.ok()
     except Exception:
-        return api.Error('error_internal', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', f'Something went wrong deleting group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
@@ -1128,12 +1135,13 @@ def api_group_user_is_member(ctx: rule.Context, username: str, group_name: str) 
     return group_user_exists(ctx, group_name, username, True)
 
 
-def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+def group_user_add(ctx: rule.Context, username: str, group_name: str, role: str = "normal") -> api.Result:
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+    :param role:       Role of the user
 
     :returns: Dict with API status result
     """
@@ -1142,7 +1150,12 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
         user_name, _ = user.from_str(ctx, username)
         # Group is a SRAM CO.
         if co_identifier and not yoda_names.is_email_username(user_name):
-            return api.Error('invalid_email', 'User {} cannot be added to group {} because user email is invalid'.format(user_name, group_name))
+            return api.Error('invalid_email', f'User {user_name} cannot be added to group {group_name} because user email is invalid')
+
+        role_map = {"viewer": "reader", "member": "normal"}
+        normalized_role = role_map.get(role, role)
+        if normalized_role not in ["normal", "reader", "manager"]:
+            return api.Error("unsupported_role", f"Unsupported role: {role}")
 
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
         status = response[2]
@@ -1164,24 +1177,30 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Res
                 # Mark user as invited.
                 msi.sudo_obj_meta_add(ctx, username, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
-            return api.Result.ok()
+            if normalized_role != "normal":
+                result = group_user_update_role(ctx, username, group_name, normalized_role)
+                if not result:
+                    return result
+
+            return api.Result.ok(info=("SRAM invitation" if put_invite else None))
         else:
             return api.Error('policy_error', message)
     except Exception:
-        return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', f'Something went wrong adding {username} to group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
-def api_group_user_add(ctx: rule.Context, username: str, group_name: str) -> api.Result:
+def api_group_user_add(ctx: rule.Context, username: str, group_name: str, role: str = "normal") -> api.Result:
     """Add a user to a group.
 
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+    :param role:       Role of the user
 
     :returns: Dict with API status result
     """
-    return group_user_add(ctx, username, group_name)
+    return group_user_add(ctx, username, group_name, role)
 
 
 def group_user_update_role(ctx: rule.Context, username: str, group_name: str, new_role: str) -> api.Result:
@@ -1203,7 +1222,7 @@ def group_user_update_role(ctx: rule.Context, username: str, group_name: str, ne
         else:
             return api.Error('policy_error', message)
     except Exception:
-        return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', f'Something went wrong updating role for {username} in group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
@@ -1242,9 +1261,9 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
         if co_identifier:
             uid = sram.get_co_member_uid(ctx, co_identifier, user_name)
             if uid == '':
-                return api.Error('sram_error', 'Something went wrong getting the unique user id for user {} from SRAM. Please contact a system administrator.'.format(user_name))
+                return api.Error('sram_error', f'Something went wrong getting the unique user id for user {user_name} from SRAM. Please contact a system administrator.')
             elif not sram.delete_collaboration_membership(ctx, co_identifier, uid):
-                return api.Error('sram_error', 'Something went wrong removing {} from group "{}" in SRAM'.format(user_name, group_name))
+                return api.Error('sram_error', f'Something went wrong removing {user_name} from group "{group_name}" in SRAM')
         else:
             if not yoda_names.is_internal_user(user_name) and sram.is_user_marked_invited(ctx, user_name, group_name):
                 # Delete pending invitation for this user
@@ -1257,7 +1276,7 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
 
         return api.Result.ok()
     except Exception:
-        return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', f'Something went wrong removing {username} from group "{group_name}". Please contact a system administrator')
 
 
 @api.make()
@@ -1300,58 +1319,58 @@ def rule_group_sram_sync(ctx: rule.Context) -> None:
         sram_co = sram_state(ctx, group, co_identifier)
 
         if sram_co:
-            log.write(ctx, "Sync group {} with SRAM".format(group_name))
+            log.write(ctx, f"Sync group {group_name} with SRAM")
             if not bool(co_identifier):
                 response_sram = sram.post_collaboration(ctx, group_name, description)
 
                 if "error" in response_sram:
                     message = response_sram['message']
-                    log.write(ctx, "Something went wrong creating group {} in SRAM: {}".format(group_name, message))
+                    log.write(ctx, f"Something went wrong creating group {group_name} in SRAM: {message}")
                     break
                 else:
                     co_identifier = response_sram['identifier']
                     avu.associate_to_group(ctx, group_name, "co_identifier", co_identifier)
 
                 if not sram.connect_service_collaboration(ctx, co_identifier):
-                    log.write(ctx, "Something went wrong connecting service to group {} in SRAM".format(group_name))
+                    log.write(ctx, f"Something went wrong connecting service to group {group_name} in SRAM")
                     break
 
-            log.write(ctx, "Get members of group {} from SRAM".format(group_name))
+            log.write(ctx, f"Get members of group {group_name} from SRAM")
             co_members = [member['email'] for member in sram.get_co_members(ctx, co_identifier)]
 
-            log.write(ctx, "Sync members of group {} with SRAM".format(group_name))
+            log.write(ctx, f"Sync members of group {group_name} with SRAM")
             for member in members:
                 # Validate email.
                 if not yoda_names.is_email_username(member):
-                    log.write(ctx, "User {} cannot be added to group {} because user email is invalid".format(member, group_name))
+                    log.write(ctx, f"User {member} cannot be added to group {group_name} because user email is invalid")
                     continue
 
                 # Check if member is invited.
                 if member in invited:
                     if member.split('#')[0] in co_members:
-                        log.write(ctx, "User {} added to group {}".format(member, group_name))
+                        log.write(ctx, f"User {member} added to group {group_name}")
                         # Remove invitation metadata.
                         msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
                     else:
-                        log.write(ctx, "User {} already invited to group {}".format(member, group_name))
+                        log.write(ctx, f"User {member} already invited to group {group_name}")
                         continue
 
                 # Not invited and not yet in the CO.
                 if member not in invited and member.split('#')[0] not in co_members:
                     sram.put_collaboration_invitation(ctx, group_name, member.split('#')[0], co_identifier)
                     msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    log.write(ctx, "User {} invited to group {}".format(member, group_name))
+                    log.write(ctx, f"User {member} invited to group {group_name}")
                     continue
 
                 # Member is group manager and in the CO.
                 if member in managers and member.split('#')[0] in co_members:
                     uid = sram.get_co_member_uid(ctx, co_identifier, member)
                     if uid == '':
-                        log.write(ctx, "Something went wrong getting the SRAM user id for user {} of group {}".format(member, group_name))
+                        log.write(ctx, f"Something went wrong getting the SRAM user id for user {member} of group {group_name}")
                     elif sram.update_collaboration_membership(ctx, co_identifier, uid, "manager"):
-                        log.write(ctx, "Updated {} user to manager of group {}".format(member, group_name))
+                        log.write(ctx, f"Updated {member} user to manager of group {group_name}")
                     else:
-                        log.write(ctx, "Something went wrong updating {} user to manager of group {} in SRAM".format(member, group_name))
+                        log.write(ctx, f"Something went wrong updating {member} user to manager of group {group_name} in SRAM")
 
     log.write(ctx, "Finished syncing groups with SRAM")
 
@@ -1391,18 +1410,25 @@ def rule_external_users_sram_sync(ctx: rule.Context) -> None:
             for member in members:
                 # Check if member has valid email and is an external user.
                 username, _ = user.from_str(ctx, member)
-                if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
-                    # Remove invitation metadata if user is member of the external users CO.
-                    if username in co_members and member in invited:
-                        log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
-                        if sram.is_user_marked_invited(ctx, username, group_name):
-                            msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                    # Put invite and add invitation metadata if user is not member of the external users CO.
-                    elif username not in co_members and member not in invited:
-                        sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
-                        if not sram.is_user_marked_invited(ctx, username, group_name):
-                            msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
-                        log.write(ctx, f"User {username} invited to group {group_name}")
+                if yoda_names.is_email_username(username):
+                    if not yoda_names.is_internal_user(username):
+                        # Remove invitation metadata if user is member of the external users CO.
+                        if username in co_members and member in invited:
+                            log.write(ctx, f"User {username} is member of group {group_name}, removing invitation metadata")
+                            if sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                        # Put invite and add invitation metadata if user is not member of the external users CO.
+                        elif username not in co_members and member not in invited:
+                            sram.put_collaboration_invitation(ctx, group_name, username, config.sram_external_users_co)
+                            if not sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_add(ctx, member, "-u", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
+                            log.write(ctx, f"User {username} invited to group {group_name}")
+                    else:
+                        # Clean up internal user invited metadata
+                        if member in invited:
+                            log.write(ctx, f"Removing invitation metadata for internal user {username}")
+                            if sram.is_user_marked_invited(ctx, username, group_name):
+                                msi.sudo_obj_meta_remove(ctx, member, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
     log.write(ctx, "Finished syncing external users with SRAM")
 
@@ -1420,35 +1446,54 @@ def _migrate_sram_to_non_sram(ctx: rule.Context, log_func: Callable, group: dict
 
     for member in members:
         username, _ = user.from_str(ctx, member)
-        if yoda_names.is_email_username(username) and not yoda_names.is_internal_user(username):
-            log_func(f"\nChecking if the external user {username} is invited to the group {group['name']}")
+        if yoda_names.is_email_username(username):
+
+            log_func(f"\nChecking if the user {username} is invited to the group {group['name']}")
 
             is_invited = sram.is_user_marked_invited(ctx, username, group['name'])
 
-            if is_invited and username not in ext_co_members:
-                # Delete invitation to SRAM CO
-                try:
-                    if not dry_run:
-                        sram.delete_pending_invitation(ctx, co_identifier, username)
-                    log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
-                except Exception:
-                    log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
+            if is_invited:
+                if not yoda_names.is_internal_user(username):
+                    if username not in ext_co_members:
+                        # Delete invitation to SRAM CO
+                        try:
+                            if not dry_run:
+                                sram.delete_pending_invitation(ctx, co_identifier, username)
+                            log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
+                        except Exception:
+                            log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
 
-                # Send new invitation to external users CO
-                if not dry_run:
-                    sram.put_collaboration_invitation(ctx, group['name'], username, config.sram_external_users_co)
-                log_func(f"\nSuccessfully sent a new invitation to {username} for SRAM external user CO.")
+                        # Send new invitation to external users CO
+                        if not dry_run:
+                            sram.put_collaboration_invitation(ctx, group['name'], username, config.sram_external_users_co)
+                        log_func(f"\nSuccessfully sent a new invitation to {username} for SRAM external user CO.")
 
-            elif is_invited and username in ext_co_members:
-                # Remove invitation metadata if user is member of the external users CO.
-                try:
-                    if not dry_run:
-                        msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
-                    log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
-                except Exception:
-                    log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+                    elif username in ext_co_members:
+                        # Remove invitation metadata if user is member of the external users CO.
+                        try:
+                            if not dry_run:
+                                msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
+                            log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
+                        except Exception:
+                            log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+                else:
+                    # Delete invitation to SRAM CO for internal user.
+                    try:
+                        if not dry_run:
+                            sram.delete_pending_invitation(ctx, co_identifier, username)
+                        log_func(f"\nSuccessfully deleted pending invitation for external user {username}.")
+                    except Exception:
+                        log_func(f"\nSomething went wrong while deleting the open invitation for user {username} in SRAM CO {group['name']}.")
 
-    # Delete collaboration in SRAM
+                    # Remove invitation metadata as user is internal user.
+                    try:
+                        if not dry_run:
+                            msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group['name'], "", "")
+                        log_func(f"\nSuccessfully removed invitation metadata for user {username}.")
+                    except Exception:
+                        log_func(f"\nSomething went wrong removing invitation metadata for user {username}.")
+
+    # Delete collaboration in SRAMea
     if not dry_run:
         if co_identifier and not sram.delete_collaboration(ctx, co_identifier):
             log_func(f"\nSomething went wrong deleting group {group['name']} in SRAM.")
@@ -1491,7 +1536,7 @@ def _migrate_non_sram_to_sram(ctx: rule.Context, log_func: Callable, group: dict
         log_func(f"\nNo valid SRAM CO found or there are no members in group {group['name']}")
 
 
-def sram_state(ctx: rule.Context, group: Dict, co_identifier: str) -> bool:
+def sram_state(ctx: rule.Context, group: dict, co_identifier: str) -> bool:
     """Check SRAM state of group.
 
     :param ctx:           Combined type of ctx and rei struct

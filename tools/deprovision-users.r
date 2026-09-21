@@ -12,14 +12,14 @@ def main(rule_args, callback, rei):
     # Get the user name and group count
     userIter = genquery.row_iterator(
         "USER_NAME, COUNT(USER_GROUP_NAME)",
-        "USER_TYPE = 'rodsuser' AND USER_ZONE = '{}'".format(zone),
+        f"USER_TYPE = 'rodsuser' AND USER_ZONE = '{zone}'",
         genquery.AS_TUPLE,
         callback) 
 
     # Include the users with two or less than two groups: one public and one personal group
     for row in userIter:
         if (int(row[1]) <= 2):
-            userList.append("{}".format(row[0]))
+            userList.append(f"{row[0]}")
 
     for user in userList:
         callback.writeLine("stdout", user)

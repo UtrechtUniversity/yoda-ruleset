@@ -35,17 +35,17 @@ def ui_browse_newsubfolder(browser, folder_new):
 
 @when(parsers.parse("user copies file {file} to {folder}"))
 def ui_research_file_copy(browser, file, folder):
-    browser.find_by_css('button[data-name="{}"]'.format(file)).click()
-    browser.find_by_css('a.file-copy[data-name="{}"]'.format(file)).click()
+    browser.find_by_css(f'button[data-name="{file}"]').click()
+    browser.find_by_css(f'a.file-copy[data-name="{file}"]').click()
     time.sleep(1)
-    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css(f'[data-path="/{folder}"]').click()
     browser.find_by_css('.dlg-action-button').click()
 
 
 @when(parsers.parse("user moves file {file} to {subfolder}"))
 def ui_research_file_move(browser, file, subfolder):
-    browser.find_by_css('button[data-name="{}"]'.format(file)).click()
-    browser.find_by_css('a.file-move[data-name="{}"]'.format(file)).click()
+    browser.find_by_css(f'button[data-name="{file}"]').click()
+    browser.find_by_css(f'a.file-move[data-name="{file}"]').click()
     time.sleep(1)
     browser.links.find_by_partial_text(subfolder).click()
     browser.find_by_css('.dlg-action-button').click()
@@ -53,16 +53,16 @@ def ui_research_file_move(browser, file, subfolder):
 
 @when(parsers.parse("user renames file {file} to {file_renamed}"))
 def ui_research_file_rename(browser, file, file_renamed):
-    browser.find_by_css('button[data-name="{}"]'.format(file)).click()
-    browser.find_by_css('a.file-rename[data-name="{}"]'.format(file)).click()
+    browser.find_by_css(f'button[data-name="{file}"]').click()
+    browser.find_by_css(f'a.file-rename[data-name="{file}"]').click()
     browser.find_by_id('file-rename-name').fill(file_renamed)
     browser.find_by_css('.btn-confirm-file-rename').click()
 
 
 @when(parsers.parse("user deletes file {file}"))
 def ui_research_file_delete(browser, file):
-    browser.find_by_css('button[data-name="{}"]'.format(file)).click()
-    browser.find_by_css('a.file-delete[data-name="{}"]'.format(file)).click()
+    browser.find_by_css(f'button[data-name="{file}"]').click()
+    browser.find_by_css(f'a.file-delete[data-name="{file}"]').click()
     browser.find_by_css('.btn-confirm-file-delete').click()
 
 
@@ -75,16 +75,16 @@ def ui_research_folder_add(browser, folder_new):
 
 @when(parsers.parse("user renames folder {folder_old} to {folder_new}"))
 def ui_research_folder_rename(browser, folder_old, folder_new):
-    browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
-    browser.find_by_css('a.folder-rename[data-name={}]'.format(folder_old)).click()
+    browser.find_by_css(f'button[data-name={folder_old}]').click()
+    browser.find_by_css(f'a.folder-rename[data-name={folder_old}]').click()
     browser.find_by_id('folder-rename-name').fill(folder_new)
     browser.find_by_css('.btn-confirm-folder-rename').click()
 
 
 @when(parsers.parse("user copies folder {folder_old} to {folder_new}"))
 def ui_research_folder_copy(browser, folder_old, folder_new):
-    browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
-    browser.find_by_css('a.folder-copy[data-name={}]'.format(folder_old)).click()
+    browser.find_by_css(f'button[data-name={folder_old}]').click()
+    browser.find_by_css(f'a.folder-copy[data-name={folder_old}]').click()
     time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
     browser.find_by_css('.dlg-action-button').click()
@@ -92,8 +92,8 @@ def ui_research_folder_copy(browser, folder_old, folder_new):
 
 @when(parsers.parse("user moves folder {folder_old} to {folder_new}"))
 def ui_research_folder_move(browser, folder_old, folder_new):
-    browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
-    browser.find_by_css('a.folder-move[data-name={}]'.format(folder_old)).click()
+    browser.find_by_css(f'button[data-name={folder_old}]').click()
+    browser.find_by_css(f'a.folder-move[data-name={folder_old}]').click()
     time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
     browser.find_by_css('.dlg-action-button').click()
@@ -107,8 +107,8 @@ def ui_research_overwrite(browser):
 
 @when(parsers.parse("user deletes folder {folder_delete}"))
 def ui_research_folder_delete(browser, folder_delete):
-    browser.find_by_css('button[data-name={}]'.format(folder_delete)).click()
-    browser.find_by_css('a.folder-delete[data-name={}]'.format(folder_delete)).click()
+    browser.find_by_css(f'button[data-name={folder_delete}]').click()
+    browser.find_by_css(f'a.folder-delete[data-name={folder_delete}]').click()
     browser.find_by_css('.btn-confirm-folder-delete').click()
 
 
@@ -164,7 +164,7 @@ def ui_research_multi_copy(browser, folder):
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-copy').click()
     time.sleep(1)
-    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css(f'[data-path="/{folder}"]').click()
     browser.find_by_css('.dlg-action-button').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
@@ -177,7 +177,7 @@ def ui_research_multi_copy_overwrite(browser, folder):
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-copy').click()
     time.sleep(1)
-    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css(f'[data-path="/{folder}"]').click()
     browser.find_by_css('.dlg-action-button').click()
     time.sleep(1)
     browser.find_by_css('.multi-overwrite-button').click()
@@ -194,7 +194,7 @@ def ui_research_multi_copy_overwrite_all(browser, folder):
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-copy').click()
     time.sleep(1)
-    browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
+    browser.find_by_css(f'[data-path="/{folder}"]').click()
     browser.find_by_css('.dlg-action-button').click()
     time.sleep(1)
     browser.find_by_css('.dlg-multi-action-button').click()
@@ -303,7 +303,7 @@ def ui_research_checksum_report_downloaded(browser, tmpdir, format):
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
 
     for child in download_dir.iterdir():
-        if str(child)[-13:] == "checksums.{}".format(format):
+        if str(child)[-13:] == f"checksums.{format}":
             assert True
             return
 
@@ -325,9 +325,9 @@ def ui_research_upload_file(browser, filename):
 
     cwd = os.getcwd()
     if os.name == 'nt':
-        browser.find_by_css('input[type="file"]')[0].fill("{}\\files\\{}".format(cwd, filename))
+        browser.find_by_css('input[type="file"]')[0].fill(f"{cwd}\\files\\{filename}")
     else:
-        browser.find_by_css('input[type="file"]')[0].fill("{}/files/{}".format(cwd, filename))
+        browser.find_by_css('input[type="file"]')[0].fill(f"{cwd}/files/{filename}")
 
 
 @then("non UTF-8 characters in the filename warning is shown")

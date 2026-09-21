@@ -40,7 +40,8 @@
     }
   },
   "Keyword": {
-    "ui:description": "Free text field for adding (searchable) keywords to your data package"
+    "ui:description": "Add (searchable) keywords to your data package",
+    "ui:field": "keyword_input"
   },
   "Related_Resource": {
     "items": {

@@ -4,15 +4,16 @@ For example usage, see make().
 """
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import base64
 import inspect
 import traceback
+import types
 import zlib
 from collections import OrderedDict
-from typing import Callable, Dict
+from typing import Any, Callable, get_args, get_origin, get_type_hints, Union
 
 import error
 import jsonutil
@@ -25,7 +26,7 @@ from measure_coverage import start_coverage, stop_coverage
 class Result:
     """API result."""
 
-    def __init__(self, data: Dict | None = None, status: str = 'ok', info: str | None = None, debug_info: str | None = None) -> None:
+    def __init__(self, data: dict | None = None, status: str = 'ok', info: str | None = None, debug_info: str | None = None) -> None:
         self.status      = status
         self.status_info = info
         self.data        = data
@@ -68,7 +69,35 @@ class Error(Result, error.UUError):
         error.UUError.__init__(self, 'error_' + name)
 
     def __str__(self) -> str:
-        return '{}: {}'.format(self.name, self.info)
+        return f"{self.name}: {self.info}"
+
+
+def _check_type(value: Any, expected_type: Any) -> bool:
+    """Check if a value matches the expected type.
+
+    :param value:         The value to validate
+    :param expected_type: The expected type hint to validate against
+
+    :returns: True if the value matches the expected type. False if the value
+              does not match.
+    """
+    if hasattr(types, 'UnionType') and isinstance(expected_type, types.UnionType):
+        # New style union types, like str | int
+        union_args = get_args(expected_type)
+        return any(_check_type(value, arg) for arg in union_args)
+    elif get_origin(expected_type) is Union:
+        # Old style union types, like Union[str, int]
+        union_args = get_args(expected_type)
+        return any(_check_type(value, arg) for arg in union_args)
+    elif expected_type is type(None):
+        return value is None
+    elif expected_type in (int, str, float, bool, list, dict):
+        # JSON does not distinguish between numeric types, so we are
+        # a bit liberal in what we accept for numeric types.
+        return (isinstance(value, expected_type)
+                or (expected_type is float and isinstance(value, int)))
+    else:
+        return False
 
 
 def _api(f: Callable) -> Callable:
@@ -81,8 +110,7 @@ def _api(f: Callable) -> Callable:
     api() creates a function that takes a JSON string as an argument,
     and translates it to function arguments for `f`. The JSON input is
     automatically validated for required/optional arguments, based on f()'s
-    signature.
-    Ideally we would also do basic type checking, but this is not possible in Python2.
+    signature. Basic type checking is also performed based on f()'s type hints.
 
     f()'s returned value may be of any JSON-encodable type, and will be stored
     in the 'data' field of the returned JSON. If f() returns or raises an
@@ -110,7 +138,10 @@ def _api(f: Callable) -> Callable:
     # If the function accepts **kwargs, we do not forbid extra arguments.
     allow_extra = a_kw is not None
 
-    def wrapper(ctx: rule.Context, inp: str) -> Dict:
+    # Extract type hints for type checking
+    type_hints = get_type_hints(f) if hasattr(f, '__annotations__') else {}
+
+    def wrapper(ctx: rule.Context, inp: str) -> dict:
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments.
 
         :param ctx: Combined type of a callback and rei struct
@@ -125,43 +156,50 @@ def _api(f: Callable) -> Callable:
         def error_internal(debug_info: str | None = None) -> Error:
             return Error('internal', 'An internal error occurred', debug_info=debug_info)
 
-        def bad_request(debug_info: str | None = None) -> Error:
-            return Error('badrequest', 'An internal error occurred', debug_info=debug_info)
+        def bad_request(info: str | None = None) -> Error:
+            return Error('badrequest', info)
 
         # Input is base64 encoded and compressed to reduce size (max rule length in iRODS is 20KB)
         # Validate input string: is it a valid JSON object?
         try:
             base64_decoded = base64.b64decode(inp)
             decompressed_data = zlib.decompress(base64_decoded)
-            data = jsonutil.parse(decompressed_data)
-            if type(data) is not OrderedDict:
+            data = jsonutil.fast_parse(decompressed_data)
+            if not isinstance(data, dict):
                 raise jsonutil.ParseError('Argument is not a JSON object')
         except base64.binascii.Error:
-            log.write(ctx, 'Error: API rule <{}> input base64 decode error'.format(f.__name__), print_module=False)
+            log.write(ctx, f"Error: API rule <{f.__name__}> input base64 decode error", print_module=False)
             return bad_request('API input base64 decode error').as_dict()
         except zlib.error:
-            log.write(ctx, 'Error: API rule <{}> input zlib decompression error'.format(f.__name__), print_module=False)
+            log.write(ctx, f"Error: API rule <{f.__name__}> input zlib decompression error", print_module=False)
             return bad_request('API input zlib decompression error').as_dict()
         except jsonutil.ParseError as e:
-            log.write(ctx, 'Error: API rule <{}> called with invalid JSON argument'.format(f.__name__), print_module=False)
-            return bad_request('JSON parse error: {}'.format(e)).as_dict()
+            log.write(ctx, f"Error: API rule <{f.__name__}> called with invalid JSON argument", print_module=False)
+            return bad_request(f"JSON parse error: {e}").as_dict()
 
         # Check that required arguments are present.
         for param in required:
             if param not in data:
-                log.write(ctx, 'Error: API rule <{}> called with missing <{}> argument'.format(f.__name__, param),
+                log.write(ctx, f"Error: API rule <{f.__name__}> called with missing <{param}> argument",
                           print_module=False)
-                return bad_request('Missing argument: {} (required: [{}]  optional: [{}])'
-                                   .format(param, ', '.join(required), ', '.join(optional))).as_dict()
+                return bad_request(f"Missing argument: {param} (required: [{', '.join(required)}]  optional: [{', '.join(optional)}])").as_dict()
 
         # Forbid arguments that are not in the function signature.
         if not allow_extra:
             for param in data:
                 if param not in required | optional:
-                    log.write(ctx, 'Error: API rule <{}> called with unrecognized <{}> argument'.format(f.__name__, param),
+                    log.write(ctx, f"Error: API rule <{f.__name__}> called with unrecognized <{param}> argument",
                               print_module=False)
-                    return bad_request('Unrecognized argument: {} (required: [{}]  optional: [{}])'
-                                       .format(param, ', '.join(required), ', '.join(optional))).as_dict()
+                    return bad_request(f"Unrecognized argument: {param} (required: [{', '.join(required)}]  optional: [{', '.join(optional)}])").as_dict()
+
+        # Type check arguments based on function annotations.
+        for param, arg_value in data.items():
+            if param in type_hints:
+                expected_type = type_hints[param]
+                if not _check_type(arg_value, expected_type):
+                    log.write(ctx, f"Error: API rule <{f.__name__}> argument <{param}> has invalid type: expected {expected_type}, got {type(arg_value).__name__}",
+                              print_module=False)
+                    return bad_request(f"Invalid type for argument {param}: expected {expected_type}, got {type(arg_value).__name__}").as_dict()
 
         # Try to run the function with the supplied arguments,
         # catching any error it throws.
@@ -175,7 +213,7 @@ def _api(f: Callable) -> Callable:
             result = f(ctx, **data)
             t = time.time() - t
 
-            log.debug(ctx, '%4dms %s' % (int(t * 1000), f.__name__))
+            log.debug(ctx, f"{int(t * 1000):4d}ms {f.__name__}")
 
             if config.measure_coverage:
                 stop_coverage(cov)
@@ -191,16 +229,16 @@ def _api(f: Callable) -> Callable:
         except Error as e:
             # A proper caught error with name and message.
             if e.debug_info is None:
-                log.write(ctx, 'Error: API rule <{}> failed with error <{}>'.format(f.__name__, e), print_module=False)
+                log.write(ctx, f"Error: API rule <{f.__name__}> failed with error <{e}>", print_module=False)
             else:
                 log.write(ctx,
-                          'Error: API rule <{}> failed with error <{}> (debug info follows below this line)\n{}'.format(f.__name__, e, e.debug_info),
+                          f"Error: API rule <{f.__name__}> failed with error <{e}> (debug info follows below this line)\n{e.debug_info}",
                           print_module=False)
             return e.as_dict()
         except Exception:
             # An uncaught error. Log a trace to aid debugging.
             log.write(ctx,
-                      'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'.format(f.__name__, traceback.format_exc()),
+                      f"Error: API rule <{f.__name__}> failed with uncaught error (trace follows below this line)\n{traceback.format_exc()}",
                       print_module=False)
             return error_internal(traceback.format_exc()).as_dict()
 
@@ -239,6 +277,6 @@ def make() -> Callable:
 
         # The JSON-in, JSON-out rule.
         return rule.make(inputs=[0], outputs=[],
-                         transform=jsonutil.dump, handler=rule.Output.STDOUT)(base)
+                         transform=jsonutil.fast_dump, handler=rule.Output.STDOUT)(base)
 
     return deco

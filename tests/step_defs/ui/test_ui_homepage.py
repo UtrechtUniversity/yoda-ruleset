@@ -14,4 +14,4 @@ scenarios('../../features/ui/ui_homepage.feature')
 
 @then(parsers.parse("username {user} is shown"))
 def ui_homepage_logged_in(browser, user):
-    assert browser.is_text_present("You are logged in as {}".format(user))
+    assert browser.is_text_present(f"You are logged in as {user}")

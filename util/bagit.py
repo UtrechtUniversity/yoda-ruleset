@@ -8,6 +8,7 @@ import itertools
 
 import genquery
 import irods_types
+from tstrings import t
 
 import data_object
 import log
@@ -32,11 +33,11 @@ def manifest(ctx: rule.Context, coll: str) -> str:
         data_object.decode_checksum(row[2]) + " " + (row[0] + "/" + row[1])[length:]
         for row in itertools.chain(
             genquery.row_iterator("COLL_NAME, ORDER(DATA_NAME), DATA_CHECKSUM",
-                                  "COLL_NAME = '{}'".format(coll),
+                                  t("COLL_NAME = '{coll}'"),
                                   genquery.AS_LIST,
                                   ctx),
             genquery.row_iterator("ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
-                                  "COLL_NAME like '{}/%'".format(coll),
+                                  t("COLL_NAME like '{coll}/%'"),
                                   genquery.AS_LIST,
                                   ctx))
         if row[0] != coll or not row[1].startswith("yoda-metadata")
@@ -45,14 +46,14 @@ def manifest(ctx: rule.Context, coll: str) -> str:
 
 def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     # Create manifest file.
-    log.write(ctx, "Creating manifest file for data package <{}>".format(coll))
+    log.write(ctx, f"Creating manifest file for data package <{coll}>")
     data_object.write(ctx, coll + "/manifest-sha256.txt", manifest(ctx, coll))
     msi.data_obj_chksum(ctx, coll + "/manifest-sha256.txt", "",
                         irods_types.BytesBuf())
 
     try:
         # Create archive.
-        log.write(ctx, "Creating archive file for data package <{}>".format(coll))
+        log.write(ctx, f"Creating archive file for data package <{coll}>")
         ret = msi.archive_create(ctx, archive, coll, resource, 0)
     except Exception:
         data_object.remove(ctx, coll + "/manifest-sha256.txt")
@@ -62,12 +63,12 @@ def create(ctx: rule.Context, archive: str, coll: str, resource: str) -> None:
     data_object.remove(ctx, coll + "/manifest-sha256.txt")
 
     if ret.get("code", -1) < 0:
-        raise Exception("Archive creation failed: {}".format(ret))
+        raise Exception(f"Archive creation failed: {ret}")
     vault.copy_acls_from_parent(ctx, archive, "default")
 
 
 def extract(ctx: rule.Context, archive: str, coll: str, resource: str = '0') -> None:
     ret = msi.archive_extract(ctx, archive, coll, 0, resource, 0)
     if ret.get("code", -1) < 0:
-        log.write(ctx, "Extracting archive of data package <{}> failed".format(coll))
-        raise Exception("Archive extraction failed: {}".format(ret))
+        log.write(ctx, f"Extracting archive of data package <{coll}> failed")
+        raise Exception(f"Archive extraction failed: {ret}")

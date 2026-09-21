@@ -162,19 +162,38 @@ Feature: Group API
             | technicaladmin      | not-a-yoda-group        |
 
 
-    Scenario Outline: Remove user from group
+    Scenario Outline: Adding user to group and updating their role
         Given user <user> is authenticated
-        And the user "sterlingarcher" is a member of group "<group_name>"
-        And the user removes user "sterlingarcher" from the group "<group_name>"
+        And the user "jameskirk" is not a member of group "<group_name>"
+        And the user adds user "jameskirk" and updates their role to "<new_role>" in group "<group_name>"
         Then the response status code is "200"
-        And user "sterlingarcher" is no longer a member of the group "<group_name>"
+        And user "jameskirk" is now a member of the group "<group_name>" with role "<new_role>"
 
         Examples:
-            | user                | group_name              |
-            | functionaladminpriv | research-api-test-group |
-            | functionaladminpriv | datamanager-api-test    |
-            | technicaladmin      | datamanager-api-test1   |
-            | technicaladmin      | not-a-yoda-group        |
+            | user                | group_name              | new_role  |
+            | functionaladminpriv | research-api-test-group | reader    |
+            | functionaladminpriv | datamanager-api-test    | manager   |
+            | technicaladmin      | datamanager-api-test1   | manager   |
+            | technicaladmin      | not-a-yoda-group        | normal    |
+
+
+    Scenario Outline: Remove user from group
+        Given user <user> is authenticated
+        And the user "<group_member>" is a member of group "<group_name>"
+        And the user removes user "<group_member>" from the group "<group_name>"
+        Then the response status code is "200"
+        And user "<group_member>" is no longer a member of the group "<group_name>"
+
+        Examples:
+            | user                | group_name              | group_member      |
+            | functionaladminpriv | research-api-test-group | sterlingarcher    |
+            | functionaladminpriv | datamanager-api-test    | sterlingarcher    |
+            | technicaladmin      | datamanager-api-test1   | sterlingarcher    |
+            | technicaladmin      | not-a-yoda-group        | sterlingarcher    |
+            | functionaladminpriv | research-api-test-group | jameskirk         |
+            | functionaladminpriv | datamanager-api-test    | jameskirk         |
+            | technicaladmin      | datamanager-api-test1   | jameskirk         |
+            | technicaladmin      | not-a-yoda-group        | jameskirk         |
 
 
     Scenario Outline: Group import CSV

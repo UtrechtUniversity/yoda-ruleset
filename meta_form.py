@@ -4,7 +4,7 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import irods_types
 
@@ -170,8 +170,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
                         return api.Error('validation', 'The metadata file is not compliant with the schema.',
                                          data={'errors': errors})
                 except Exception as e:
-                    log.write(ctx, 'Unknown error while validating <{}> against schema id <{}>: {}'
-                              .format(meta_path, current_schema_id, str(e)))
+                    log.write(ctx, f'Unknown error while validating <{meta_path}> against schema id <{current_schema_id}>: {str(e)}')
                     return api.Error('internal', 'The metadata file could not be validated due to an internal error.')
                 else:
                     # No errors! Offer automatic transformation.
@@ -194,8 +193,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
             else:
                 # Schema ID does not match and there is no defined transformation.
                 # We have no way to parse this file.
-                log.write(ctx, 'Metadata file <{}> has untransformable schema <{}> (need {})'
-                               .format(meta_path, current_schema_id, schema['$id']))
+                log.write(ctx, f"Metadata file <{meta_path}> has untransformable schema <{current_schema_id}> (need {schema['$id']})")
                 return api.Error('bad_schema',
                                  'The metadata file is not compliant with the schema in this category and cannot be transformed. '
                                  + 'Please contact your datamanager.')
@@ -242,8 +240,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
         else:
             # Schema ID does not match and there is no defined transformation.
             # We have no way to parse this file.
-            log.write(ctx, 'Metadata file <{}> has untransformable schema <{}> (need {})'
-                           .format(meta_path, current_schema_id, schema['$id']))
+            log.write(ctx, f"Metadata file <{meta_path}> has untransformable schema <{current_schema_id}> (need {schema['$id']})")
             return api.Error('bad_schema',
                              'The metadata file is not compliant with the schema in this category and cannot be transformed. '
                              + 'Please contact your datamanager.')
@@ -256,7 +253,7 @@ def load(ctx: rule.Context, coll: str) -> api.Result:
             'is_locked': is_locked}
 
 
-def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
+def save(ctx: rule.Context, coll: str, metadata: dict) -> api.Result:
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -265,9 +262,9 @@ def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
 
     :returns: API status
     """
-    log.write(ctx, 'save form for coll <{}>'.format(coll))
+    log.write(ctx, f'save form for coll <{coll}>')
 
-    json_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    json_path = f'{coll}/{constants.IIJSONMETADATA}'
 
     space, zone, group, subpath = pathutil.info(coll)
     is_vault = space is pathutil.Space.VAULT
@@ -278,15 +275,15 @@ def save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
         if datamanager_group == '':
             return api.Error('internal', 'could not get datamanager group')
 
-        tmp_coll = '/{}/home/{}/{}/{}'.format(zone, datamanager_group, group, subpath)
+        tmp_coll = f'/{zone}/home/{datamanager_group}/{group}/{subpath}'
 
         try:
             msi.coll_create(ctx, tmp_coll, '1', irods_types.BytesBuf())
         except error.UUError:
-            return api.Error('coll_create', 'Failed to create staging area at <{}>'.format(tmp_coll))
+            return api.Error('coll_create', f'Failed to create staging area at <{tmp_coll}>')
 
         # Use staging area instead of trying to write to the vault directly.
-        json_path = '{}/{}'.format(tmp_coll, constants.IIJSONMETADATA)
+        json_path = f'{tmp_coll}/{constants.IIJSONMETADATA}'
 
     # Remove empty objects from metadata.
     metadata = misc.remove_empty_objects(metadata)
@@ -331,7 +328,7 @@ def api_meta_form_load(ctx: rule.Context, coll: str) -> api.Result:
 
 
 @api.make()
-def api_meta_form_save(ctx: rule.Context, coll: str, metadata: Dict) -> api.Result:
+def api_meta_form_save(ctx: rule.Context, coll: str, metadata: dict) -> api.Result:
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct

@@ -22,7 +22,7 @@ scenarios("../../features/ui/ui_admin.feature")
 
 @when("the user navigates to the home page")
 def ui_admin_navigates_to_home(browser):
-    url = "{}/".format(portal_url)
+    url = f"{portal_url}/"
     browser.visit(url)
 
 
@@ -192,14 +192,14 @@ def ui_admin_clicks_upload_file_format_button(browser, filename):
 
     cwd = os.getcwd()
     if os.name == 'nt':
-        browser.find_by_css('input[type="file"]')[0].fill("{}\\files\\file_formats\\{}".format(cwd, filename))
+        browser.find_by_css('input[type="file"]')[0].fill(f"{cwd}\\files\\file_formats\\{filename}")
     else:
-        browser.find_by_css('input[type="file"]')[0].fill("{}/files/file_formats/{}".format(cwd, filename))
+        browser.find_by_css('input[type="file"]')[0].fill(f"{cwd}/files/file_formats/{filename}")
 
 
 @then(parsers.parse('the success message of uploading a file format list {filename} is shown'))
 def ui_admin_upload_file_format_success(browser, filename):
-    assert browser.is_text_present("File format list '{}' uploaded successfully.".format(filename))
+    assert browser.is_text_present(f"File format list '{filename}' uploaded successfully.")
 
 
 @when(parsers.parse('the user selects the file format list {filename} to delete'))
@@ -220,4 +220,4 @@ def ui_admin_click_delete_button(browser):
 
 @then(parsers.parse('the success message for deleting the file format list {filename} is shown'))
 def ui_admin_delete_file_format_success(browser, filename):
-    assert browser.is_text_present("File format list '{}' deleted successfully.".format(filename))
+    assert browser.is_text_present(f"File format list '{filename}' deleted successfully.")

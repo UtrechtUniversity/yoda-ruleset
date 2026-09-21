@@ -60,14 +60,14 @@ def _call_msvc_json_objops(ctx, jsonstr, val, ops, argument_index):
 
 def _create_tmp_object(ctx):
     """Creates a randomly named test data object and returns its name"""
-    path = "/{}/home/rods/{}.test".format(user.zone(ctx), str(uuid.uuid4()))
+    path = f"/{user.zone(ctx)}/home/rods/{str(uuid.uuid4())}.test"
     data_object.write(ctx, path, "test")
     return path
 
 
 def _create_tmp_collection(ctx):
     """Creates a randomly named test collection and returns its name"""
-    path = "/{}/home/rods/{}-test".format(user.zone(ctx), str(uuid.uuid4()))
+    path = f"/{user.zone(ctx)}/home/rods/{str(uuid.uuid4())}-test"
     collection.create(ctx, path)
     return path
 
@@ -361,6 +361,32 @@ def _test_schema_active_schema_vault_without_research(ctx):
     ctx.uuGroupAdd("vault-without-research", "test-automation", "something", "", "", "", "", "", "", "", "")
     result = schema.get_active_schema_path(ctx, "/tempZone/home/vault-without-research")
     ctx.uuGroupRemove("vault-without-research", "", "")
+    return result
+
+
+def _test_get_schema_category_lookup_dict(ctx: rule.Context) -> List[str]:
+    result: List[str] = []
+
+    dict1 = schema.get_schema_category_lookup_dict(ctx)
+
+    if dict1["test-automation"] != "default-3":
+        result.append("Fail env default / existing category")
+    if dict1["nonexistentcategory"] != "default-3":
+        result.append("Fail env default / nonexistent category")
+
+    schema_collection = "/tempZone/yoda/schemas/test-automation"
+    schema_object = f"{schema_collection}/metadata.json"
+    collection.create(ctx, schema_collection)
+    data_object.write(ctx, schema_object, "test")
+    dict2 = schema.get_schema_category_lookup_dict(ctx)
+
+    if dict2["test-automation"] != "test-automation":
+        result.append("Fail cat default / existing category")
+    if dict2["nonexistentcategory"] != "default-3":
+        result.append("Fail cat default / nonexistent category")
+
+    collection.remove(ctx, schema_collection)
+
     return result
 
 
@@ -781,6 +807,9 @@ basic_integration_tests = [
     {"name":  "schema.get_active_schema_path.vault-without-research",
      "test": lambda ctx: _test_schema_active_schema_vault_without_research(ctx),
      "check": lambda x: x == "/tempZone/yoda/schemas/default-3/metadata.json"},
+    {"name":  "schema.get_schema_category_lookup_dict",
+     "test": lambda ctx: _test_get_schema_category_lookup_dict(ctx),
+     "check": lambda x: x == []},
     # Vault metadata schema report: only check return value type, not contents
     {"name": "schema_transformation.batch_vault_metadata_schema_report",
      "test": lambda ctx: ctx.rule_batch_vault_metadata_schema_report(""),
@@ -812,6 +841,21 @@ basic_integration_tests = [
     {"name":   "util.collection.exists.no",
      "test": lambda ctx: collection.exists(ctx, "/tempZone/chewbacca"),
      "check": lambda x: not x},
+    {"name":   "util.collection.has_modify_date_after",
+     "test": lambda ctx: _test_has_modify_date_after(ctx),
+     "check": lambda x: x == []},
+    {"name":   "util.collection.has_dataobjects.yes_nonrecursive",
+     "test": lambda ctx: collection.has_dataobjects(ctx, "/tempZone/home/research-initial/testdata"),
+     "check": lambda x: x is True},
+    {"name":   "util.collection.has_dataobjects.yes_recursive",
+     "test": lambda ctx: collection.has_dataobjects(ctx, "/tempZone/home/research-initial"),
+     "check": lambda x: x is True},
+    {"name":   "util.collection.has_dataobjects.no",
+     "test": lambda ctx: collection.has_dataobjects(ctx, "/tempZone/home/research-core-0"),
+     "check": lambda x: x is False},
+    {"name":   "util.collection.has_dataobjects_modified_after",
+     "test": lambda ctx: _test_has_dataobjects_modified_after(ctx),
+     "check": lambda x: x == []},
     {"name":   "util.collection.owner",
      "test": lambda ctx: collection.owner(ctx, "/tempZone/yoda"),
      "check": lambda x: x == ('rods', 'tempZone')},
@@ -897,6 +941,9 @@ basic_integration_tests = [
     {"name":   "util.group.is_member.no",
      "test": lambda ctx: group.is_member(ctx, "research-initial", "rods"),
      "check": lambda x: not x},
+    {"name":   "util.group.get_research_groups_list",
+     "test": lambda ctx: group.get_research_groups_list(ctx),
+     "check": lambda x: len(x) > 10 and "research-initial" in x},
     {"name":   "util.group.members.normal",
      "test": lambda ctx: group.members(ctx, "research-initial"),
      "check": lambda x: sorted(x) == sorted([('alice@yoda.dev', 'tempZone'), ('bob@yoda.dev', 'tempZone'), ('functionaladminpriv', 'tempZone'), ('functionaladminpriv@yoda.test', 'tempZone'), ('groupmanager', 'tempZone'), ('groupmanager@yoda.test', 'tempZone'), ('researcher', 'tempZone'), ('researcher@yoda.test', 'tempZone')])},
@@ -1034,7 +1081,7 @@ def rule_run_integration_tests(ctx, tests):
         try:
             result = test(ctx)
         except BaseException:
-            log.write(ctx, "Basic integration test {} failed with Exception: {}".format(name, traceback.format_exc()))
+            log.write(ctx, f"Basic integration test {name} failed with Exception: {traceback.format_exc()}")
             exception = True
 
         if exception:
@@ -1044,7 +1091,7 @@ def rule_run_integration_tests(ctx, tests):
         elif check.__code__.co_argcount == 2 and check(ctx, result):
             verdict = "VERDICT_OK"
         else:
-            verdict = "VERDICT_FAILED   (output '{}')".format(str(result))
+            verdict = f"VERDICT_FAILED   (output '{str(result)}')"
 
         return_value += name + " " + verdict + "\n"
 
@@ -1149,7 +1196,7 @@ def _test_hashes_collection_script(ctx):
     :returns: the calculated SHA256 hash of the collection.
     """
     # Create collection
-    coll_path = "/{}/home/rods/{}-test".format(user.zone(ctx), "hash")
+    coll_path = f"/{user.zone(ctx)}/home/rods/hash-test"
     collection.create(ctx, coll_path)
 
     # Add data objects to collection
@@ -1157,7 +1204,7 @@ def _test_hashes_collection_script(ctx):
     data_object.write(ctx, f"{coll_path}/file2.txt", b"contentB")
 
     # Create subcollection
-    subcoll_path = coll_path + '/{}-test'.format("subhash")
+    subcoll_path = coll_path + '/subhash-test'
     collection.create(ctx, subcoll_path)
 
     # Add data objects in subcollection
@@ -1180,7 +1227,7 @@ def _test_hashes_collection_trailing_slash(ctx):
 
     :returns: true if the same hash is returned else false
     """
-    base_path = "/{}/home/rods".format(user.zone(ctx))
+    base_path = f"/{user.zone(ctx)}/home/rods"
     path = f"{base_path}/collection-trailing-slash"
 
     collection.create(ctx, path)
@@ -1332,6 +1379,108 @@ def _test_copy_folder_to_research(ctx):
                     collection.remove(ctx, path)
             except Exception as e:
                 log.write(ctx, f"Clean up test files exception: {str(e)}")
+
+
+def _test_has_modify_date_after(ctx: rule.Context) -> List[str]:
+    """Tests for the collection.has_modify_date_after function
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: List of unexpected results
+    """
+    testcollection = _create_tmp_collection(ctx)
+    test_modifytime = 1783417948
+    json_inp = {"logical_path": testcollection, "options": {"seconds_since_epoch": test_modifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    result: List[str] = []
+
+    if not collection.has_modify_date_after(ctx, testcollection, test_modifytime - 1):
+        result.append("Fail for modify time just before")
+    if collection.has_modify_date_after(ctx, testcollection, test_modifytime):
+        result.append("Fail for modify time equals")
+    if collection.has_modify_date_after(ctx, testcollection, test_modifytime + 1):
+        result.append("Fail for modify time just after")
+    if not collection.has_modify_date_after(ctx, testcollection, 999):
+        result.append("Fail for modify time numerically before / lexically after")
+
+    collection.remove(ctx, testcollection)
+    return result
+
+
+def _test_has_dataobjects_modified_after(ctx: rule.Context) -> List[str]:
+    """Tests for the collection.has_dataobjects_modified_after function
+
+    :param ctx: combined type of a callback and rei struct
+
+    :returns: List of unexpected results
+    """
+    # Timestamp that is numerically lower but lexically higher than regular timestamps
+    test_lexicaltime = 999
+
+    # create testcollection
+    testcollection = _create_tmp_collection(ctx)
+    test_modifytime = 1783417948
+    json_inp = {"logical_path": testcollection, "options": {"seconds_since_epoch": test_modifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    result: List[str] = []
+
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime - 1, False):
+        result.append("Fail for collection without data objects (no fallback/before)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection without data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime + 1, False):
+        result.append("Fail for collection without data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime - 1, True):
+        result.append("Fail for collection without data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection without data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_modifytime + 1, True):
+        result.append("Fail for collection without data objects (fallback/after)")
+
+    test_objectmodifytime = test_modifytime - 3600
+    objectname = os.path.join(testcollection, "test.txt")
+    json_inp = {"logical_path": objectname, "options": {"seconds_since_epoch": test_objectmodifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, False):
+        result.append("Fail for collection with data objects (no fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection with data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, False):
+        result.append("Fail for collection with data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, True):
+        result.append("Fail for collection with data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection with data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, True):
+        result.append("Fail for collection with data objects (fallback/after)")
+
+    data_object.remove(ctx, objectname)
+    subcollection = os.path.join(testcollection, "subcollection")
+    objectname = os.path.join(subcollection, "test.txt")
+    collection.create(ctx, subcollection)
+    test_objectmodifytime = test_modifytime - 7200
+    json_inp = {"logical_path": objectname, "options": {"seconds_since_epoch": test_objectmodifytime}}
+    msi.touch(ctx, json.dumps(json_inp))
+
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, False):
+        result.append("Fail for collection with nested data objects (no fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, False):
+        result.append("Fail for collection with nested data objects (no fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, False):
+        result.append("Fail for collection with nested data objects (no fallback/after)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime - 1, True):
+        result.append("Fail for collection with nested data objects (fallback/before)")
+    if not collection.has_dataobjects_modified_after(ctx, testcollection, test_lexicaltime, True):
+        result.append("Fail for collection with nested data objects (fallback/before-lexical)")
+    if collection.has_dataobjects_modified_after(ctx, testcollection, test_objectmodifytime + 1, True):
+        result.append("Fail for collection with nested data objects (fallback/after)")
+
+    collection.remove(ctx, testcollection)
+
+    return result
 
 
 def _test_collection_subcollections(ctx: rule.Context) -> List[str]:

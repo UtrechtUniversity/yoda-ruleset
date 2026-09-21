@@ -11,11 +11,12 @@
 import os
 
 import genquery
+from tstrings import t
 
 
 # Determine existence of a collection
 def coll_exists(ctx, coll):
-    return len(list(genquery.Query(ctx, "COLL_ID", f"COLL_NAME = '{coll}'"))) > 0
+    return len(list(genquery.Query(ctx, "COLL_ID", t("COLL_NAME = '{coll}'")))) > 0
 
 
 # Get group from collection
@@ -27,7 +28,7 @@ def get_group_coll(ctx, coll):
     else:
         query = list(genquery.Query(ctx,
                                     "COLL_PARENT_NAME",
-                                    f"COLL_NAME = '{coll}'"))
+                                    t("COLL_NAME = '{coll}'")))
 
         if len(query) > 0:
             if query[0].rsplit('/', 1)[-1].startswith("vault-"):
@@ -47,7 +48,7 @@ def group_exists(ctx, group):
 def get_avus(ctx, coll, avu):
     query = list(genquery.Query(ctx,
                                 "ORDER(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE",
-                                f"META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'"))
+                                t("META_COLL_ATTR_NAME like '{avu}' AND COLL_NAME = '{coll}'")))
     avus = {}
     if len(query) > 0:
         for (attr, value) in query:
@@ -59,7 +60,7 @@ def get_avus(ctx, coll, avu):
 def get_subcolls(ctx, coll):
     query = list(genquery.Query(ctx,
                                 "COLL_NAME",
-                                f"COLL_NAME like '{coll}/%'"))
+                                t("COLL_NAME like '{coll}/%'")))
     if len(query) > 0:
         return query
     return []
@@ -69,7 +70,7 @@ def get_subcolls(ctx, coll):
 def get_dataobjs(ctx, coll):
     query = list(genquery.Query(ctx,
                                 "DATA_NAME",
-                                f"COLL_NAME = '{coll}'"))
+                                t("COLL_NAME = '{coll}'")))
     if len(query) > 0:
         return query
     else:
@@ -82,11 +83,11 @@ def get_acls(ctx, coll, data="", item=""):
     if item == "coll" and data == "":
         query = list(genquery.Query(ctx,
                                     "ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME",
-                                    f"COLL_NAME = '{coll}'"))
+                                    t("COLL_NAME = '{coll}'")))
     elif item == "dataobj" and data != "":
         query = list(genquery.Query(ctx,
                                     "ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME",
-                                    f"COLL_NAME = '{coll}' AND DATA_NAME like '{data}'"))
+                                    t("COLL_NAME = '{coll}' AND DATA_NAME like '{data}'")))
     else:
         return acls
 
@@ -304,7 +305,7 @@ def check_acls(ctx, coll, mode):
 def check_coll_inherit(ctx, coll, mode):
     query = list(genquery.Query(ctx,
                                 "COLL_INHERITANCE",
-                                f"COLL_NAME = '{coll}'"))
+                                t("COLL_NAME = '{coll}'")))
 
     if len(query) > 0:
         inherit = "Enabled" if query[0] == "1" else "Disabled"
@@ -401,34 +402,34 @@ def ensure_fix(ctx, op, coll, data="", user_id="", access="", attr="", value="")
         if data == "":
             if len(list(genquery.Query(ctx,
                                        "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-                                       f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) > 0:
+                                       t("COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'")))) > 0:
                 ensured = True
         else:
             if len(list(genquery.Query(ctx,
                                        "DATA_ACCESS_USER_ID, DATA_ACCESS_NAME",
-                                       f"DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'"))) > 0:
+                                       t("DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'")))) > 0:
                 ensured = True
     elif op == "acl-remove":
         if data == "":
             if len(list(genquery.Query(ctx,
                                        "COLL_ACCESS_USER_ID, COLL_ACCESS_NAME",
-                                       f"COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'"))) == 0:
+                                       t("COLL_ACCESS_USER_ID = '{user_id}' AND COLL_ACCESS_NAME in {access} AND COLL_NAME = '{coll}'")))) == 0:
                 ensured = True
         else:
             if len(list(genquery.Query(ctx,
                                        "DATA_ACCESS_USER_ID, DATA_ACCESS_NAME",
-                                       f"DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'"))) == 0:
+                                       t("DATA_ACCESS_USER_ID = '{user_id}' AND DATA_ACCESS_NAME in {access} AND COLL_NAME = '{coll}' AND DATA_NAME LIKE '{data}'")))) == 0:
                 ensured = True
     elif op == "inherit":
         query = list(genquery.Query(ctx,
                                     "COLL_INHERITANCE",
-                                    f"COLL_NAME = '{coll}'"))
+                                    t("COLL_NAME = '{coll}'")))
         if len(query) > 0:
             ensured = (query[0] == "0")
     elif op == "avu":
         if len(list(genquery.Query(ctx,
                                    "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                   f"META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'"))) > 0:
+                                   t("META_COLL_ATTR_NAME like '{attr}' AND META_COLL_ATTR_VALUE like '{value}' AND COLL_NAME = '{coll}'")))) > 0:
             ensured = True
     return ensured
 
@@ -468,6 +469,7 @@ def main(rule_args, ctx, rei):
             ctx.writeLine("stdout", "ERROR: Collection does not exist.")
     else:
         ctx.writeLine("stdout", "ERROR: Rule can only be run by a rodsadmin user.")
+
 
 INPUT *coll=, *mode=read
 OUTPUT ruleExecOut

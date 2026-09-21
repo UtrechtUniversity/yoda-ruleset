@@ -1,21 +1,21 @@
 """JSON schema transformation utility functions."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2025-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-from typing import Any, Dict, List
+from typing import Any, List
 
 
-def add_affiliation_identifier(m: Dict[str, Any]) -> Dict[str, Any]:
+def add_affiliation_identifier(m: dict[str, Any]) -> dict[str, Any]:
     """Add affiliation identifiers to creators, contributors, and contacts.
 
     :param m: Metadata to transform
 
     :returns: Transformed JSON object
     """
-    def _transform_affiliations(entities: List[Dict[str, Any]]) -> None:
+    def _transform_affiliations(entities: List[dict[str, Any]]) -> None:
         """Transform affiliations for a list of entities."""
         for entity in entities:
             new_affiliations = []
@@ -50,7 +50,7 @@ def correctify_isni(org_isni: str) -> str | None:
     if not re.search("^[0-9]{15}[0-9X]$", new_isni_split[-1]):
         return None
 
-    return "https://isni.org/isni/{}".format(new_isni_split[-1])
+    return f"https://isni.org/isni/{new_isni_split[-1]}"
 
 
 def correctify_orcid(org_orcid: str) -> str | None:
@@ -67,7 +67,7 @@ def correctify_orcid(org_orcid: str) -> str | None:
     if not re.search("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", orcs[-1]):
         return None
 
-    return "https://orcid.org/{}".format(orcs[-1])
+    return f"https://orcid.org/{orcs[-1]}"
 
 
 def correctify_scopus(org_scopus: str) -> str | None:
@@ -92,17 +92,17 @@ def correctify_researcher_id(org_researcher_id: str) -> str | None:
     if not re.search("^[A-Z]-[0-9]{4}-[0-9]{4}$", rid[-1]):
         return None
 
-    return "https://www.researcherid.com/rid/{}".format(rid[-1])
+    return f"https://www.researcherid.com/rid/{rid[-1]}"
 
 
-def correctify_personal_identifiers(m: Dict[str, Any]) -> Dict[str, Any]:
+def correctify_personal_identifiers(m: dict[str, Any]) -> dict[str, Any]:
     """Correct illformatted personal identifiers for creators, contributors, and contacts.
 
     :param m: Metadata to transform
 
     :returns: Transformed JSON object
     """
-    def _correctify_identifiers(entities: List[Dict[str, Any]]) -> None:
+    def _correctify_identifiers(entities: List[dict[str, Any]]) -> None:
         """Correctify personal identifiers."""
         for entity in entities:
             person_identifiers = []
@@ -151,7 +151,7 @@ def correctify_personal_identifiers(m: Dict[str, Any]) -> Dict[str, Any]:
     return m
 
 
-def merge_geo_keywords(m: Dict) -> Dict:
+def merge_geo_keywords(m: dict) -> dict:
     """Merge several geo keywords into single keyword field.
 
     :param m: Metadata to transform
@@ -184,7 +184,7 @@ def merge_geo_keywords(m: Dict) -> Dict:
     return m
 
 
-def rename_related_datapackage(m: Dict) -> Dict:
+def rename_related_datapackage(m: dict) -> dict:
     """Rename Related Datapackage field to Related Resource field.
 
     :param m: Metadata to transform

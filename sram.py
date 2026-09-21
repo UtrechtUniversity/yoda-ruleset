@@ -5,7 +5,7 @@ __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 import genquery
 import requests
@@ -17,7 +17,7 @@ HTTP_CREATED = 201
 HTTP_NO_CONTENT = 204
 
 
-def _request_headers() -> Dict[str, str]:
+def _request_headers() -> dict[str, str]:
     """Return SRAM API request headers with bearer token."""
     return {
         'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ def _request_headers() -> Dict[str, str]:
     }
 
 
-def post_collaboration(ctx: rule.Context, group_name: str, description: str) -> Dict:
+def post_collaboration(ctx: rule.Context, group_name: str, description: str) -> dict:
     """Create SRAM Collaborative Organisation Identifier.
 
     :param ctx:             Combined type of a callback and rei struct
@@ -243,7 +243,7 @@ def update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid:
     return response.status_code == HTTP_CREATED
 
 
-def get_co_members(ctx: rule.Context, co_identifier: str) -> List[Dict[str, str]]:
+def get_co_members(ctx: rule.Context, co_identifier: str) -> List[dict[str, str]]:
     """Get SRAM collaboration members with their uids.
 
     :param ctx:           Combined type of a callback and rei struct

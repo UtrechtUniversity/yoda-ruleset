@@ -21,7 +21,7 @@ def write(ctx: rule.Context, message: str, write_stdout: bool = False, print_mod
     if print_module:
         stack = inspect.stack()[1]
         module = inspect.getmodule(stack[0])
-        message_to_print = '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message)
+        message_to_print = f"[{module.__name__.replace('rules_uu.', '')}] {message}"
     else:
         message_to_print = message
 
@@ -38,4 +38,4 @@ def debug(ctx: rule.Context, message: str) -> None:
     :param message: Message to write to log
     """
     if config.environment == 'development':
-        ctx.writeString("serverLog", 'DEBUG: {}'.format(message))
+        ctx.writeString("serverLog", f'DEBUG: {message}')

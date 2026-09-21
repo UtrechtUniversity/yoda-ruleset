@@ -97,7 +97,7 @@ def post_status_transition(ctx: rule.Context,
             # Send notifications to datamanagers.
             message = "Data package submitted for publication"
             for datamanager in datamanagers:
-                datamanager_name = '{}#{}'.format(*datamanager)
+                datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
                 notifications.set(ctx, actor, datamanager_name, path, message)
 
     elif status is constants.vault_package_state.APPROVED_FOR_PUBLICATION:

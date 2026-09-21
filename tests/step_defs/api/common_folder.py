@@ -1,7 +1,7 @@
 # coding=utf-8
 """Common API folder feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -60,7 +60,7 @@ def api_folder_submit_move(user, folder, delete_research_copy="False"):
     return api_request(
         user,
         "folder_submit",
-        {"coll": folder, "delete_research_copy": delete_research_copy}
+        {"coll": folder, "delete_research_copy": delete_research_copy.lower() == "true"}
     )
 
 
@@ -109,7 +109,7 @@ def api_response(user, folder):
     schema = path.split("/")[2]
 
     cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, schema), encoding="utf8") as f:
+    with open(f"{cwd}/files/{schema}.json", encoding="utf8") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     http_status, _ = api_request(
@@ -159,7 +159,7 @@ def folder_status(user, folder, status):
 def folder_locks(api_response, folder):
     _, body = api_response
     x = folder.split('/')
-    assert "/{}".format(x[-1]) in body["data"]
+    assert f"/{x[-1]}" in body["data"]
 
 
 @then(parsers.parse("folder {folder} does not exist"))

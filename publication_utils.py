@@ -3,8 +3,6 @@
 __copyright__ = 'Copyright (c) 2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from typing import Dict
-
 import datacite
 from util import constants
 
@@ -40,7 +38,7 @@ def should_return_early(status: constants.publication_status) -> bool:
     )
 
 
-def generate_preliminary_doi(publication_config: Dict, publication_state: Dict) -> None:
+def generate_preliminary_doi(publication_config: dict, publication_state: dict) -> None:
     """Generate a preliminary DOI. Preliminary, because we check for collision later.
 
     :param publication_config: Dict with publication configuration
@@ -54,7 +52,7 @@ def generate_preliminary_doi(publication_config: Dict, publication_state: Dict) 
     publication_state["versionDOI"] = f"{datacite_prefix}/{yoda_prefix}-{random_id}"
 
 
-def generate_base_doi(publication_config: Dict, publication_state: Dict) -> None:
+def generate_base_doi(publication_config: dict, publication_state: dict) -> None:
     """Generate a base DOI.
 
     :param publication_config: Dict with publication configuration
@@ -68,7 +66,7 @@ def generate_base_doi(publication_config: Dict, publication_state: Dict) -> None
     publication_state["baseDOI"] = f"{datacite_prefix}/{yoda_prefix}-{random_id}"
 
 
-def generate_landing_page_url(publication_config: Dict, publication_state: Dict) -> None:
+def generate_landing_page_url(publication_config: dict, publication_state: dict) -> None:
     """Generate a URL for the landing page.
 
     :param publication_config: Dict with publication configuration

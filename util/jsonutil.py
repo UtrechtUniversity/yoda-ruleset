@@ -5,9 +5,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 from collections import OrderedDict
-from typing import Dict
 
 import jsonavu
+import orjson
 import requests
 
 import avu
@@ -20,6 +20,25 @@ import rule
 
 class ParseError(error.UUError):
     """Exception for unparsable JSON text."""
+
+
+def fast_parse(input: bytes) -> dict:
+    """Parse binary JSON data into a dictionary. For most purposes, this
+       should be equivalent to the regular parse function, since
+       dictionaries preserve order in Python 3.7+. Only the
+       specific functions of OrderedDict like move_to_end are
+       not available.
+
+    :param input: binary data to parse
+
+    :raises ParseError: JSON file format error
+
+    :returns: JSON data as dictionary
+    """
+    try:
+        return orjson.loads(input)
+    except orjson.JSONDecodeError:
+        raise ParseError('JSON file format error')
 
 
 def parse(text: str) -> OrderedDict:
@@ -37,7 +56,20 @@ def parse(text: str) -> OrderedDict:
         raise ParseError('JSON file format error')
 
 
-def dump(data: Dict, **options: int) -> str:
+def fast_dump(input: dict) -> str:
+    """Dump dictionary structure into string data using JSON.
+       This is similar to the regular dump function, only it does
+       not do any formatting like indenting, and does not support
+       options.
+
+    :param input: dictionary data structure
+
+    :returns: JSON data in string format
+    """
+    return orjson.dumps(input).decode("utf-8")
+
+
+def dump(data: dict, **options: int) -> str:
     """Dump an object to a JSON string."""
     # json.dumps seems to not like mixed str/unicode input, so make sure
     # everything is of the same type first.
@@ -64,7 +96,7 @@ def read_from_url(url: str, timeout: int = 10) -> OrderedDict:
     return response.json(object_pairs_hook=OrderedDict)
 
 
-def write(ctx: rule.Context, path: str, data: Dict, **options: int) -> None:
+def write(ctx: rule.Context, path: str, data: dict, **options: int) -> None:
     """Write a JSON object to an iRODS data object."""
     return data_object.write(ctx, path, dump(data, **options))
 
@@ -85,9 +117,9 @@ def set_on_object(ctx: rule.Context, path: str, type: str, namespace: str, json_
     # Remove existing metadata from object in namespace.
     try:
         if type == "collection":
-            avu.rmw_from_coll(ctx, path, "%", "%", "{}_%".format(namespace))
+            avu.rmw_from_coll(ctx, path, "%", "%", f"{namespace}_%")
         else:
-            avu.rmw_from_data(ctx, path, "%", "%", "{}_%".format(namespace))
+            avu.rmw_from_data(ctx, path, "%", "%", f"{namespace}_%")
     except msi.Error as e:
         # Ignore -819000 (CAT_SUCCESS_BUT_WITH_NO_INFO) errors when removing metadata.
         if str(e).find("-819000") > -1:

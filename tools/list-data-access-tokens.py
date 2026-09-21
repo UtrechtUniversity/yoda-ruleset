@@ -93,10 +93,7 @@ def print_tokens(data, args):
                 writer.writerow(token)
         elif args.format == "human":
             for token in sorted_data:
-                print('{0:40} {1:19} {2:19}'.format(
-                     token["user"],
-                     token["label"],
-                     token["exp_time"]))
+                print(f'{token["user"]:40} {token["label"]:19} {token["exp_time"]:19}')
         else:
             exit_with_error("Error: unknown output format")
 

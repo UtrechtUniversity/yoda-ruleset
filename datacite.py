@@ -1,20 +1,19 @@
 """Functions for communicating with DataCite and some utilities."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import random
 import string
-from typing import Dict
 
 import requests
 
 from util import *
 
 
-def metadata_post(payload: Dict) -> requests.Response:
+def metadata_post(payload: dict) -> requests.Response:
     """Register DOI metadata with DataCite."""
-    url = "{}/dois".format(config.datacite_rest_api_url)
+    url = f"{config.datacite_rest_api_url}/dois"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
@@ -30,7 +29,7 @@ def metadata_post(payload: Dict) -> requests.Response:
 
 def metadata_put(doi: str, payload: str) -> requests.Response:
     """Update metadata with DataCite."""
-    url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
+    url = f"{config.datacite_rest_api_url}/dois/{doi}"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
@@ -46,7 +45,7 @@ def metadata_put(doi: str, payload: str) -> requests.Response:
 
 def metadata_get(doi: str) -> requests.Response:
     """Check with DataCite if DOI is available."""
-    url = "{}/dois/{}".format(config.datacite_rest_api_url, doi)
+    url = f"{config.datacite_rest_api_url}/dois/{doi}"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 

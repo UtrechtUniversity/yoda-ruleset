@@ -77,7 +77,7 @@ def api_deposit_status(user, deposit_name):
     return api_request(
         user,
         "deposit_status",
-        {"path": "/deposit-pilot/{}".format(deposit_name)}
+        {"path": f"/deposit-pilot/{deposit_name}"}
     )
 
 
@@ -86,7 +86,7 @@ def api_deposit_clear(user, deposit_name):
     return api_request(
         user,
         "deposit_submit",
-        {"path": "/deposit-pilot/{}".format(deposit_name)}
+        {"path": f"/deposit-pilot/{deposit_name}"}
     )
 
 
@@ -123,7 +123,7 @@ def api_deposit_file_upload(user, file, deposit_name):
     return upload_data(
         user,
         file,
-        "/deposit-pilot/{}".format(deposit_name)
+        f"/deposit-pilot/{deposit_name}"
     )
 
 
@@ -132,20 +132,20 @@ def api_response(user, deposit_name):
     _, body = api_request(
         user,
         "meta_form_load",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name)}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}"}
     )
 
     path = urlparse(body['data']['schema']['$id']).path
     schema = path.split("/")[2]
 
     cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, schema)) as f:
+    with open(f"{cwd}/files/{schema}.json") as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     return api_request(
         user,
         "meta_form_save",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name), "metadata": metadata}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}", "metadata": metadata}
     )
 
 
@@ -154,7 +154,7 @@ def data_access_restriction_open(user, deposit_name):
     _, body = api_request(
         user,
         "meta_form_load",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name)}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}"}
     )
 
     metadata = body['data']['metadata']
@@ -163,7 +163,7 @@ def data_access_restriction_open(user, deposit_name):
     return api_request(
         user,
         "meta_form_save",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name), "metadata": metadata}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}", "metadata": metadata}
     )
 
 
@@ -172,7 +172,7 @@ def data_access_restriction_restricted(user, deposit_name):
     _, body = api_request(
         user,
         "meta_form_load",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name)}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}"}
     )
 
     metadata = body['data']['metadata']
@@ -181,7 +181,7 @@ def data_access_restriction_restricted(user, deposit_name):
     return api_request(
         user,
         "meta_form_save",
-        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name), "metadata": metadata}
+        {"coll": f"/tempZone/home/deposit-pilot/{deposit_name}", "metadata": metadata}
     )
 
 

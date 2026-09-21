@@ -7,12 +7,12 @@ import math
 import time
 import uuid
 from collections import OrderedDict
-from typing import Dict, List
+from typing import List
 
 import constants
 
 
-def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
+def check_data_package_system_avus(extracted_avus: dict) -> dict:
     """Checks whether a data package has the expected system AVUs that start with constants.UUORGMETADATAPREFIX (i.e, 'org_').
 
     This function compares the AVUs of the provided data package against a set of ground truth AVUs derived from
@@ -72,9 +72,9 @@ def check_data_package_system_avus(extracted_avus: Dict) -> Dict:
     elif constants.UUORGMETADATAPREFIX + 'publication_next_version' in extracted_attrs:
         combined_avu_names_suffix.update(avu_names_first_version_suffix)
 
-    ground_truth_avus = {"{}publication_{}".format(constants.UUORGMETADATAPREFIX, name) for name in combined_avu_names_suffix}
+    ground_truth_avus = {f"{constants.UUORGMETADATAPREFIX}publication_{name}" for name in combined_avu_names_suffix}
     combined_avu_names_suffix.update(avu_names_optional_suffix)
-    ground_truth_avus_with_optional = {"{}publication_{}".format(constants.UUORGMETADATAPREFIX, name) for name in combined_avu_names_suffix}
+    ground_truth_avus_with_optional = {f"{constants.UUORGMETADATAPREFIX}publication_{name}" for name in combined_avu_names_suffix}
     # Find missing and unexpected AVUs
     missing_avus = ground_truth_avus - extracted_attrs
     unexpected_avus = extracted_attrs - ground_truth_avus_with_optional
@@ -109,10 +109,10 @@ def human_readable_size(size_bytes: int) -> str:
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return '{} {}'.format(s, size_name[i])
+    return f'{s} {size_name[i]}'
 
 
-def remove_empty_objects(d: Dict) -> Dict:
+def remove_empty_objects(d: dict) -> dict:
     """Remove empty objects (None, '', {}, []) from OrderedDict."""
     if isinstance(d, dict):
         # Create OrderedDict to maintain order.
@@ -130,12 +130,6 @@ def remove_empty_objects(d: Dict) -> Dict:
     else:
         # Return the value because it is not a dict or list.
         return d
-
-
-def escape(unsafe: str) -> str:
-    """Escaping Special Characters for GenQuery2."""
-    safe = unsafe.replace("'", "''")
-    return safe
 
 
 def is_valid_uuid(uuid_string: str) -> bool:

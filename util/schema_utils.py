@@ -16,7 +16,7 @@ def is_unsupported_schema(schema_id: str) -> bool:
               schema IDs are compulsory in the present version of Yoda. Unknown
               schemas are considered to be not (known to be) unsupported.
     """
-    deprecated_ids = ["https://yoda.uu.nl/schemas/{}/metadata.json".format(shortname)
+    deprecated_ids = [f"https://yoda.uu.nl/schemas/{shortname}/metadata.json"
                       for shortname in
                       ["core-0", "core-1", "default-0", "default-1", "default-2",
                        "hptlab-0", "teclab-0"

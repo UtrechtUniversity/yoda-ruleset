@@ -1,13 +1,13 @@
 """Python/Rule interface code."""
 from __future__ import annotations
 
-__copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
 import traceback
 from enum import Enum
-from typing import Callable, Dict, List
+from typing import Callable, List
 
 import log
 
@@ -80,7 +80,7 @@ def make(inputs: List | None = None, outputs: List | None = None, transform: Cal
 
     :returns: Decorator to create a rule from a Python function
     """
-    def encode_val(v: str | int | List | Dict) -> str:
+    def encode_val(v: str | int | List | dict) -> str:
         """Encode a value such that it can be safely transported in rule_args, as output."""
         if type(v) is str:
             return v
@@ -101,26 +101,32 @@ def make(inputs: List | None = None, outputs: List | None = None, transform: Cal
                           + traceback.format_exc())
                 raise e
 
-            if result is None:
-                return
+            try:
+                if result is None:
+                    return
 
-            result = list(map(transform, list(result) if type(result) is tuple else [result]))
+                result = list(map(transform, list(result) if type(result) is tuple else [result]))
 
-            if handler is Output.STORE:
-                if outputs is None:
-                    # outputs not specified? overwrite all arguments.
-                    rule_args[:] = list(map(encode_val, result))
-                else:
-                    # set specific output arguments.
-                    for i, x in zip(outputs, result):
-                        rule_args[i] = encode_val(x)
-            elif handler is Output.STDOUT:
-                for x in result:
-                    callback.writeString('stdout', encode_val(x) + '\n')
-                    # For debugging:
-                    # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
-            elif handler is Output.STDOUT_BIN:
-                for x in result:
-                    callback.writeString('stdout', encode_val(x))
+                if handler is Output.STORE:
+                    if outputs is None:
+                        # outputs not specified? overwrite all arguments.
+                        rule_args[:] = list(map(encode_val, result))
+                    else:
+                        # set specific output arguments.
+                        for i, x in zip(outputs, result):
+                            rule_args[i] = encode_val(x)
+                elif handler is Output.STDOUT:
+                    for x in result:
+                        callback.writeString('stdout', encode_val(x) + '\n')
+                        # For debugging:
+                        # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
+                elif handler is Output.STDOUT_BIN:
+                    for x in result:
+                        callback.writeString('stdout', encode_val(x))
+            except Exception as e:
+                log.write(ctx, "Uncaught exception while processing rule result: "
+                          + traceback.format_exc())
+                raise e
+
         return r
     return deco

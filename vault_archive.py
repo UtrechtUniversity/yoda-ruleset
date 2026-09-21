@@ -4,12 +4,14 @@ from __future__ import annotations
 __copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
 import json
 import time
-from typing import Dict, List
+from typing import List
 
 import genquery
 import irods_types
+from tstrings import t
 
 import folder
 import groups
@@ -43,7 +45,7 @@ def package_system_metadata(ctx: rule.Context, coll: str) -> List:
         }
         for row in genquery.row_iterator(
             "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'".format(coll, constants.UUORGMETADATAPREFIX),
+            t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}%'"),
             genquery.AS_LIST,
             ctx)
     ]
@@ -57,7 +59,7 @@ def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
 
     :returns: List of dicts with provenance log
     """
-    def key(item: Dict) -> int:
+    def key(item: dict) -> int:
         return int(item["time"])
 
     provenance_log = []
@@ -74,7 +76,7 @@ def package_provenance_log(ctx: rule.Context, system_metadata: List) -> List:
 
 def package_archive_path(ctx: rule.Context, coll: str) -> str | None:
     for row in genquery.row_iterator("DATA_PATH",
-                                     "COLL_NAME = '{}' AND DATA_NAME = 'archive.tar'".format(coll),
+                                     t("COLL_NAME = '{coll}' AND DATA_NAME = 'archive.tar'"),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -91,7 +93,7 @@ def vault_archivable(ctx: rule.Context, coll: str) -> bool:
 
     if not coll.endswith("/original"):
         for _row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                          "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{}'".format(coll),
+                                          t("META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME = '{coll}'"),
                                           genquery.AS_LIST,
                                           ctx):
             coll_size = collection.size(ctx, coll)
@@ -107,7 +109,7 @@ def vault_archivable(ctx: rule.Context, coll: str) -> bool:
 
 def vault_archival_status(ctx: rule.Context, coll: str) -> str | bool:
     for row in genquery.row_iterator("META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.IIARCHIVEATTRNAME),
+                                     t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.IIARCHIVEATTRNAME}'"),
                                      genquery.AS_LIST,
                                      ctx):
         return row[0]
@@ -116,13 +118,13 @@ def vault_archival_status(ctx: rule.Context, coll: str) -> str | bool:
 
 
 def create_archive(ctx: rule.Context, coll: str) -> None:
-    log.write(ctx, "Creating archive of data package <{}>".format(coll))
+    log.write(ctx, f"Creating archive of data package <{coll}>")
     user_metadata = meta.get_latest_vault_metadata_path(ctx, coll)
     system_metadata = package_system_metadata(ctx, coll)
     provenance_log = package_provenance_log(ctx, system_metadata)
 
     # create extra archive files
-    log.write(ctx, "Generating metadata for archive of data package <{}>".format(coll))
+    log.write(ctx, f"Generating metadata for archive of data package <{coll}>")
     data_object.copy(ctx, user_metadata, coll + "/archive/user-metadata.json")
     data_object.write(ctx, coll + "/archive/system-metadata.json",
                       jsonutil.dump(system_metadata))
@@ -136,7 +138,7 @@ def create_archive(ctx: rule.Context, coll: str) -> None:
     # create bagit archive
     bagit.create(ctx, coll + "/archive.tar", coll + "/archive", config.data_package_archive_resource)
     msi.data_obj_chksum(ctx, coll + "/archive.tar", "", irods_types.BytesBuf())
-    log.write(ctx, "Finished creating archive of data package <{}>, ready to move to tape".format(coll))
+    log.write(ctx, f"Finished creating archive of data package <{coll}>, ready to move to tape")
 
 
 def extract_archive(ctx: rule.Context, coll: str) -> None:
@@ -148,7 +150,7 @@ def extract_archive(ctx: rule.Context, coll: str) -> None:
         time.sleep(10)
 
     if state not in ("DUL", "REG", "INV"):
-        log.write(ctx, "Archive of data package <{}> is not available, state is <{}>".format(coll, state))
+        log.write(ctx, f"Archive of data package <{coll}> is not available, state is <{state}>")
         raise Exception("Archive is not available")
 
     bagit.extract(ctx, coll + "/archive.tar", coll + "/archive", resource=config.resource_vault)
@@ -169,10 +171,10 @@ def vault_archive(ctx: rule.Context, actor: str, coll: str) -> str:
 
         message = "Data package scheduled for archival"
         for datamanager in datamanagers:
-            datamanager_name = '{}#{}'.format(*datamanager)
+            datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
             notifications.set(ctx, actor, datamanager_name, coll, message)
 
-        log.write(ctx, "Data package <{}> scheduled for archiving by <{}>".format(coll, actor))
+        log.write(ctx, f"Data package <{coll}> scheduled for archiving by <{actor}>")
 
         return "Success"
 
@@ -184,7 +186,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
     if vault_archival_status(ctx, coll) != constants.vault_archive_state.ARCHIVE.value:
         return "Invalid"
     try:
-        log.write(ctx, "Start archival of data package <{}>".format(coll))
+        log.write(ctx, f"Start archival of data package <{coll}>")
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVING.value)
         collection.create(ctx, coll + "/archive")
         if data_object.exists(ctx, coll + "/License.txt"):
@@ -195,7 +197,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVED.value)
         provenance.log_action(ctx, "system", coll, "archive completed", False)
-        log.write(ctx, "Finished archival of data package <{}>".format(coll))
+        log.write(ctx, f"Finished archival of data package <{coll}>")
 
         return "Success"
     except Exception:
@@ -212,7 +214,7 @@ def vault_create_archive(ctx: rule.Context, coll: str) -> str:
 
         provenance.log_action(ctx, "system", coll, "archive failed", False)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "archival failed")
-        log.write(ctx, "Archival of data package <{}> failed".format(coll))
+        log.write(ctx, f"Archival of data package <{coll}> failed")
 
         return "Failure"
 
@@ -222,17 +224,17 @@ def vault_unarchive(ctx: rule.Context, actor: str, coll: str) -> str:
         # Prepare for unarchival.
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACT.value)
         provenance.log_action(ctx, actor, coll, "unarchive scheduled", False)
-        log.write(ctx, "Request retrieval of data package <{}> from tape".format(coll))
+        log.write(ctx, f"Request retrieval of data package <{coll}> from tape")
         ctx.daget(package_archive_path(ctx, coll), config.data_package_archive_fqdn)
 
         # Send notifications to datamanagers.
         datamanagers = folder.get_datamanagers(ctx, coll)
         message = "Data package scheduled for unarchival"
         for datamanager in datamanagers:
-            datamanager_name = '{}#{}'.format(*datamanager)
+            datamanager_name = f'{datamanager[0]}#{datamanager[1]}'
             notifications.set(ctx, actor, datamanager_name, coll, message)
 
-        log.write(ctx, "Data package <{}> scheduled for unarchiving by <{}>".format(coll, actor))
+        log.write(ctx, f"Data package <{coll}> scheduled for unarchiving by <{actor}>")
 
         return "Success"
 
@@ -244,7 +246,7 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
     if vault_archival_status(ctx, coll) != constants.vault_archive_state.EXTRACT.value:
         return "Invalid"
     try:
-        log.write(ctx, "Start unarchival of data package <{}>".format(coll))
+        log.write(ctx, f"Start unarchival of data package <{coll}>")
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACTING.value)
 
         extract_archive(ctx, coll)
@@ -255,13 +257,13 @@ def vault_extract_archive(ctx: rule.Context, coll: str) -> str:
 
         avu.rm_from_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.EXTRACTING.value)
         provenance.log_action(ctx, "system", coll, "unarchive completed", False)
-        log.write(ctx, "Finished unarchival of data package <{}>".format(coll))
+        log.write(ctx, f"Finished unarchival of data package <{coll}>")
 
         return "Success"
     except Exception:
         provenance.log_action(ctx, "system", coll, "unarchive failed", False)
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "extraction failed")
-        log.write(ctx, "Unarchival of data package <{}> failed".format(coll))
+        log.write(ctx, f"Unarchival of data package <{coll}> failed")
 
         return "Failure"
 
@@ -276,7 +278,7 @@ def update(ctx: rule.Context, coll: str, attr: str | None) -> None:
 
 def vault_update_archive(ctx: rule.Context, coll: str) -> str:
     try:
-        log.write(ctx, "Start update of archived data package <{}>".format(coll))
+        log.write(ctx, f"Start update of archived data package <{coll}>")
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.UPDATING.value)
 
         extract_archive(ctx, coll)
@@ -286,11 +288,11 @@ def vault_update_archive(ctx: rule.Context, coll: str) -> str:
         collection.remove(ctx, coll + "/archive", force=True)
 
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, constants.vault_archive_state.ARCHIVED.value)
-        log.write(ctx, "Finished update of archived data package <{}>".format(coll))
+        log.write(ctx, f"Finished update of archived data package <{coll}>")
         return "Success"
     except Exception:
         avu.set_on_coll(ctx, coll, constants.IIARCHIVEATTRNAME, "update failed")
-        log.write(ctx, "Update of archived data package <{}> failed".format(coll))
+        log.write(ctx, f"Update of archived data package <{coll}> failed")
 
         return "Failure"
 
@@ -314,8 +316,11 @@ def api_vault_archive(ctx: rule.Context, coll: str) -> api.Result:
     if not vault_archivable(ctx, coll) or vault_archival_status(ctx, coll):
         return "Invalid"
 
+    # Encode paths into base64
+    encoded_coll = base64.b64encode(coll.encode()).decode()
+
     try:
-        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.ARCHIVE.value)
+        ctx.iiAdminVaultArchive(encoded_coll, constants.vault_archive_state.ARCHIVE.value)
         return "Success"
     except Exception:
         return "Failure"
@@ -352,19 +357,35 @@ def api_vault_extract(ctx: rule.Context, coll: str) -> api.Result:
     if vault_archival_status(ctx, coll) != constants.vault_archive_state.ARCHIVED.value:
         return "Invalid"
 
+    # Encode paths into base64
+    encoded_coll = base64.b64encode(coll.encode()).decode()
+
     try:
-        ctx.iiAdminVaultArchive(coll, constants.vault_archive_state.EXTRACT.value)
+        ctx.iiAdminVaultArchive(encoded_coll, constants.vault_archive_state.EXTRACT.value)
         return "Success"
     except Exception:
         return "Failure"
 
 
-@rule.make(inputs=[0, 1, 2], outputs=[3])
-def rule_vault_archive(ctx: rule.Context, actor: str, coll: str, action: str) -> str:
+@rule.make(inputs=[0, 1, 2, 3], outputs=[3])
+def rule_vault_archive(ctx: rule.Context, actor: str, coll: str, action: str, status: str) -> str:
+    # Decode base64-encoded paths
+    try:
+        decoded_coll = base64.b64decode(coll).decode('utf-8')
+    except Exception as e:
+        log.write(ctx, f"Failed to decode base64-encoded path '{coll}' for archive: {str(e)}")
+        return "Failure"
+
+    if not decoded_coll or not decoded_coll.startswith('/'):
+        log.write(ctx, f"Invalid path after decoding for archive: <{decoded_coll}>")
+        return "Failure"
+
+    log.write(ctx, f"vault_archive: {actor} {action} '{decoded_coll}' (status: {status})")
+
     if action == "archive":
-        return vault_archive(ctx, actor, coll)
+        return vault_archive(ctx, actor, decoded_coll)
     elif action == "extract":
-        return vault_unarchive(ctx, actor, coll)
+        return vault_unarchive(ctx, actor, decoded_coll)
     else:
         return "Failure"
 

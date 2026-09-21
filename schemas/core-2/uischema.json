@@ -13,7 +13,8 @@
     "ui:description": "Categorize your research to a (sub)discipline"
   },
   "Keyword": {
-    "ui:description": "Free text field for adding (searchable) key words to your data package"
+    "ui:description": "Add (searchable) keywords to your data package",
+    "ui:field": "keyword_input"
   },
   "Data_Type": {
     "ui:help": "What is the type of your data"

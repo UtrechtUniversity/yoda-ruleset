@@ -38,7 +38,7 @@ def ui_browse_folder(browser, folder):
 
 @when(parsers.parse("user clicks on file {file} in folder {folder}"))
 def ui_browse_file(browser, file, folder):
-    browser.find_by_css("[data-path='/{}/{}']".format(folder, file)).click()
+    browser.find_by_css(f"[data-path='/{folder}/{file}']").click()
 
 
 @when('user clicks go to group manager')
@@ -49,4 +49,4 @@ def ui_go_to_group_manager(browser):
 @when(parsers.parse("correct row in tree is active for {group}"))
 @then(parsers.parse("correct row in tree is active for {group}"))
 def ui_group_tree_correct_row_active(browser, group):
-    assert browser.find_by_css('a.group.active[data-name={}]'.format(group), wait_time=1)
+    assert browser.find_by_css(f'a.group.active[data-name={group}]', wait_time=1)

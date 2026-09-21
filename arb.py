@@ -24,7 +24,7 @@ def rule_resource_update_resc_arb_data(ctx: rule.Context, resc_name: str, bytes_
         return
 
     if not resources.exists(ctx, resc_name):
-        log.write(ctx, "Error: could not find resource named '{}' for ARB update.".format(resc_name))
+        log.write(ctx, f"Error: could not find resource named '{resc_name}' for ARB update.")
         return
 
     bytes_free_gb = int(bytes_free) / 2 ** 30

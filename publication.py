@@ -8,10 +8,11 @@ import re
 import urllib.parse
 from datetime import datetime
 from traceback import format_exc
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import genquery
 from requests.exceptions import ReadTimeout
+from tstrings import t
 
 import datacite
 import json_datacite
@@ -41,7 +42,7 @@ __all__ = ['rule_process_publication',
            'rule_lift_embargos_on_data_access']
 
 
-def get_publication_config(ctx: rule.Context) -> Dict[str, str]:
+def get_publication_config(ctx: rule.Context) -> dict[str, str]:
     """Get all publication config keys and their values and report any missing keys."""
     zone = user.zone(ctx)
     system_coll = f"/{zone}{constants.UUSYSTEMCOLLECTION}"
@@ -88,7 +89,7 @@ def get_publication_config(ctx: rule.Context) -> Dict[str, str]:
     return config_keys
 
 
-def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication_state: Dict) -> None:
+def generate_combi_json(ctx: rule.Context, publication_config: dict, publication_state: dict) -> None:
     """Join system metadata with the user metadata in yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -133,7 +134,8 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
         },
         'Publication_Date': publication_date,
         'Open_access_Link': open_access_link,
-        'License_URI': license_uri
+        'License_URI': license_uri,
+        'Base_DOI': publication_state.get('baseDOI', '')
     }
 
     deaccession_date = vault_deaccession.get_deaccession_date(ctx, vault_package)
@@ -145,7 +147,7 @@ def generate_combi_json(ctx: rule.Context, publication_config: Dict, publication
     publication_state["combiJsonPath"] = combi_json_path
 
 
-def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_system_json(ctx: rule.Context, publication_state: dict) -> None:
     """Overwrite combi metadata json with system-only metadata.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -165,7 +167,8 @@ def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
                 "Identifier_Scheme": "DOI",
                 "Identifier": doi,
             },
-            "Publication_Date": publication_state["publicationDate"]
+            "Publication_Date": publication_state["publicationDate"],
+            "Base_DOI": publication_state.get('baseDOI', '')
         }
     }
 
@@ -173,7 +176,7 @@ def generate_system_json(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["combiJsonPath"] = system_json_path
 
 
-def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
+def get_publication_state(ctx: rule.Context, vault_package: str) -> dict:
     """The publication state is kept as metadata on the vault package.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -195,7 +198,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
     # Handle access restriction.
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = '" + vault_package + "'",
+        t("META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = '{vault_package}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -205,7 +208,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
     license = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "META_COLL_ATTR_NAME like '%License' AND COLL_NAME = '" + vault_package + "'",
+        t("META_COLL_ATTR_NAME like '%License' AND COLL_NAME = '{vault_package}'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -216,7 +219,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
         license_uri = ""
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "META_COLL_ATTR_NAME like '" + constants.UUORGMETADATAPREFIX + "license_uri" + "' AND COLL_NAME = '" + vault_package + "'",
+            t("META_COLL_ATTR_NAME like '{constants.UUORGMETADATAPREFIX}license_uri' AND COLL_NAME = '{vault_package}'"),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -229,7 +232,7 @@ def get_publication_state(ctx: rule.Context, vault_package: str) -> Dict:
     return publication_state
 
 
-def save_publication_state(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
+def save_publication_state(ctx: rule.Context, vault_package: str, publication_state: dict) -> None:
     """Save the publication state key-value-pairs to AVU's on the vault package.
 
     :param ctx:               Combined type of a callback and rei struct
@@ -301,7 +304,7 @@ def get_publication_date(ctx: rule.Context, vault_package: str) -> str:
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -327,7 +330,7 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}action_log'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -339,7 +342,7 @@ def get_last_modified_datetime(ctx: rule.Context, vault_package: str) -> str:
     return my_date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
-def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_datacite_json(ctx: rule.Context, publication_state: dict) -> None:
     """Generate a DataCite compliant JSON based on yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -360,7 +363,7 @@ def generate_datacite_json(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: str, send_method: str, base_doi: bool = False) -> None:
+def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: str, send_method: str, base_doi: bool = False) -> None:
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -373,7 +376,35 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: s
     datacite_json = data_object.read(ctx, datacite_json_path)
 
     if base_doi:
-        datacite_json = datacite_json.replace(publication_state['versionDOI'], doi)
+        # The generated JSON describes the version DOI. Adjust the id/doi fields
+        # and the relation entry so it correctly describes the base DOI instead.
+        data = json.loads(datacite_json)
+        attributes = data['data']['attributes']
+
+        data['data']['id'] = doi
+        attributes['doi'] = doi
+        prefix, suffix = doi.rsplit('/', 1)
+        attributes['prefix'] = prefix
+        attributes['suffix'] = suffix
+
+        # Remove the version's "IsVersionOf" entry, replace with "HasVersion"
+        # for every known version of this base DOI (not just the current one).
+        related = [r for r in attributes['relatedIdentifiers']
+                   if r['relationType'] != 'IsVersionOf']
+        version_dois = {publication_state['versionDOI']}
+        version_dois.update(
+            version_doi
+            for _, version_doi, _ in get_all_versions(ctx, publication_state['vaultPackage'], doi)[0]
+        )
+
+        related.extend({
+            'relatedIdentifier': v_doi,
+            'relatedIdentifierType': 'DOI',
+            'relationType': 'HasVersion'
+        } for v_doi in version_dois)
+
+        attributes['relatedIdentifiers'] = related
+        datacite_json = json.dumps(data)
 
     try:
         if send_method == 'post':
@@ -398,7 +429,7 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: Dict, doi: s
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> None:
+def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: dict) -> None:
     """Upload DOI to DataCite. This will register the DOI as a draft.
     This function is also a draft, and will have to be reworked!
 
@@ -436,7 +467,7 @@ def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: Dict) -> No
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def remove_metadata_from_datacite(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Remove metadata XML from DataCite.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -469,7 +500,7 @@ def remove_metadata_from_datacite(ctx: rule.Context, publication_state: Dict, ty
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def mint_doi(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -501,7 +532,7 @@ def mint_doi(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None
         publication_state["status"] = constants.publication_status.RETRY
 
 
-def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: str) -> None:
+def generate_landing_page(ctx: rule.Context, publication_state: dict, publish: str) -> None:
     """Generate landingpage based upon yoda-metadata.json metadata and system metadata.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -551,7 +582,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: Dict, publish: s
     publication_state["landingPagePath"] = landing_page_path
 
 
-def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -576,7 +607,7 @@ def copy_landingpage_to_public_host(ctx: rule.Context, random_id: str, publicati
         log.write(ctx, "copy_landingpage_to_public_host: " + error)
 
 
-def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -602,7 +633,7 @@ def copy_metadata_to_moai(ctx: rule.Context, random_id: str, publication_config:
         log.write(ctx, f"copy_metadata_to_moai: {error_code}")
 
 
-def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
+def generate_manifest(ctx: rule.Context, publication_state: dict) -> None:
     """Generate a manifest of data package.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -624,7 +655,7 @@ def generate_manifest(ctx: rule.Context, publication_state: Dict) -> None:
     publication_state["manifestPath"] = manifest_path
 
 
-def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_config: Dict, publication_state: Dict) -> None:
+def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_config: dict, publication_state: dict) -> None:
     """Copy the manifest JSON to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -649,7 +680,7 @@ def copy_manifest_to_public_host(ctx: rule.Context, random_id: str, publication_
         log.write(ctx, "copy_manifest_to_public_host: " + error)
 
 
-def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: Dict) -> None:
+def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_state: dict) -> None:
     """Set access restriction for vault package.
 
     This function is called when (re)publishing a vault package.
@@ -673,7 +704,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
     # Check whether lift_embargo_date is present already
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "lift_embargo_date'",
+        t("COLL_NAME = '{vault_package}' AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}lift_embargo_date'"),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -705,7 +736,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
     try:
         msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
     except Exception:
-        log.write(ctx, "set_access_restrictions for {} failed: {}".format(vault_package, format_exc()))
+        log.write(ctx, f"set_access_restrictions for {vault_package} failed: {format_exc()}")
         publication_state["status"] = constants.publication_status.UNRECOVERABLE
         return
 
@@ -715,7 +746,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
         try:
             msi.set_acl(ctx, "recursive", "admin:null", "anonymous", f"{vault_package}/original")
         except Exception:
-            log.write(ctx, "set_access_restrictions for {} failed: {}".format(f"{vault_package}/original", format_exc()))
+            log.write(ctx, f"set_access_restrictions for {vault_package}/original failed: {format_exc()}")
             publication_state["status"] = constants.publication_status.UNRECOVERABLE
             return
 
@@ -726,7 +757,7 @@ def set_access_restrictions(ctx: rule.Context, vault_package: str, publication_s
         publication_state["anonymousAccess"] = "yes"
 
 
-def check_doi_availability(ctx: rule.Context, publication_state: Dict, type_flag: str) -> None:
+def check_doi_availability(ctx: rule.Context, publication_state: dict, type_flag: str) -> None:
     """Request DOI to check on availability. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
@@ -766,7 +797,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process publication of vault package <{vault_package}>")
 
     # Check permissions, rodsadmin only.
     if not user.is_rodsadmin(ctx):
@@ -791,10 +822,10 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     # Publication status check and handling
     if verbose:
-        log.write(ctx, "Initial publication status is: " + publication_state['status'])
+        log.write(ctx, "Initial publication status is: " + str(publication_state['status']))
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -811,7 +842,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
 
     # Create base DOI if it does not exist in the previous publication state.
     if 'previous_version' not in publication_state and "baseDOI" not in publication_state:
-        log.write(ctx, "Creating base DOI for the vault package <{}>".format(vault_package))
+        log.write(ctx, f"Creating base DOI for the vault package <{vault_package}>")
         try:
             generate_base_doi(publication_config, publication_state)
             check_doi_availability(ctx, publication_state, 'base')
@@ -824,8 +855,8 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
             if verbose:
-                log.write(ctx, "Error status for creating base DOI: " + publication_state['status'])
-            return publication_state['status']
+                log.write(ctx, "Error status for creating base DOI: " + str(publication_state['status']))
+            return str(publication_state['status'])
 
     if update_base_doi:
         if verbose:
@@ -1095,7 +1126,7 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "Finished publication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished publication of vault package <{vault_package}>")
     return str(publication_state["status"])
 
 
@@ -1107,7 +1138,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process depublication of vault package <{vault_package}>")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1136,7 +1167,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
         publication_state = get_publication_state(ctx, vault_package)
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -1237,7 +1268,7 @@ def process_depublication(ctx: rule.Context, vault_package: str) -> str:
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED.value)
     publication_state["status"] = constants.publication_status.OK
     save_publication_state(ctx, vault_package, publication_state)
-    log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished depublication of vault package <{vault_package}>")
 
     return str(publication_state["status"])
 
@@ -1250,7 +1281,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
 
     :return: "OK" if all went ok
     """
-    log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Process republication of vault package <{vault_package}>")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1279,7 +1310,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
         publication_state = get_publication_state(ctx, vault_package)
 
     if should_return_early(publication_state['status']):
-        return publication_state['status']
+        return str(publication_state['status'])
     elif should_process(publication_state['status']):
         publication_state['status'] = constants.publication_status.PROCESSING
 
@@ -1438,7 +1469,7 @@ def process_republication(ctx: rule.Context, vault_package: str) -> str:
     publication_state["status"] = constants.publication_status.OK
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED.value)
-    log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
+    log.write(ctx, f"Finished republication of vault package <{vault_package}>")
 
     return str(publication_state["status"])
 
@@ -1461,12 +1492,12 @@ def rule_update_publication(ctx: rule.Context,
         log.write(ctx, "User is no rodsadmin", True)
         return
 
-    log.write(ctx, "[UPDATE PUBLICATIONS] Start for {}".format(vault_package), True)
+    log.write(ctx, f"[UPDATE PUBLICATIONS] Start for {vault_package}", True)
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
-        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
-        "AND META_COLL_ATTR_VALUE in ('{}', '{}')".format(str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)),
+        f"AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}vault_status' "
+        f"AND META_COLL_ATTR_VALUE in ('{str(constants.vault_package_state.PUBLISHED)}', '{str(constants.vault_package_state.DEPUBLISHED)}')",
         genquery.AS_LIST,
         ctx
     )
@@ -1480,9 +1511,9 @@ def rule_update_publication(ctx: rule.Context,
             log.write(ctx, coll_name + ': ' + output, True)
 
     if not packages_found:
-        log.write(ctx, "[UPDATE PUBLICATIONS] No packages found for {}".format(vault_package), True)
+        log.write(ctx, f"[UPDATE PUBLICATIONS] No packages found for {vault_package}", True)
     else:
-        log.write(ctx, "[UPDATE PUBLICATIONS] Finished for {}".format(vault_package), True)
+        log.write(ctx, f"[UPDATE PUBLICATIONS] Finished for {vault_package}", True)
 
 
 def update_publication(ctx: rule.Context,
@@ -1500,7 +1531,7 @@ def update_publication(ctx: rule.Context,
 
     :returns: "OK" if all went ok
     """
-    log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
+    log.write(ctx, f"update_publication: Process vault package <{vault_package}> DataCite={update_datacite} landingpage={update_landingpage} MOAI={update_moai}")
 
     # check permissions - rodsadmin only
     if not user.is_rodsadmin(ctx):
@@ -1526,7 +1557,7 @@ def update_publication(ctx: rule.Context,
     # Publication must be finished.
     if publication_state['status'] != constants.publication_status.OK:
         log.write(ctx, "update_publication: Not processing vault package, because initial status is " + str(publication_state['status']))
-        return publication_state['status']
+        return str(publication_state['status'])
 
     # Abort if data packages has a known unsupported metadata schema
     try:
@@ -1537,7 +1568,7 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status after retrieving metadata schema (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status after retrieving metadata schema (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     if metadata_schema is None:
@@ -1550,7 +1581,7 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status after checking metadata schema (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status after checking metadata schema (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     update_base_doi = False
@@ -1578,12 +1609,12 @@ def update_publication(ctx: rule.Context,
 
     save_publication_state(ctx, vault_package, publication_state)
     if should_abort(publication_state["status"]):
-        log.write(ctx, "update_publication: returned with error status before update DataCite (status: '{}')".format(publication_state["status"]))
+        log.write(ctx, f"update_publication: returned with error status before update DataCite (status: '{publication_state['status']}')")
         return str(publication_state["status"])
 
     if update_datacite:
         # Generate DataCite JSON
-        log.write(ctx, 'Update datacite for package {}'.format(vault_package))
+        log.write(ctx, f'Update datacite for package {vault_package}')
         try:
             generate_datacite_json(ctx, publication_state)
         except Exception:
@@ -1592,7 +1623,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before send DataCite (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before send DataCite (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Send DataCite JSON to metadata end point
@@ -1608,12 +1639,12 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update landing page (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update landing page (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     if update_landingpage:
         # Create landing page
-        log.write(ctx, 'Update landing page for package {}'.format(vault_package))
+        log.write(ctx, f'Update landing page for package {vault_package}')
         try:
             generate_landing_page(ctx, publication_state, "publish")
         except Exception:
@@ -1622,7 +1653,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before upload landing page (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before upload landing page (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Use secure copy to push landing page to the public host
@@ -1636,7 +1667,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update manifest (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update manifest (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         try:
@@ -1647,7 +1678,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before upload manifest (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before upload manifest (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
         # Use secure copy to push manifest JSON to the public host.
@@ -1661,12 +1692,12 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before update MOAI (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before update MOAI (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     if update_moai:
         # Use secure copy to push combi JSON to MOAI server
-        log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
+        log.write(ctx, f'Update MOAI for package {vault_package}')
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         if update_base_doi:
@@ -1675,7 +1706,7 @@ def update_publication(ctx: rule.Context,
 
         save_publication_state(ctx, vault_package, publication_state)
         if should_abort(publication_state["status"]):
-            log.write(ctx, "update_publication: returned with error status before publication OK (status: '{}')".format(publication_state["status"]))
+            log.write(ctx, f"update_publication: returned with error status before publication OK (status: '{publication_state['status']}')")
             return str(publication_state["status"])
 
     # Updating was a success
@@ -1698,12 +1729,12 @@ def rule_add_base_doi(ctx: rule.Context, vault_package: str) -> None:
         log.write(ctx, "User is no rodsadmin", True)
         return
 
-    log.write(ctx, "[ADD BASE DOI] Start for {}".format(vault_package), True)
+    log.write(ctx, f"[ADD BASE DOI] Start for {vault_package}", True)
     collections = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME like '%%/home/vault-%%' "
-        "AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "vault_status' "
-        "AND META_COLL_ATTR_VALUE in ('{}', '{}')".format(str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)),
+        f"AND META_COLL_ATTR_NAME = '{constants.UUORGMETADATAPREFIX}vault_status' "
+        f"AND META_COLL_ATTR_VALUE in ('{str(constants.vault_package_state.PUBLISHED)}', '{str(constants.vault_package_state.DEPUBLISHED)}')",
         genquery.AS_LIST,
         ctx
     )
@@ -1717,9 +1748,9 @@ def rule_add_base_doi(ctx: rule.Context, vault_package: str) -> None:
             log.write(ctx, f"{coll_name}: {output}", True)
 
     if not packages_found:
-        log.write(ctx, "[ADD BASE DOI] No packages found for {}".format(vault_package), True)
+        log.write(ctx, f"[ADD BASE DOI] No packages found for {vault_package}", True)
     else:
-        log.write(ctx, "[ADD BASE DOI] Finished for {}".format(vault_package), True)
+        log.write(ctx, f"[ADD BASE DOI] Finished for {vault_package}", True)
 
 
 def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
@@ -1802,7 +1833,7 @@ def add_base_doi(ctx: rule.Context, vault_package: str) -> str:
     return str(constants.publication_status.OK)
 
 
-def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> Dict:
+def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> dict:
     """Retrieve all collection metadata.
 
     :param ctx:    Combined type of a callback and rei struct
@@ -1814,7 +1845,7 @@ def get_collection_metadata(ctx: rule.Context, coll: str, prefix: str) -> Dict:
     coll_metadata = {}
     iter = genquery.row_iterator(
         "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME like '" + prefix + "%'",
+        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME like '{prefix}%'"),
         genquery.AS_LIST, ctx
     )
 
@@ -1889,9 +1920,9 @@ def rule_lift_embargos_on_data_access(ctx: rule.Context) -> str:
     # Find all packages that have embargo date for data access that must be lifted
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
-        "COLL_NAME like  '" + "/{}/home/vault-%".format(zone) + "'"
+        f"COLL_NAME like '/{zone}/home/vault-%'"
         " AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'lift_embargo_date' + "'"
-        " AND META_COLL_ATTR_VALUE <= '{}'".format(datetime.now().strftime('%Y-%m-%d')),
+        f" AND META_COLL_ATTR_VALUE <= '{datetime.now().strftime('%Y-%m-%d')}'",
         genquery.AS_LIST, ctx
     )
     for row in iter:

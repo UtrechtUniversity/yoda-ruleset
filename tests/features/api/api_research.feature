@@ -139,6 +139,29 @@ Feature: Research API
             | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial/api_test_copy |
 
 
+    Scenario Outline: Research file copy succeeds with boolean overwrite false and then true
+        Given user researcher is authenticated
+        And the Yoda research file copy API is queried to copy <file> to <copy> in <copy_collection> from <collection> with boolean overwrite <overwrite>
+        Then the response status code is "200"
+        And file <copy> exists in <copy_collection>
+        And file <copy> is deleted from <copy_collection> when overwrite is <overwrite>
+
+        Examples:
+            | collection                      | file               | copy                         | copy_collection                 | overwrite |
+            | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_overwrite.json | /tempZone/home/research-initial | false     |
+            | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_overwrite.json | /tempZone/home/research-initial | true      |
+
+
+    Scenario Outline: Research file copy failed for a non-boolean overwrite value
+        Given user researcher is authenticated
+        And the Yoda research file copy API is queried to copy <file> to <copy> in <copy_collection> from <collection> with string overwrite <overwrite>
+        Then the response status code is "400"
+
+        Examples:
+            | collection                      | file               | copy                         | copy_collection                 | overwrite |
+            | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_overwrite.json | /tempZone/home/research-initial | true      |
+
+
     Scenario Outline: Research file rename
         Given user researcher is authenticated
         And the Yoda research file rename API is queried with <file>, <file_renamed> and <collection>

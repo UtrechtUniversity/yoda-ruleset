@@ -96,7 +96,7 @@ def ui_metadata_delete(browser):
 
 @then(parsers.parse('metadata form is saved as yoda-metadata.json for folder {folder}'))
 def ui_metadata_saved(browser, folder):
-    assert browser.is_text_present("Updated metadata of folder </{}>".format(folder))
+    assert browser.is_text_present(f"Updated metadata of folder </{folder}>")
 
 
 @then('metadata is deleted from folder')

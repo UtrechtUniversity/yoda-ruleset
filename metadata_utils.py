@@ -5,7 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 import sys
-from typing import Dict, List, Union
+from typing import List, Union
 
 import jsonschema
 
@@ -18,8 +18,8 @@ if 'unittest' not in sys.modules:
 
 def get_json_metadata_errors(ctx: rule.Context,
                              metadata_path: str,
-                             metadata: Union[Dict, None] = None,
-                             schema: Union[Dict, None] = None,
+                             metadata: Union[dict, None] = None,
+                             schema: Union[dict, None] = None,
                              ignore_required: bool = False) -> List:
     """
     Validate JSON metadata, and return a list of errors, if any.
@@ -67,7 +67,7 @@ def get_json_metadata_errors(ctx: rule.Context,
 
 def is_json_metadata_valid(ctx: rule.Context,
                            metadata_path: str,
-                           metadata: Union[Dict, None] = None,
+                           metadata: Union[dict, None] = None,
                            ignore_required: bool = False) -> bool:
     """Check if json metadata contains no errors.
 
@@ -94,7 +94,8 @@ def is_json_metadata_valid(ctx: rule.Context,
 def humanize_validation_error(e: dict) -> str:
     """Transform a jsonschema validation error such that it is readable by humans.
 
-    :param e: a jsonschema.exceptions.ValidationError
+    :param e: a dictionary containing ValidationError data. The get_json_metadata_errors
+              function returns a list of dictionaries in the expected format.
 
     :returns: a supposedly human-readable description of the error
     """
@@ -104,7 +105,7 @@ def humanize_validation_error(e: dict) -> str:
     path_out = []
     for _i, x in enumerate(e['path']):
         if isinstance(x, int):
-            path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
+            path_out[-1] = f'{path_out[-1]} {x + 1}'
         else:
             path_out += [x.replace('_', ' ')]
 

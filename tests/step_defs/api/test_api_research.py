@@ -95,6 +95,20 @@ def api_research_file_copy(user, file, copy, copy_collection, collection):
     )
 
 
+@given(parsers.parse("the Yoda research file copy API is queried to copy {file} to {copy} in {copy_collection} from {collection} with {param_type} overwrite {overwrite}"), target_fixture="api_response")
+def api_research_file_copy_overwrite(user, file, copy, copy_collection, collection, param_type, overwrite):
+    value = (overwrite == "true") if param_type == "boolean" else overwrite
+    return api_request(
+        user,
+        "research_file_copy",
+        {
+            "filepath": collection + "/" + file,
+            "new_filepath": copy_collection + "/" + copy,
+            "overwrite": value,
+        }
+    )
+
+
 @given(parsers.parse("the Yoda research file rename API is queried with {file}, {file_renamed} and {collection}"), target_fixture="api_response")
 def api_research_file_rename(user, file, file_renamed, collection):
     return api_request(
@@ -298,3 +312,15 @@ def research_manifest_checksum_empty(api_response):
     actual_names = [item["name"] for item in body["data"]["manifest"]]
     for name in expected_names:
         assert name in actual_names, f"{name} is not present in the manifest data"
+
+
+@then(parsers.parse("file {file} is deleted from {collection} when overwrite is {overwrite}"))
+def research_file_delete_cleanup(user, file, collection, overwrite):
+    # Only clean up when the overwrite=true.
+    if overwrite == "true":
+        http_status, _ = api_request(
+            user,
+            "research_file_delete",
+            {"coll": collection, "file_name": file}
+        )
+        assert http_status == 200

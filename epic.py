@@ -1,10 +1,9 @@
 """Functions for communicating with EPIC and some utilities."""
 
-__copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import uuid
-from typing import Dict
 
 import publication
 from util import *
@@ -21,7 +20,7 @@ def generate_uuid(ctx: rule.Context) -> str:
 rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
 
 
-def register_epic_pid(ctx: rule.Context, target: str) -> Dict:
+def register_epic_pid(ctx: rule.Context, target: str) -> dict:
     """Create and try to register an EPIC PID.
 
     :param ctx:    Combined type of a callback and rei struct

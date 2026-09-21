@@ -31,8 +31,8 @@ def data_file_exists(resc_name, data_path, callback):
         else:
             exists = False
     except RuntimeError as e:
-        callback.writeLine("stdout", "[msi_stat_vault failed on path '{}' with error - '{}'".format(data_path, errorcode(e)))
-        return str(False), -1, "[msi_stat_vault failed on path '{}' with error - '{}'".format(data_path, errorcode(e))
+        callback.writeLine("stdout", f"[msi_stat_vault failed on path '{data_path}' with error - '{errorcode(e)}'")
+        return str(False), -1, f"[msi_stat_vault failed on path '{data_path}' with error - '{errorcode(e)}'"
 
     return exists, type, size
 
@@ -52,7 +52,7 @@ def list_replicas_on_path(data_id, repl_num, data_path, callback):
 
     rescloc_iter = genquery.row_iterator(
         "RESC_LOC, DATA_ID",
-        "DATA_ID = '{}' AND DATA_REPL_NUM = '{}'".format(data_id, repl_num),
+        f"DATA_ID = '{data_id}' AND DATA_REPL_NUM = '{repl_num}'",
         genquery.AS_LIST,
         callback)
 
@@ -61,7 +61,7 @@ def list_replicas_on_path(data_id, repl_num, data_path, callback):
 
     replica_iter = genquery.row_iterator(
         "DATA_ID, DATA_REPL_NUM, RESC_LOC",
-        "DATA_PATH = '{}' AND RESC_LOC = '{}'".format(data_path, resc_loc),
+        f"DATA_PATH = '{data_path}' AND RESC_LOC = '{resc_loc}'",
         genquery.AS_LIST,
         callback)
 
@@ -84,7 +84,7 @@ def get_replicas_list(data_id, callback):
 
     replica_iter = genquery.row_iterator(
         "DATA_REPL_NUM",
-        "DATA_ID = '{}'".format(data_id),
+        f"DATA_ID = '{data_id}'",
         genquery.AS_LIST,
         callback)
 
@@ -107,8 +107,8 @@ def calculate_chksum(resc_name, data_path, callback):
         chksum_output = callback.wrap_msi_file_checksum(data_path, resc_name, '')
         chksum = chksum_output['arguments'][2]
     except RuntimeError as e:
-        callback.writeLine("stdout", "msi_file_checksum failed on path '{}' with error - '{}'".format(data_path, errorcode(e)))
-        return -1, "msi_file_checksum failed on path '{}' with error - '{}'".format(data_path, errorcode(e))
+        callback.writeLine("stdout", f"msi_file_checksum failed on path '{data_path}' with error - '{errorcode(e)}'")
+        return -1, f"msi_file_checksum failed on path '{data_path}' with error - '{errorcode(e)}'"
 
     return chksum
 
@@ -130,7 +130,7 @@ def replica_compatibility(data_id, repl_num, resc_name, data_path, data_file_siz
 
     replica_iter = genquery.row_iterator(
         "DATA_SIZE, DATA_CHECKSUM, RESC_LOC",
-        "DATA_ID ='{}' AND DATA_REPL_NUM = '{}'".format(data_id, repl_num),
+        f"DATA_ID ='{data_id}' AND DATA_REPL_NUM = '{repl_num}'",
         genquery.AS_TUPLE,
         callback)
 
@@ -163,7 +163,7 @@ def get_logical_path(data_id, callback):
 
     logicalpath_iter = genquery.row_iterator(
         "COLL_NAME, DATA_NAME",
-        "DATA_ID ='{}'".format(data_id),
+        f"DATA_ID ='{data_id}'",
         genquery.AS_TUPLE,
         callback)
 
@@ -186,7 +186,7 @@ def get_actual_data_path(data_id, repl_num, callback):
 
     path_iter = genquery.row_iterator(
         "DATA_PATH, RESC_LOC",
-        "DATA_ID ='{}' AND DATA_REPL_NUM = '{}'".format(data_id, repl_num),
+        f"DATA_ID ='{data_id}' AND DATA_REPL_NUM = '{repl_num}'",
         genquery.AS_TUPLE,
         callback)
 
