@@ -332,7 +332,7 @@ def available_documents_get(ctx: rule.Context, request_id: str, datarequest_type
 ###################################################
 
 @api.make()
-def api_datarequest_upload_data(ctx: rule.Context, path: str, data: Dict) -> api.Result:
+def api_datarequest_upload_data(ctx: rule.Context, path: str, data: dict) -> api.Result:
     """ Write datarequest data to path. This API endpoint ony works in development mode.
     This API endpoint is only meant for testing.
 
