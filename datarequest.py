@@ -1208,7 +1208,7 @@ def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, ac
 
     # Create collection with request id if doesn't exist
     # path as a parameter
-    datarequest_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    datarequest_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     if not collection.exists(ctx, datarequest_path):
         collection.create(ctx, datarequest_path)
 
@@ -1219,7 +1219,6 @@ def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, ac
     # Grant/revoke temporary write permissions
     ctx.adminTempWritePermission(datarequest_path, action)
     return
->>>>>>> e7bfdd62 (YDA-6004 - Made changes according to feedback.)
 
 
 @api.make()
