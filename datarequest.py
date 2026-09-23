@@ -986,7 +986,7 @@ def api_datarequest_submit(ctx: rule.Context, request_id: str, draft: bool, draf
     else:
         req_id = request_id
 
-    data_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{req_id}/{'datarequest-data.json'}"
+    data_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{req_id}/datarequest-data.json"
     try:
         data = jsonutil.read(ctx, data_path)
     except error.UUFileSizeError as e:
@@ -1017,7 +1017,7 @@ def api_datarequest_submit(ctx: rule.Context, request_id: str, draft: bool, draf
         return api.Error("permission_error", "Action not permitted.")
 
     # Construct data request collection and file path.
-    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{req_id}"
     file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
 
     # If we're not working with a draft, initialize the data request collection
