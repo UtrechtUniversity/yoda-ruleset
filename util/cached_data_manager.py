@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 __copyright__ = 'Copyright (c) 2019-2024, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import traceback
 from typing import TYPE_CHECKING
 
-import redis
-
 if TYPE_CHECKING:
+    import redis
     import rule
 
 
@@ -58,6 +59,9 @@ class CachedDataManager:
     # be re-implemented by subclass.
 
     def __init__(self, *args: str, **kwargs: int) -> None:
+        # Import here rather than at compile time in order to avoid having the
+        # compile time penalty for every agent connection.
+        import redis
         try:
             self._connection = redis.Redis(host="localhost")
         except BaseException:

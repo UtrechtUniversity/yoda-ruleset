@@ -13,7 +13,6 @@ from typing import Iterator, List, Tuple
 
 import genquery
 import irods_types
-import psutil
 from tstrings import t
 
 import folder
@@ -1023,6 +1022,7 @@ def revision_remove(ctx: rule.Context, revision_id: str, revision_path: str) -> 
 
 def memory_rss_usage() -> int:
     """The RSS (resident) memory size in bytes for the current process."""
+    import psutil
     p = psutil.Process()
     return p.memory_info().rss
 

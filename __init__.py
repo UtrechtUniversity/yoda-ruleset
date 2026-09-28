@@ -37,7 +37,6 @@ from datacite                 import *
 from exceptions               import *
 from folder                   import *
 from groups                   import *
-from integration_tests        import *
 from json_datacite            import *
 from json_landing_page        import *
 from mail                     import *
@@ -72,3 +71,6 @@ if config.enable_tokens:
 
 if config.enable_data_package_archive:
     from vault_archive import *
+
+if config.environment in ("test", "development")
+    from integration_tests import *

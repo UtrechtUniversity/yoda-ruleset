@@ -1,18 +1,23 @@
 """Functions for communicating with DataCite and some utilities."""
+from __future__ import annotations
 
 __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import random
 import string
-
-import requests
+from typing import TYPE_CHECKING
 
 from util import *
 
 
+if TYPE_CHECKING:
+    import requests
+
+
 def metadata_post(payload: dict) -> requests.Response:
     """Register DOI metadata with DataCite."""
+    import requests
     url = f"{config.datacite_rest_api_url}/dois"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
@@ -29,6 +34,7 @@ def metadata_post(payload: dict) -> requests.Response:
 
 def metadata_put(doi: str, payload: str) -> requests.Response:
     """Update metadata with DataCite."""
+    import requests
     url = f"{config.datacite_rest_api_url}/dois/{doi}"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
@@ -45,6 +51,7 @@ def metadata_put(doi: str, payload: str) -> requests.Response:
 
 def metadata_get(doi: str) -> requests.Response:
     """Check with DataCite if DOI is available."""
+    import requests
     url = f"{config.datacite_rest_api_url}/dois/{doi}"
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}

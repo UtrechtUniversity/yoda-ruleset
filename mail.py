@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import email
 import re
-import smtplib
 from email.mime.text import MIMEText
 from typing import Tuple
 
@@ -30,6 +29,8 @@ def send(ctx: rule.Context, to: str, actor: str, subject: str, body: str, cc: st
 
     :returns: API status
     """
+    import smtplib
+
     if not config.notifications_enabled:
         log.write(ctx, 'Sending mail notifications is disabled')
         return
