@@ -8,8 +8,6 @@ from datetime import datetime
 from typing import List, Tuple, Union
 
 import genquery
-import requests
-import urllib3
 from tstrings import t
 
 import datacite
@@ -180,6 +178,9 @@ def compare_local_remote_landingpage(ctx: rule.Context, file_path: str, url: str
 
     :returns:         True if the file contents match, False otherwise
     """
+    import requests
+    import urllib3
+
     # Local/irods file
     if api_call:
         # If called by technicaladmin, only check that the file exists since we don't have access to the contents
@@ -248,6 +249,9 @@ def check_combi_json(ctx: rule.Context, data_package: str, publication_config: d
 
     :returns:                  A tuple containing boolean results of checking
     """
+    import requests
+    import urllib3
+
     # Check that the combi json in irods exists
     file_path = ''
     try:
