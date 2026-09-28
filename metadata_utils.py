@@ -7,8 +7,6 @@ import re
 import sys
 from typing import List, Union
 
-import jsonschema
-
 from util import error, rule
 
 if 'unittest' not in sys.modules:
@@ -42,6 +40,8 @@ def get_json_metadata_errors(ctx: rule.Context,
 
     :returns: List of errors in JSON object
     """
+    import jsonschema
+
     def transform_error(e):
         """Turn a ValidationError into a data structure for the frontend."""
         return {'message':     e.message,

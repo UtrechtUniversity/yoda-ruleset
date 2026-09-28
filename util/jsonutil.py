@@ -8,7 +8,6 @@ from collections import OrderedDict
 
 import jsonavu
 import orjson
-import requests
 
 import avu
 import data_object
@@ -91,6 +90,8 @@ def read_from_url(url: str, timeout: int = 10) -> OrderedDict:
 
     :returns: Parsed JSON object
     """
+    import requests
+
     response = requests.get(url, timeout=timeout)
     response.raise_for_status()
     return response.json(object_pairs_hook=OrderedDict)

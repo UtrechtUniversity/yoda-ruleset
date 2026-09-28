@@ -11,7 +11,6 @@ from traceback import format_exc
 from typing import List, Tuple
 
 import genquery
-from requests.exceptions import ReadTimeout
 from tstrings import t
 
 import datacite
@@ -372,6 +371,8 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: s
     :param send_method:        http verb (either 'post' or 'put')
     :param base_doi:           Indicates if we are sending metadata for base DOI
     """
+    from requests.exceptions import ReadTimeout
+
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
@@ -436,6 +437,8 @@ def post_draft_doi_to_datacite(ctx: rule.Context, publication_state: dict) -> No
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     """
+    from requests.exceptions import ReadTimeout
+
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
@@ -474,6 +477,8 @@ def remove_metadata_from_datacite(ctx: rule.Context, publication_state: dict, ty
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Determine whether it is base DOI or version DOI
     """
+    from requests.exceptions import ReadTimeout
+
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
     try:
@@ -507,6 +512,8 @@ def mint_doi(ctx: rule.Context, publication_state: dict, type_flag: str) -> None
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
+    from requests.exceptions import ReadTimeout
+
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
     try:
@@ -764,6 +771,8 @@ def check_doi_availability(ctx: rule.Context, publication_state: dict, type_flag
     :param publication_state:  Dict with state of the publication process
     :param type_flag:          Flag indicating DOI type ('version' or 'base')
     """
+    from requests.exceptions import ReadTimeout
+
     doi = publication_state[type_flag + "DOI"]
 
     try:

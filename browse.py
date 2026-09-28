@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
-import magic
 from genquery import AS_DICT, Query
 from tstrings import t
 
@@ -313,6 +312,8 @@ def api_load_text_obj(ctx: rule.Context, file_path: str = '/') -> api.Result:
 
     :returns: file as a string or API status in case of error
     """
+    import magic
+
     # Obtain some context.
     # - What kind of collection path is this?
     space, _, _, _ = pathutil.info(file_path)

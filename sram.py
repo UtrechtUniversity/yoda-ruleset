@@ -1,16 +1,19 @@
 """Functions for communicating with SRAM and some utilities."""
+from __future__ import annotations
 
 __copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import datetime
 import time
-from typing import List, Optional, Union
+from typing import List, Optional, TYPE_CHECKING, Union
 
 import genquery
-import requests
 
 from util import *
+
+if TYPE_CHECKING:
+    import requests
 
 HTTP_OK = 200
 HTTP_CREATED = 201
@@ -35,6 +38,8 @@ def post_collaboration(ctx: rule.Context, group_name: str, description: str) -> 
 
     :returns: JSON object with new collaboration details
     """
+    import requests
+
     url = f"{config.sram_rest_api_url}/api/collaborations/v1"
 
     group_type = ''
@@ -78,6 +83,8 @@ def delete_collaboration(ctx: rule.Context, co_identifier: str) -> bool:
 
     :returns: Boolean indicating of deletion of collaboration succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"delete_collaboration error: CO identifier is invalid {co_identifier}")
         return False
@@ -104,6 +111,8 @@ def delete_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid:
 
     :returns: Boolean indicating of deletion of collaboration membership succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"delete_collaboration_membership error: CO identifier is invalid {co_identifier}")
         return False
@@ -131,6 +140,8 @@ def put_collaboration_invitation(ctx: rule.Context, group_name: str, username: s
 
     :returns: Boolean indicating if put of new collaboration invitation succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"put_collaboration_invitation error: CO identifier is invalid {co_identifier}")
         return False
@@ -186,6 +197,8 @@ def connect_service_collaboration(ctx: rule.Context, co_identifier: str) -> bool
 
     :returns: Boolean indicating if connecting a service to an existing collaboration succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"connect_service_collaboration error: CO identifier is invalid {co_identifier}")
         return False
@@ -218,6 +231,8 @@ def update_collaboration_membership(ctx: rule.Context, co_identifier: str, uuid:
 
     :returns: Boolean indicating that updation of collaboration membership succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"update_collaboration_membership error: CO identifier is invalid {co_identifier}")
         return False
@@ -251,6 +266,8 @@ def get_co_members(ctx: rule.Context, co_identifier: str) -> List[dict[str, str]
 
     :returns: List of dicts containing email and uid of SRAM collaboration members
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"get_co_members error: CO identifier is invalid {co_identifier}")
         return []
@@ -376,6 +393,8 @@ def get_open_invitations(ctx: rule.Context, co_identifier: str) -> Union[bool, r
 
     :returns: Response including status code
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"put_collaboration_invitation error: CO identifier is invalid {co_identifier}")
         return False
@@ -407,6 +426,8 @@ def delete_pending_invitation(ctx: rule.Context, co_identifier: str, username: s
 
     :returns: Boolean indicating of deletion of invitation succeeded
     """
+    import requests
+
     if not misc.is_valid_uuid(co_identifier):
         log.write(ctx, f"delete_collaboration error: CO identifier is invalid {co_identifier}")
         return False

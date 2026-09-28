@@ -9,7 +9,6 @@ import time
 
 import genquery
 import irods_types
-import psutil
 from tstrings import t
 
 from util import *
@@ -262,6 +261,7 @@ def is_replication_blocked_by_admin(ctx: rule.Context) -> bool:
 
 def memory_rss_usage() -> int:
     """The RSS (resident) memory size in bytes for the current process."""
+    import psutil
     p = psutil.Process()
     return p.memory_info().rss
 
