@@ -5,10 +5,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import os
 
-import coverage
-
 
 def start_coverage():
+    import coverage
     ruleset_path = "/etc/irods/yoda-ruleset"
     data_file = "/tmp/coverage.dat"
     source_paths = [ruleset_path, os.path.join(ruleset_path, "util")]

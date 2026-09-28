@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 import genquery
-import requests
 
 import schema
 import sram
@@ -744,6 +743,8 @@ def provisionExternalUser(ctx: rule.Context, username: str, creatorUser: str, cr
 
     :returns: Response status code
     """
+    import requests
+
     eus_api_fqdn       = config.eus_api_fqdn
     eus_api_port       = config.eus_api_port
     eus_api_secret     = config.eus_api_secret
@@ -814,6 +815,7 @@ def removeExternalUser(ctx: rule.Context, username: str, userzone: str) -> str:
 
     :returns: Response status code
     """
+    import requests
     eus_api_fqdn       = config.eus_api_fqdn
     eus_api_port       = config.eus_api_port
     eus_api_secret     = config.eus_api_secret

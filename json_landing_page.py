@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 from typing import Dict
 
-import jinja2
 from dateutil import parser
 
 from util import *
@@ -67,6 +66,8 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
 
     :return: Output HTML landing page
     """
+    import jinja2
+
     # Read and clean metadata.
     json_data = jsonutil.read(ctx, combi_json_path)
     json_data = misc.remove_empty_objects(json_data)
