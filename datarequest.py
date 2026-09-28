@@ -13,7 +13,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
 import mail
@@ -659,6 +658,8 @@ def datarequest_data_valid(ctx: rule.Context, data: dict, schema_name: str | Non
 
     :returns: Boolean indicating if datarequest is valid
     """
+    import jsonschema
+
     # Check if a schema is specified
     if not (schema_name or schema):
         return api.Error("validation_error",

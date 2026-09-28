@@ -8,8 +8,6 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from typing import Any, List
 
-from deepdiff import DeepDiff
-
 
 def describe_metadata_changes(data1: Any, data2: Any) -> List[str]:
     """Describe differences between two metadata data structures, typically
@@ -20,6 +18,8 @@ def describe_metadata_changes(data1: Any, data2: Any) -> List[str]:
 
     :returns:        List of strings describing the changes
     """
+    from deepdiff import DeepDiff
+
     try:
         results: List[str] = []
         meta_diff = DeepDiff(data1, data2)

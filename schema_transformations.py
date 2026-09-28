@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from typing import Callable
 
-import requests
 from schema_transformations_utils import add_affiliation_identifier, correctify_personal_identifiers, merge_geo_keywords, rename_related_datapackage
 
 import meta
@@ -449,6 +448,8 @@ def _eposmsl0_eposmsl1(ctx: rule.Context, m: dict) -> dict:
 
     :returns: Transformed (epos-msl-1) JSON object
     """
+    import requests
+
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/epos-msl-1/metadata.json')
 
     new_uischema = jsonutil.read(ctx, f"/{user.zone(ctx)}/yoda/schemas/epos-msl-1/uischema.json")
