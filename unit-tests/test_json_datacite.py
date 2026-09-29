@@ -23,7 +23,7 @@ for _irods_module in ('genquery', 'session_vars', 'irods_types'):
 # import it explicitly to make it available as a util attribute.
 importlib.import_module('util.rule')
 
-from json_datacite import _process_affiliations_list, get_contributors, get_creators  # noqa: E402
+from json_datacite import _process_affiliations_list, get_contributors, get_creators, get_geo_locations  # noqa: E402
 
 
 class JsonDataciteAffiliationsListTest(TestCase):
@@ -267,3 +267,52 @@ class JsonDataciteContactPersonTest(TestCase):
         self.assertEqual(output[1]['contributorType'], 'Contact')
         self.assertEqual(output[1]['affiliation'], [{'affiliationIdentifier': 'https://ror.org/123456789',
                                                      'affiliationIdentifierScheme': 'ROR'}])
+
+
+class JsonDataciteGeoLocationsTest(TestCase):
+    """Tests for converting geo locations to DataCite format."""
+
+    def test_box(self) -> None:
+        """Bounding box keeps its north, south, east and west bounds"""
+        combi = {'GeoLocation': [{'geoLocationBox': {'northBoundLatitude': 52.1,
+                                                     'southBoundLatitude': 51.9,
+                                                     'westBoundLongitude': 5.0,
+                                                     'eastBoundLongitude': 5.2}}]}
+        output = get_geo_locations(combi)
+        self.assertEqual(output, [{'geoLocationBox': {'northBoundLatitude': '52.1',
+                                                      'southBoundLatitude': '51.9',
+                                                      'westBoundLongitude': '5.0',
+                                                      'eastBoundLongitude': '5.2'}}])
+
+    def test_point(self) -> None:
+        """Bounding box with identical corners is converted to a point"""
+        combi = {'GeoLocation': [{'geoLocationBox': {'northBoundLatitude': 52.1,
+                                                     'southBoundLatitude': 52.1,
+                                                     'westBoundLongitude': 5.0,
+                                                     'eastBoundLongitude': 5.0}}]}
+        output = get_geo_locations(combi)
+        self.assertEqual(output, [{'geoLocationPoint': {'pointLatitude': '52.1',
+                                                        'pointLongitude': '5.0'}}])
+
+    def test_box_with_description(self) -> None:
+        """Spatial description is added as geo location place"""
+        combi = {'GeoLocation': [{'Description_Spatial': 'Utrecht',
+                                  'geoLocationBox': {'northBoundLatitude': 52.1,
+                                                     'southBoundLatitude': 51.9,
+                                                     'westBoundLongitude': 5.0,
+                                                     'eastBoundLongitude': 5.2}}]}
+        output = get_geo_locations(combi)
+        self.assertEqual(len(output), 1)
+        self.assertEqual(output[0]['geoLocationPlace'], 'Utrecht')
+        self.assertEqual(output[0]['geoLocationBox']['northBoundLatitude'], '52.1')
+        self.assertEqual(output[0]['geoLocationBox']['southBoundLatitude'], '51.9')
+
+    def test_covered_geolocation_place(self) -> None:
+        """Covered geolocation places are converted, empty places are skipped"""
+        output = get_geo_locations({'Covered_Geolocation_Place': ['Utrecht', '', 'Amsterdam']})
+        self.assertEqual(output, [{'geoLocationPlace': 'Utrecht'},
+                                  {'geoLocationPlace': 'Amsterdam'}])
+
+    def test_no_geo_locations(self) -> None:
+        """Metadata without geo locations"""
+        self.assertEqual(get_geo_locations({}), [])
