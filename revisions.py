@@ -18,7 +18,7 @@ from tstrings import t
 import folder
 import groups
 from revision_strategies import get_revision_strategy
-from revision_utils import calculate_end_of_calendar_day, get_balance_id, get_deletion_candidates, get_resc, get_revision_store_path, revision_cleanup_prefilter, revision_eligible
+from revision_utils import calculate_end_of_calendar_day, get_balance_id, get_deletion_candidates, get_resc, get_revision_store_path, revision_cleanup_prefilter, revision_eligible, revision_eligible_quickcheck
 from util import *
 from util.spool import get_spool_data, has_spool_data, put_spool_data
 
@@ -256,16 +256,7 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
     :param zone:     Zone where the original can be found
     :param path:     Path of the original
     """
-    size = data_object.size(ctx, path)
-    groups = data_object.get_group_owners(ctx, path)
-    if groups:
-        revision_store = get_revision_store(ctx, groups[0][0])
-        revision_store_exists = revision_store is not None
-    else:
-        revision_store_exists = False
-
-    should_create_rev, _ = revision_eligible(constants.UUMAXREVISIONSIZE, size is not None, size, path, groups, revision_store_exists)
-    if not should_create_rev:
+    if not revision_eligible_quickcheck(path):
         return
 
     revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
@@ -273,29 +264,19 @@ def resource_modified_post_revision(ctx: rule.Context, resource: str, zone: str,
 
     # Mark data object for batch revision by setting 'org_revision_scheduled' metadata.
     try:
-        # Check whether the object already has an AVU. If we try to add the AVU when it already
-        # exists, we will catch the exception below, however the SQL error would still result in log
-        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
-        # if an AVU is added after this check.
-        already_has_avu = len(list(genquery.Query(ctx,
-                                                  ['DATA_ID'],
-                                                  t("COLL_NAME = '{pathutil.dirname(path)}' AND DATA_NAME = '{pathutil.basename(path)}' AND META_DATA_ATTR_NAME = '{revision_avu_name}'"),
-                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
-
-        if not already_has_avu:
-            add_operation = {
-                "entity_name": path,
-                "entity_type": "data_object",
-                "operations": [
-                    {
-                        "operation": "add",
-                        "attribute": revision_avu_name,
-                        "value": revision_avu_value,
-                        "units": ""
-                    }
-                ]
-            }
-            avu.apply_atomic_operations(ctx, add_operation)
+        add_operation = {
+            "entity_name": path,
+            "entity_type": "data_object",
+            "operations": [
+                {
+                    "operation": "add",
+                    "attribute": revision_avu_name,
+                    "value": revision_avu_value,
+                    "units": ""
+                }
+            ]
+        }
+        avu.apply_atomic_operations(ctx, add_operation)
 
     except msi.Error as e:
         if "-817000" in str(e):
