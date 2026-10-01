@@ -77,7 +77,7 @@ def api_datarequest_save(user, req_id):
         user,
         "datarequest_upload_data",
         {
-            "path": f"/tempZone/home/datarequests-research/{req_id}/datarequest-data.json",
+            "path": f"/tempZone/home/datarequests-research/{req_id}/stage/datarequest-data.json",
             "data": {
                 "instructions": {},
                 "part": {},
