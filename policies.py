@@ -813,6 +813,14 @@ def pep_api_bulk_data_obj_reg_pre(rule_args, callback, rei):
     callback.msiExit('-169000', 'rcBulkDataObjReg is not allowed')  # SYS_NOT_ALLOWED
 
 
+def pep_database_reg_user_re_pre(rule_args, callback, rei):
+    """prevents custom groupadmin payload via USER_ADMIN_AN 714"""
+    api_index = str(rei.rsComm.apiInx)
+    user_type = str(rule_args[3].userType)
+    if api_index == "714" and user_type == "rodsadmin":
+        callback.msiExit('-169000', 'Custom groupadmin payload not allowed.')  # SYS_NOT_ALLOWED
+
+
 @policy.require()
 def pep_api_struct_file_ext_and_reg_pre(ctx: rule.Context,
                                         instance_name: str,
