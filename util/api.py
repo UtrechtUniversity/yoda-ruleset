@@ -8,12 +8,13 @@ __copyright__ = 'Copyright (c) 2019-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import base64
+import hashlib
 import inspect
 import traceback
 import types
 import zlib
 from collections import OrderedDict
-from typing import Any, Callable, get_args, get_origin, get_type_hints, Union
+from typing import Any, Callable, get_args, get_origin, get_type_hints, Optional, Union
 
 import error
 import jsonutil
@@ -21,6 +22,22 @@ import log
 import rule
 from config import config
 from measure_coverage import start_coverage, stop_coverage
+
+# Maximum size of decompressed API input, to guard against decompression bombs.
+MAX_INPUT_SIZE = 16 * 1024 * 1024
+
+# Maximum total size of the (compressed, base64-encoded) input of a multi-part
+# API request. Keep in sync with MULTIPART_MAX_TOTAL_SIZE in the portal (api.py).
+MULTIPART_MAX_TOTAL_SIZE = 300000
+
+# API functions by rule name (e.g. 'api_meta_form_save'), registered by make().
+_api_functions: dict[str, Callable] = {}
+
+# Staged input parts of a multi-part API request. Each iRODS agent serves a
+# single connection (and therefore a single user), and module-level state
+# persists for the agent's lifetime, so these parts are never shared between
+# users. The portal sends all parts of a request over the same connection.
+_multipart_chunks: list[str] = []
 
 
 class Result:
@@ -100,6 +117,25 @@ def _check_type(value: Any, expected_type: Any) -> bool:
         return False
 
 
+def _decompress(data: bytes) -> bytes:
+    """Decompress zlib-compressed API input, refusing input that decompresses
+    to more than MAX_INPUT_SIZE bytes.
+
+    :param data: zlib-compressed data
+
+    :raises error: (zlib.error) Data is invalid, incomplete or too large when decompressed
+
+    :returns: Decompressed data
+    """
+    decompressor = zlib.decompressobj()
+    result = decompressor.decompress(data, MAX_INPUT_SIZE)
+    if decompressor.unconsumed_tail:
+        raise zlib.error('decompressed input exceeds maximum size')
+    if not decompressor.eof:
+        raise zlib.error('incomplete or truncated input')
+    return result
+
+
 def _api(f: Callable) -> Callable:
     """Turn a Python function into a basic API function.
 
@@ -163,7 +199,7 @@ def _api(f: Callable) -> Callable:
         # Validate input string: is it a valid JSON object?
         try:
             base64_decoded = base64.b64decode(inp)
-            decompressed_data = zlib.decompress(base64_decoded)
+            decompressed_data = _decompress(base64_decoded)
             data = jsonutil.fast_parse(decompressed_data)
             if not isinstance(data, dict):
                 raise jsonutil.ParseError('Argument is not a JSON object')
@@ -274,9 +310,81 @@ def make() -> Callable:
     def deco(f: Callable) -> Callable:
         # The "base" API function, that does handling of arguments and errors.
         base = _api(f)
+        _api_functions[f.__name__] = base
 
         # The JSON-in, JSON-out rule.
         return rule.make(inputs=[0], outputs=[],
                          transform=jsonutil.fast_dump, handler=rule.Output.STDOUT)(base)
 
     return deco
+
+
+# Multi-part API requests {{{
+
+# API calls whose input does not fit in a single rule call are sent by the
+# portal in multiple parts, over a single iRODS connection:
+#
+#   1. api_stage_multipart_request_clear:  discard any previously staged parts
+#   2. api_stage_multipart_request_submit: stage one part of the (compressed,
+#                                          base64-encoded) input, repeated per part
+#   3. api_stage_multipart_request_run:    run the API function on the
+#                                          reassembled input
+#
+# The output of the run step is the output of the API function itself.
+
+@make()
+def api_stage_multipart_request_clear(ctx: rule.Context) -> None:
+    """Start a multi-part API request by discarding any previously staged parts.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    _multipart_chunks.clear()
+
+
+@make()
+def api_stage_multipart_request_submit(ctx: rule.Context, chunk: str) -> Optional[Error]:
+    """Stage one part of the input of a multi-part API request.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param chunk: Part of the compressed, base64-encoded API input
+
+    :returns: Error if the total input exceeds the maximum size
+    """
+    if sum(len(c) for c in _multipart_chunks) + len(chunk) > MULTIPART_MAX_TOTAL_SIZE:
+        _multipart_chunks.clear()
+        return Error('multipart_too_large', 'Multi-part API request exceeds maximum size')
+
+    _multipart_chunks.append(chunk)
+    return None
+
+
+@make()
+def api_stage_multipart_request_run(ctx: rule.Context, function: str, checksum: str) -> Result:
+    """Run an API function on the input staged by a multi-part API request.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param function: Name of the API function, without 'api_' prefix
+    :param checksum: SHAKE-256 checksum (20 bytes, hex) of the uncompressed API input
+
+    :returns: Result of the API function
+    """
+    encoded = ''.join(_multipart_chunks)
+    _multipart_chunks.clear()
+
+    api_function = None if function.startswith('stage_multipart_request') else _api_functions.get('api_' + function)
+    if api_function is None:
+        return Error('badrequest', f'Unknown API function: {function}')
+
+    # Check that all parts have been received intact before running the API function.
+    try:
+        received = _decompress(base64.b64decode(encoded))
+    except (base64.binascii.Error, zlib.error):
+        received = b''
+    if hashlib.shake_256(received).hexdigest(20) != checksum:
+        return Error('multipart_incomplete', 'Multi-part API request is incomplete or corrupt')
+
+    # Pass on the API function's output (including any error status) unchanged.
+    output = api_function(ctx, encoded)
+    return Result(output['data'], output['status'], output['status_info'], output.get('debug_info'))
+
+# }}}
