@@ -925,26 +925,11 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     :param ctx:              Combined type of a callback and rei struct
     :param data:             Contents of the data request
-    :param request_id:       Unique identifier of data request
     :param draft:            Boolean specifying whether the data request should be saved as draft
     :param draft_request_id: Unique identifier of the draft data request
 
     :returns: API status
     """
-    # Read data from file
-    req_id = ""
-    if draft_request_id:
-        req_id = draft_request_id
-    else:
-        req_id = request_id
-
-    data_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{req_id}/stage/datarequest-data.json"
-
-    try:
-        data = jsonutil.read(ctx, data_path)
-    except error.UUFileSizeError as e:
-        return api.Error('read_datarequest_file', f'Could not read datarequest from file: {e}')
-
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
@@ -977,9 +962,8 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
         request_id = str(generate_request_id(ctx))
 
     # Construct data request collection and file path.
-    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{req_id}"
+    coll_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
     file_path = f"{coll_path}/{DATAREQUEST + JSON_EXT}"
-    stage_path = f"{coll_path}/stage"
 
     # If we're not working with a draft, initialize the data request collection
     if not draft_request_id:
@@ -1037,10 +1021,10 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     # If draft, set status
     if draft:
-        status_set(ctx, req_id, status.DRAFT)
+        status_set(ctx, request_id, status.DRAFT)
         # If new draft, return request ID of draft data request
         if not draft_request_id:
-            return {"requestId": req_id}
+            return {"requestId": request_id}
         # If update of existing draft, return nothing
         else:
             return
@@ -1059,21 +1043,14 @@ def api_datarequest_submit(ctx: rule.Context, data: dict, draft: bool, draft_req
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
-        status_set(ctx, req_id, status.DAO_SUBMITTED)
+        status_set(ctx, request_id, status.DAO_SUBMITTED)
     else:
         if data['datarequest']['attachments']['attachments'] == "Yes":
-            status_set(ctx, req_id, status.PENDING_ATTACHMENTS)
-            return {"pendingAttachments": True, "requestId": req_id}
+            status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
+            return {"pendingAttachments": True, "requestId": request_id}
         else:
-            status_set(ctx, req_id, status.SUBMITTED)
+            status_set(ctx, request_id, status.SUBMITTED)
             return
-
-    # Clean up the data file
-    try:
-        data_object.remove(ctx, data_path)
-        collection.remove(ctx, stage_path)
-    except Exception as e:
-        log.write(ctx, f'api_datarequest_submit: Failed to remove file: {e}')
 
 
 @api.make()
@@ -1194,40 +1171,6 @@ def api_datarequest_attachment_post_upload_actions(ctx: rule.Context, request_id
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     return api.Result.ok()
-
-@api.make()
-def api_datarequest_data_write_permission(ctx: rule.Context, request_id: str, action: str) -> api.Result:
-    """
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-    :param action:     String specifying whether write permission must be granted ("grant") or
-                       revoked ("grantread" or "revoke")
-
-    :returns: None
-    """
-    datarequest_path = f"/{user.zone(ctx)}/{DRCOLLECTION}/{request_id}"
-    datarequest_stage_path = datarequest_path + "/stage"
-
-    # Check if action is valid
-    if action not in ["grant", "grantread", "own"]:
-        return api.Error("InputError", "Invalid action input parameter.")
-
-    # Validate request_id
-    if not request_id.isnumeric():
-        return api.Error("validation_error", "Invalid datarequest ID.")
-
-    # Create collection with request id if doesn't exist
-    # path as a parameter
-    if not collection.exists(ctx, datarequest_path):
-        collection.create(ctx, datarequest_path)
-        # Create staging area for datarequest
-        if not collection.exists(ctx, datarequest_stage_path):
-            collection.create(ctx, datarequest_stage_path)
-
-    # Grant temporary write permissions to staging area
-    ctx.adminTempWritePermission(datarequest_stage_path, action)
-
-    return
 
 
 @api.make()
