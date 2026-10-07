@@ -4,6 +4,8 @@ __copyright__ = 'Copyright (c) 2023-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import base64
+import hashlib
+import json
 import sys
 import zlib
 from typing import Optional, Union
@@ -12,7 +14,16 @@ from unittest import TestCase
 sys.path.append('../util')
 
 import jsonutil
-from api import _api, _check_type
+from api import (
+    _api,
+    _check_type,
+    api_stage_multipart_request_clear,
+    api_stage_multipart_request_run,
+    api_stage_multipart_request_submit,
+    make,
+    MAX_INPUT_SIZE,
+    MULTIPART_MAX_TOTAL_SIZE,
+)
 
 
 # --- Test helpers for encoding/decoding API input ---------------------------
@@ -25,6 +36,32 @@ def encode_input(data: dict) -> str:
 class DummyContext:
     def writeString(self, stream, message):
         pass
+
+
+class OutputContext:
+    """Rule callback that records what a rule writes to stdout."""
+    def __init__(self):
+        self.stdout = []
+
+    def writeString(self, stream, message):
+        if stream == 'stdout':
+            self.stdout.append(message)
+
+
+def call_rule(rule_function, data: dict) -> dict:
+    """Call an API rule (as created by api.make()) like iRODS would, and return its parsed output."""
+    callback = OutputContext()
+    rule_function([encode_input(data)], callback, None)
+    return json.loads(callback.stdout[-1])
+
+
+# An API function to call through multi-part requests. Registered by make(),
+# just like the API functions of the ruleset modules.
+def api_unit_test_echo(ctx, text: str):
+    return text
+
+
+make()(api_unit_test_echo)
 
 
 class UtilAPITest(TestCase):
@@ -180,3 +217,71 @@ class UtilAPITest(TestCase):
         result = wrapped(DummyContext(), non_object)
 
         self.assertTrue(result['status'].startswith('error_'))
+
+    def test_api_wrapper_rejects_input_exceeding_max_size(self):
+        # Highly compressible input that would decompress to more than the
+        # maximum input size (a "decompression bomb").
+        wrapped = _api(lambda ctx, text: None)
+        result = wrapped(DummyContext(), encode_input({'text': 'x' * MAX_INPUT_SIZE}))
+
+        self.assertTrue(result['status'].startswith('error_'))
+
+    def run_multipart(self, encoded: str, chunk_size: int, function: str, checksum: str) -> dict:
+        """Send encoded API input as a multi-part request, and return the output of the run step."""
+        call_rule(api_stage_multipart_request_clear, {})
+        for i in range(0, len(encoded), chunk_size):
+            submit_result = call_rule(api_stage_multipart_request_submit, {'chunk': encoded[i:i + chunk_size]})
+            self.assertEqual(submit_result['status'], 'ok')
+        return call_rule(api_stage_multipart_request_run, {'function': function, 'checksum': checksum})
+
+    def test_multipart_request(self):
+        params = {'text': 'Yoda ' * 10000}
+        checksum = hashlib.shake_256(jsonutil.dump(params).encode('utf-8')).hexdigest(20)
+
+        result = self.run_multipart(encode_input(params), 100, 'unit_test_echo', checksum)
+
+        # Same output as a direct call of the API function.
+        self.assertEqual(result['status'], 'ok')
+        self.assertEqual(result['data'], params['text'])
+
+    def test_multipart_request_passes_on_api_errors(self):
+        # Missing argument: the API function's own error is returned.
+        checksum = hashlib.shake_256(jsonutil.dump({}).encode('utf-8')).hexdigest(20)
+
+        result = self.run_multipart(encode_input({}), 10, 'unit_test_echo', checksum)
+
+        self.assertEqual(result['status'], 'error_badrequest')
+        self.assertIn('Missing argument: text', result['status_info'])
+
+    def test_multipart_request_incomplete(self):
+        params = {'text': 'Yoda ' * 10000}
+        checksum = hashlib.shake_256(jsonutil.dump(params).encode('utf-8')).hexdigest(20)
+        encoded = encode_input(params)
+
+        # Last part missing.
+        result = self.run_multipart(encoded[:-10], 100, 'unit_test_echo', checksum)
+        self.assertEqual(result['status'], 'error_multipart_incomplete')
+
+        # Nothing staged (e.g. parts were sent to another agent).
+        result = call_rule(api_stage_multipart_request_run, {'function': 'unit_test_echo', 'checksum': checksum})
+        self.assertEqual(result['status'], 'error_multipart_incomplete')
+
+    def test_multipart_request_wrong_checksum(self):
+        result = self.run_multipart(encode_input({'text': 'Yoda'}), 10, 'unit_test_echo', '0' * 40)
+
+        self.assertEqual(result['status'], 'error_multipart_incomplete')
+
+    def test_multipart_request_unknown_function(self):
+        params = {'text': 'Yoda'}
+        checksum = hashlib.shake_256(jsonutil.dump(params).encode('utf-8')).hexdigest(20)
+
+        for function in ['does_not_exist', 'stage_multipart_request_run', 'stage_multipart_request_clear']:
+            result = self.run_multipart(encode_input(params), 10, function, checksum)
+            self.assertEqual(result['status'], 'error_badrequest')
+            self.assertIn('Unknown API function', result['status_info'])
+
+    def test_multipart_request_too_large(self):
+        call_rule(api_stage_multipart_request_clear, {})
+        result = call_rule(api_stage_multipart_request_submit, {'chunk': 'A' * (MULTIPART_MAX_TOTAL_SIZE + 1)})
+
+        self.assertEqual(result['status'], 'error_multipart_too_large')
