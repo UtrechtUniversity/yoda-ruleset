@@ -59,6 +59,9 @@ from vault                    import *
 from vault_deaccession        import *
 from epic                     import *
 
+# Rules for handling multi-part API requests (see util/api.py).
+from api                      import api_stage_multipart_request_clear, api_stage_multipart_request_run, api_stage_multipart_request_submit
+
 # Import certain modules only when enabled.
 if config.enable_datarequest:
     from datarequest import *
