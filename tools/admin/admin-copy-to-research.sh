@@ -2,7 +2,7 @@
 actor="$1"
 coll_origin="$2"
 coll_target="$3"
-receiver="$actor"
+receiver="$4"
 retry_str="$5"
 
 irule -r irods_rule_engine_plugin-irods_rule_language-instance \

@@ -258,21 +258,23 @@ def schedule_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: 
     """
     encoded_origin = base64.b64encode(coll_origin.encode()).decode()
     encoded_target = base64.b64encode(coll_target.encode()).decode()
+    encoded_actor = base64.b64encode(actor.encode()).decode()
+    encoded_retry_count = base64.b64encode(str(retry_count).encode()).decode()
     ctx.delayExec(
         f"<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>{wait_seconds}s</PLUSET>",
-        f"iiAdminVaultCopyToResearch('{encoded_origin}', '{encoded_target}', '{actor}', '{retry_count}')",
+        f"iiAdminVaultCopyToResearch('{encoded_origin}', '{encoded_target}', '{encoded_actor}', '{encoded_retry_count}')",
         "")
 
 
 @rule.make(inputs=[0, 1, 2, 3], outputs=[])
-def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str, actor: str, retry_str: str) -> None:
+def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target: str, receiver: str, retry_str: str) -> None:
     """Orchestrate vault copy-to-research operation with retry handling.
     If the copy operation fails, it will be retried up to a maximum number of times.
 
     :param ctx:         Combined type of a callback and rei struct
     :param coll_origin: Base64-encoded origin data collection in vault space
     :param coll_target: Base64-encoded target collection in research or deposit space
-    :param actor:       User to notify of success/failure
+    :param receiver:    Base64-encoded user to notify of success/failure
     :param retry_str:   Current retry attempt as string
 
     :returns:           True if operation succeeded or entered retry logic, False if target already existed
@@ -281,6 +283,8 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
     try:
         decoded_origin = base64.b64decode(coll_origin).decode('utf-8')
         decoded_target = base64.b64decode(coll_target).decode('utf-8')
+        decoded_receiver = base64.b64decode(receiver).decode('utf-8')
+        decoded_retry_str = base64.b64decode(retry_str).decode('utf-8')
     except Exception as e:
         log.write(ctx, f"Failed to decode base64-encoded paths during copy-to-research: {str(e)}")
         return
@@ -293,7 +297,7 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
         log.write(ctx, f"Invalid target path after decoding for copy-to-research: <{decoded_target}>")
         return
 
-    log.write(ctx, f"Starting vault copy: {decoded_origin} -> {decoded_target}, attempt #{retry_str}")
+    log.write(ctx, f"Starting vault copy: {decoded_origin} -> {decoded_target}, attempt #{decoded_retry_str}")
 
     space, _, _, _ = pathutil.info(decoded_target)
 
@@ -309,15 +313,15 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
     if success:
         # Fix ACLs for data package copied to deposit.
         if space is pathutil.Space.DEPOSIT:
-            msi.set_acl(ctx, "recursive", "admin:own", actor, decoded_target)
+            msi.set_acl(ctx, "recursive", "admin:own", decoded_receiver, decoded_target)
 
         _, _, _, datapackage_name = pathutil.info(decoded_origin)
-        notifications.set(ctx, "system", actor, decoded_target, f"Copying data package <{datapackage_name}>finished")
+        notifications.set(ctx, "system", decoded_receiver, decoded_target, f"Copying data package <{datapackage_name}>finished")
         log.write(ctx, f"Copy successful: {decoded_origin}")
     else:
         # Copy failed and enter retry logic
-        retry_count = int(retry_str)
-        handle_retry_operation(ctx, decoded_origin, decoded_target, actor, retry_count)
+        retry_count = int(decoded_retry_str)
+        handle_retry_operation(ctx, decoded_origin, decoded_target, decoded_receiver, retry_count)
 
 
 def copy_folder_to_research(ctx: rule.Context, coll: str, target: str) -> bool:
