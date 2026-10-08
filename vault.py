@@ -276,7 +276,7 @@ def rule_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target
     :param coll_origin: Base64-encoded origin data collection in vault space
     :param coll_target: Base64-encoded target collection in research or deposit space
     :param receiver:    Base64-encoded user to notify of success/failure
-    :param retry_str:   Current retry attempt as string
+    :param retry_str:   Base64-encoded current retry attempt as string
 
     :returns:           True if operation succeeded or entered retry logic, False if target already existed
     """
