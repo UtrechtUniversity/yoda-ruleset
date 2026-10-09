@@ -21,6 +21,11 @@
 
     <title>{{ title }} - Data Publication Platform of Utrecht University</title>
 
+    {# schema.org Dataset metadata, TODO: pre-escaped, for now do not HTML-escape it. #}
+    {% if schema_org_json_ld %}
+    <script type="application/ld+json">{{ schema_org_json_ld | safe }}</script>
+    {% endif %}
+
     <link href="/static/css/bootstrap.min.css?v=1752566642" rel="stylesheet">
     <link href="/static/css/landingpage.css?v=1752566642" rel="stylesheet">
     <link href="/static/css/leaflet-1.5.1.css" rel="stylesheet" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==">

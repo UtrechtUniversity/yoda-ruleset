@@ -3,6 +3,7 @@
 __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 from datetime import datetime
 from typing import Dict
 
@@ -39,6 +40,38 @@ def persistent_identifier_to_uri(identifier_scheme: str, identifier: str) -> str
         uri = f"#{identifier}"
 
     return uri
+
+
+def create_schema_org_json_ld(title: str, description: str, doi_uri: str, license_uri: str) -> str:
+    """Create a schema.org Dataset description of a data package, as JSON-LD.
+
+    The result is embedded in a landing page as the contents of the
+    <script type="application/ld+json"> element
+
+    :param title:       Title of the data package
+    :param description: Description of the data package
+    :param doi_uri:     Persistent identifier of the data package, as a URI
+    :param license_uri: URI of the license of the data package, if any
+
+    :returns: schema.org metadata as JSON-LD, ready to embed in a script
+    """
+    json_ld: Dict[str, str] = {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": title,
+        "description": description,
+    }
+
+    if doi_uri:
+        json_ld["identifier"] = doi_uri
+    if license_uri:
+        json_ld["license"] = license_uri
+
+    # TODO: Escaping these three characters for now.
+    return (json.dumps(json_ld)
+            .replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026"))
 
 
 def json_landing_page_create_json_landing_page(ctx: rule.Context,
@@ -215,6 +248,14 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     elif license != "Custom":
         license_uri = json_data["System"].get("License_URI", "")
 
+    # Create schema.org json-ld
+    schema_org_json_ld = create_schema_org_json_ld(
+        title,
+        description,
+        persistent_identifier_to_uri(persistent_identifier_datapackage["Identifier_Scheme"],
+                                     persistent_identifier_datapackage["Identifier"]),
+        license_uri)
+
     # Format last modified and publication date.
     last_modified_date_time = parser.parse(json_data["System"]["Last_Modified_Date"])
     last_modified_date = last_modified_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
@@ -251,6 +292,7 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         last_modified_date=last_modified_date,
         related_resources=all_related_resources,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
+        schema_org_json_ld=schema_org_json_ld,
         geolocations=geolocations,
         covered_geolocation_place=covered_geolocation_place,
         random_id=random_id,
