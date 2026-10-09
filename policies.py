@@ -9,6 +9,7 @@ import re
 from typing import Any
 
 import genquery
+import orjson
 import session_vars
 
 import datarequest
@@ -673,6 +674,10 @@ def pep_resource_resolve_hierarchy_pre(ctx: rule.Context,
 auth_pre_pep_executed = False
 
 
+# This PEP is used for the legacy API interface (endpoint #703), which
+# is still used by Davrods.
+#
+# See also the related pep_api_auth_response_pre PEP in uuPolicies.r
 @policy.require()
 def pep_api_auth_request_pre(ctx: rule.Context,
                              instance_name: str,
@@ -712,8 +717,23 @@ def pep_api_authenticate_pre(ctx: rule.Context,
                              comm: dict,
                              request: object,
                              response: object) -> policy.Succeed | policy.Fail:
-    # This PEP is used for authentication of all PAM users and the rods account,
-    # but not for the anonymous account.
+    # Verify that proxy user matches auth user. We want to check this
+    # for every request. Therefore we run this check before checking whether
+    # the PEP has fired before.
+    proxy_user_data = session_vars.get_map(ctx.rei)['proxy_user']
+    startup_proxyuser = proxy_user_data['user_name']
+    startup_proxyzone = proxy_user_data['irods_zone']
+    (auth_user, auth_zone) = get_auth_request_data(request)
+    if startup_proxyuser != auth_user or startup_proxyzone != auth_zone:
+        error_message = 'pep_api_authenticate_pre:' \
+                        f' startup_proxy[{startup_proxyuser}#{startup_proxyzone}]' \
+                        f' does not match auth_user[{auth_user}#{auth_zone}]' \
+                        f' DENIED (AN 110000)'
+        log.write(ctx, error_message)
+        return policy.fail('startup_proxy must match authenticating user')
+
+    # This PEP is used for authentication using the new/regular authentication
+    # API endpoints.
     global auth_pre_pep_executed
 
     # Only run this PEP's body once per session (i.e. once per agent).
@@ -735,6 +755,27 @@ def pep_api_authenticate_pre(ctx: rule.Context,
 
     return policy.succeed()
 # }}}
+
+
+def get_auth_request_data(request: object) -> Tuple[Optional[str], Optional[str]]:
+    """Get the user that authenticates from an authentication framework (API 110000) request.
+
+    :param request: JSON request sent by the client, in the format passed by the PREP
+
+    :returns: Tuple of user name and zone name. User name and zone name can be None if we cannot
+              determine them.
+    """
+    try:
+        request_json = orjson.loads(bytes(request.get_bytes()).decode('utf-8'))
+        user_name = request_json['user_name']
+        zone_name = request_json['zone_name']
+    except (ValueError, KeyError, TypeError):
+        return (None, None)
+
+    if not isinstance(user_name, str) or not isinstance(zone_name, str):
+        return (None, None)
+
+    return user_name, zone_name
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])

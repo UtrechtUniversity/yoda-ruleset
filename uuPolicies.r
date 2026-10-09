@@ -121,5 +121,20 @@ msiTarFileExtract(*logical_path, *target_coll, *dest_resc, *status) {
   failmsg(-169000, 'msiTarFileExtract is not allowed'); # SYS_NOT_ALLOWED
 }
 
+# Lock down 704 authentication endpoint API. We need this PEP to be
+# in legacy rule language, because the Python rule engine plugin
+# currently can't deserialize authentication response objects.
+#
+# See also the related pep_api_auth_request_pre PEP in policies.py
+pep_api_auth_response_pre(*INST, *COMM, *RESP) {
+  *startup_proxyuser = *COMM.proxy_user_name
+  *startup_proxyzone = *COMM.proxy_rods_zone
+  *auth_user = *RESP.username
+  if (*startup_proxyuser != *auth_user) {
+    writeLine('serverLog', 'pep_api_auth_response_pre: startup_proxy[*startup_proxyuser#*startup_proxyzone] does not match auth_user[*auth_user] - DENIED (AN 704)');
+    failmsg(-169000, 'startup_proxy must match authenticating user'); # SYS_NOT_ALLOWED
+  }
+}
+
 # Enforce server to use TLS encryption.
 acPreConnect(*OUT) { *OUT="CS_NEG_REQUIRE"; }
