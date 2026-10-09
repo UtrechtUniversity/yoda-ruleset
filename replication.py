@@ -9,7 +9,6 @@ import time
 
 import genquery
 import irods_types
-from tstrings import t
 
 from util import *
 
@@ -29,30 +28,20 @@ def replicate_asynchronously(ctx: rule.Context, path: str, source_resource: str,
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     try:
-        # Check whether the object already has an AVU. If we try to add the AVU when it already
-        # exists, we will catch the exception below, however the SQL error would still result in log
-        # clutter. Checking beforehand reduces the log clutter, though such errors can still occur
-        # if an AVU is added after this check.
-        already_has_avu = len(list(genquery.Query(ctx,
-                                                  ['DATA_ID'],
-                                                  t("COLL_NAME = '{pathutil.dirname(path)}' AND DATA_NAME = '{pathutil.basename(path)}' AND META_DATA_ATTR_NAME = '{replication_avu_name}'"),
-                                                  offset=0, limit=1, output=genquery.AS_LIST))) > 0
-
-        if not already_has_avu:
-            # Can't use mod_avu/set here (instead of add_avu) because it would be blocked by metadata policies.
-            add_operation = {
-                "entity_name": path,
-                "entity_type": "data_object",
-                "operations": [
-                    {
-                        "operation": "add",
-                        "attribute": replication_avu_name,
-                        "value": replication_avu_value,
-                        "units": ""
-                    }
-                ]
-            }
-            avu.apply_atomic_operations(ctx, add_operation)
+        # Can't use mod_avu/set here (instead of add_avu) because it would be blocked by metadata policies.
+        add_operation = {
+            "entity_name": path,
+            "entity_type": "data_object",
+            "operations": [
+                {
+                    "operation": "add",
+                    "attribute": replication_avu_name,
+                    "value": replication_avu_value,
+                    "units": ""
+                }
+            ]
+        }
+        avu.apply_atomic_operations(ctx, add_operation)
     except msi.Error as e:
         if "-817000" in str(e):
             # CAT_UNKNOWN_FILE: object has been removed in the mean time. No need to replicate it anymore.

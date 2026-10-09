@@ -10,6 +10,7 @@ from typing import Any
 
 import genquery
 import session_vars
+from tstrings import t
 
 import datarequest
 import folder
@@ -576,6 +577,25 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     return policy.fail('No execcmd privileges for this command')
 
 
+def get_revrepl_avu_names(ctx: rule.Context, path: str) -> set[str]:
+    """Get revision / replication AVUs for data object. We combine this in one function,
+       so that we can combine this in one query. This saves time in the synchronous
+       PEP code, reducing performance impact on writes.
+
+       :param ctx:             Combined type of a callback and rei struct
+       :param path: Path of data object to check
+
+       :returns: Set of found relevant AVU names (org_replication_scheduled, org_revision_scheduled)
+    """
+    replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"      # noqa F841 - used in tstring below
+    revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"            # noqa F841 - used in tstring below
+    return {row[0] for row in
+            genquery.Query(ctx,
+                           ['META_DATA_ATTR_NAME'],
+                           t("COLL_NAME = '{pathutil.dirname(path)}' AND DATA_NAME = '{pathutil.basename(path)}' AND META_DATA_ATTR_NAME IN('{replication_avu_name}','{revision_avu_name}')"),
+                           output=genquery.AS_LIST)}
+
+
 @rule.make()
 def pep_resource_modified_post(ctx: rule.Context,
                                instance_name: str,
@@ -589,7 +609,16 @@ def pep_resource_modified_post(ctx: rule.Context,
     username = _ctx.map()['user_user_name']
     info = pathutil.info(path)
 
-    if not should_resource_be_replication_exempt(config, instance_name):
+    replication_avu_name = constants.UUORGMETADATAPREFIX + "replication_scheduled"
+    revision_avu_name = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+
+    avus_present: set[str] = set()
+    try:
+        avus_present = get_revrepl_avu_names(ctx, path)
+    except Exception as e:
+        log.write(ctx, f"Unable to get replication/revision AVUs for <{path}> in PEP: {str(e)}. Skipping replication and revision creation.")
+
+    if not should_resource_be_replication_exempt(config, instance_name) and replication_avu_name not in avus_present:
         for resource in config.resource_replica:
             replication.replicate_asynchronously(ctx, path, instance_name, resource)
 
@@ -620,7 +649,8 @@ def pep_resource_modified_post(ctx: rule.Context,
         # Log errors, but continue with revisions.
         log.write(ctx, 'rule_meta_modified_post failed: ' + str(e))
 
-    revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
+    if revision_avu_name not in avus_present:
+        revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
 
     if config.enable_async_checksum:
         # Base64 encode the path.
