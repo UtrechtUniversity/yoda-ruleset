@@ -132,7 +132,9 @@ pep_api_auth_response_pre(*INST, *COMM, *RESP) {
   *startup_proxy = "*startup_proxyuser#*startup_proxyzone"
   # The username in the authentication response has the form user#zone
   *auth_user = *RESP.username
-  if (*startup_proxy != *auth_user) {
+  # The startup_proxy comparison is the normal case. The startup_proxyuser comparison
+  # is to retain compatibility with Jargon.
+  if (*startup_proxy != *auth_user && *startup_proxyuser != *auth_user) {
     writeLine('serverLog', 'pep_api_auth_response_pre: startup_proxy[*startup_proxy] does not match auth_user[*auth_user] - DENIED (AN 704)');
     failmsg(-169000, 'startup_proxy must match authenticating user'); # SYS_NOT_ALLOWED
   }
