@@ -5,7 +5,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import ast
 import re
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 
 from config import Config, config
@@ -198,3 +198,28 @@ def check_max_connections_exceeded(ctx: rule.Context) -> bool:
         return False
     else:
         return user.number_of_connections(ctx) > config.user_max_connections_number
+
+
+def is_forwarded_pam_auth_request(proxy_user_data: dict,
+                                  auth_scheme: Optional[str],
+                                  auth_operation: Optional[str]) -> bool:
+    """Check whether an authentication framework (API 110000) request is a PAM password
+       check.
+
+    The consumer forwards such requests over a server-to-server connection on which it
+    has already authenticated with the service account, so the proxy user differs from
+    the authenticating user. We rely on the privilege level rather than the proxy user
+    name, because the name comes from the startup pack and has not been verified until
+    the proxy user has authenticated.
+
+    :param proxy_user_data: Proxy user data from the session variables
+    :param auth_scheme:     Authentication scheme of the request
+    :param auth_operation:  Authentication operation of the request
+
+    :returns: Boolean indicating whether this is a forwarded PAM password check
+    """
+    # Refers to rodsadmin privileges in local zone
+    LOCAL_PRIV_USER_AUTH = 5
+    return (proxy_user_data['authentication_info']['privilege_level'] == LOCAL_PRIV_USER_AUTH
+            and auth_scheme == 'pam_password'
+            and auth_operation == 'auth_agent_auth_request')
