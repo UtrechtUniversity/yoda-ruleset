@@ -15,7 +15,7 @@ sys.path.append('..')
 for _irods_module in ('genquery', 'session_vars', 'irods_types'):
     sys.modules.setdefault(_irods_module, MagicMock())
 
-from policies_utils import _is_safe_genquery_inp, check_anonymous_access_allowed, check_max_connections_exceeded, format_client_description, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately  # noqa: E402
+from policies_utils import _is_safe_genquery_inp, check_anonymous_access_allowed, check_max_connections_exceeded, format_client_description, is_forwarded_pam_auth_request, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately  # noqa: E402
 from util import config  # noqa: E402
 
 
@@ -191,3 +191,32 @@ class PoliciesTest(TestCase):
 
         mock_user.number_of_connections.return_value = 3
         self.assertFalse(check_max_connections_exceeded(ctx))
+
+    def test_is_forwarded_pam_auth_request(self):
+        # Auth request from admin with pam_password scheme
+        self.assertTrue(is_forwarded_pam_auth_request(
+            {"authentication_info": {"privilege_level": 5}},
+            'pam_password',
+            'auth_agent_auth_request',
+        ))
+
+        # Not from admin
+        self.assertFalse(is_forwarded_pam_auth_request(
+            {"authentication_info": {"privilege_level": 1}},
+            'pam_password',
+            'auth_agent_auth_request',
+        ))
+
+        # Not pam_password authentication
+        self.assertFalse(is_forwarded_pam_auth_request(
+            {"authentication_info": {"privilege_level": 5}},
+            'native',
+            'auth_agent_auth_request',
+        ))
+
+        # Not an authentication request
+        self.assertFalse(is_forwarded_pam_auth_request(
+            {"authentication_info": {"privilege_level": 5}},
+            'pam_password',
+            'auth_agent_auth_response',
+        ))
