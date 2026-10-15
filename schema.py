@@ -233,11 +233,11 @@ def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api
 
 @api.make()
 def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
-    """Retrieve selectable schemas and default schema.
+    """Retrieve selectable schemas, composed schemas, and default schema.
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: Dict with schemas and default schema.
+    :returns: Dict with schemas, composed schemas, and default schema.
     """
     schemas = []
 
@@ -251,12 +251,17 @@ def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
         schema = row[0].split('/')[-1]
         schemas.append(schema)
 
+    composed_schemas = []
+    for composed_schema in get_composed_schemas(ctx):
+        composed_schemas.append(composed_schema['name'])
+
     if not config.default_yoda_schema:
         schema_default = ''
     else:
         schema_default = config.default_yoda_schema
 
     return {'schemas': schemas,
+            'composed_schemas': composed_schemas,
             'schema_default': schema_default}
 
 
