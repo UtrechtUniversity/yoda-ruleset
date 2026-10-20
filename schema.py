@@ -231,6 +231,47 @@ def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api
     return api.Result.ok()
 
 
+def build_composed_schema(ctx: rule.Context, identifier: str) -> dict:
+    """Build metadata schema from building blocks of a composed schema.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Composed metadata schema identifier
+
+    :returns: Metadata schema
+    """
+    if not schema_utils.is_valid_schema_identifier(identifier):
+        return api.Error('bad_request', 'Invalid composed schema identifier')
+
+    composed_schema = next(
+        (item for item in get_composed_schemas(ctx)
+         if item["name"] == identifier),
+        None,
+    )
+
+    if composed_schema is None:
+        return api.Error('not_found', 'Could not find composed schema with provided identifier')
+
+    available_blocks = get_building_blocks(ctx)
+
+    available_by_id = {
+        block_id: block_data
+        for item in available_blocks
+        for block_id, block_data in item.items()
+    }
+
+    schemas = [
+        available_by_id[block_ref]["schema"]
+        for block_ref in composed_schema.get("blocks", [])
+        if block_ref in available_by_id
+    ]
+
+    return schema_utils.merge_building_blocks(
+        title=composed_schema["name"],
+        description=composed_schema["description"],
+        schemas=schemas
+    )
+
+
 @api.make()
 def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
     """Retrieve selectable schemas, composed schemas, and default schema.
@@ -410,7 +451,16 @@ def get_active_schema(ctx: rule.Context, path: str) -> dict:
 
     :returns: Schema object (parsed from JSON)
     """
-    return jsonutil.read(ctx, get_active_schema_path(ctx, path))
+    schema = {}
+    try:
+        schema = jsonutil.read(ctx, get_active_schema_path(ctx, path))
+    except Exception:
+        path_parts = path.split('/')
+        group_name = path_parts[3]
+        composed_schema = get_schema_id_from_group(ctx, group_name)
+        schema = build_composed_schema(ctx, composed_schema)
+
+    return schema
 
 
 def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[dict, dict]:
@@ -422,11 +472,21 @@ def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[dict, dict
 
     :returns: Schema and UI schema object (parsed from JSON)
     """
-    schema_path   = get_active_schema_path(ctx, path)
-    uischema_path = f'{pathutil.chop(schema_path)[0]}/uischema.json'
+    schema = {}
+    uischema = {}
 
-    return jsonutil.read(ctx, schema_path), \
-        jsonutil.read(ctx, uischema_path)
+    try:
+        schema_path   = get_active_schema_path(ctx, path)
+        uischema_path = f'{pathutil.chop(schema_path)[0]}/uischema.json'
+        schema = jsonutil.read(ctx, schema_path)
+        uischema = jsonutil.read(ctx, uischema_path)
+    except Exception:
+        path_parts = path.split('/')
+        group_name = path_parts[3]
+        composed_schema = get_schema_id_from_group(ctx, group_name)
+        schema = build_composed_schema(ctx, composed_schema)
+
+    return schema, uischema
 
 
 def get_active_schema_id(ctx: rule.Context, path: str) -> str:
