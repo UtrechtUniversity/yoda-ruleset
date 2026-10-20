@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 from collections import OrderedDict
 from datetime import datetime
+from traceback import format_exc
 from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 import genquery
@@ -1021,6 +1022,7 @@ def group_create(ctx: rule.Context,
         else:
             return api.Error('policy_error', message)
     except Exception:
+        log.write(ctx, f'Error occurred when creating group "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong creating group "{group_name}". Please contact a system administrator')
 
 
@@ -1071,6 +1073,7 @@ def api_group_update(ctx: rule.Context, group_name: str, property_name: str, pro
         else:
             return api.Error('policy_error', message)
     except Exception:
+        log.write(ctx, f'Error occurred when updating group "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong updating group "{group_name}". Please contact a system administrator')
 
 
@@ -1098,6 +1101,7 @@ def api_group_delete(ctx: rule.Context, group_name: str) -> api.Result:
 
         return api.Result.ok()
     except Exception:
+        log.write(ctx, f'Error occurred when deleting group "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong deleting group "{group_name}". Please contact a system administrator')
 
 
@@ -1188,6 +1192,7 @@ def group_user_add(ctx: rule.Context, username: str, group_name: str, role: str 
         else:
             return api.Error('policy_error', message)
     except Exception:
+        log.write(ctx, f'Error occurred when adding {username} to "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong adding {username} to group "{group_name}". Please contact a system administrator')
 
 
@@ -1224,6 +1229,7 @@ def group_user_update_role(ctx: rule.Context, username: str, group_name: str, ne
         else:
             return api.Error('policy_error', message)
     except Exception:
+        log.write(ctx, f'Error occurred when updating role for {username} in group "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong updating role for {username} in group "{group_name}". Please contact a system administrator')
 
 
@@ -1272,12 +1278,14 @@ def group_remove_user_from_group(ctx: rule.Context, username: str, group_name: s
                 try:
                     sram.delete_pending_invitation(ctx, config.sram_external_users_co, username)
                 except Exception:
+                    log.write(ctx, f'Error occurred when deleting invitation for user "{username}": {format_exc()}')
                     return api.Error('sram_error', f"Something went wrong while deleting the open invitation for user {username}.")
                 # Remove invitation metadata.
                 msi.sudo_obj_meta_remove(ctx, username, "-u", "", constants.UUORGMETADATAPREFIX + "sram_invited", group_name, "", "")
 
         return api.Result.ok()
     except Exception:
+        log.write(ctx, f'Error occurred when removing {username} from group "{group_name}": {format_exc()}')
         return api.Error('error_internal', f'Something went wrong removing {username} from group "{group_name}". Please contact a system administrator')
 
 
