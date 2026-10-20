@@ -3,6 +3,8 @@
 __copyright__ = 'Copyright (c) 2025-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import copy
+
 
 def is_unsupported_schema(schema_id: str) -> bool:
     """
@@ -118,3 +120,75 @@ def is_valid_composed_schema_structure(schema: dict) -> bool:
             return False
 
     return True
+
+
+def merge_building_blocks(title: str, description: str, schemas: list[dict]) -> dict:
+    """Merge building blocks into a single metadata schema.
+
+    :param title:       Title of metadata schema
+    :param description: Description of metadata schema
+    :param schemas:     Building blocks for metadata schema
+
+    :returns: Metadata schema
+    """
+    def normalize(value, block_name):
+        if isinstance(value, dict):
+            result = {}
+
+            for key, item in value.items():
+                if key == "$id":
+                    continue
+
+                if key in ("$ref", "$dynamicRef") and isinstance(item, str):
+                    item = item.replace(
+                        "#/$defs/", f"#/$defs/{block_name}_"
+                    )
+                    item = item.replace(
+                        "#/definitions/", f"#/$defs/{block_name}_"
+                    )
+
+                result[key] = normalize(item, block_name)
+
+            return result
+
+        if isinstance(value, list):
+            return [normalize(item, block_name) for item in value]
+
+        return value
+
+    definitions = {}
+    properties = {}
+    required_fields = []
+
+    for block in schemas:
+        name = block["title"]
+        schema = copy.deepcopy(block)
+
+        if schema.get("required"):
+            required_fields.append(name)
+
+        block_defs = {}
+        block_defs.update(schema.pop("$defs", {}) or {})
+        block_defs.update(schema.pop("definitions", {}) or {})
+
+        for def_name, def_schema in block_defs.items():
+            definitions[f"{name}_{def_name}"] = normalize(
+                def_schema, name
+            )
+
+        definitions[name] = normalize(schema, name)
+        properties[name] = {
+            "title": name,
+            "$ref": f"#/$defs/{name}",
+        }
+
+    return {
+        "$id": title,
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": title,
+        "description": description,
+        "type": "object",
+        "$defs": definitions,
+        "properties": properties,
+        "required": required_fields,
+    }
