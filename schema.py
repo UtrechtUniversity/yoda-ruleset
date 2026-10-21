@@ -23,6 +23,11 @@ __all__ = ['api_schema_get_building_blocks',
            'api_schema_delete_composed_schema',
            'api_schema_get_schemas']
 
+REQUIRED_BUILDING_BLOCKS = ["descriptive_1-0-0",
+                            "citation_1-0-0",
+                            "access-rights_1-0-0",
+                            "preservation_1-0-0"]
+
 
 def get_building_blocks(ctx: rule.Context) -> list[dict]:
     """Get schema building blocks from iRODS.
@@ -44,7 +49,13 @@ def get_building_blocks(ctx: rule.Context) -> list[dict]:
         metadata_schema = jsonutil.read(ctx, f"/{zone}/yoda/metadata_schemas/{block_name}/metadata.json")
         ui_schema = jsonutil.read(ctx, f"/{zone}/yoda/metadata_schemas/{block_name}/uischema.json")
 
-        blocks.append({block_name: {"schema": metadata_schema, "ui_schema": ui_schema}})
+        blocks.append({
+            block_name: {
+                "schema": metadata_schema,
+                "ui_schema": ui_schema,
+                "required": block_name in REQUIRED_BUILDING_BLOCKS,
+            }
+        })
 
     return blocks
 
