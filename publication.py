@@ -407,6 +407,9 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: s
         attributes['relatedIdentifiers'] = related
         datacite_json = json.dumps(data)
 
+    # To do: Update the previous version with link to new one
+    # To do: Update version DOI with link to previous version
+
     try:
         if send_method == 'post':
             response = datacite.metadata_post(datacite_json)

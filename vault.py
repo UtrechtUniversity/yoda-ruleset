@@ -1675,45 +1675,89 @@ def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: 
     :param new_version:      Path to new version of data package in the vault
     :param previous_version: Path to previous version of data package in the vault
     """
-    form = meta_form.load(ctx, new_version)
-    schema = form["schema"]
-    metadata = form["metadata"]
+
+    # To Do: Currently, the base DOI is showing as NewVersionOf. Skip base DOI here.
+
+    new_version_form = meta_form.load(ctx, new_version)
+    new_version_schema = new_version_form["schema"]
+    new_version_metadata = new_version_form["metadata"]
+
+    previous_version_form = meta_form.load(ctx, previous_version)
+    previous_version_schema = previous_version_form["schema"]
+    previous_version_metadata = previous_version_form["metadata"]
 
     # Only add related data package if it is in the schema.
-    if "Related_Datapackage" in schema["properties"]:
+    if "Related_Datapackage" in new_version_schema["properties"]:
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
+                "Identifier": get_doi(ctx, previous_version)
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": f"{get_title(ctx, previous_version)}"
         }
 
-        if "Related_Datapackage" in metadata:
-            metadata["Related_Datapackage"].append(data_package)
+        if "Related_Datapackage" in new_version_metadata:
+            new_version_metadata["Related_Datapackage"].append(data_package)
         else:
-            metadata["Related_Datapackage"] = [data_package]
+            new_version_metadata["Related_Datapackage"] = [data_package]
 
-        meta_form.save(ctx, new_version, metadata)
+        meta_form.save(ctx, new_version, new_version_metadata)
 
     # Only add related resource if it is in the schema.
-    elif "Related_Resource" in schema["properties"]:
+    elif "Related_Resource" in new_version_schema["properties"]:
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
+                "Identifier": get_doi(ctx, previous_version)
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": f"{get_title(ctx, previous_version)}"
         }
 
-        if "Related_Resource" in metadata:
-            metadata["Related_Resource"].append(data_package)
+        if "Related_Resource" in new_version_metadata:
+            new_version_metadata["Related_Resource"].append(data_package)
         else:
-            metadata["Related_Resource"] = [data_package]
+            new_version_metadata["Related_Resource"] = [data_package]
 
-        meta_form.save(ctx, new_version, metadata)
+        meta_form.save(ctx, new_version, new_version_metadata)
+
+    
+    # Only add related data package if it is in the schema.
+    if "Related_Datapackage" in previous_version_schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": get_doi(ctx, new_version)
+            },
+            "Relation_Type": "IsPreviousVersionOf",
+            "Title": f"{get_title(ctx, new_version)}"
+        }
+
+        if "Related_Datapackage" in previous_version_metadata:
+            previous_version_metadata["Related_Datapackage"].append(data_package)
+        else:
+            previous_version_metadata["Related_Datapackage"] = [data_package]
+
+        meta_form.save(ctx, previous_version, previous_version_metadata)
+
+    # Only add related resource if it is in the schema.
+    elif "Related_Resource" in previous_version_schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": get_doi(ctx, new_version)
+            },
+            "Relation_Type": "IsPreviousVersionOf",
+            "Title": f"{get_title(ctx, new_version)}"
+        }
+
+        if "Related_Resource" in previous_version_metadata:
+            previous_version_metadata["Related_Resource"].append(data_package)
+        else:
+            previous_version_metadata["Related_Resource"] = [data_package]
+
+        meta_form.save(ctx, previous_version, previous_version_metadata)
 
 
 def get_all_doi_versions(ctx: rule.Context, path: str) -> Tuple[List, List, List]:

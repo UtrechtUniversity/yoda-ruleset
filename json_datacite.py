@@ -48,6 +48,7 @@ def create_datacite_json(ctx: rule.Context, landing_page_url: str, combi_path: s
             "prefix": doi_parts[0],
             "suffix": doi_parts[1],
             "identifiers": get_identifiers(combi),
+            "alternateIdentifiers": get_alternate_identifiers(combi),
             "creators": get_creators(combi),
             "titles": get_titles(combi),
             "publisher": get_publisher(combi),
@@ -75,8 +76,11 @@ def get_DOI(combi: dict) -> str:
 
 
 def get_identifiers(combi: dict) -> List:
-    return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
-             'identifierType': 'DOI'}]
+    return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'], 'identifierType': 'DOI'}]
+
+
+def get_alternate_identifiers(combi: dict) -> List:
+    return [{'alternateIdentifier': combi['System']['Base_DOI'], 'alternateIdentifierType': 'DOI'}]
 
 
 def get_titles(combi: dict) -> List:
