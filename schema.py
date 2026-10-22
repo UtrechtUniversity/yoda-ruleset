@@ -250,7 +250,7 @@ def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api
     return api.Result.ok()
 
 
-def build_composed_schema(ctx: rule.Context, identifier: str) -> dict:
+def build_composed_schema(ctx: rule.Context, identifier: str) -> Tuple[dict, dict]:
     """Build metadata schema from building blocks of a composed schema.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -284,11 +284,18 @@ def build_composed_schema(ctx: rule.Context, identifier: str) -> dict:
         if block_ref in available_by_id
     ]
 
+    uischemas = [
+        available_by_id[block_ref]["uischema"]
+        for block_ref in composed_schema.get("blocks", [])
+        if block_ref in available_by_id
+    ]
+
     return schema_utils.merge_building_blocks(
         identifier=composed_schema["identifier"],
         title=composed_schema["name"],
         description=composed_schema["description"],
-        schemas=schemas
+        schemas=schemas,
+        uischemas=uischemas
     )
 
 
@@ -478,7 +485,7 @@ def get_active_schema(ctx: rule.Context, path: str) -> dict:
         path_parts = path.split('/')
         group_name = path_parts[3]
         composed_schema = get_schema_id_from_group(ctx, group_name)
-        schema = build_composed_schema(ctx, composed_schema)
+        schema, _ = build_composed_schema(ctx, composed_schema)
 
     return schema
 
@@ -504,7 +511,7 @@ def get_active_schema_uischema(ctx: rule.Context, path: str) -> Tuple[dict, dict
         path_parts = path.split('/')
         group_name = path_parts[3]
         composed_schema = get_schema_id_from_group(ctx, group_name)
-        schema = build_composed_schema(ctx, composed_schema)
+        schema, uischema = build_composed_schema(ctx, composed_schema)
 
     return schema, uischema
 
