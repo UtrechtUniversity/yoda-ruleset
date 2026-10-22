@@ -95,11 +95,13 @@ class SchemaUtilsTest(TestCase):
 
     def test_is_valid_composed_schema_structure_valid(self):
         self.assertTrue(is_valid_composed_schema_structure({
+            'identifier': 'test-schema-0',
             'name': 'TestSchema',
             'description': 'A test schema',
             'blocks': ['block1', 'block2']
         }))
         self.assertTrue(is_valid_composed_schema_structure({
+            'identifier': 'minimal-schema-0',
             'name': 'MinimalSchema',
             'description': 'Minimal',
             'blocks': []
@@ -107,43 +109,51 @@ class SchemaUtilsTest(TestCase):
 
     def test_is_valid_composed_schema_structure_missing_fields(self):
         self.assertFalse(is_valid_composed_schema_structure({
+            'name': 'NoIdentifier',
+            'description': 'Missing identifier',
+            'blocks': ['block1']
+        }))
+        self.assertFalse(is_valid_composed_schema_structure({
+            'identifier': 'missing-name-0',
             'description': 'Missing name',
             'blocks': ['block1']
         }))
         self.assertFalse(is_valid_composed_schema_structure({
+            'identifier': 'no-description-0',
             'name': 'NoDescription',
             'blocks': ['block1']
         }))
         self.assertFalse(is_valid_composed_schema_structure({
+            'identifier': 'no-blocks-0',
             'name': 'NoBlocks',
             'description': 'Missing blocks'
         }))
 
     def test_is_valid_composed_schema_structure_invalid_name_type(self):
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 123, 'description': 'Test', 'blocks': []
+            'identifier': 'test-schema-0', 'name': 123, 'description': 'Test', 'blocks': []
         }))
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': None, 'description': 'Test', 'blocks': []
+            'identifier': 'test-schema-0', 'name': None, 'description': 'Test', 'blocks': []
         }))
 
     def test_is_valid_composed_schema_structure_invalid_description_type(self):
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 'Test', 'description': 123, 'blocks': []
+            'identifier': 'test-schema-0', 'name': 'Test', 'description': 123, 'blocks': []
         }))
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 'Test', 'description': None, 'blocks': []
+            'identifier': 'test-schema-0', 'name': 'Test', 'description': None, 'blocks': []
         }))
 
     def test_is_valid_composed_schema_structure_invalid_blocks_type(self):
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 'Test', 'description': 'Test', 'blocks': 'block1'
+            'identifier': 'test-schema-0', 'name': 'Test', 'description': 'Test', 'blocks': 'block1'
         }))
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 'Test', 'description': 'Test', 'blocks': None
+            'identifier': 'test-schema-0', 'name': 'Test', 'description': 'Test', 'blocks': None
         }))
         self.assertFalse(is_valid_composed_schema_structure({
-            'name': 'Test', 'description': 'Test', 'blocks': 123
+            'identifier': 'test-schema-0', 'name': 'Test', 'description': 'Test', 'blocks': 123
         }))
 
     def test_is_valid_composed_schema_structure_empty(self):
