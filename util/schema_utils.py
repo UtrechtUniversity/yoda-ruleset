@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2025-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import copy
+from typing import Tuple
 
 
 def is_unsupported_schema(schema_id: str) -> bool:
@@ -123,13 +124,14 @@ def is_valid_composed_schema_structure(schema: dict) -> bool:
     return True
 
 
-def merge_building_blocks(identifier: str, title: str, description: str, schemas: list[dict]) -> dict:
+def merge_building_blocks(identifier: str, title: str, description: str, schemas: list[dict], uischemas: list[dict]) -> Tuple[dict, dict]:
     """Merge building blocks into a single metadata schema.
 
     :param identifier:  Identifier of metadata schema
     :param title:       Title of metadata schema
     :param description: Description of metadata schema
     :param schemas:     Building blocks for metadata schema
+    :param uischemas:   Building blocks for UI metadata schema
 
     :returns: Metadata schema
     """
@@ -184,7 +186,7 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
             "$ref": f"#/$defs/{name}",
         }
 
-    return {
+    schema = {
         "$id": identifier,
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "title": title,
@@ -194,3 +196,9 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
         "properties": properties,
         "required": required_fields,
     }
+
+    uischema = {}
+    for schema in uischemas:
+        uischema |= schema
+
+    return schema, uischema
