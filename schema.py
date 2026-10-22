@@ -124,18 +124,19 @@ def api_schema_get_composed_schema(ctx: rule.Context, identifier: str) -> api.Re
         return api.Error('bad_request', 'Invalid composed schema identifier')
 
     for schema in get_composed_schemas(ctx):
-        if schema["name"] == identifier:
+        if schema["identifier"] == identifier:
             return schema
 
     return api.Error('not_found', 'Could not find composed schema with provided identifier')
 
 
 @api.make()
-def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, description: str, blocks: list) -> api.Result:
+def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: str, description: str, blocks: list) -> api.Result:
     """A POST for Compose page to save a composed schema.
 
     :param ctx:         Combined type of a callback and rei struct
     :param identifier:  Composed metadata schema identifier
+    :param name:        Name of composed metadata schema
     :param description: Description of composed metadata schema
     :param blocks:      List of schema building blocks
 
@@ -145,6 +146,8 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, descript
         return api.Error('not_allowed', 'Only admins can post composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
+    if not schema_utils.is_valid_schema_identifier(name):
+        return api.Error('bad_request', 'Invalid composed schema name')
     if not schema_utils.is_valid_schema_description(description):
         return api.Error('bad_request', 'Invalid composed schema description')
     building_blocks = get_building_blocks(ctx)
@@ -152,12 +155,13 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, descript
         return api.Error('bad_request', 'Invalid schema building block list')
 
     for schema in get_composed_schemas(ctx):
-        if schema["name"] == identifier:
+        if schema["identifier"] == identifier:
             return api.Error('schema_exists', f"Composed schemas with name <{identifier}> already exists")
 
     try:
         composed_schema = {
-            "name": identifier,
+            "identifier": identifier,
+            "name": name,
             "description": description,
             "blocks": blocks
         }
@@ -170,11 +174,12 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, descript
 
 
 @api.make()
-def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, description: str, blocks: list) -> api.Result:
+def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str, description: str, blocks: list) -> api.Result:
     """A PUT for Edit page to update a composed schema.
 
     :param ctx:         Combined type of a callback and rei struct
     :param identifier:  Composed metadata schema identifier
+    :param name:        Name of composed metadata schema
     :param description: Description of composed metadata schema
     :param blocks:      List of schema building blocks
 
@@ -184,6 +189,8 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, descripti
         return api.Error('not_allowed', 'Only admins can put composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
+    if not schema_utils.is_valid_schema_identifier(name):
+        return api.Error('bad_request', 'Invalid composed schema name')
     if not schema_utils.is_valid_schema_description(description):
         return api.Error('bad_request', 'Invalid composed schema description')
     building_blocks = get_building_blocks(ctx)
@@ -193,7 +200,7 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, descripti
     # Verify schema exists before update.
     existing_schema = None
     for schema in get_composed_schemas(ctx):
-        if schema["name"] == identifier:
+        if schema["identifier"] == identifier:
             existing_schema = schema
             break
 
@@ -207,7 +214,8 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, descripti
 
     try:
         composed_schema = {
-            "name": identifier,
+            "identifier": identifier,
+            "name": name,
             "description": description,
             "blocks": blocks
         }
@@ -255,7 +263,7 @@ def build_composed_schema(ctx: rule.Context, identifier: str) -> dict:
 
     composed_schema = next(
         (item for item in get_composed_schemas(ctx)
-         if item["name"] == identifier),
+         if item["identifier"] == identifier),
         None,
     )
 
@@ -277,6 +285,7 @@ def build_composed_schema(ctx: rule.Context, identifier: str) -> dict:
     ]
 
     return schema_utils.merge_building_blocks(
+        identifier=composed_schema["identifier"],
         title=composed_schema["name"],
         description=composed_schema["description"],
         schemas=schemas

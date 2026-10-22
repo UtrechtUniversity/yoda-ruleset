@@ -107,6 +107,7 @@ def is_valid_composed_schema_structure(schema: dict) -> bool:
     :returns: True if valid, False otherwise
     """
     required_attributes = {
+        'identifier': str,
         'name': str,
         'description': str,
         'blocks': list
@@ -122,9 +123,10 @@ def is_valid_composed_schema_structure(schema: dict) -> bool:
     return True
 
 
-def merge_building_blocks(title: str, description: str, schemas: list[dict]) -> dict:
+def merge_building_blocks(identifier: str, title: str, description: str, schemas: list[dict]) -> dict:
     """Merge building blocks into a single metadata schema.
 
+    :param identifier:  Identifier of metadata schema
     :param title:       Title of metadata schema
     :param description: Description of metadata schema
     :param schemas:     Building blocks for metadata schema
@@ -183,7 +185,7 @@ def merge_building_blocks(title: str, description: str, schemas: list[dict]) -> 
         }
 
     return {
-        "$id": title,
+        "$id": identifier,
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "title": title,
         "description": description,

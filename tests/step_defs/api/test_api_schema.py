@@ -58,6 +58,7 @@ def api_schema_post_composed_schema(user, identifier):
         user,
         "schema_post_composed_schema",
         {"identifier": identifier,
+         "name": identifier,
          "description": "API test schema description",
          "blocks": ["descriptive_1-0-0", "citation_1-0-0", "preservation_1-0-0", "access-rights_1-0-0"]}
     )
@@ -69,6 +70,7 @@ def api_schema_put_composed_schema(user, identifier):
         user,
         "schema_put_composed_schema",
         {"identifier": identifier,
+         "name": identifier,
          "description": "API test schema description",
          "blocks": ["descriptive_1-0-0", "citation_1-0-0", "preservation_1-0-0", "access-rights_1-0-0"]}
     )
