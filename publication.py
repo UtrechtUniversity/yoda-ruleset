@@ -583,6 +583,7 @@ def generate_landing_page(ctx: rule.Context, publication_state: dict, publish: s
         versions,
         is_deaccession_complete,
         is_archived,
+        publication_state.get("landingPageUrl", ""),
     )
 
     data_object.write(ctx, landing_page_path, landing_page_html)
