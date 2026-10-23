@@ -198,7 +198,9 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
     }
 
     uischema = {}
-    for schema in uischemas:
-        uischema |= schema
+    for ui_schema in uischemas:
+        uischema |= ui_schema
+
+    uischema["ui:order"] = [block["title"] for block in schemas]
 
     return schema, uischema

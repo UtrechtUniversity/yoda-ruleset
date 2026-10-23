@@ -18,6 +18,7 @@ from util import *
 __all__ = ['api_schema_get_building_blocks',
            'api_schema_get_composed_schemas',
            'api_schema_get_composed_schema',
+           'api_schema_preview_composed_schema',
            'api_schema_post_composed_schema',
            'api_schema_put_composed_schema',
            'api_schema_delete_composed_schema',
@@ -131,6 +132,46 @@ def api_schema_get_composed_schema(ctx: rule.Context, identifier: str) -> api.Re
             return composed_schema
 
     return api.Error('not_found', 'Could not find composed schema with provided identifier')
+
+
+@api.make()
+def api_schema_preview_composed_schema(ctx: rule.Context, blocks: list) -> api.Result:
+    """Preview composed metadata schema from building blocks.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param blocks: List of schema building blocks
+
+    :returns: Composed metadata schema
+    """
+    building_blocks = get_building_blocks(ctx)
+    if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
+        return api.Error('bad_request', 'Invalid schema building block list')
+
+    available_by_id = {
+        block_id: block_data
+        for item in building_blocks
+        for block_id, block_data in item.items()
+    }
+
+    schemas = [
+        available_by_id[block_ref]["schema"]
+        for block_ref in blocks
+        if block_ref in available_by_id
+    ]
+
+    uischemas = [
+        available_by_id[block_ref]["ui_schema"]
+        for block_ref in blocks
+        if block_ref in available_by_id
+    ]
+
+    return schema_utils.merge_building_blocks(
+        identifier="metadata-schema-preview-0",
+        title="Metadata schema preview",
+        description="Metadata schema preview",
+        schemas=schemas,
+        uischemas=uischemas
+    )
 
 
 @api.make()
@@ -288,7 +329,7 @@ def build_composed_schema(ctx: rule.Context, identifier: str) -> Tuple[dict, dic
     ]
 
     uischemas = [
-        available_by_id[block_ref]["uischema"]
+        available_by_id[block_ref]["ui_schema"]
         for block_ref in composed_schema.get("blocks", [])
         if block_ref in available_by_id
     ]
@@ -324,7 +365,7 @@ def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
 
     composed_schemas = []
     for composed_schema in get_composed_schemas(ctx):
-        composed_schemas.append(composed_schema['name'])
+        composed_schemas.append(composed_schema['identifier'])
 
     if not config.default_yoda_schema:
         schema_default = ''
