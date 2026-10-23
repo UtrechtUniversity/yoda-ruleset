@@ -113,19 +113,22 @@ def api_schema_get_composed_schemas(ctx: rule.Context) -> api.Result:
 
 @api.make()
 def api_schema_get_composed_schema(ctx: rule.Context, identifier: str) -> api.Result:
-    """A GET using ID for Edit page to have the preselected checkboxes of a composed schema
+    """A GET using ID for Compose page to show a composed schema.
 
     :param ctx:        Combined type of a callback and rei struct
     :param identifier: Composed metadata schema identifier
 
-    :returns: List of blocks for composed schema
+    :returns: Composed metadata schema
     """
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
 
-    for schema in get_composed_schemas(ctx):
-        if schema["identifier"] == identifier:
-            return schema
+    for composed_schema in get_composed_schemas(ctx):
+        if composed_schema["identifier"] == identifier:
+            schema, uischema = build_composed_schema(ctx, identifier)
+            composed_schema["schema"] = schema
+            composed_schema["uischema"] = uischema
+            return composed_schema
 
     return api.Error('not_found', 'Could not find composed schema with provided identifier')
 
