@@ -198,6 +198,10 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
     if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
         return api.Error('bad_request', 'Invalid schema building block list')
 
+    required_blocks = set(REQUIRED_BUILDING_BLOCKS)
+    if not required_blocks.issubset(set(blocks)):
+        return api.Error('bad_request', 'All required building blocks must be selected')
+
     for schema in get_composed_schemas(ctx):
         if schema["identifier"] == identifier:
             return api.Error('schema_exists', f"Composed schemas with name <{identifier}> already exists")
