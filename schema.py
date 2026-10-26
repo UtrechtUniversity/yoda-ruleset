@@ -160,7 +160,7 @@ def api_schema_preview_composed_schema(ctx: rule.Context, blocks: list) -> api.R
     ]
 
     uischemas = [
-        available_by_id[block_ref]["uischema"]
+        available_by_id[block_ref]["ui_schema"]
         for block_ref in blocks
         if block_ref in available_by_id
     ]
@@ -329,7 +329,7 @@ def build_composed_schema(ctx: rule.Context, identifier: str) -> Tuple[dict, dic
     ]
 
     uischemas = [
-        available_by_id[block_ref]["uischema"]
+        available_by_id[block_ref]["ui_schema"]
         for block_ref in composed_schema.get("blocks", [])
         if block_ref in available_by_id
     ]
