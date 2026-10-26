@@ -190,13 +190,17 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
         return api.Error('not_allowed', 'Only admins can post composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
-    if not schema_utils.is_valid_schema_identifier(name):
+    if not schema_utils.is_valid_schema_name(name):
         return api.Error('bad_request', 'Invalid composed schema name')
     if not schema_utils.is_valid_schema_description(description):
         return api.Error('bad_request', 'Invalid composed schema description')
     building_blocks = get_building_blocks(ctx)
     if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
         return api.Error('bad_request', 'Invalid schema building block list')
+
+    required_blocks = set(REQUIRED_BUILDING_BLOCKS)
+    if not required_blocks.issubset(set(blocks)):
+        return api.Error('bad_request', 'All required building blocks must be selected')
 
     for schema in get_composed_schemas(ctx):
         if schema["identifier"] == identifier:
@@ -233,7 +237,7 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str
         return api.Error('not_allowed', 'Only admins can put composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
-    if not schema_utils.is_valid_schema_identifier(name):
+    if not schema_utils.is_valid_schema_name(name):
         return api.Error('bad_request', 'Invalid composed schema name')
     if not schema_utils.is_valid_schema_description(description):
         return api.Error('bad_request', 'Invalid composed schema description')

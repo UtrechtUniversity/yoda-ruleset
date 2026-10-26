@@ -30,6 +30,11 @@
       "$ref": "#/$defs/optionsDataAccessRestriction",
       "title": "Data package access",
       "default": "Restricted - available upon request"
+    },
+    "License": {
+      "type": "string",
+      "title": "License",
+      "default": "Custom"
     }
   },
   "allOf": [
@@ -55,8 +60,7 @@
               "Creative Commons Zero v1.0 Universal",
               "Open Data Commons Attribution License (ODC-By) v1.0",
               "Custom"
-            ],
-            "title": "License"
+            ]
           }
         },
         "required": [
@@ -78,9 +82,7 @@
             "type": "string",
             "enum": [
               "Custom"
-            ],
-            "title": "License",
-            "default": "Custom"
+            ]
           }
         },
         "required": [
@@ -102,9 +104,7 @@
             "type": "string",
             "enum": [
               "Custom"
-            ],
-            "title": "License",
-            "default": "Custom"
+            ]
           }
         },
         "required": [
