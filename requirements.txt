@@ -20,3 +20,4 @@ sqlcipher3-binary==0.5.4
 coverage==7.8.0
 orjson==3.10.18
 tstrings-backport==0.1.5
+certifi==2026.10.23
