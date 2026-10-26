@@ -365,7 +365,7 @@ def api_schema_get_schemas(ctx: rule.Context) -> api.Result:
 
     composed_schemas = []
     for composed_schema in get_composed_schemas(ctx):
-        composed_schemas.append(composed_schema['name'])
+        composed_schemas.append(composed_schema['identifier'])
 
     if not config.default_yoda_schema:
         schema_default = ''
