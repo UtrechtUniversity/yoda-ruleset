@@ -200,6 +200,34 @@ def check_max_connections_exceeded(ctx: rule.Context) -> bool:
         return user.number_of_connections(ctx) > config.user_max_connections_number
 
 
+def get_session_refusal_reason(ctx: rule.Context, session_map: dict) -> Optional[str]:
+    """Check whether a session should be refused before the client authenticates.
+       These checks apply regardless of which authentication API the client uses.
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param session_map: Session variables map of the agent
+
+    :returns: Reason for refusing the session, or None if the session is allowed
+    """
+    proxy_user = session_map['proxy_user']
+    client_user = session_map['client_user']
+    client_address = session_map['connection']['client_address']
+
+    # Check the proxy user, since that is the user that authenticates. The authentication
+    # PEPs verify that it matches the user in the authentication request. The client user
+    # is not checked: iRODS only allows a proxy user to act on behalf of a different client
+    # user if the proxy user is a rodsadmin. This is the case for server-to-server
+    # connections, which originate from other servers in the zone.
+    if (proxy_user['user_name'] == 'anonymous'
+            and not check_anonymous_access_allowed(ctx, client_address)):
+        return f'Refused access to anonymous account from address {client_address}.'
+
+    if check_max_connections_exceeded(ctx):
+        return f'Refused access for {client_user["user_name"]}#{client_user["irods_zone"]}, max connections exceeded.'
+
+    return None
+
+
 def is_forwarded_pam_auth_request(proxy_user_data: dict,
                                   auth_scheme: Optional[str],
                                   auth_operation: Optional[str]) -> bool:

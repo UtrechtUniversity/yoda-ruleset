@@ -666,51 +666,36 @@ def pep_resource_resolve_hierarchy_pre(ctx: rule.Context,
 
 # Pre-authentication PEPs {{{
 
-# The new iRODS authentication framework invokes the authentication API more
-# than once per session, which causes the authentication pre-PEPs to fire
-# multiple times. We only want to run the body of these PEPs once per session
-# (i.e. once per agent). Each agent runs in its own process, so a module-level
-# global persists for the agent's lifetime.
-auth_pre_pep_executed = False
+# Keep track of whether the pre-authentication checks have already
+# passed for this session. In that case, we don't have to check
+# again.
+auth_session_checks_passed = False
 
 
-# This PEP is used for the legacy API interface (endpoint #703), which
-# is still used by Davrods.
+# This PEP is invoked for the legacy native authentication API (#703, AUTH_REQUEST_AN),
+# which a client calls to obtain a challenge before it sends its response (#704).
+# Clients that use this API include Davrods (via clientLoginWithPassword), go-irodsclient
+# and GoCommands (for native authentication, and after obtaining a temporary password with
+# PAM authentication), python-irodsclient if legacy authentication has been forced, and
+# clients built against iRODS versions older than 4.3. It is not invoked for authentication
+# using the authentication framework (#110000).
 #
-# See also the related pep_api_auth_response_pre PEP in uuPolicies.r
+# The request does not contain a user name. The related pep_api_auth_response_pre PEP in
+# uuPolicies.r verifies that the user in the response matches the proxy user.
 @policy.require()
 def pep_api_auth_request_pre(ctx: rule.Context,
                              instance_name: str,
                              comm: dict,
                              request: object) -> policy.Succeed | policy.Fail:
-    # This PEP is still fired for authentication of the anonymous user.
-    global auth_pre_pep_executed
-
-    # Only run this PEP's body once per session (i.e. once per agent).
-    if auth_pre_pep_executed:
-        return policy.succeed()
-    auth_pre_pep_executed = True
-
-    (user_name, zone_name)  = user.user_and_zone(ctx)
-    client_address = session_vars.get_map(ctx.rei)['connection']['client_address']
-    client_desc = format_client_description(session_vars.get_map(ctx.rei)['connection']['option'])
-
-    # It looks like this PEP is only used for the anonymous user. Check user name to be sure.
-    if user_name == 'anonymous' and not check_anonymous_access_allowed(ctx, client_address):
-        log.write(ctx, f'Refused access to anonymous account from address {client_address}.')
-        return policy.fail(f'Refused access to anonymous account from address {client_address}.')
-
-    if check_max_connections_exceeded(ctx):
-        log.write(ctx, f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
-        return policy.fail(f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
-
-    # p1 suffix specifies which PEP has printed this message
-    log.write(ctx, f'{{{user_name}#{zone_name}}} Agent process started from {client_address} [p1] ({client_desc})',
-              print_module=False)
-
-    return policy.succeed()
+    return check_and_log_auth_session(ctx, 'p1')
 
 
+# This PEP is invoked for the authentication framework API (#110000, AUTHENTICATION_APN),
+# which is the default authentication API of iCommands and other clients built against
+# iRODS 4.3 or later, and of python-irodsclient for iRODS 4.3 or later. It is invoked once
+# for each step of the authentication flow, for all authentication schemes (e.g. native,
+# pam_password), and also for the anonymous user. A consumer also calls this API on the
+# provider over a server-to-server connection to forward PAM password checks.
 @policy.require()
 def pep_api_authenticate_pre(ctx: rule.Context,
                              instance_name: str,
@@ -718,8 +703,8 @@ def pep_api_authenticate_pre(ctx: rule.Context,
                              request: object,
                              response: object) -> policy.Succeed | policy.Fail:
     # Verify that proxy user matches auth user. We want to check this
-    # for every request. Therefore we run this check before checking whether
-    # the PEP has fired before.
+    # for every request. Therefore we run this check before the session checks,
+    # which only run until they have passed once.
     proxy_user_data = session_vars.get_map(ctx.rei)['proxy_user']
     startup_proxyuser = proxy_user_data['user_name']
     startup_proxyzone = proxy_user_data['irods_zone']
@@ -733,29 +718,38 @@ def pep_api_authenticate_pre(ctx: rule.Context,
         log.write(ctx, error_message)
         return policy.fail('startup_proxy must match authenticating user')
 
-    # This PEP is used for authentication using the new/regular authentication
-    # API endpoints.
-    global auth_pre_pep_executed
+    return check_and_log_auth_session(ctx, 'p2')
 
-    # Only run this PEP's body once per session (i.e. once per agent).
-    if auth_pre_pep_executed:
+
+def check_and_log_auth_session(ctx: rule.Context, pep_label: str) -> policy.Succeed | policy.Fail:
+    """Run the checks that apply to every new session, regardless of which
+       authentication API the client uses, and logs it if it succeeds.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param pep_label: Label of the calling PEP, for log messages
+
+    :returns: Policy result
+    """
+    global auth_session_checks_passed
+
+    if auth_session_checks_passed:
         return policy.succeed()
-    auth_pre_pep_executed = True
 
-    (user_name, zone_name)  = user.user_and_zone(ctx)
-    client_address = session_vars.get_map(ctx.rei)['connection']['client_address']
-    client_desc = format_client_description(session_vars.get_map(ctx.rei)['connection']['option'])
+    session_map = session_vars.get_map(ctx.rei)
+    refusal_reason = get_session_refusal_reason(ctx, session_map)
+    if refusal_reason is not None:
+        log.write(ctx, refusal_reason)
+        return policy.fail(refusal_reason)
 
-    if check_max_connections_exceeded(ctx):
-        log.write(ctx, f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
-        return policy.fail(f'Refused access for {user_name}#{zone_name}, max connections exceeded.')
+    auth_session_checks_passed = True
 
-    # p2 suffix specifies which PEP has printed this message
-    log.write(ctx, f'{{{user_name}#{zone_name}}} Agent process started from {client_address} [p2] ({client_desc})',
+    (user_name, zone_name) = user.user_and_zone(ctx)
+    client_address = session_map['connection']['client_address']
+    client_desc = format_client_description(session_map['connection']['option'])
+    log.write(ctx, f'{{{user_name}#{zone_name}}} Agent process started from {client_address} [{pep_label}] ({client_desc})',
               print_module=False)
 
     return policy.succeed()
-# }}}
 
 
 def get_auth_request_data(request: object) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
@@ -786,6 +780,9 @@ def get_auth_request_data(request: object) -> Tuple[Optional[str], Optional[str]
         operation = None
 
     return user_name, zone_name, scheme, operation
+
+
+# }}}
 
 
 @rule.make(inputs=[0, 1, 2, 3, 4], outputs=[])

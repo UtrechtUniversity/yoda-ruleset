@@ -15,7 +15,7 @@ sys.path.append('..')
 for _irods_module in ('genquery', 'session_vars', 'irods_types'):
     sys.modules.setdefault(_irods_module, MagicMock())
 
-from policies_utils import _is_safe_genquery_inp, check_anonymous_access_allowed, check_max_connections_exceeded, format_client_description, is_forwarded_pam_auth_request, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately  # noqa: E402
+from policies_utils import _is_safe_genquery_inp, check_anonymous_access_allowed, check_max_connections_exceeded, format_client_description, get_session_refusal_reason, is_forwarded_pam_auth_request, should_resource_be_replication_exempt, should_resource_trigger_policies, should_transition_submitted_to_accepted_immediately  # noqa: E402
 from util import config  # noqa: E402
 
 
@@ -191,6 +191,38 @@ class PoliciesTest(TestCase):
 
         mock_user.number_of_connections.return_value = 3
         self.assertFalse(check_max_connections_exceeded(ctx))
+
+    @patch("policies_utils.check_max_connections_exceeded")
+    @patch("policies_utils.config")
+    def test_get_session_refusal_reason(self, mock_config, mock_max_connections_exceeded):
+        ctx = MagicMock()
+        mock_config.remote_anonymous_access = ["1.2.3.4"]
+        mock_max_connections_exceeded.return_value = False
+
+        def session_map(proxy_user, client_user, address):
+            return {"proxy_user": {"user_name": proxy_user, "irods_zone": "tempZone"},
+                    "client_user": {"user_name": client_user, "irods_zone": "tempZone"},
+                    "connection": {"client_address": address}}
+
+        # Anonymous user from permitted addresses
+        self.assertIsNone(get_session_refusal_reason(ctx, session_map("anonymous", "anonymous", "127.0.0.1")))
+        self.assertIsNone(get_session_refusal_reason(ctx, session_map("anonymous", "anonymous", "1.2.3.4")))
+
+        # Anonymous user from an address that is not permitted
+        self.assertIsNotNone(get_session_refusal_reason(ctx, session_map("anonymous", "anonymous", "1.2.3.5")))
+
+        # Anonymous proxy user with a different client user from an address that is not permitted
+        self.assertIsNotNone(get_session_refusal_reason(ctx, session_map("anonymous", "researcher", "1.2.3.5")))
+
+        # Rodsadmin acting on behalf of the anonymous user (server-to-server connection)
+        self.assertIsNone(get_session_refusal_reason(ctx, session_map("rods", "anonymous", "1.2.3.5")))
+
+        # Regular user from any address
+        self.assertIsNone(get_session_refusal_reason(ctx, session_map("researcher", "researcher", "1.2.3.5")))
+
+        # Regular user that exceeds the maximum number of connections
+        mock_max_connections_exceeded.return_value = True
+        self.assertIsNotNone(get_session_refusal_reason(ctx, session_map("researcher", "researcher", "1.2.3.5")))
 
     def test_is_forwarded_pam_auth_request(self):
         # Auth request from admin with pam_password scheme
