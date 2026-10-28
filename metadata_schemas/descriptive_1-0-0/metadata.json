@@ -596,7 +596,7 @@
     "Language": {
       "$ref": "#/$defs/optionsISO639-1",
       "title": "Language of the data",
-      "default": "en"
+      "default": "en - English"
     },
     "Discipline": {
       "type": "array",
