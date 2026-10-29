@@ -117,7 +117,7 @@ def building_block_present(api_response, block):
     _, body = api_response
 
     assert body['data']
-    assert block in body['data']
+    assert any(block in building_block for building_block in body['data'])
 
 
 @then(parsers.parse('schema contains building block {block}'))
