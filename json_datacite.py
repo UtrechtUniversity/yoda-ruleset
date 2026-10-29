@@ -251,8 +251,8 @@ def get_contributors(combi: Dict) -> List:
         try:
             all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
                         'nameType': 'Personal',
-                        # 'givenName': person['Name']['Given_Name'],
-                        # 'familyName': person['Name']['Family_Name'],
+                        'givenName': person['Name']['Given_Name'],
+                        'familyName': person['Name']['Family_Name'],
                         'affiliation': affiliations,
                         'contributorType':  person['Contributor_Type'],
                         'nameIdentifiers': name_ids})
@@ -260,7 +260,7 @@ def get_contributors(combi: Dict) -> List:
             pass
 
     # 2) Contactperson
-    for person in combi.get('ContactPerson', []):
+    for person in combi.get('Contact', []):
         aff_list = person.get('Affiliation', [])
         # if affiliation is string, transform it to list to process
         if isinstance(aff_list, str):
@@ -280,7 +280,7 @@ def get_contributors(combi: Dict) -> List:
                         'givenName': person['Name']['Given_Name'],
                         'familyName': person['Name']['Family_Name'],
                         'affiliation': affiliations,
-                        'contributorType': 'Contact',
+                        'contributorType': 'ContactPerson',
                         'nameIdentifiers': name_ids})
         except KeyError:
             pass
