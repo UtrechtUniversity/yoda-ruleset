@@ -230,8 +230,8 @@ class JsonDataciteContactPersonTest(TestCase):
 
         :returns: Combined JSON structure with a single contact person
         """
-        return {'ContactPerson': [{'Name': {'Given_Name': 'Jane', 'Family_Name': 'Doe'},
-                                   'Affiliation': affiliation}]}
+        return {'Contact': [{'Name': {'Given_Name': 'Jane', 'Family_Name': 'Doe'},
+                             'Affiliation': affiliation}]}
 
     def test_affiliation_without_name(self) -> None:
         """Contact person with an affiliation that only has an identifier"""
@@ -257,14 +257,14 @@ class JsonDataciteContactPersonTest(TestCase):
         combi = {'Contributor': [{'Name': {'Given_Name': 'Jane', 'Family_Name': 'Doe'},
                                   'Contributor_Type': 'DataCurator',
                                   'Affiliation': [{'Affiliation_Identifier': 'https://ror.org/04pp8hn57'}]}],
-                 'ContactPerson': [{'Name': {'Given_Name': 'John', 'Family_Name': 'Doe'},
-                                    'Affiliation': [{'Affiliation_Identifier': 'https://ror.org/123456789'}]}]}
+                 'Contact': [{'Name': {'Given_Name': 'John', 'Family_Name': 'Doe'},
+                              'Affiliation': [{'Affiliation_Identifier': 'https://ror.org/123456789'}]}]}
         output = get_contributors(combi)
         self.assertEqual(len(output), 2)
         self.assertEqual(output[0]['contributorType'], 'DataCurator')
         self.assertEqual(output[0]['affiliation'], [{'affiliationIdentifier': 'https://ror.org/04pp8hn57',
                                                      'affiliationIdentifierScheme': 'ROR'}])
-        self.assertEqual(output[1]['contributorType'], 'Contact')
+        self.assertEqual(output[1]['contributorType'], 'ContactPerson')
         self.assertEqual(output[1]['affiliation'], [{'affiliationIdentifier': 'https://ror.org/123456789',
                                                      'affiliationIdentifierScheme': 'ROR'}])
 
