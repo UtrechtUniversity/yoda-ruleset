@@ -4,7 +4,7 @@ __copyright__ = 'Copyright (c) 2025-2026, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import copy
-from typing import Tuple
+from typing import Tuple, Union
 
 
 def is_unsupported_schema(schema_id: str) -> bool:
@@ -43,6 +43,25 @@ def is_valid_schema_identifier(identifier: str) -> bool:
     if len(identifier) > 50:
         return False
     if not identifier.isalnum():
+        return False
+    return True
+
+
+def is_valid_schema_name(name: str) -> bool:
+    """Validate composed schema name.
+
+    - Non-empty string
+    - Max 50 characters
+
+    :param name: Composed schema name to validate
+
+    :returns: True if valid, False otherwise
+    """
+    if not name or not isinstance(name, str):
+        return False
+    if not name.strip():
+        return False
+    if len(name) > 50:
         return False
     return True
 
@@ -203,10 +222,13 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
         "required": required_fields,
     }
 
-    uischema = {}
+    uischema: dict[str, Union[dict, list]] = {}
+
     for block, ui_schema in zip(schemas, uischemas):
         uischema[block["title"]] = ui_schema
 
     uischema["ui:order"] = [block["title"] for block in schemas]
+
+    return schema, uischema
 
     return schema, uischema
