@@ -71,6 +71,7 @@ def get_composed_schemas(ctx: rule.Context) -> list[dict]:
     zone = user.zone(ctx)
     avus = avu.of_coll(ctx, f"/{zone}/yoda/composed_schemas")
     composed_schemas = []
+    schemas_in_use = get_schema_ids_in_use(ctx)
 
     for schema in avus:
         if schema.attr.startswith(f"{constants.SCHEMA}_"):
@@ -80,11 +81,28 @@ def get_composed_schemas(ctx: rule.Context) -> list[dict]:
                 log.write(ctx, f"Failed to parse schema JSON of <{schema.attr}>: {e}")
 
             if schema_utils.is_valid_composed_schema_structure(composed_schema):
+                composed_schema["in_use"] = composed_schema["identifier"] in schemas_in_use
                 composed_schemas.append(composed_schema)
             else:
                 log.write(ctx, f"Invalid structure of composed metadata schema <{schema.attr}>: {str(composed_schema)}")
 
     return composed_schemas
+
+
+def get_schema_ids_in_use(ctx: rule.Context) -> set[str]:
+    """Get schema identifiers assigned to groups."""
+    schemas_in_use = set()
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'",
+        genquery.AS_LIST, ctx
+    )
+
+    for schema_id, in iter:
+        schemas_in_use.add(schema_id)
+
+    return schemas_in_use
 
 
 @api.make()
@@ -288,6 +306,9 @@ def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api
         return api.Error('not_allowed', 'Only admins can delete composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
+
+    if identifier in get_schema_ids_in_use(ctx):
+        return api.Error('bad_request', 'Cannot delete a composed schema that is in use')
 
     try:
         zone = user.zone(ctx)
