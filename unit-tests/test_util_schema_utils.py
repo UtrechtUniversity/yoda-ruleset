@@ -14,6 +14,7 @@ from schema_utils import (
     is_valid_composed_schema_structure,
     is_valid_schema_description,
     is_valid_schema_identifier,
+    is_valid_schema_name,
 )
 
 
@@ -43,6 +44,22 @@ class SchemaUtilsTest(TestCase):
         self.assertFalse(is_valid_schema_identifier("schema name"))  # Contains space
         self.assertFalse(is_valid_schema_identifier("schema_name"))  # Contains underscore
         self.assertFalse(is_valid_schema_identifier("schema@name"))  # Contains special char
+
+    def test_is_valid_schema_name_valid(self):
+        """Test valid schema name."""
+        self.assertTrue(is_valid_schema_name("A test schema name"))
+        self.assertTrue(is_valid_schema_name("Minimal name"))
+        self.assertTrue(is_valid_schema_name("a" * 50))  # Max length
+        self.assertTrue(is_valid_schema_name(" Name with surrounding spaces "))
+
+    def test_is_valid_schema_name_invalid(self):
+        """Test invalid schema name."""
+        self.assertFalse(is_valid_schema_name(""))            # Empty string
+        self.assertFalse(is_valid_schema_name(None))          # None
+        self.assertFalse(is_valid_schema_name(123))           # Not a string
+        self.assertFalse(is_valid_schema_name("a" * 51))      # Exceeds max length
+        self.assertFalse(is_valid_schema_name(" "))           # Whitespace-only
+        self.assertFalse(is_valid_schema_name("   "))         # Whitespace-only
 
     def test_is_valid_schema_description_valid(self):
         """Test valid schema descriptions."""
