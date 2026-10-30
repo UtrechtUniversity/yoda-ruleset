@@ -12,7 +12,9 @@ sys.path.append('../util')
 from metadata_utils import get_json_metadata_errors, humanize_validation_error
 
 
-class MetadataUtilsTest(TestCase):
+class MetadataUtilsTests:
+    SCHEMA_URI = None
+
     SAMPLE_SCHEMA = """
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -53,6 +55,15 @@ class MetadataUtilsTest(TestCase):
   "unevaluatedProperties": false
 }
    """
+
+    def setUp(self):
+        super().setUp()
+        draft_2020_uri = 'https://json-schema.org/draft/2020-12/schema'
+        self.SAMPLE_SCHEMA = self.SAMPLE_SCHEMA.replace(
+            draft_2020_uri, self.SCHEMA_URI)
+        self.SAMPLE_SCHEMA_UNEVALUATED_PROPERTIES = (
+            self.SAMPLE_SCHEMA_UNEVALUATED_PROPERTIES.replace(
+                draft_2020_uri, self.SCHEMA_URI))
 
     def test_get_json_metadata_errors_correct(self):
         errors = get_json_metadata_errors(None,
@@ -178,3 +189,11 @@ class MetadataUtilsTest(TestCase):
         ])
         self.assertEqual(humanize_validation_error(errors[0]),
                          'This field contains an error: medium')
+
+
+class MetadataUtilsDraft201909Test(MetadataUtilsTests, TestCase):
+    SCHEMA_URI = 'https://json-schema.org/draft/2019-09/schema'
+
+
+class MetadataUtilsDraft202012Test(MetadataUtilsTests, TestCase):
+    SCHEMA_URI = 'https://json-schema.org/draft/2020-12/schema'
