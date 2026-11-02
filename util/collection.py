@@ -87,8 +87,10 @@ def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
 
     :returns: Number of data objects
     """
-    # Generators can't be fed to len(), so here we are...
-    return sum(1 for _ in data_objects(ctx, path, recursive=recursive))
+    return list(genquery.Query(ctx, "count(distinct DATA_NAME)",
+                               t("COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'") if recursive else
+                               t("COLL_NAME = '{path}'"),
+                               output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))[0][0]
 
 
 def collection_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
