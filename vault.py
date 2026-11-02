@@ -604,62 +604,31 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
     size_readable = misc.human_readable_size(size)
     system_metadata["Data Package Size"] = f"{data_count} files, {collection_count} folders, total of {size_readable}"
 
-    # Modified date.
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'"),
-        genquery.AS_LIST, ctx
-    )
+    # Modified date, landing page URL, data package reference, persistent identifier EPIC
+    iter = list(genquery.Query(ctx,
+                               "distinct META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME",
+                               t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME IN ('org_publication_lastModifiedDateTime', 'org_publication_landingPageUrl', '{constants.DATA_PACKAGE_REFERENCE}', 'org_epic_pid', 'org_epic_url')"),
+                               output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2))
 
     for row in iter:
-        modified_date = parser.parse(row[0])
-        modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
-        system_metadata["Modified date"] = str(modified_date_time)
-
-    # Landingpage URL.
-    landinpage_url = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'"),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        landinpage_url = row[0]
-        system_metadata["Landingpage"] = f"<a href=\"{landinpage_url}\">{landinpage_url}</a>"
-
-    # Data Package Reference.
-    data_package_reference = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = '{constants.DATA_PACKAGE_REFERENCE}'"),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        data_package_reference = row[0]
-        system_metadata["Data Package Reference"] = f"<a href=\"yoda/{data_package_reference}\">yoda/{data_package_reference}</a>"
-
-    # Persistent Identifier EPIC.
-    package_epic_pid = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_epic_pid'"),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        package_epic_pid = row[0]
-
-    package_epic_url = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME = 'org_epic_url'"),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        package_epic_url = row[0]
+        landinpage_url = ""
+        data_package_reference = ""
+        package_epic_pid = ""
+        package_epic_url = ""
+        if row[1] == 'org_publication_lastModifiedDateTime':
+            modified_date = parser.parse(row[0])
+            modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')
+            system_metadata["Modified date"] = str(modified_date_time)
+        elif row[1] == 'org_publication_landingPageUrl':
+            landinpage_url = row[0]
+            system_metadata["Landingpage"] = f"<a href=\"{landinpage_url}\">{landinpage_url}</a>"
+        elif row[1] == constants.DATA_PACKAGE_REFERENCE:
+            data_package_reference = row[0]
+            system_metadata["Data Package Reference"] = f"<a href=\"yoda/{data_package_reference}\">yoda/{data_package_reference}</a>"
+        elif row[1] == 'org_epic_pid':
+            package_epic_pid = row[0]
+        elif row[1] == 'org_epic_url':
+            package_epic_url = row[0]
 
     if package_epic_pid:
         if package_epic_url:
