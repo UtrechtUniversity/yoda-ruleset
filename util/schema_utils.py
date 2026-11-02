@@ -170,9 +170,6 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
                         "#/definitions/", f"#/$defs/{block_name}_"
                     )
 
-                    if item == f"#/$defs/{block_name}_optionsNameIdentifierScheme":
-                        item = "#/$defs/optionsNameIdentifierScheme"
-
                 result[key] = normalize(item, block_name)
 
             return result
@@ -198,12 +195,7 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
         block_defs.update(schema.pop("definitions", {}) or {})
 
         for def_name, def_schema in block_defs.items():
-            if def_name == "optionsNameIdentifierScheme":
-                definitions[def_name] = normalize(def_schema, name)
-            else:
-                definitions[f"{name}_{def_name}"] = normalize(
-                    def_schema, name
-                )
+            definitions[f"{name}_{def_name}"] = normalize(def_schema, name)
 
         definitions[name] = normalize(schema, name)
         properties[name] = {
@@ -228,7 +220,5 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
         uischema[block["title"]] = ui_schema
 
     uischema["ui:order"] = [block["title"] for block in schemas]
-
-    return schema, uischema
 
     return schema, uischema
