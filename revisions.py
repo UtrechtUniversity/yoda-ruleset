@@ -714,12 +714,12 @@ def get_all_revision_data_ids(ctx: rule.Context) -> Iterator[Tuple[str, str]]:
 
         :param ctx:  Combined type of a callback and rei struct
 
-        :yields: iterator of 2-tuples containing collection and data object IDs
+        :yields: iterator of 2-tuples containing original path and data object ID
     """
     revision_store = get_revision_store_path(user.zone(ctx))
 
     revision_objects = genquery.row_iterator(
-        "order_desc(COLL_ID), DATA_ID",
+        "order(META_DATA_ATTR_VALUE), DATA_ID",
         "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "'"
         " AND COLL_NAME like '" + revision_store + "/%'",
         genquery.AS_LIST, ctx)
@@ -757,8 +757,8 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
 
        :param ctx:               Combined type of a callback and rei struct
        :param target_batch_size: Number of revisions to aim for in one batch. The real batch size can be
-                                 more, because all revision objects in one collection are always in the
-                                 same batch.
+                                 slightly more, because all revisions of one original data object are always in
+                                 the same batch.
 
        :returns:                 Status
 
@@ -774,53 +774,53 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
 
     ingest_state = {
         "batch": [],
-        "current_coll": None,
-        "objects_for_current_coll": []
+        "current_original": None,
+        "objects_for_current_original": []
     }
     number_revisions = 0
 
-    def ingest_new_data_id(ctx: rule.Context, coll_id: str, data_id: str, ingest_state: dict, target_batch_size: int) -> None:
-        """Read data object. Store it in ingest state as long as its collection ID is the same as
-           the previous one, so that all data objects in the same collection are
+    def ingest_new_data_id(ctx: rule.Context, original_path: str, data_id: str, ingest_state: dict, target_batch_size: int) -> None:
+        """Read data object. Store it in ingest state as long as its original path is the same as
+           the previous one, so that all revisions of the same original data object are
            part of the same batch.
 
-           If the new data object has a different collection ID from the previous
+           If the new data object has a different original path from the previous
            ones, flush previously collected data objects to the batch buffer, and if
            needed from there to the spool queue.
 
            :param ctx:               combined type of a callback and rei struct
-           :param coll_id:           collection ID
+           :param original_path:     path of the original data object
            :param data_id:           data object ID
            :param ingest_state:      ingest state dictionary
            :param target_batch_size: target batch size
         """
-        if coll_id == ingest_state["current_coll"]:
-            ingest_state["objects_for_current_coll"].append(data_id)
+        if original_path == ingest_state["current_original"]:
+            ingest_state["objects_for_current_original"].append(data_id)
         else:
             if (len(ingest_state["batch"]) > 0
-                    and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_coll"]) >= target_batch_size):
+                    and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_original"]) >= target_batch_size):
                 put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
                 ingest_state["batch"] = []
 
-            ingest_state["batch"].extend(ingest_state["objects_for_current_coll"])
-            ingest_state["objects_for_current_coll"] = [data_id]
-            ingest_state["current_coll"] = coll_id
+            ingest_state["batch"].extend(ingest_state["objects_for_current_original"])
+            ingest_state["objects_for_current_original"] = [data_id]
+            ingest_state["current_original"] = original_path
 
             if len(ingest_state["batch"]) >= target_batch_size:
                 log.write(ctx, "Flush batch 2 " + str(ingest_state["batch"]))
                 put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
                 ingest_state["batch"] = []
 
-    for (coll_id, data_id) in get_all_revision_data_ids(ctx):
+    for (original_path, data_id) in get_all_revision_data_ids(ctx):
         number_revisions += 1
-        ingest_new_data_id(ctx, coll_id, data_id, ingest_state, int(target_batch_size))
+        ingest_new_data_id(ctx, original_path, data_id, ingest_state, int(target_batch_size))
 
     if (len(ingest_state["batch"]) > 0
-            and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_coll"]) >= int(target_batch_size)):
+            and len(ingest_state["batch"]) + len(ingest_state["objects_for_current_original"]) >= int(target_batch_size)):
         put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
         ingest_state["batch"] = []
 
-    ingest_state["batch"].extend(ingest_state["objects_for_current_coll"])
+    ingest_state["batch"].extend(ingest_state["objects_for_current_original"])
     if len(ingest_state["batch"]) > 0:
         put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
 
