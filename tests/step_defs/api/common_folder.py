@@ -141,7 +141,7 @@ def folder_status(user, folder, status):
     if status == "FOLDER":
         status = ""
 
-    for _i in range(30):
+    for _i in range(75):
         _, body = api_request(
             user,
             "research_collection_details",
@@ -150,7 +150,7 @@ def folder_status(user, folder, status):
 
         if body["data"]["status"] == status:
             return True
-        time.sleep(5)
+        time.sleep(2)
 
     raise AssertionError()
 
@@ -166,7 +166,7 @@ def folder_locks(api_response, folder):
 def folder_does_not_exist(user, folder):
     parent_folder, target = os.path.split(folder.rstrip('/'))
 
-    for _ in range(30):
+    for _ in range(75):
         _, body = api_request(
             user,
             "browse_folder",
@@ -177,6 +177,6 @@ def folder_does_not_exist(user, folder):
         if not any(entry.get("name") == target for entry in items):
             return True
 
-        time.sleep(5)
+        time.sleep(2)
 
     raise AssertionError(f"Folder {folder} still exists after timeout")
