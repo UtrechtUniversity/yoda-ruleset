@@ -50,12 +50,12 @@ Feature: Deposit API (restricted)
         And deposit exists
         And the Yoda deposit submit API is queried
         Then the response status code is "200"
+        And deposit is archived
 
 
     Scenario Outline: Deposit not accessible for viewer
         Given user researcher is authenticated
-        And deposit exists
-        And deposit is archived
+        And archived deposit exists
         And user viewer is authenticated
         And the Yoda browse collections API is queried with <collection>
         Then the response status code is "200"
