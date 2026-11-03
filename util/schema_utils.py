@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 import copy
 from typing import Tuple, Union
 
+from jsonschema import Draft202012Validator, exceptions
+
 
 def is_unsupported_schema(schema_id: str) -> bool:
     """
@@ -141,6 +143,15 @@ def is_valid_composed_schema_structure(schema: dict) -> bool:
             return False
 
     return True
+
+
+def is_valid_json_schema(schema: dict) -> bool:
+    """Check whether a schema is a valid JSON Schema."""
+    try:
+        Draft202012Validator.check_schema(schema)
+        return True
+    except exceptions.SchemaError:
+        return False
 
 
 def merge_building_blocks(identifier: str, title: str, description: str, schemas: list[dict], uischemas: list[dict]) -> Tuple[dict, dict]:
