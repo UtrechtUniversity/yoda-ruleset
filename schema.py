@@ -215,7 +215,6 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
     building_blocks = get_building_blocks(ctx)
     if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
         return api.Error('bad_request', 'Invalid schema building block list')
-
     required_blocks = set(REQUIRED_BUILDING_BLOCKS)
     if not required_blocks.issubset(set(blocks)):
         return api.Error('bad_request', 'All required building blocks must be selected')
@@ -224,7 +223,22 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
         if schema["identifier"] == identifier:
             return api.Error('schema_exists', f"Composed schemas with name <{identifier}> already exists")
 
+    available_blocks_by_id = {
+        block_id: block_data
+        for item in building_blocks
+        for block_id, block_data in item.items()
+    }
+
     try:
+        schemas = [available_blocks_by_id[block]["schema"] for block in blocks]
+        uischemas = [available_blocks_by_id[block]["ui_schema"] for block in blocks]
+        schema, _ = schema_utils.merge_building_blocks(
+            identifier, name, description, schemas, uischemas
+        )
+
+        if not schema_utils.is_valid_json_schema(schema):
+            return api.Error('bad_request', 'Invalid composed metadata schema')
+
         composed_schema = {
             "identifier": identifier,
             "name": name,
@@ -234,6 +248,7 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
         zone = user.zone(ctx)
         avu.set_on_coll(ctx, f"/{zone}/yoda/composed_schemas", f"{constants.SCHEMA}_{identifier}", jsonutil.fast_dump(composed_schema))
     except Exception:
+        log.write(ctx, f"Failed to post composed schema <{identifier}>")
         return api.Error('internal', f"Failed to post composed schemas <{identifier}>")
 
     return api.Result.ok()
@@ -262,6 +277,9 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str
     building_blocks = get_building_blocks(ctx)
     if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
         return api.Error('bad_request', 'Invalid schema building block list')
+    required_blocks = set(REQUIRED_BUILDING_BLOCKS)
+    if not required_blocks.issubset(set(blocks)):
+        return api.Error('bad_request', 'All required building blocks must be selected')
 
     # Verify schema exists before update.
     existing_schema = None
@@ -278,7 +296,22 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str
     if not existing_blocks.issubset(set(blocks)):
         return api.Error('bad_request', 'Cannot remove blocks from existing schema')
 
+    available_blocks_by_id = {
+        block_id: block_data
+        for item in building_blocks
+        for block_id, block_data in item.items()
+    }
+
     try:
+        schemas = [available_blocks_by_id[block]["schema"] for block in blocks]
+        uischemas = [available_blocks_by_id[block]["ui_schema"] for block in blocks]
+        schema, _ = schema_utils.merge_building_blocks(
+            identifier, name, description, schemas, uischemas
+        )
+
+        if not schema_utils.is_valid_json_schema(schema):
+            return api.Error('bad_request', 'Invalid composed metadata schema')
+
         composed_schema = {
             "identifier": identifier,
             "name": name,
@@ -288,6 +321,7 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str
         zone = user.zone(ctx)
         avu.set_on_coll(ctx, f"/{zone}/yoda/composed_schemas", f"{constants.SCHEMA}_{identifier}", jsonutil.fast_dump(composed_schema))
     except Exception:
+        log.write(ctx, f"Failed to put composed schema <{identifier}>")
         return api.Error('internal', f"Failed to put composed schemas <{identifier}>")
 
     return api.Result.ok()
