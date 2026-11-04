@@ -1505,7 +1505,7 @@ def _test_collection_data_count(ctx: rule.Context) -> bool:
         data_object.write(ctx, f"{subcoll}/test.txt", b"test")
         data_count += 1
 
-    result = collection.data_count(ctx, coll) == str(data_count)
+    result = collection.data_count(ctx, coll) == data_count
 
     # Remove test data
     cmd = ["irm", "-r", coll]

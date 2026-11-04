@@ -208,6 +208,13 @@ def api_deposit_status_return(api_response):
     assert body["data"]["metadata"]
 
 
+@then('deposit status is returned without data')
+def api_deposit_status_return_without_data(api_response):
+    _, body = api_response
+    assert body["data"]["data"] is False
+    assert body["data"]["metadata"]
+
+
 @then('the browse result contains deposit')
 def api_response_contains(api_response, deposit_name):
     _, body = api_response
