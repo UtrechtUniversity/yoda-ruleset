@@ -1059,7 +1059,6 @@ def rule_run_integration_tests(ctx, tests):
         cov = measure_coverage.start_coverage()
 
     return_value = ""
-    log.write(ctx, "Running")
 
     if config.environment != "development":
         log.write(ctx, "Error: integration tests can only run on development environment.")
@@ -1138,7 +1137,6 @@ def _call_dir_list(ctx, dirname, resc_name):
     if config.enable_nfs_resource:
         dirname = dirname.replace("/var/lib/irods/", "/nfs/")
     ret = msi.dir_list(ctx, dirname, resc_name, "")
-    print(ret['arguments'][2])
     result_len = len(json.loads(ret['arguments'][2]))
     dir_len = len([entry for entry in os.listdir(dirname) if os.path.isdir(dirname + '/' + entry)])
     return result_len == dir_len
