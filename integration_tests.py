@@ -859,6 +859,9 @@ basic_integration_tests = [
     {"name":   "util.collection.owner",
      "test": lambda ctx: collection.owner(ctx, "/tempZone/yoda"),
      "check": lambda x: x == ('rods', 'tempZone')},
+    {"name":   "util.collection.data_count",
+     "test": lambda ctx: _test_collection_data_count(ctx),
+     "check": lambda x: x is True},
     {"name":   "util.collection.subcollections",
      "test": lambda ctx: _test_collection_subcollections(ctx),
      "check": lambda x: x == []},
@@ -1479,6 +1482,40 @@ def _test_has_dataobjects_modified_after(ctx: rule.Context) -> List[str]:
         result.append("Fail for collection with nested data objects (fallback/after)")
 
     collection.remove(ctx, testcollection)
+
+    return result
+
+
+def _test_collection_data_count(ctx: rule.Context) -> bool:
+    basepath = f"/{user.zone(ctx)}/home/rods"
+    coll = f"{basepath}/test_data_count"
+    folder_names = ["data1", "data2", "data3"]
+
+    # Set up test data
+    data_count = 0
+    if not collection.exists(ctx, coll):
+        collection.create(ctx, coll)
+    data_object.write(ctx, f"{coll}/test.txt", b"test")
+    data_count += 1
+
+    for name in folder_names:
+        subcoll = os.path.join(coll, name)
+        if not collection.exists(ctx, subcoll):
+            collection.create(ctx, subcoll)
+        data_object.write(ctx, f"{subcoll}/test.txt", b"test")
+        data_count += 1
+
+    result = collection.data_count(ctx, coll) == str(data_count)
+
+    # Remove test data
+    cmd = ["irm", "-r", coll]
+    environment = dict(os.environ)
+
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE, env=environment)
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        raise RuntimeError(f"failure during cleanup test data collections.data_count {stderr.decode()}")
 
     return result
 
