@@ -1324,11 +1324,11 @@ def _test_copy_acls_from_parent(ctx: rule.Context) -> List[str]:
     unexpected_results = []
 
     if (test_read_user, "read_object") not in acls_with_names_result:
-        print("Read privileges not copied")
+        unexpected_results.append("Read privileges not copied")
     if (test_write_user, "modify_object") not in acls_with_names_result:
-        print("Write privileges not copied")
+        unexpected_results.append("Write privileges not copied")
     if (test_own_user, "own") not in acls_with_names_result:
-        print("Ownership privileges not copied")
+        unexpected_results.append("Ownership privileges not copied")
 
     collection.remove(ctx, sub_path)
     collection.remove(ctx, main_path)
