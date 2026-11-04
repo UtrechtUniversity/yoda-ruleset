@@ -807,7 +807,6 @@ def rule_revisions_cleanup_collect(ctx: rule.Context, target_batch_size: str) ->
             ingest_state["current_coll"] = coll_id
 
             if len(ingest_state["batch"]) >= target_batch_size:
-                log.write(ctx, "Flush batch 2 " + str(ingest_state["batch"]))
                 put_spool_data(constants.PROC_REVISION_CLEANUP_SCAN, [ingest_state["batch"]])
                 ingest_state["batch"] = []
 
