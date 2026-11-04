@@ -87,7 +87,7 @@ def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
 
     :returns: Number of data objects
     """
-    return list(genquery.Query(ctx, "count(distinct DATA_NAME)",
+    return list(genquery.Query(ctx, "count(distinct DATA_ID)",
                                t("COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'") if recursive else
                                t("COLL_NAME = '{path}'"),
                                output=genquery.AS_LIST, limit=1, parser=genquery.Parser.GENQUERY2))[0][0]
