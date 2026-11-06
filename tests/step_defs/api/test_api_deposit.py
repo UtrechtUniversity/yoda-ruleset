@@ -54,9 +54,27 @@ def deposit_exists(user):
     return body["data"]["items"][0]["name"]
 
 
-@given('deposit is archived')
-def deposit_is_archived(user):
-    time.sleep(45)
+@then('deposit is archived')
+def deposit_is_archived(user, deposit_name):
+    # Copy-to-vault runs asynchronously, typically with either a 5 second
+    # interval (CI API/integration tests) or a 60 second interval (regular setup), so
+    # we need to wait for a while to see if the package shows up if it's not there
+    # yet.
+    http_status, names = None, []
+    for _i in range(150):
+        http_status, body = api_request(
+            user,
+            "browse_collections",
+            {"coll": "/tempZone/home/vault-pilot", "sort_order": "desc"}
+        )
+
+        if http_status == 200:
+            names = [item["name"] for item in body["data"]["items"]]
+            if any(name.startswith(deposit_name) for name in names):
+                return True
+        time.sleep(2)
+
+    raise AssertionError(f"Deposit {deposit_name} not archived after timeout (last status: {http_status}, vault items: {names})")
 
 
 @given('archived deposit exists', target_fixture="deposit_name")

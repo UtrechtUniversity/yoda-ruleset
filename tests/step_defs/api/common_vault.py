@@ -169,7 +169,7 @@ def api_vault_copy_to_research_space(user, vault, data_package, research):
 
 @then(parsers.parse('data package in {vault} status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
-    for _i in range(25):
+    for _i in range(60):
         _, body = api_request(
             user,
             "vault_collection_details",
@@ -178,7 +178,7 @@ def data_package_status(user, vault, data_package, status):
 
         if body["data"]["status"] == status:
             return True
-        time.sleep(5)
+        time.sleep(2)
 
     raise AssertionError()
 
@@ -236,7 +236,7 @@ def published_packages(api_response):
 
 @then(parsers.parse("data package exists in {research}"))
 def api_research_data_package(user, data_package, research):
-    for _i in range(30):
+    for _i in range(90):
         http_status, body = api_request(
             user,
             "browse_collections",
@@ -247,6 +247,6 @@ def api_research_data_package(user, data_package, research):
         for item in body["data"]["items"]:
             if item["name"] == data_package:
                 return True
-        time.sleep(5)
+        time.sleep(2)
     # If we reach this point, the data package was not found
     raise AssertionError()

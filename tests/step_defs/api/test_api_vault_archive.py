@@ -72,7 +72,7 @@ def data_package_archivable(user, vault, data_package):
 
 @then(parsers.parse('data package in {vault} archival status is "{status}"'))
 def data_package_archival_status(user, vault, data_package, status):
-    for _i in range(36):
+    for _i in range(150):
         _, body = api_request(
             user,
             "vault_collection_details",
@@ -83,6 +83,6 @@ def data_package_archival_status(user, vault, data_package, status):
             return True
         if status == "unarchived" and body["data"]["archive"]["archivable"] and not body["data"]["archive"]["status"]:
             return True
-        time.sleep(10)
+        time.sleep(2)
 
     raise AssertionError()

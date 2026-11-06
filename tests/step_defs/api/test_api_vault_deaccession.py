@@ -65,7 +65,7 @@ def data_package_status(user, vault, data_package, status):
     if status == "ACTIVE":
         status = ""
 
-    for _i in range(36):
+    for _i in range(150):
         _, body = api_request(
             user,
             "vault_collection_details",
@@ -74,6 +74,6 @@ def data_package_status(user, vault, data_package, status):
 
         if body["data"]["deaccession"]["status"] == status:
             return True
-        time.sleep(10)
+        time.sleep(2)
 
     raise AssertionError()
