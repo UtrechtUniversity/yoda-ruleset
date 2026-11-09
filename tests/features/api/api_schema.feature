@@ -34,6 +34,7 @@ Feature: Schema API
         And default schema is present
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema get building blocks
         Given user <user> is authenticated
         And the Yoda schema get building blocks schemas API is queried
@@ -60,6 +61,7 @@ Feature: Schema API
             | datamanager | temporal-coverage_1-0-0 |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema post composed schemas
         Given user <user> is authenticated
         And the Yoda schema post composed schemas API is queried with <identifier>
@@ -71,6 +73,7 @@ Feature: Schema API
             | functionaladminpriv | api2       |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema post composed schemas already exist
         Given user <user> is authenticated
         And the Yoda schema post composed schemas API is queried with <identifier>
@@ -82,6 +85,7 @@ Feature: Schema API
             | functionaladminpriv | api2       |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema put composed schemas
         Given user <user> is authenticated
         And the Yoda schema put composed schemas API is queried with <identifier>
@@ -93,6 +97,7 @@ Feature: Schema API
             | functionaladminpriv | api2       |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema get composed schemas
         Given user <user> is authenticated
         And the Yoda schema get composed schemas API is queried
@@ -107,6 +112,7 @@ Feature: Schema API
             | functionaladminpriv | api2   |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema get composed schema
         Given user <user> is authenticated
         And the Yoda schema get composed schema API is queried with <identifier>
@@ -121,6 +127,7 @@ Feature: Schema API
             | functionaladminpriv | api2       | access-rights_1-0-0 |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema delete composed schemas
         Given user <user> is authenticated
         And the Yoda schema delete composed schemas API is queried with <identifier>
@@ -132,6 +139,7 @@ Feature: Schema API
             | functionaladminpriv | api2       |
 
 
+    @metadata_schema_composer
     Scenario Outline: Schema get composed schema after deletion
         Given user <user> is authenticated
         And the Yoda schema get composed schema API is queried with <identifier>

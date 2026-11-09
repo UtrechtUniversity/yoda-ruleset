@@ -90,7 +90,12 @@ def get_composed_schemas(ctx: rule.Context) -> list[dict]:
 
 
 def get_schema_ids_in_use(ctx: rule.Context) -> set[str]:
-    """Get schema identifiers assigned to groups."""
+    """Get schema identifiers assigned to groups.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Set of composed schemas in use
+    """
     schemas_in_use = set()
 
     iter = genquery.row_iterator(
@@ -113,6 +118,9 @@ def api_schema_get_building_blocks(ctx: rule.Context) -> api.Result:
 
     :returns: List of schema building blocks
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     try:
         return get_building_blocks(ctx)
     except Exception:
@@ -127,6 +135,9 @@ def api_schema_get_composed_schemas(ctx: rule.Context) -> api.Result:
 
     :returns: List of all composed schemas
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     return get_composed_schemas(ctx)
 
 
@@ -139,6 +150,9 @@ def api_schema_get_composed_schema(ctx: rule.Context, identifier: str) -> api.Re
 
     :returns: Composed metadata schema
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     if not schema_utils.is_valid_schema_identifier(identifier):
         return api.Error('bad_request', 'Invalid composed schema identifier')
 
@@ -161,6 +175,9 @@ def api_schema_preview_composed_schema(ctx: rule.Context, blocks: list) -> api.R
 
     :returns: Composed metadata schema
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     building_blocks = get_building_blocks(ctx)
     if not schema_utils.is_valid_blocks_list([list(block.keys())[0] for block in building_blocks], blocks):
         return api.Error('bad_request', 'Invalid schema building block list')
@@ -204,6 +221,9 @@ def api_schema_post_composed_schema(ctx: rule.Context, identifier: str, name: st
 
     :returns: Boolean indicating if post succeeded
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     if not admin.is_admin(ctx, user.name(ctx)):
         return api.Error('not_allowed', 'Only admins can post composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
@@ -266,6 +286,9 @@ def api_schema_put_composed_schema(ctx: rule.Context, identifier: str, name: str
 
     :returns: Boolean indicating if put succeeded
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     if not admin.is_admin(ctx, user.name(ctx)):
         return api.Error('not_allowed', 'Only admins can put composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
@@ -336,6 +359,9 @@ def api_schema_delete_composed_schema(ctx: rule.Context, identifier: str) -> api
 
     :returns: Boolean indicating if composed schema is deleted
     """
+    if not config.enable_metadata_schema_composer:
+        return api.Error('not_allowed', 'Metadata Schema Composer is disabled')
+
     if not admin.is_admin(ctx, user.name(ctx)):
         return api.Error('not_allowed', 'Only admins can delete composed schemas')
     if not schema_utils.is_valid_schema_identifier(identifier):
