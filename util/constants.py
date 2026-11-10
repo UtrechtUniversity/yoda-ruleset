@@ -90,6 +90,8 @@ CRONJOB_STATE = {
 }
 """Cronjob states."""
 
+MAX_QUERY_LIMIT = 999999999
+
 
 class vault_package_state(Enum):
     """Vault package states."""
