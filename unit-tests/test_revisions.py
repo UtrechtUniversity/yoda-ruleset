@@ -9,10 +9,23 @@ from unittest import TestCase
 sys.path.append('..')
 
 from revision_strategies import get_revision_strategy
-from revision_utils import get_deletion_candidates, revision_cleanup_prefilter, revision_eligible
+from revision_utils import get_deletion_candidates, revision_cleanup_prefilter, revision_eligible, revision_eligible_quickcheck
 
 
 class RevisionTest(TestCase):
+
+    def test_revision_eligible_quickcheck(self):
+        # Happy flow
+        self.assertTrue(revision_eligible_quickcheck("/zone/home/research-test/obj"))
+
+        # Not in research space
+        self.assertFalse(revision_eligible_quickcheck("/zone/home/vault-test/obj"))
+
+        # Blocklist file
+        self.assertFalse(revision_eligible_quickcheck("/zone/home/research-test/.DS_Store"))
+
+        # Blocklist wildcard file
+        self.assertFalse(revision_eligible_quickcheck("/zone/home/research-test/._wildcard"))
 
     def test_revision_eligible(self):
         # Happy flow

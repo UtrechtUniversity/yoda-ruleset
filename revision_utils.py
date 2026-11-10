@@ -14,13 +14,39 @@ from revision_strategies import get_revision_strategy, RevisionStrategy
 from util import constants, log, pathutil, rule
 
 
+def revision_eligible_quickcheck(path: str) -> bool:
+    """Performs a partial but inexpensive check whether we can create a revision
+       for a given data object.
+
+       The goal of this is to determine synchronously on writes to data objects whether
+       a revision is possibly needed. The revision batch job will perform a full check
+       using the revision_eligible function asynchronously, so that it does not slow
+       down write operations.
+
+       :param path:                  Path to the given data object
+
+       :returns: boolean (True: this data object may need a revision,
+                          False, False: this data object should not get a revision
+    """
+
+    # Only create revisions for research space
+    space, _, _, _ = pathutil.info(path)
+    if space is not pathutil.Space.RESEARCH:
+        return False
+
+    if any(fnmatch.fnmatch(pathutil.basename(path), pattern) for pattern in constants.UUBLOCKLIST):
+        return False
+
+    return True
+
+
 def revision_eligible(max_size: int, data_obj_exists: bool, size: int, path: str, groups: List, revision_store_exists: bool) -> Tuple[bool, str]:
     """Determine whether can create a revision of given data object.
 
     :param max_size:              Max size that file can be to create a revision (in bytes)
     :param data_obj_exists:       Whether the data object exists
     :param size:                  Size of the data object
-    :param path:                  Path to the given data object (for logging)
+    :param path:                  Path to the given data object
     :param groups:                List of groups retrieved for this data object
     :param revision_store_exists: Whether revision store for this group exists
 
