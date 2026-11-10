@@ -388,15 +388,14 @@ def post_metadata_to_datacite(ctx: rule.Context, publication_state: dict, doi: s
         attributes['prefix'] = prefix
         attributes['suffix'] = suffix
 
-        # Remove the version's "IsVersionOf" entry, replace with "HasVersion"
+        # Remove the version's "IsVersionOf" and "IsNewVersionOf" entry, replace with "HasVersion"
         # for every known version of this base DOI (not just the current one).
+        version_dois = []
+        for _, v, _ in get_all_versions(ctx, publication_state['vaultPackage'], doi)[0]:
+            version_dois.append(v)
+
         related = [r for r in attributes['relatedIdentifiers']
-                   if r['relationType'] != 'IsVersionOf']
-        version_dois = {publication_state['versionDOI']}
-        version_dois.update(
-            version_doi
-            for _, version_doi, _ in get_all_versions(ctx, publication_state['vaultPackage'], doi)[0]
-        )
+                   if r['relatedIdentifier'] not in version_dois if r['relatedIdentifier'] != doi]
 
         related.extend({
             'relatedIdentifier': v_doi,
@@ -1124,6 +1123,9 @@ def process_publication(ctx: rule.Context, vault_package: str) -> str:
                 log.write(ctx, "Updating previous version AVU.")
             avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
             if verbose:
+                log.write(ctx, "Updating previous version dataCite metadata.")
+            update_previous_version_metadata(ctx, previous_publication_state, publication_state["versionDOI"])
+            if verbose:
                 log.write(ctx, "Updating previous version landing page.")
             previous_versions = get_all_versions(ctx, publication_state["previous_version"], publication_state["baseDOI"])[1]
             for item in previous_versions[1:]:
@@ -1643,6 +1645,12 @@ def update_publication(ctx: rule.Context,
             post_metadata_to_datacite(ctx, publication_state, publication_state["versionDOI"], 'put')
             if update_base_doi:
                 post_metadata_to_datacite(ctx, publication_state, publication_state["baseDOI"], 'put', base_doi=True)
+            if 'previous_version' in publication_state:
+                previous_vault_package = publication_state["previous_version"]
+                previous_publication_state = get_publication_state(ctx, previous_vault_package)
+                if verbose:
+                    log.write(ctx, "Updating metadata of previous publication in Datacite.")
+                update_previous_version_metadata(ctx, previous_publication_state, publication_state["versionDOI"])
         except Exception:
             log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + format_exc())
             publication_state["status"] = constants.publication_status.RETRY
@@ -1896,6 +1904,51 @@ def get_all_versions(ctx: rule.Context, path: str, doi: str) -> Tuple[List, List
             all_previous_versions.append([item[2], item[4]])
 
     return all_versions, all_previous_versions
+
+
+def update_previous_version_metadata(ctx: rule.Context, publication_state: dict, doi: str) -> None:
+    """Update previous version datacite metadata to link with the new version
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param publication_state: Dict of previous publication
+    :param doi:  Version DOI of the new publication
+
+    """
+
+    from requests.exceptions import ReadTimeout
+
+    datacite_json_path = publication_state["dataCiteJsonPath"]
+    datacite_json = data_object.read(ctx, datacite_json_path)
+
+    data = json.loads(datacite_json)
+    attributes = data['data']['attributes']
+    related = attributes['relatedIdentifiers']
+
+    # Add "IsPreviousVersionOf" entry to previous version to create
+    # linked list for dataCite metadata.
+    related.append({
+        'relatedIdentifier': doi,
+        'relatedIdentifierType': 'DOI',
+        'relationType': 'IsPreviousVersionOf'
+    })
+
+    attributes['relatedIdentifiers'] = related
+    datacite_json = json.dumps(data)
+    try:
+        response = datacite.metadata_put(publication_state['versionDOI'], datacite_json)
+
+        http_code = response.status_code
+
+        if http_code == 200:
+            publication_state["dataCiteMetadataPosted"] = "yes"
+        elif http_code in [401, 403, 500, 503, 504]:
+            # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+            log.write(ctx, f"post_metadata_to_datacite: HTTP code {http_code} received. Operation will be retried later. {datacite.get_errors(response.json())}")
+        else:
+            log.write(ctx, f"post_metadata_to_datacite: HTTP code {http_code} received. Unrecoverable error. {datacite.get_errors(response.json())}")
+    except ReadTimeout:
+        # DataCite timeout.
+        log.write(ctx, "post_metadata_to_datacite: DataCite timeout received. Operation will be retried later.")
 
 
 """Rule interface for processing publication of a vault package."""

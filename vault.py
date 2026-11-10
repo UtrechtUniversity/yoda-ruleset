@@ -1684,7 +1684,7 @@ def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: 
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
+                "Identifier": get_doi(ctx, previous_version)
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": f"{get_title(ctx, previous_version)}"
@@ -1702,7 +1702,7 @@ def meta_add_new_version(ctx: rule.Context, new_version: str, previous_version: 
         data_package = {
             "Persistent_Identifier": {
                 "Identifier_Scheme": "DOI",
-                "Identifier": f"https://doi.org/{get_doi(ctx, previous_version)}"
+                "Identifier": get_doi(ctx, previous_version)
             },
             "Relation_Type": "IsNewVersionOf",
             "Title": f"{get_title(ctx, previous_version)}"
