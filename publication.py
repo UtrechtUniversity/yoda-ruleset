@@ -1914,6 +1914,9 @@ def update_previous_version_metadata(ctx: rule.Context, publication_state: dict,
     :param doi:  Version DOI of the new publication
 
     """
+
+    from requests.exceptions import ReadTimeout
+
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
