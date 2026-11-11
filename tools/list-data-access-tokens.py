@@ -11,7 +11,7 @@ import sys
 
 
 def exit_with_error(message):
-    print >> sys.stderr, message
+    print(message, file=sys.stderr)
     sys.exit(1)
 
 
