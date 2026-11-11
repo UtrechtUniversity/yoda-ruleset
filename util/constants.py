@@ -223,7 +223,7 @@ class publication_status(Enum):
     UNKNOWN       = "Unknown"        # Publication status is unknown
     OK            = "OK"             # Publication is OK
     PROCESSING    = "Processing"     # Publication is being processed
-    RETRY         = "Retry"          # Publication failed, can be automtically retried
+    RETRY         = "Retry"          # Publication failed, can be automatically retried
     UNRECOVERABLE = "Unrecoverable"  # Publication failed, needs manual intervention
 
     def __str__(self) -> str:
