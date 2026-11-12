@@ -12,6 +12,7 @@ import genquery
 import irods_types
 from tstrings import t
 
+import constants
 import data_object
 import msi
 import rule
@@ -75,7 +76,7 @@ def size(ctx: rule.Context, path: str) -> int:
     return reduce(func, list(genquery.Query(
                              ctx, "distinct DATA_ID, DATA_SIZE",
                              t("COLL_NAME = '{path}' OR COLL_NAME like '{path}/%'"),
-                             output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)), 0)
+                             output=genquery.AS_LIST, limit=constants.MAX_QUERY_LIMIT, parser=genquery.Parser.GENQUERY2)), 0)
 
 
 def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
@@ -96,11 +97,10 @@ def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
 
 def collection_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
     """Get a collection's collection count (the amount of collections within a collection)."""
-    return sum(1 for _ in list(genquery.Query(
-                               ctx, "distinct COLL_ID",
+    return list(genquery.Query(ctx, "count(distinct COLL_ID)",
                                t("COLL_NAME like '{path}/%'") if recursive else
                                t("COLL_PARENT_NAME = '{path}' AND COLL_NAME like '{path}/%'"),
-                               output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2)))
+                               output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2))[0][0]
 
 
 def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:
