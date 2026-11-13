@@ -1,0 +1,33 @@
+{
+  "ui:order": [
+    "Related_Resource"
+  ],
+  "Related_Resource": {
+    "ui:order": [
+      "Relation_Type",
+      "Title",
+      "Persistent_Identifier"
+    ],
+    "items": {
+      "Relation_Type": {
+        "ui:help": "Relation to this resource"
+      },
+      "Title": {
+        "ui:help": "Title of the related resource"
+      },
+      "Persistent_Identifier": {
+        "ui:help": "Persistent identifier of the related resource",
+        "ui:order": [
+          "Identifier_Scheme",
+          "Identifier"
+        ],
+        "Identifier_Scheme": {
+          "ui:help": "Type of Persistent identifier of the related data resource"
+        },
+        "Identifier": {
+          "ui:help": "The identifier as it can be resolved on the appropriate service"
+        }
+      }
+    }
+  }
+}

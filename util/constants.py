@@ -79,7 +79,8 @@ IICOPYLASTRUN               = UUORGMETADATAPREFIX + 'last_run'
 DELETE_RESEARCH_COPY        = UUORGMETADATAPREFIX + 'delete_research_copy'
 DATA_PACKAGE_REFERENCE      = UUORGMETADATAPREFIX + 'data_package_reference'
 
-SCHEMA_USER_SELECTABLE  = UUORGMETADATAPREFIX + 'schema_user_selectable'
+SCHEMA                 = UUORGMETADATAPREFIX + 'schema'
+SCHEMA_USER_SELECTABLE = UUORGMETADATAPREFIX + 'schema_user_selectable'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',

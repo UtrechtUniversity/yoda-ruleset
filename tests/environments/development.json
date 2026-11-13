@@ -2,6 +2,7 @@
     "url": "https://portal.yoda.test",
     "davrods_url": "https://data.yoda.test",
     "zone_name": "tempZone",
+    "enable_metadata_schema_composer": true,
     "roles": {
         "researcher":              {"username": "researcher",              "password": "test"},
         "viewer":                  {"username": "viewer",                  "password": "test"},

@@ -1,0 +1,28 @@
+{
+  "$id": "spatial-coverage_1-0-0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spatial coverage",
+  "description": "Document the geographic locations, regions, countries, or cities where the data was collected or is applicable",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "stringNormalNullable": {
+      "type": ["string", "null"],
+      "maxLength": 255
+    }
+  },
+  "required": [],
+  "properties": {
+    "Covered_Geolocation_Place": {
+      "title": "Location(s) covered",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stringNormalNullable",
+        "title": "Location",
+        "default": ""
+      }
+    }
+  }
+}
