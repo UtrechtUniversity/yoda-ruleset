@@ -1,4 +1,8 @@
 {
+  "ui:order": [
+    "Retention_Period",
+    "Retention_Information"
+  ],
   "Retention_Period": {
     "ui:help": "The minimal number of years the data will be kept in the archive",
     "ui:widget": "updown"

@@ -1,4 +1,15 @@
 {
+  "ui:order": [
+    "Title",
+    "Description",
+    "Version",
+    "Language",
+    "Discipline",
+    "Data_Type",
+    "Data_Classification",
+    "Keyword",
+    "Collection_Name"
+  ],
   "Title": {
     "ui:help": "The title of your data package"
   },

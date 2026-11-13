@@ -228,7 +228,7 @@ def merge_building_blocks(identifier: str, title: str, description: str, schemas
     uischema: dict[str, Union[dict, list]] = {}
 
     for block, ui_schema in zip(schemas, uischemas):
-        uischema[block["title"]] = ui_schema
+        uischema[block["title"]] = copy.deepcopy(ui_schema)
 
     uischema["ui:order"] = [block["title"] for block in schemas]
 

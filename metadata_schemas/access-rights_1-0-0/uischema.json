@@ -1,4 +1,9 @@
 {
+  "ui:order": [
+    "License",
+    "Data_Access_Restriction",
+    "Embargo_End_Date"
+  ],
   "License": {
     "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
   },

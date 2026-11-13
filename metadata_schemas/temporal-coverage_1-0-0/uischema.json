@@ -1,6 +1,14 @@
 {
+  "ui:order": [
+    "Collected",
+    "Covered_Period"
+  ],
   "Collected": {
     "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "ui:order": [
+      "Start_Date",
+      "End_Date"
+    ],
     "Start_Date": {
       "ui:help": "Indicate when you've started collecting the data for this data package"
     },
@@ -10,6 +18,10 @@
   },
   "Covered_Period": {
     "ui:help": "An indication of the period covered by your data package",
+    "ui:order": [
+      "Start_Date",
+      "End_Date"
+    ],
     "Start_Date": {
       "ui:help": "An indication of the start date of the period covered by your data package"
     },

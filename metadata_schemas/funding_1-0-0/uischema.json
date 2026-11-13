@@ -1,5 +1,12 @@
 {
+  "ui:order": [
+    "Funding_Reference"
+  ],
   "Funding_Reference": {
+    "ui:order": [
+      "Funder_Name",
+      "Award_Number"
+    ],
     "items": {
       "Funder_Name": {
         "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"

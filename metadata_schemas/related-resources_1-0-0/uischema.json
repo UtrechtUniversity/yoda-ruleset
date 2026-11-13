@@ -1,5 +1,13 @@
 {
+  "ui:order": [
+    "Related_Resource"
+  ],
   "Related_Resource": {
+    "ui:order": [
+      "Relation_Type",
+      "Title",
+      "Persistent_Identifier"
+    ],
     "items": {
       "Relation_Type": {
         "ui:help": "Relation to this resource"
@@ -9,6 +17,10 @@
       },
       "Persistent_Identifier": {
         "ui:help": "Persistent identifier of the related resource",
+        "ui:order": [
+          "Identifier_Scheme",
+          "Identifier"
+        ],
         "Identifier_Scheme": {
           "ui:help": "Type of Persistent identifier of the related data resource"
         },

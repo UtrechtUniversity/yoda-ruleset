@@ -1,8 +1,21 @@
 {
+  "ui:order": [
+    "Creator",
+    "Contributor"
+  ],
   "Creator": {
     "ui:description": "The person(s) who created (a version of) the data package.",
+    "ui:order": [
+      "Name",
+      "Affiliation",
+      "Person_Identifier"
+    ],
     "items": {
       "Name": {
+        "ui:order": [
+          "Given_Name",
+          "Family_Name"
+        ],
         "Given_Name": {
           "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
         },
@@ -15,6 +28,10 @@
         "items": {
           "ui:field": "affiliation_identifier",
           "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
+          "ui:order": [
+            "Affiliation_Name",
+            "Affiliation_Identifier"
+          ],
           "Affiliation_Name": {
             "ui:help": "Name of the affiliation"
           },
@@ -27,6 +44,10 @@
         "ui:description": "Person identifier of creator of the data package",
         "items": {
           "ui:field": "person_identifier",
+          "ui:order": [
+            "Name_Identifier_Scheme",
+            "Name_Identifier"
+          ],
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
@@ -54,9 +75,19 @@
   },
   "Contributor": {
     "ui:description": "The person(s) who have contributed to this data package",
+    "ui:order": [
+      "Name",
+      "Contributor_Type",
+      "Affiliation",
+      "Person_Identifier"
+    ],
     "items": {
       "Name": {
         "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "ui:order": [
+          "Given_Name",
+          "Family_Name"
+        ],
         "Given_Name": {
           "ui:help": "The personal or first name of the person(s) who has contributed to (a version of) the data package"
         },
@@ -72,6 +103,10 @@
         "items": {
           "ui:field": "affiliation_identifier",
           "ui:data": "https://raw.githubusercontent.com/UtrechtUniversity/yoda-ruleset/development/vocabularies/affiliations.json",
+          "ui:order": [
+            "Affiliation_Name",
+            "Affiliation_Identifier"
+          ],
           "Affiliation_Name": {
             "ui:help": "Name of the affiliation"
           },
@@ -84,6 +119,10 @@
         "ui:description": "Person identifier of contributor of the data package",
         "items": {
           "ui:field": "person_identifier",
+          "ui:order": [
+            "Name_Identifier_Scheme",
+            "Name_Identifier"
+          ],
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
