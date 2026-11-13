@@ -39,12 +39,12 @@ def get_building_blocks(ctx: rule.Context) -> list[dict]:
     """
     blocks = []
     zone = user.zone(ctx)
-    iter = genquery.row_iterator(
+    rows = genquery.row_iterator(
         "COLL_NAME",
         f"COLL_PARENT_NAME = '/{zone}/yoda/metadata_schemas' AND META_COLL_ATTR_NAME = '{constants.SCHEMA_USER_SELECTABLE}' AND META_COLL_ATTR_VALUE = 'True'",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
+    for row in rows:
         block_name = row[0].split('/')[-1]
 
         metadata_schema = jsonutil.read(ctx, f"/{zone}/yoda/metadata_schemas/{block_name}/metadata.json")
@@ -57,6 +57,17 @@ def get_building_blocks(ctx: rule.Context) -> list[dict]:
                 "required": block_name in REQUIRED_BUILDING_BLOCKS,
             }
         })
+
+    required_order = {
+        name: index for index, name in enumerate(REQUIRED_BUILDING_BLOCKS)
+    }
+
+    blocks.sort(
+        key=lambda block: (
+            next(iter(block)) not in required_order,
+            required_order.get(next(iter(block)), 0),
+        )
+    )
 
     return blocks
 
