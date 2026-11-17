@@ -97,10 +97,11 @@ def data_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
 
 def collection_count(ctx: rule.Context, path: str, recursive: bool = True) -> int:
     """Get a collection's collection count (the amount of collections within a collection)."""
-    return list(genquery.Query(ctx, "count(distinct COLL_ID)",
+    data = list(genquery.Query(ctx, "count(distinct COLL_ID)",
                                t("COLL_NAME like '{path}/%'") if recursive else
                                t("COLL_PARENT_NAME = '{path}' AND COLL_NAME like '{path}/%'"),
                                output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2))[0][0]
+    return int(data)
 
 
 def subcollections(ctx: rule.Context, path: str, recursive: bool = False) -> Iterable:

@@ -610,11 +610,11 @@ def api_vault_system_metadata(ctx: rule.Context, coll: str) -> api.Result:
                                t("COLL_NAME = '{coll}' AND META_COLL_ATTR_NAME IN ('org_publication_lastModifiedDateTime', 'org_publication_landingPageUrl', '{constants.DATA_PACKAGE_REFERENCE}', 'org_epic_pid', 'org_epic_url')"),
                                output=genquery.AS_LIST, parser=genquery.Parser.GENQUERY2))
 
+    landinpage_url = ""
+    data_package_reference = ""
+    package_epic_pid = ""
+    package_epic_url = ""
     for row in iter:
-        landinpage_url = ""
-        data_package_reference = ""
-        package_epic_pid = ""
-        package_epic_url = ""
         if row[1] == 'org_publication_lastModifiedDateTime':
             modified_date = parser.parse(row[0])
             modified_date_time = modified_date.strftime('%Y-%m-%d %H:%M:%S%z')

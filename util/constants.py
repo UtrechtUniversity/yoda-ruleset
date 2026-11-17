@@ -90,7 +90,7 @@ CRONJOB_STATE = {
 }
 """Cronjob states."""
 
-MAX_QUERY_LIMIT = 999999999
+MAX_QUERY_LIMIT = 999999999  # GenQuery upper limit value for query results to override default limit of 256
 
 
 class vault_package_state(Enum):
