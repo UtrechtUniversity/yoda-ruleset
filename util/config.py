@@ -119,6 +119,7 @@ class Config:
                 "user_max_connections_enabled": False,
                 "user_max_connections_number": 4,
                 "enable_nfs_resource": False,
+                "enable_metadata_schema_composer": False,
                 "deaccession_cooldown": 14}
 
     def _get_config_filename(self) -> str:

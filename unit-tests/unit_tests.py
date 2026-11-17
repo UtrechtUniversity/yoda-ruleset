@@ -6,7 +6,7 @@ from unittest import makeSuite, TestSuite
 from test_group_import import GroupImportTest
 from test_json_datacite import JsonDataciteAffiliationsListTest, JsonDataciteContactPersonTest, JsonDataciteContributorTest, JsonDataciteCreatorTest, JsonDataciteGeoLocationsTest
 from test_json_landing_page import JsonLandingPageAffiliationsTest, JsonLandingPageDateTest, JsonLandingPageKeywordsTest, JsonLandingPageOrganizationTest, JsonLandingPagePersistentIdentifierTest, JsonLandingPagePersonTest, JsonLandingPageSchemaOrgJsonLdTest, JsonLandingPageTemporalCoverageTest
-from test_metadata_utils import MetadataUtilsTest
+from test_metadata_utils import MetadataUtilsDraft201909Test, MetadataUtilsDraft202012Test
 from test_policies import PoliciesTest
 from test_publication_utils import PublicationUtilsTest
 from test_revisions import RevisionTest
@@ -43,7 +43,8 @@ def suite():
     test_suite.addTest(makeSuite(JsonLandingPagePersonTest))
     test_suite.addTest(makeSuite(JsonLandingPageSchemaOrgJsonLdTest))
     test_suite.addTest(makeSuite(JsonLandingPageTemporalCoverageTest))
-    test_suite.addTest(makeSuite(MetadataUtilsTest))
+    test_suite.addTest(makeSuite(MetadataUtilsDraft201909Test))
+    test_suite.addTest(makeSuite(MetadataUtilsDraft202012Test))
     test_suite.addTest(makeSuite(PoliciesTest))
     test_suite.addTest(makeSuite(PublicationUtilsTest))
     test_suite.addTest(makeSuite(RevisionTest))
