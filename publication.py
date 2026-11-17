@@ -1648,9 +1648,10 @@ def update_publication(ctx: rule.Context,
             if 'previous_version' in publication_state:
                 previous_vault_package = publication_state["previous_version"]
                 previous_publication_state = get_publication_state(ctx, previous_vault_package)
-                if verbose:
-                    log.write(ctx, "Updating metadata of previous publication in Datacite.")
-                update_previous_version_metadata(ctx, previous_publication_state, publication_state["versionDOI"])
+                if previous_publication_state != constants.vault_package_state.DEPUBLISHED.value:
+                    if verbose:
+                        log.write(ctx, "Updating metadata of previous publication in Datacite.")
+                    update_previous_version_metadata(ctx, previous_publication_state, publication_state["versionDOI"])
         except Exception:
             log.write(ctx, "Exception while posting metadata to Datacite after metadata update: " + format_exc())
             publication_state["status"] = constants.publication_status.RETRY
