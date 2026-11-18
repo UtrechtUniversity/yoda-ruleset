@@ -363,8 +363,8 @@ def internal_api_group_data(ctx: rule.Context) -> dict:
     creation_dates = {}
     zone = user.zone(ctx)
     iter = genquery.row_iterator(
-        "COLL_NAME, COLL_CREATE_TIME",
-        f"COLL_PARENT_NAME = '/{zone}/home' and COLL_NAME not like '/{zone}/home/vault-%' and COLL_NAME not like '/{zone}/home/grp-%'",
+        "USER_NAME, USER_CREATE_TIME",
+        f"USER_TYPE = 'rodsgroup' AND USER_ZONE = '{zone}' AND USER_NAME NOT LIKE 'vault-%' and USER_NAME NOT LIKE 'grp-%'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -407,14 +407,12 @@ def internal_api_group_data(ctx: rule.Context) -> dict:
         if "schema_id" not in group:
             group["schema_id"] = schema_lookup_dict[group.get('category', "__nocategory")]
 
-        coll_name = f"/{user.zone(ctx)}/home/{group['name']}"
-
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group.get('description', ''),
             'schema_id': group['schema_id'],
             'expiration_date': group.get('expiration_date', ''),
             'data_classification': group.get('data_classification', ''),
-            'creation_date': creation_dates.get(coll_name, ''),
+            'creation_date': creation_dates.get(group['name'], ''),
             'sram_co': group.get('sram_co', ''),
             'members': members
         }
