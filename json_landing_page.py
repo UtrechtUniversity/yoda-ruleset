@@ -307,16 +307,18 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
 
     :return: Output HTML landing page
     """
-    import jinja2
+    from jinja2.sandbox import ImmutableSandboxedEnvironment
 
     # Read and clean metadata.
     json_data = jsonutil.read(ctx, combi_json_path)
     json_data = misc.remove_empty_objects(json_data)
 
-    # Load and prepare Jinja template.
+    # Load and prepare the sandboxed Jinja template.
     landingpage_template_path = f"/{zone}/yoda/templates/{template_name}"
-    template = data_object.read(ctx, landingpage_template_path)
-    tm = jinja2.Environment(autoescape=True).from_string(template)
+    template_source = data_object.read(ctx, landingpage_template_path)
+    env = ImmutableSandboxedEnvironment(autoescape=True)
+    env.globals["persistent_identifier_to_uri"] = persistent_identifier_to_uri
+    tm = env.from_string(template_source)
 
     # Handle empty landing page (depublication).
     if template_name == "emptylandingpage.html.j2":
@@ -484,9 +486,6 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     last_modified_date = last_modified_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
     publication_date_time = parser.parse(json_data["System"]["Publication_Date"])
     publication_date = publication_date_time.strftime("%Y-%m-%d %H:%M:%S%z")
-
-    # Add custom template functions.
-    tm.globals["persistent_identifier_to_uri"] = persistent_identifier_to_uri
 
     # Render landingpage template.
     return tm.render(
