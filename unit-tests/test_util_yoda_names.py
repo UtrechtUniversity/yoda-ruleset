@@ -9,7 +9,7 @@ from unittest import TestCase
 
 sys.path.append('../util')
 
-from yoda_names import _is_internal_user, is_email_username, is_valid_category, is_valid_expiration_date, is_valid_groupname, is_valid_schema_id, is_valid_subcategory
+from yoda_names import _is_internal_user, is_email_username, is_valid_category, is_valid_expiration_date, is_valid_group_description, is_valid_groupname, is_valid_schema_id, is_valid_subcategory
 
 
 class UtilYodaNamesTest(TestCase):
@@ -110,3 +110,16 @@ class UtilYodaNamesTest(TestCase):
         self.assertEqual(is_valid_schema_id("under_score-1"), False)
         self.assertEqual(is_valid_schema_id("with space-1"), False)
         self.assertEqual(is_valid_schema_id("dot.name-1"), False)
+
+    def test_is_valid_group_description(self):
+        self.assertEqual(is_valid_group_description(""), True)
+        self.assertEqual(is_valid_group_description("Valid description (v1.0), with_underscore-hyphen"), True)
+        self.assertEqual(is_valid_group_description("a" * 2700), True)
+        self.assertEqual(is_valid_group_description("a" * 2701), False)
+        self.assertEqual(is_valid_group_description("</script><script>alert(1)</script>"), False)
+        self.assertEqual(is_valid_group_description("it's"), False)
+        self.assertEqual(is_valid_group_description('double"quote'), False)
+        self.assertEqual(is_valid_group_description("line\nbreak"), False)
+        self.assertEqual(is_valid_group_description("trailing newline\n"), False)
+        self.assertEqual(is_valid_group_description("tab\tcharacter"), False)
+        self.assertEqual(is_valid_group_description("non-ascii caf\u00e9"), False)

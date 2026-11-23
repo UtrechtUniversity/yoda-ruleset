@@ -132,7 +132,7 @@ def given_group_exists(user, group_name):
 
 @given(parsers.parse('the user updates group "{group_name}"'), target_fixture="api_response")
 def api_group_update(user, group_name):
-    tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
+    tobeDescription = 'To test or not to test'
 
     return api_request(
         user,
@@ -269,7 +269,7 @@ def then_group_created(user, group_name):
     assert exists
 
 
-@then(parsers.parse('the update to group "{group_name}" is persisted'))
+@then(parsers.parse('the update to group "{group_name}" has been persisted'))
 def then_group_updated(user, group_name, api_response):
     _, body = api_request(
         user,
@@ -278,7 +278,7 @@ def then_group_updated(user, group_name, api_response):
     )
 
     description = body['data']
-    tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
+    tobeDescription = 'To test or not to test'
 
     assert description == tobeDescription
 

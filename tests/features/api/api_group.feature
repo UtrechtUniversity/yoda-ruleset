@@ -122,7 +122,7 @@ Feature: Group API
         And the group "<group_name>" exists
         And the user updates group "<group_name>"
         Then the response status code is "200"
-        And the update to group "<group_name>" is persisted
+        And the update to group "<group_name>" has been persisted
 
         Examples:
             | user                | group_name              |

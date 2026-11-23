@@ -25,6 +25,7 @@ __all__ = ['api_group_data',
            'rule_group_remove_external_user',
            'rule_group_check_external_user',
            'rule_group_expiration_date_validate',
+           'rule_group_description_validate',
            'rule_user_exists',
            'rule_group_user_exists',
            'api_group_search_users',
@@ -901,6 +902,18 @@ def rule_group_expiration_date_validate(ctx: rule.Context, expiration_date: str)
         return 'true'
     except ValueError:
         return 'false'
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_group_description_validate(ctx: rule.Context, description: str) -> str:
+    """Validation of group description.
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param description: Group description that has to be validated
+
+    :returns: Indication whether group description is an accepted value
+    """
+    return 'true' if yoda_names.is_valid_group_description(description) else 'false'
 
 
 @api.make()
