@@ -74,6 +74,27 @@ uuGroupCategoryNameIsValid(*name)
 uuGroupSubcategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
+# \brief Check if a group description is valid.
+#
+# Group descriptions must:
+#
+# - contain only letters, numbers, spaces, commas, periods, parentheses, underscores and hyphens
+# - be at most 2700 characters long
+# - may be empty
+#
+# The check is implemented in Python (rule_group_description_validate), because
+# "like regex" in the rule language does not reliably reject descriptions that
+# contain a newline.
+#
+# \param[in]  description
+# \param[out] valid
+#
+uuGroupDescriptionIsValid(*description, *valid) {
+    *result = "";
+    rule_group_description_validate(*description, *result);
+    *valid = bool(*result);
+}
+
 # \brief Check if co_identifier is valid.
 #
 # CO Identifier must:
@@ -279,6 +300,16 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *expiratio
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
 	}
+
+	# The description is shown in the group manager, so it must be validated
+	# for all group types (including datamanager groups).
+	if (*allowed == 1) {
+		uuGroupDescriptionIsValid(*description, *descriptionValid);
+		if (!*descriptionValid) {
+			*allowed = 0;
+			*reason  = "The group description may only contain letters a-z, numbers, spaces, commas, periods, parentheses, underscores (_) and hyphens (-), and may be at most 2700 characters long.";
+		}
+	}
 }
 
 # \brief Group Policy: Can the user create a group with / modify a group to use a certain category?
@@ -362,7 +393,12 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 				*reason = "Subcategory names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
 			}
 		} else if (*attribute == "description") {
-			*allowed = 1;
+			uuGroupDescriptionIsValid(*value, *descriptionValid);
+			if (*descriptionValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The group description may only contain letters a-z, numbers, spaces, commas, periods, parentheses, underscores (_) and hyphens (-), and may be at most 2700 characters long.";
+			}
 		} else if (*attribute == "data_classification") {
 			uuGroupDataClassificationIsValid(*groupName, *value, *dataClassValid);
 			if (*dataClassValid) {

@@ -38,6 +38,25 @@ def is_valid_subcategory(name: str) -> bool:
     )
 
 
+def is_valid_group_description(description: str) -> bool:
+    """Is this a valid group description?
+
+    Group descriptions may be empty, may only contain letters, numbers, spaces,
+    commas, periods, parentheses, underscores and hyphens, and may be at most
+    2700 characters long. This must be the same as the group description check
+    in the group manager of the portal.
+
+    :param description: description of the group
+
+    :returns: boolean value that indicates whether this is a valid group description
+    """
+    # Use fullmatch: with re.search, "$" also matches before a trailing newline.
+    return (
+        len(description) <= 2700
+        and re.fullmatch(r"[A-Za-z0-9,.()_ -]*", description) is not None
+    )
+
+
 def is_valid_groupname(name: str) -> bool:
     """Is this name a valid group name
 

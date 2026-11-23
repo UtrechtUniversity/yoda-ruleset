@@ -262,6 +262,21 @@ def _test_groups_data(ctx, test_group, attribute, value):
             and test_group not in group_names)
 
 
+def _test_group_policy_can_modify_description(ctx: rule.Context, description: str) -> bool:
+    """Check whether the group policy allows setting a group description on an existing group."""
+    ret = ctx.uuGroupPolicyCanGroupModify(user.full_name(ctx), "research-default-3", "description", description, "", "")
+    # The legacy rule sets *allowed to integer 1 or 0, which is returned as '\x01' or '\x00'.
+    return ret['arguments'][4] == '\x01'
+
+
+def _test_group_policy_can_add_with_description(ctx: rule.Context, description: str) -> bool:
+    """Check whether the group policy allows creating a (non-existing) group with a group description."""
+    ret = ctx.uuGroupPolicyCanGroupAdd(user.full_name(ctx), "research-integration-test-description", "test-automation",
+                                       "test-automation", "", "default-3", description, "unspecified", "", "", "", "")
+    # The legacy rule sets *allowed to integer 1 or 0, which is returned as '\x01' or '\x00'.
+    return ret['arguments'][10] == '\x01'
+
+
 def _test_statistics_exportdata(ctx: rule.Context) -> List[str]:
     """Test function to calculate statistics export data
 
@@ -762,6 +777,39 @@ basic_integration_tests = [
     {"name": "groups.rule_group_expiration_date_validate.6",
      "test": lambda ctx: ctx.rule_group_expiration_date_validate("2044-02-26", ""),
      "check": lambda x: x['arguments'][1] == 'true'},
+    {"name": "groups.policy_modify_description.valid",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "Valid description (v1.0), with_underscore-hyphen"),
+     "check": lambda x: x},
+    {"name": "groups.policy_modify_description.empty",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, ""),
+     "check": lambda x: x},
+    {"name": "groups.policy_modify_description.max_length",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "a" * 2700),
+     "check": lambda x: x},
+    {"name": "groups.policy_modify_description.too_long",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "a" * 2701),
+     "check": lambda x: not x},
+    {"name": "groups.policy_modify_description.script",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "</script><script>alert(1)</script>"),
+     "check": lambda x: not x},
+    {"name": "groups.policy_modify_description.quote",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "it's"),
+     "check": lambda x: not x},
+    {"name": "groups.policy_modify_description.newline",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "line\nbreak"),
+     "check": lambda x: not x},
+    {"name": "groups.policy_modify_description.trailing_newline",
+     "test": lambda ctx: _test_group_policy_can_modify_description(ctx, "trailing newline\n"),
+     "check": lambda x: not x},
+    {"name": "groups.policy_add_description.valid",
+     "test": lambda ctx: _test_group_policy_can_add_with_description(ctx, "Valid description"),
+     "check": lambda x: x},
+    {"name": "groups.policy_add_description.script",
+     "test": lambda ctx: _test_group_policy_can_add_with_description(ctx, "</script><script>alert(1)</script>"),
+     "check": lambda x: not x},
+    {"name": "groups.policy_add_description.too_long",
+     "test": lambda ctx: _test_group_policy_can_add_with_description(ctx, "a" * 2701),
+     "check": lambda x: not x},
     {"name": "meta.get_latest_vault_metadata_path.empty",
      "test": lambda ctx: _test_get_latest_vault_metadata_path_empty(ctx),
      "check": lambda x: x},
