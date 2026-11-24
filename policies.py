@@ -557,9 +557,6 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     if user.is_rodsadmin(ctx, actor):
         return policy.succeed()
 
-    if user.is_member_of(ctx, 'priv-execcmd-all', actor):
-        return policy.succeed()
-
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
