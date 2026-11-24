@@ -159,6 +159,10 @@ def pytest_bdd_apply_tag(tag, function):
         marker = pytest.mark.skip(reason="Skip WebDAV tests")
         marker(function)
         return True
+    elif tag == "metadata_schema_composer" and not configuration.get("enable_metadata_schema_composer", False):
+        marker = pytest.mark.skip(reason="Metadata Schema Composer is disabled")
+        marker(function)
+        return True
     elif tag == "fail":
         marker = pytest.mark.xfail(reason="Test is expected to fail", run=True, strict=False)
         marker(function)

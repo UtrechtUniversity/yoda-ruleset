@@ -56,7 +56,11 @@ def get_json_metadata_errors(ctx: rule.Context,
         metadata = jsonutil.read(ctx, metadata_path)
 
     # Perform validation and filter errors.
-    validator = jsonschema.Draft201909Validator(schema)
+    validator_class = jsonschema.validators.validator_for(
+        schema,
+        default=jsonschema.Draft201909Validator,
+    )
+    validator = validator_class(schema)
     errors = list(validator.iter_errors(metadata))
 
     if ignore_required:
