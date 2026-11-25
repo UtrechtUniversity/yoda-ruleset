@@ -225,6 +225,9 @@
                                 <span class="date" property="dc:created">{{ publication_date }}</span>
                                 <label>Accessibility:</label>
                                 <span property="dc:accessRights">{{ data_access_restriction }}</span>
+                                {% if license_icon_exists %}
+                                <span><a href="{{ license_uri }}" target="blank"><img src="{{ license_icon }}" alt="{{ license }}"></a></span>
+                                {% endif %}
                             </div>
                             <p class="description" property="dc:description">{{ description }}</p>
                             <div class="keywords">

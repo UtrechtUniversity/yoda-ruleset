@@ -4,6 +4,7 @@ __copyright__ = 'Copyright (c) 2019-2025, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import os
 from datetime import datetime
 
 from dateutil import parser
@@ -458,6 +459,15 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     elif license != "Custom":
         license_uri = json_data["System"].get("License_URI", "")
 
+    # Determine license icon.
+    license_icon_exists = False
+    license_icon_file = f"/var/www/landingpages/static/img/{license}.svg"
+    if os.path.exists(license_icon_file):
+        license_icon_exists = True
+        license_icon = f"/static/img/{license}.svg"
+    else:
+        log.write(ctx, f"Landing page: license icon not available for license '{license}'")
+
     # Whether the data can be downloaded in the JSON-LD block
     # Conditions are derived from the landingpage template, which activates the download button.
     is_openly_available = no_active_embargo and data_access_restriction.startswith("Open") and not is_deaccession_complete
@@ -507,6 +517,8 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         data_access_restriction=data_access_restriction,
         license=license,
         license_uri=license_uri,
+        license_icon_exists=license_icon_exists,
+        license_icon=license_icon,
         open_access_link=open_access_link,
         funding_reference=funding_reference,
         data_classification=data_classification,
