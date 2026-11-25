@@ -13,6 +13,7 @@ import orjson
 import session_vars
 
 import datarequest
+import datarequest_permission_utils
 import folder
 import policies_datapackage_status
 import policies_datarequest_status
@@ -560,6 +561,14 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
+    # This script changes ACLs as rodsadmin. Only allow the changes that the data
+    # request module needs.
+    if cmd == datarequest_permission_utils.TEMP_PERMISSION_SCRIPT:
+        if config.enable_datarequest:
+            return can_execcmd_datarequest_temp_permission(ctx, actor, args)
+        else:
+            return policy.fail("Cannot run DR module temp permission script because DR module has been disabled.")
+
     # Allow scheduled admin scripts.
     if cmd.startswith('admin-scheduled-'):
         return policy.succeed()
@@ -572,6 +581,43 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
             return policy.fail('Actor not given as first arg to admin- execcmd')
 
     return policy.fail('No execcmd privileges for this command')
+
+
+def can_execcmd_datarequest_temp_permission(ctx: rule.Context,
+                                            actor: user.User,
+                                            args: str) -> policy.Succeed | policy.Fail:
+    """Check a temporary data request permission change via msiExecCmd.
+
+    Looks up the facts that need iRODS and passes them to the logic in
+    datarequest_permission_utils. This runs as the actor, so the role lookups
+    are the same as those in the data request API functions.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param actor: User running msiExecCmd
+    :param args:  Arguments passed to msiExecCmd
+
+    :returns: Policy result
+    """
+    try:
+        request = datarequest_permission_utils.parse_temp_permission_args(args, str(actor))
+    except ValueError as e:
+        return policy.fail(f'Invalid data request permission change: {e}')
+
+    try:
+        status = datarequest.status_get(ctx, request.request_id).value
+        roles = datarequest.datarequest_roles_get(ctx, request.request_id)
+        target = user.from_str(ctx, request.target)
+        target_is_dac_member = user.is_member_of(ctx, datarequest.GROUP_DAC, target)
+        target_is_owner = datarequest.datarequest_owner_get(ctx, request.request_id) == target.name
+    except Exception as e:
+        return policy.fail(f'Could not check data request permission change: {e}')
+
+    reason = datarequest_permission_utils.temp_permission_denial_reason(
+        request, roles, status, target_is_dac_member, target_is_owner)
+    if reason is not None:
+        return policy.fail(f'Data request permission change not allowed: {reason}')
+
+    return policy.succeed()
 
 
 @rule.make()

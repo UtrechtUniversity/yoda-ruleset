@@ -8,10 +8,10 @@ processTempWritePermission() {
 
     if (*permission == "grant") {
         msiSetACL("default", "admin:write", *user, *path);
-    } else if (*permission == "grantread") {
+    } else if (*permission == "grantread" || *permission == "read") {
+        # "read" is used by file_lock() in datarequest.py to downgrade the
+        # temporary write access of the data request owner.
         msiSetACL("default", "admin:read", *user, *path);
-    } else if (*permission == "own") {
-        msiSetACL("default", "admin:own", *user, *path);
     } else if (*permission == "revoke") {
         msiSetACL("default", "admin:null", *user, *path);
     } else {
