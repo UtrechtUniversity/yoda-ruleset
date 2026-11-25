@@ -618,27 +618,26 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
-	uuChop(*groupName, *_, *baseName, "-", true);
-	if (*groupName like regex "(intake|research)-.*") {
-		# This is a group manager managed group with a read-only counterpart.
-		# Clean up the read-only shadow group.
+    uuChop(*groupName, *_, *baseName, "-", true);
+    if (*groupName like regex "(intake|research)-.*") {
+        # This is a group manager managed group with a read-only counterpart.
+        # Clean up the read-only shadow group.
 
-		*roGroupName = "read-*baseName";
-		msiSudoGroupRemove(*roGroupName, "");
+        *roGroupName = "read-*baseName";
+        msiSudoGroupRemove(*roGroupName, "");
+    }
 
-		# Remove the vault group if it is empty.
-		# We need a msiExecCmd here because the user removing this
-		# research/intake group does not necessarily have read access to the
-		# vault, and thus cannot check whether the vault is empty.
-		# This will also remove the orphan revision collection, if it exists.
-		uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
-	} else 	if (*groupName like regex "deposit-.*") {
-    	# Remove the vault group if it is empty.
-    	# We need a msiExecCmd here because the user removing this
-    	# deposit group does not necessarily have read access to the
-    	# vault, and thus cannot check whether the vault is empty.
-    	# This will also remove the orphan revision collection, if it exists.
-    	uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
+    if (*groupName like regex "(intake|research|deposit)-.*") {
+        # Remove the vault group if it is empty.
+        # We need a msiExecCmd here because the user removing this
+        # research/intake/deposit group does not necessarily have read access
+        # to the vault, and thus cannot check whether the vault is empty.
+        # This will also remove the orphan revision collection, if it exists.
+        msiExecCmd("admin-remove-orphan-vault-if-empty.sh",
+                   uuClientFullName ++ " " ++ "vault-*baseName",
+                   "", "", 0, *out);
+        msiGetStdoutInExecCmdOut(*out, *stdout);
+        writeString("stdout", "*stdout");
     }
 }
 

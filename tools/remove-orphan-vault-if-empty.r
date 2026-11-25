@@ -5,6 +5,10 @@ removeOrphanVaultIfEmpty {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
 	}
 
+	if (!(*vaultName like regex "^vault-.+")) {
+		failmsg(-1, "Input '*vaultName' is not a valid vault group name");
+	}
+
 	# Error cases are: Vault does *not* exist, or its base group *still* exists.
 	# In other situations the call to this script is valid and should not fail.
 	# That is, no error will be thrown if e.g. the vault is not empty.
