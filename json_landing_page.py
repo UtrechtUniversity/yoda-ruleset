@@ -263,8 +263,6 @@ def create_schema_org_json_ld(json_data: dict,
     if date_published:
         json_ld["datePublished"] = date_published
 
-    # Development env: "Yoda development team"
-    # Production env: "Utrecht University"
     if publisher:
         json_ld["publisher"] = {"@type": "Organization", "name": publisher}
 
@@ -324,6 +322,9 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
     if template_name == "emptylandingpage.html.j2":
         persistent_identifier_datapackage = json_data["System"]["Persistent_Identifier_Datapackage"]
         return tm.render(
+            publisher=config.landingpage_publisher,
+            contact_name=config.landingpage_contact_name,
+            contact_url=config.landingpage_contact_url,
             matomo_tracking_enabled=config.matomo_tracking_enabled,
             matomo_server_fqdn=config.matomo_server_fqdn,
             matomo_site_id=config.matomo_site_id,
@@ -513,6 +514,9 @@ def json_landing_page_create_json_landing_page(ctx: rule.Context,
         collection_name=collection_name,
         last_modified_date=last_modified_date,
         related_resources=all_related_resources,
+        publisher=config.landingpage_publisher,
+        contact_name=config.landingpage_contact_name,
+        contact_url=config.landingpage_contact_url,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
         schema_org_json_ld=schema_org_json_ld,
         geolocations=geolocations,
