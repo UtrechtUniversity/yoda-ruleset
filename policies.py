@@ -14,6 +14,8 @@ import session_vars
 
 import datarequest
 import folder
+import groups
+import meta_form
 import policies_datapackage_status
 import policies_datarequest_status
 import policies_deaccession_status
@@ -22,6 +24,7 @@ import policies_intake
 import replication
 import revisions
 import vault
+import vault_utils
 from policies_utils import *
 from util import *
 
@@ -560,6 +563,11 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
+    # This script copies data as rodsadmin. Only allow the copies that the vault and
+    # deposit modules schedule for the actor.
+    if cmd == vault_utils.COPY_TO_RESEARCH_SCRIPT:
+        return can_execcmd_copy_to_research(ctx, actor, args)
+
     # Allow scheduled admin scripts.
     if cmd.startswith('admin-scheduled-'):
         return policy.succeed()
@@ -572,6 +580,54 @@ def py_acPreProcForExecCmd(ctx: rule.Context,
             return policy.fail('Actor not given as first arg to admin- execcmd')
 
     return policy.fail('No execcmd privileges for this command')
+
+
+def can_execcmd_copy_to_research(ctx: rule.Context,
+                                 actor: user.User,
+                                 args: str) -> policy.Succeed | policy.Fail:
+    """Check a copy-to-research request via msiExecCmd.
+
+    Looks up the facts that need iRODS and passes them to the logic in
+    vault_utils. This runs as the actor, so the lookups match those in
+    api_vault_copy_to_research and api_deposit_copy_data_package.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param actor: User running msiExecCmd
+    :param args:  Arguments passed to msiExecCmd
+
+    :returns: Policy result
+    """
+    try:
+        request = vault_utils.parse_copy_to_research_args(args, str(actor))
+    except ValueError as e:
+        return policy.fail(f'Invalid copy-to-research request: {e}')
+
+    try:
+        _, _, origin_group, _ = pathutil.info(request.origin)
+        _, _, target_group, _ = pathutil.info(request.target)
+        target_parent, _ = pathutil.chop(request.target)
+        origin_category = groups.group_category(ctx, origin_group)
+
+        target_exists = collection.exists(ctx, request.target)
+        target_parent_exists = collection.exists(ctx, target_parent)
+        facts = vault_utils.CopyToResearchFacts(
+            origin_readable=collection.exists(ctx, request.origin),
+            actor_is_origin_datamanager=(origin_category != ''
+                                         and groups.user_is_datamanager(ctx, origin_category, str(actor))),
+            target_group_role=groups.user_role(ctx, str(actor), target_group),
+            target_exists=target_exists,
+            target_parent_exists=target_parent_exists,
+            target_locked=target_exists and meta_form.get_coll_lock_count(ctx, request.target) > 0,
+            target_parent_locked=target_parent_exists and meta_form.get_coll_lock_count(ctx, target_parent) > 0,
+            target_has_data=target_exists and not collection.is_empty(ctx, request.target))
+    except Exception as e:
+        return policy.fail(f'Could not check copy-to-research request: {e}')
+
+    reason = vault_utils.copy_to_research_denial_reason(request, str(actor), facts)
+    if reason is not None:
+        return policy.fail(f'Copy to research not allowed: {reason}')
+
+    return policy.succeed()
 
 
 @rule.make()
