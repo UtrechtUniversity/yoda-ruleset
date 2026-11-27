@@ -60,18 +60,30 @@ def deposit_is_archived(user, deposit_name):
     # interval (CI API/integration tests) or a 60 second interval (regular setup), so
     # we need to wait for a while to see if the package shows up if it's not there
     # yet.
+    # The vault package appears before securing has finished: for restricted
+    # packages, read access for the group is only revoked afterwards, just before
+    # the deposit collection is removed. So also wait for the deposit to be gone.
+    # This relies on the user being the submitter, who keeps read access to the
+    # vault package.
     http_status, names = None, []
     for _i in range(150):
         http_status, body = api_request(
             user,
             "browse_collections",
-            {"coll": "/tempZone/home/vault-pilot", "sort_order": "desc"}
+            {"coll": "/tempZone/home/vault-pilot", "sort_order": "desc", "limit": 1000}
         )
 
         if http_status == 200:
             names = [item["name"] for item in body["data"]["items"]]
             if any(name.startswith(deposit_name) for name in names):
-                return True
+                deposit_status, deposit_body = api_request(
+                    user,
+                    "browse_collections",
+                    {"coll": "/tempZone/home/deposit-pilot", "sort_order": "desc", "limit": 1000}
+                )
+                if deposit_status == 200 and not any(item["name"] == deposit_name
+                                                     for item in deposit_body["data"]["items"]):
+                    return True
         time.sleep(2)
 
     raise AssertionError(f"Deposit {deposit_name} not archived after timeout (last status: {http_status}, vault items: {names})")
