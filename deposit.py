@@ -61,9 +61,13 @@ def api_deposit_copy_data_package(ctx: rule.Context, reference: str, deposit_gro
     _, _, group_name, _ = pathutil.info(coll_target)
 
     # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
+    # Data managers may copy without direct access to the data package, but only from vault
+    # groups in their own category (the category of the data package, not of the deposit group).
+    # This matches the check in can_execcmd_copy_to_research in policies.py.
     user_full_name = user.full_name(ctx)
-    category = groups.group_category(ctx, group_name)
-    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+    _, _, origin_group, _ = pathutil.info(coll_data_package)
+    category = groups.group_category(ctx, origin_group)
+    is_datamanager = category != '' and groups.user_is_datamanager(ctx, category, user_full_name)
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.

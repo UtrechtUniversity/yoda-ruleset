@@ -215,9 +215,13 @@ def api_vault_copy_to_research(ctx: rule.Context, coll_origin: str, coll_target:
         return api.Error('PackageAlreadyPresentInTarget', 'This datapackage is already present at the specified location')
 
     # Check user permissions.
+    # Data managers may copy without direct access to the origin, but only from vault
+    # groups in their own category (the category of the origin, not of the target).
+    # This matches the check in can_execcmd_copy_to_research in policies.py.
     user_full_name = user.full_name(ctx)
-    category       = groups.group_category(ctx, group_name)
-    is_datamanager = groups.user_is_datamanager(ctx, category, user_full_name)
+    _, _, origin_group, _ = pathutil.info(coll_origin)
+    category       = groups.group_category(ctx, origin_group)
+    is_datamanager = category != '' and groups.user_is_datamanager(ctx, category, user_full_name)
 
     if not is_datamanager and not collection.exists(ctx, coll_origin):
         return api.Error('NoPermissions', 'Insufficient rights to perform this action')
