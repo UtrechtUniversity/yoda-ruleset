@@ -3,6 +3,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from unittest import makeSuite, TestSuite
 
+from test_datarequest_permission_utils import DatarequestPermissionUtilsTest
 from test_group_import import GroupImportTest
 from test_json_datacite import JsonDataciteAffiliationsListTest, JsonDataciteContactPersonTest, JsonDataciteContributorTest, JsonDataciteCreatorTest, JsonDataciteGeoLocationsTest
 from test_json_landing_page import JsonLandingPageAffiliationsTest, JsonLandingPageDateTest, JsonLandingPageKeywordsTest, JsonLandingPageOrganizationTest, JsonLandingPagePersistentIdentifierTest, JsonLandingPagePersonTest, JsonLandingPageSchemaOrgJsonLdTest, JsonLandingPageTemporalCoverageTest
@@ -29,6 +30,7 @@ def suite():
     test_suite.addTest(makeSuite(CorrectifyResearcherIDTest))
     test_suite.addTest(makeSuite(MergeGeoKeywordsTest))
     test_suite.addTest(makeSuite(RenameRelatedDatapackageTest))
+    test_suite.addTest(makeSuite(DatarequestPermissionUtilsTest))
     test_suite.addTest(makeSuite(GroupImportTest))
     test_suite.addTest(makeSuite(JsonDataciteAffiliationsListTest))
     test_suite.addTest(makeSuite(JsonDataciteContactPersonTest))
